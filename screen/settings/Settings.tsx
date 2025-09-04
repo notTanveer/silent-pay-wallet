@@ -4,6 +4,7 @@ import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import loc from '../../loc';
 import { useSettings } from '../../hooks/context/useSettings';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
+import DeleteWallet from './DeleteWallet';
 
 const Settings = () => {
   const { navigate } = useExtendedNavigation();
@@ -20,6 +21,8 @@ const Settings = () => {
       <ListItem title={loc.settings.network} onPress={() => navigate('NetworkSettings')} testID="NetworkSettings" chevron />
       <ListItem title={loc.settings.tools} onPress={() => navigate('ToolsScreen')} testID="Tools" chevron />
       <ListItem title={loc.settings.about} onPress={() => navigate('About')} testID="AboutButton" chevron />
+      {/* TODO: Eventually make this a separate screen with proper description */}
+      <DeleteWallet />
     </SafeAreaScrollView>
   );
 };

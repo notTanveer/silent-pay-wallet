@@ -33,7 +33,7 @@ const scheduleInNextFrame = (callback: () => void): number => {
 const LAYOUT = {
   PADDINGS: 30,
   ICON_MARGIN: 7,
-  BUTTON_MARGIN: 10,
+  BUTTON_MARGIN: 15,
   MIN_BUTTON_WIDTH: 100,
   MIN_BUTTON_WIDTH_LARGE: 130,
   DRAWER_WIDTH: 320,
@@ -360,7 +360,6 @@ const buttonContentStaticStyles = StyleSheet.create({
   },
   textBase: {
     fontWeight: '600',
-    marginLeft: LAYOUT.ICON_MARGIN,
     backgroundColor: 'transparent',
     textAlign: 'center',
     textAlignVertical: 'center',
@@ -383,6 +382,7 @@ interface FButtonProps {
   text: string;
   icon: ReactNode;
   width?: number;
+  widthRatio?: number; // relative width multiplier (e.g., 1.5 for 50% wider, 0.7 for 30% narrower)
   first?: boolean;
   last?: boolean;
   singleChild?: boolean;
@@ -427,10 +427,28 @@ const ButtonContent = ({ icon, text, textStyle, iconStyle }: ButtonContentProps)
     scaledIcon = icon;
   }
 
+  if (!text || text.trim() === '') {
+    return (
+      <View style={[buttonContentStaticStyles.contentContainer, { justifyContent: 'center' }]}>
+        <View style={buttonStyles.iconContainer}>{scaledIcon}</View>
+      </View>
+    );
+  }
+
+  if (!icon) {
+    return (
+      <View style={[buttonContentStaticStyles.contentContainer, { justifyContent: 'center' }]}>
+        <Text numberOfLines={1} adjustsFontSizeToFit style={[textStyle, buttonStyles.centeredText, { lineHeight: fontSize * 1.2 }]}>
+          {text}
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={buttonContentStaticStyles.contentContainer}>
       <View style={buttonStyles.iconContainer}>{scaledIcon}</View>
-      <Text numberOfLines={1} adjustsFontSizeToFit style={[textStyle, buttonStyles.centeredText, { lineHeight: fontSize * 1.2 }]}>
+      <Text numberOfLines={1} adjustsFontSizeToFit style={[textStyle, buttonStyles.centeredText, { lineHeight: fontSize * 1.2, marginLeft: LAYOUT.ICON_MARGIN }]}>
         {text}
       </Text>
     </View>
@@ -441,6 +459,7 @@ export const FButton = ({
   text,
   icon,
   width,
+  widthRatio = 1,
   first,
   last,
   singleChild,
@@ -479,9 +498,9 @@ export const FButton = ({
   if (width) {
     style.paddingHorizontal = LAYOUT.PADDINGS;
     if (singleChild && !isVertical) {
-      style.width = width * LAYOUT.SINGLE_BUTTON_WIDTH_FACTOR + LAYOUT.PADDINGS * 2;
+      style.width = widthRatio * width * LAYOUT.SINGLE_BUTTON_WIDTH_FACTOR + LAYOUT.PADDINGS * 2;
     } else {
-      style.width = isVertical ? '100%' : width + LAYOUT.PADDINGS * 2;
+      style.width = isVertical ? '100%' : widthRatio * width + LAYOUT.PADDINGS * 2;
     }
   }
 

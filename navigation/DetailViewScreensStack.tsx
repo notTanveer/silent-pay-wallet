@@ -75,12 +75,13 @@ const DetailViewStackScreensStack = () => {
         <SettingsButton />
       ) : (
         <>
-          <AddWalletButton onPress={navigateToAddWallet} />
-          <View style={styles.width24} />
+          {/* Only show AddWalletButton when there are no wallets (single wallet mode) */}
+          {wallets.length === 0 && <AddWalletButton onPress={navigateToAddWallet} />}
+          {wallets.length === 0 && <View style={styles.width24} />}
           <SettingsButton />
         </>
       ),
-    [sizeClass, navigateToAddWallet],
+    [sizeClass, navigateToAddWallet, wallets.length],
   );
 
   const useWalletListScreenOptions = useMemo<NativeStackNavigationOptions>(() => {

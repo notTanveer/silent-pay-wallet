@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useReducer, useRef, useMemo } from 'react';
 import { useFocusEffect, useIsFocused, useRoute, RouteProp } from '@react-navigation/native';
-import { Alert, findNodeHandle, Image, InteractionManager, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Alert, findNodeHandle, Image, InteractionManager, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Icon } from '@rneui/themed';
 import A from '../../blue_modules/analytics';
 import { getClipboardContent } from '../../blue_modules/clipboard';
 import { isDesktop } from '../../blue_modules/environment';
@@ -12,9 +13,9 @@ import presentAlert from '../../components/Alert';
 import { FButton, FContainer } from '../../components/FloatButtons';
 import { useTheme } from '../../components/themes';
 import { TransactionListItem } from '../../components/TransactionListItem';
-import WalletsCarousel from '../../components/WalletsCarousel';
 import { useSizeClass, SizeClass } from '../../blue_modules/sizeClass';
-import loc from '../../loc';
+import loc, { formatBalance, transactionTimeToReadable } from '../../loc';
+import { BitcoinUnit } from '../../models/bitcoinUnits';
 import ActionSheet from '../ActionSheet';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
@@ -26,7 +27,7 @@ import useMenuElements from '../../hooks/useMenuElements';
 import SafeAreaSectionList from '../../components/SafeAreaSectionList';
 import { scanQrHelper } from '../../helpers/scan-qr.ts';
 
-const WalletsListSections = { CAROUSEL: 'CAROUSEL', TRANSACTIONS: 'TRANSACTIONS' };
+const WalletsListSections = { WALLET: 'WALLET', TRANSACTIONS: 'TRANSACTIONS' };
 
 type SectionData = {
   key: string;
@@ -98,17 +99,13 @@ const WalletsList: React.FC = () => {
   const [state, dispatch] = useReducer<React.Reducer<WalletListState, WalletListAction>>(reducer, initialState);
   const { isLoading } = state;
   const { sizeClass, isLarge } = useSizeClass();
-  const walletsCarousel = useRef<any>();
-  const currentWalletIndex = useRef<number>(0);
   const { registerTransactionsHandler, unregisterTransactionsHandler } = useMenuElements();
-  const { wallets, getTransactions, getBalance, refreshAllWalletTransactions } = useStorage();
+  const { wallets, getTransactions, getBalance, refreshAllWalletTransactions, saveToDisk } = useStorage();
   const { isTotalBalanceEnabled, isElectrumDisabled } = useSettings();
-  const { width } = useWindowDimensions();
   const { colors, scanImage } = useTheme();
   const navigation = useExtendedNavigation<NavigationProps>();
-  const isFocused = useIsFocused();
   const route = useRoute<RouteProps>();
-  const dataSource = getTransactions(undefined, 10);
+  const dataSource = getTransactions(undefined, Infinity);
   const walletsCount = useRef<number>(wallets.length);
   const walletActionButtonsRef = useRef<any>();
 
@@ -123,6 +120,29 @@ const WalletsList: React.FC = () => {
     listHeaderText: {
       color: colors.foregroundColor,
       flexShrink: 1,
+    },
+    walletContainer: {
+      backgroundColor: colors.background,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+    noWalletText: {
+      color: colors.foregroundColor,
+      fontSize: 18,
+      textAlign: 'center',
+      marginVertical: 20,
+    },
+    noWalletSubText: {
+      color: colors.alternativeTextColor,
+      fontSize: 16,
+      textAlign: 'center',
+    },
+    balanceAmountText: {
+      color: colors.foregroundColor,
+      fontSize: 36 ,
+      fontWeight: 'bold',
+      marginBottom: 8,
+      textAlign: 'center',
     },
   });
 
@@ -238,39 +258,6 @@ const WalletsList: React.FC = () => {
     [navigation],
   );
 
-  const handleClick = useCallback(
-    (item?: TWallet) => {
-      if (item?.getID) {
-        const walletID = item.getID();
-        navigation.navigate('WalletTransactions', {
-          walletID,
-          walletType: item.type,
-        });
-      } else {
-        navigation.navigate('AddWalletRoot');
-      }
-    },
-    [navigation],
-  );
-
-  const onSnapToItem = useCallback(
-    (e: { nativeEvent: { contentOffset: any } }) => {
-      if (!isFocused) return;
-
-      const contentOffset = e.nativeEvent.contentOffset;
-      const index = Math.ceil(contentOffset.x / width);
-
-      if (currentWalletIndex.current !== index) {
-        console.debug('onSnapToItem', wallets.length === index ? 'NewWallet/Importing card' : index);
-        if (wallets[index] && (wallets[index].timeToRefreshBalance() || wallets[index].timeToRefreshTransaction())) {
-          refreshWallets(index, false, false);
-        }
-        currentWalletIndex.current = index;
-      }
-    },
-    [isFocused, refreshWallets, wallets, width],
-  );
-
   const renderListHeaderComponent = useCallback(() => {
     return (
       <View style={[styles.listHeaderBack, stylesHook.listHeaderBack]}>
@@ -286,10 +273,6 @@ const WalletsList: React.FC = () => {
     );
   }, [stylesHook.listHeaderBack, stylesHook.listHeaderText]);
 
-  const handleLongPress = useCallback(() => {
-    navigation.navigate('ManageWallets');
-  }, [navigation]);
-
   const renderTransactionListsRow = useCallback(
     (item: ExtendedTransaction) => (
       <TransactionListItem key={item.hash} item={item} itemPriceUnit={item.walletPreferredBalanceUnit} walletID={item.walletID} />
@@ -297,38 +280,69 @@ const WalletsList: React.FC = () => {
     [],
   );
 
-  const renderWalletsCarousel = useCallback(() => {
+  const changeWalletBalanceUnit = useCallback(async () => {
+    const wallet = wallets.length > 0 ? wallets[0] : null;
+    if (!wallet) return;
+
+    let newWalletPreferredUnit = wallet.getPreferredBalanceUnit();
+
+    switch (newWalletPreferredUnit) {
+      case BitcoinUnit.BTC:
+        newWalletPreferredUnit = BitcoinUnit.SATS;
+        break;
+      case BitcoinUnit.SATS:
+        newWalletPreferredUnit = BitcoinUnit.LOCAL_CURRENCY;
+        break;
+      default:
+        newWalletPreferredUnit = BitcoinUnit.BTC;
+        break;
+    }
+
+    wallet.preferredBalanceUnit = newWalletPreferredUnit;
+    await saveToDisk();
+  }, [wallets, saveToDisk]);
+
+  const renderWalletItem = useCallback(() => {
+    const wallet = wallets.length > 0 ? wallets[0] : null;
+    
+    if (!wallet) {
+      return (
+        <View style={[styles.walletContainer, stylesHook.walletContainer]}>
+          <Text style={[styles.noWalletText, stylesHook.noWalletText]}>
+            {loc.wallets.list_empty_txs1}
+          </Text>
+          <Text style={[styles.noWalletSubText, stylesHook.noWalletSubText]}>
+            {loc.wallets.list_create_a_wallet}
+          </Text>
+        </View>
+      );
+    }
+
+    const balanceText = formatBalance(wallet.getBalance(), wallet.getPreferredBalanceUnit(), true);
+
     return (
-      <>
-        <WalletsCarousel
-          data={wallets}
-          extraData={[wallets]}
-          onPress={handleClick}
-          handleLongPress={handleLongPress}
-          onMomentumScrollEnd={onSnapToItem}
-          ref={walletsCarousel}
-          onNewWalletPress={handleClick}
-          testID="WalletsList"
-          horizontal
-          scrollEnabled={isFocused}
-          animateChanges={true}
-        />
-      </>
+      <View style={[styles.balanceHeader, stylesHook.walletContainer]}>
+        <TouchableOpacity onPress={changeWalletBalanceUnit}>
+          <Text style={[styles.balanceAmount, stylesHook.balanceAmountText]}>
+            {balanceText}
+          </Text>
+        </TouchableOpacity>
+      </View>
     );
-  }, [handleClick, handleLongPress, isFocused, onSnapToItem, wallets]);
+  }, [wallets, stylesHook, dataSource]);
 
   const renderSectionItem = useCallback(
     (item: { section: any; item: ExtendedTransaction }) => {
       switch (item.section.key) {
-        case WalletsListSections.CAROUSEL:
-          return sizeClass === SizeClass.Large ? null : renderWalletsCarousel();
+        case WalletsListSections.WALLET:
+          return sizeClass === SizeClass.Large ? null : renderWalletItem();
         case WalletsListSections.TRANSACTIONS:
           return renderTransactionListsRow(item.item);
         default:
           return null;
       }
     },
-    [sizeClass, renderTransactionListsRow, renderWalletsCarousel],
+    [sizeClass, renderTransactionListsRow, renderWalletItem],
   );
 
   const renderSectionHeader = useCallback(
@@ -340,7 +354,7 @@ const WalletsList: React.FC = () => {
       switch (section.section.key) {
         case WalletsListSections.TRANSACTIONS:
           return renderListHeaderComponent();
-        case WalletsListSections.CAROUSEL: {
+        case WalletsListSections.WALLET: {
           return isTotalBalanceEnabled ? (
             <View style={stylesHook.walletsListWrapper}>
               <TotalWalletsBalance />
@@ -375,16 +389,31 @@ const WalletsList: React.FC = () => {
     [dataSource.length, isLoading],
   );
 
-  const renderScanButton = useCallback(() => {
+  const renderButtons = useCallback(() => {
     if (wallets.length > 0) {
       return (
         <FContainer ref={walletActionButtonsRef.current}>
           <FButton
+            onPress={onReceiveButtonPressed}
+            icon={null}
+            text="Request"
+            widthRatio={1.3}
+            testID="HomeScreenReceiveButton"
+          />
+          <FButton
             onPress={onScanButtonPressed}
-            onLongPress={sendButtonLongPress}
             icon={<Image resizeMode="stretch" source={scanImage} />}
-            text={loc.send.details_scan}
+            text=""
+            widthRatio={0.01}
             testID="HomeScreenScanButton"
+          />
+          <FButton
+            onPress={onSendButtonPressed}
+            onLongPress={sendButtonLongPress}
+            icon={null}
+            text="Pay"
+            widthRatio={1.3}
+            testID="HomeScreenSendButton"
           />
         </FContainer>
       );
@@ -401,6 +430,25 @@ const WalletsList: React.FC = () => {
   const onScanButtonPressed = useCallback(() => {
     scanQrHelper().then(onBarScanned);
   }, [onBarScanned]);
+
+  const onSendButtonPressed = useCallback(() => {
+    if (wallets.length > 0) {
+      const wallet = wallets[0];
+      navigation.navigate('SendDetailsRoot', {
+        walletID: wallet.getID(),
+      });
+    }
+  }, [navigation, wallets]);
+
+  const onReceiveButtonPressed = useCallback(() => {
+    if (wallets.length > 0) {
+      const wallet = wallets[0];
+      navigation.navigate('ReceiveDetails', {
+        walletID: wallet.getID(),
+        address: '',
+      });
+    }
+  }, [navigation, wallets]);
 
   const pasteFromClipboard = useCallback(async () => {
     onBarScanned(await getClipboardContent());
@@ -454,16 +502,16 @@ const WalletsList: React.FC = () => {
       return [{ key: WalletsListSections.TRANSACTIONS, data: dataSource }];
     }
 
-    // On smaller screens, show both carousel and transactions
+    // On smaller screens, show both wallet and transactions
     return [
-      { key: WalletsListSections.CAROUSEL, data: [WalletsListSections.CAROUSEL] },
+      { key: WalletsListSections.WALLET, data: [WalletsListSections.WALLET] },
       { key: WalletsListSections.TRANSACTIONS, data: dataSource },
     ];
   }, [sizeClass, dataSource]);
 
   // Constants for layout calculations
   const TRANSACTION_ITEM_HEIGHT = 80;
-  const CAROUSEL_HEIGHT = 195;
+  const WALLET_HEIGHT = 195;
   const SECTION_HEADER_HEIGHT = 56; // Base height
   const LARGE_TITLE_EXTRA_HEIGHT = 20; // Additional height for large titles
 
@@ -476,18 +524,18 @@ const WalletsList: React.FC = () => {
       const headerHeight = getSectionHeaderHeight();
 
       if (sizeClass === SizeClass.Large) {
-        // On large screens: only transaction items, no carousel
+        // On large screens: only transaction items, no wallet
         return {
           length: TRANSACTION_ITEM_HEIGHT,
           offset: TRANSACTION_ITEM_HEIGHT * index,
           index,
         };
       } else {
-        // On smaller screens: first item is carousel, rest are transactions
-        // First section: Carousel
+        // On smaller screens: first item is wallet, rest are transactions
+        // First section: Wallet
         if (index === 0) {
           return {
-            length: CAROUSEL_HEIGHT,
+            length: WALLET_HEIGHT,
             offset: 0,
             index,
           };
@@ -495,13 +543,13 @@ const WalletsList: React.FC = () => {
 
         // Second section: Transactions
         // Need to account for:
-        // 1. Carousel height
+        // 1. Wallet height
         // 2. Section header height for transactions section
         // 3. Transaction items
-        const transactionIndex = index - 1; // Adjust index to account for carousel
+        const transactionIndex = index - 1; // Adjust index to account for wallet
         return {
           length: TRANSACTION_ITEM_HEIGHT,
-          offset: CAROUSEL_HEIGHT + headerHeight + TRANSACTION_ITEM_HEIGHT * transactionIndex,
+          offset: WALLET_HEIGHT + headerHeight + TRANSACTION_ITEM_HEIGHT * transactionIndex,
           index,
         };
       }
@@ -525,7 +573,7 @@ const WalletsList: React.FC = () => {
         ignoreTopInset={true} // Ignore top inset as the screen header already handles it
         {...refreshProps}
       />
-      {renderScanButton()}
+      {renderButtons()}
     </>
   );
 };
@@ -561,5 +609,33 @@ const styles = StyleSheet.create({
     color: '#9aa0aa',
     textAlign: 'center',
     fontWeight: '600',
+  },
+  walletContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  noWalletText: {
+    fontSize: 18,
+    textAlign: 'center',
+    marginVertical: 20,
+    fontWeight: '500',
+  },
+  noWalletSubText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  balanceHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 24,
+    paddingBottom: 40,
+    paddingTop: 40,
+    alignItems: 'center',
+  },
+  balanceAmount: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
   },
 });

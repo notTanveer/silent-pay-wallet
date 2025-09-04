@@ -1,16 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, memo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { Linking, View, ViewStyle, StyleSheet } from 'react-native';
+import { Linking, View, ViewStyle, StyleSheet, Text } from 'react-native';
 import Lnurl from '../class/lnurl';
 import { LightningTransaction, Transaction } from '../class/wallets/types';
-import TransactionExpiredIcon from '../components/icons/TransactionExpiredIcon';
-import TransactionIncomingIcon from '../components/icons/TransactionIncomingIcon';
-import TransactionOffchainIcon from '../components/icons/TransactionOffchainIcon';
-import TransactionOffchainIncomingIcon from '../components/icons/TransactionOffchainIncomingIcon';
-import TransactionOnchainIcon from '../components/icons/TransactionOnchainIcon';
-import TransactionOutgoingIcon from '../components/icons/TransactionOutgoingIcon';
-import TransactionPendingIcon from '../components/icons/TransactionPendingIcon';
 import loc, { formatBalanceWithoutSuffix, transactionTimeToReadable } from '../loc';
 import { BitcoinUnit } from '../models/bitcoinUnits';
 import { useSettings } from '../hooks/context/useSettings';
@@ -26,11 +19,16 @@ import { CommonToolTipActions } from '../typings/CommonToolTipActions';
 import { pop } from '../NavigationService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HighlightedText from './HighlightedText';
+import { shortenAddress, getRelevantAddress } from '../utils/transactionHelpers';
 
 const styles = StyleSheet.create({
   subtitle: {
     color: 'colors.foregroundColor',
     fontSize: 13,
+  },
+  subtitleTime: {
+    fontSize: 12,
+    opacity: 0.6,
   },
   highlight: {
     backgroundColor: '#FFF5C0',
@@ -87,11 +85,39 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
       return name.substr(0, 7) + '...' + name.substr(name.length - 7, 7);
     };
 
+    const relevantAddress = getRelevantAddress(item);
+
     const title = useMemo(() => {
+      if (relevantAddress) {
+        return shortenAddress(relevantAddress);
+      }
       if (item.confirmations === 0) {
         return loc.transactions.pending;
       } else {
         return transactionTimeToReadable(item.timestamp);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [relevantAddress, item.confirmations, item.timestamp, language]);
+
+    const timeText = useMemo(() => {
+      if (item.confirmations === 0) {
+        return loc.transactions.pending;
+      } else {
+        const now = new Date();
+        const txDate = new Date(item.timestamp * 1000);
+        const timeDifferenceMs = now.getTime() - txDate.getTime();
+        const hoursDifference = timeDifferenceMs / (1000 * 60 * 60);
+        
+        if (hoursDifference > 24) {
+          return txDate.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          });
+        } else {
+          // Show relative time for recent transactions
+          return transactionTimeToReadable(item.timestamp);
+        }
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [item.confirmations, item.timestamp, language]);
@@ -102,12 +128,12 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
     }
     const txMemo = (counterparty ? `[${shortenContactName(counterparty)}] ` : '') + (txMetadata[item.hash]?.memo ?? '');
     const subtitle = useMemo(() => {
-      let sub = Number(item.confirmations) < 7 ? loc.formatString(loc.transactions.list_conf, { number: item.confirmations }) : '';
+      let sub = Number(item.confirmations) < 7 ? loc.formatString(loc.transactions.list_conf, { number: item.confirmations }) : timeText;
       if (sub !== '') sub += ' ';
       sub += txMemo;
       if (item.memo) sub += item.memo;
       return sub || undefined;
-    }, [txMemo, item.confirmations, item.memo]);
+    }, [relevantAddress, timeText, txMemo, item.confirmations, item.memo]);
 
     const formattedAmount = useMemo(() => {
       return formatBalanceWithoutSuffix(item.value && item.value, itemPriceUnit, true).toString();
@@ -167,75 +193,6 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
       insets.right,
       insets.left,
     ]);
-
-    const determineTransactionTypeAndAvatar = () => {
-      if (item.category === 'receive' && item.confirmations! < 3) {
-        return {
-          label: loc.transactions.pending_transaction,
-          icon: <TransactionPendingIcon />,
-        };
-      }
-
-      if (item.type && item.type === 'bitcoind_tx') {
-        return {
-          label: loc.transactions.onchain,
-          icon: <TransactionOnchainIcon />,
-        };
-      }
-
-      if (item.type === 'paid_invoice') {
-        return {
-          label: loc.transactions.offchain,
-          icon: <TransactionOffchainIcon />,
-        };
-      }
-
-      if (item.type === 'user_invoice' || item.type === 'payment_request') {
-        const currentDate = new Date();
-        const now = (currentDate.getTime() / 1000) | 0; // eslint-disable-line no-bitwise
-        const invoiceExpiration = item.timestamp! + item.expire_time!;
-        if (!item.ispaid && invoiceExpiration < now) {
-          return {
-            label: loc.transactions.expired_transaction,
-            icon: <TransactionExpiredIcon />,
-          };
-        } else if (!item.ispaid) {
-          return {
-            label: loc.transactions.expired_transaction,
-            icon: <TransactionPendingIcon />,
-          };
-        } else {
-          return {
-            label: loc.transactions.incoming_transaction,
-            icon: <TransactionOffchainIncomingIcon />,
-          };
-        }
-      }
-
-      if (!item.confirmations) {
-        return {
-          label: loc.transactions.pending_transaction,
-          icon: <TransactionPendingIcon />,
-        };
-      } else if (item.value! < 0) {
-        return {
-          label: loc.transactions.outgoing_transaction,
-          icon: <TransactionOutgoingIcon />,
-        };
-      } else {
-        return {
-          label: loc.transactions.incoming_transaction,
-          icon: <TransactionIncomingIcon />,
-        };
-      }
-    };
-
-    const { label: transactionTypeLabel, icon: avatar } = determineTransactionTypeAndAvatar();
-
-    const amountWithUnit = useMemo(() => {
-      const unitSuffix = itemPriceUnit === BitcoinUnit.BTC || itemPriceUnit === BitcoinUnit.SATS ? ` ${itemPriceUnit}` : ' ';
-      return `${formattedAmount}${unitSuffix}`;
-    }, [formattedAmount, itemPriceUnit]);
 
     useEffect(() => {
       setSubtitleNumberOfLines(1);
@@ -393,18 +350,20 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
         actions={toolTipActions}
         onPressMenuItem={onToolTipPress}
         onPress={onPress}
-        accessibilityLabel={`${transactionTypeLabel}, ${amountWithUnit}, ${subtitle ?? title}`}
         accessibilityRole="button"
         accessibilityState={accessibilityState}
       >
         <ListItem
-          leftAvatar={avatar}
           title={title}
           subtitleNumberOfLines={subtitleNumberOfLines}
           subtitle={
             subtitle ? (
               renderHighlightedText ? (
                 renderHighlightedText(subtitle, searchQuery ?? '')
+              ) : relevantAddress ? (
+                <Text style={[styles.subtitle, styles.subtitleTime]}>
+                  {subtitle}
+                </Text>
               ) : (
                 <HighlightedText
                   text={subtitle}
