@@ -1,7 +1,6 @@
-import { RouteProp, useFocusEffect, useLocale, useNavigation, useRoute } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RouteProp, useFocusEffect, useLocale, useRoute } from '@react-navigation/native';
 import React, { useCallback, useEffect } from 'react';
-import { BackHandler, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, ScrollView, StyleSheet, Text, View, InteractionManager } from 'react-native';
 import Button from '../../components/Button';
 import { useTheme } from '../../components/themes';
 import { useSettings } from '../../hooks/context/useSettings';
@@ -10,15 +9,15 @@ import loc from '../../loc';
 import { AddWalletStackParamList } from '../../navigation/AddWalletStack';
 import SeedWords from '../../components/SeedWords';
 import { useScreenProtect } from '../../hooks/useScreenProtect';
+import { useExtendedNavigation } from '../../hooks/useExtendedNavigation.ts';
 
 type RouteProps = RouteProp<AddWalletStackParamList, 'PleaseBackup'>;
-type NavigationProp = NativeStackNavigationProp<AddWalletStackParamList, 'PleaseBackup'>;
 
 const PleaseBackup: React.FC = () => {
   const { wallets, saveToDisk } = useStorage();
   const { walletID } = useRoute<RouteProps>().params;
   const wallet = wallets.find(w => w.getID() === walletID)!;
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useExtendedNavigation();
   const { isPrivacyBlurEnabled } = useSettings();
   const { colors } = useTheme();
   const { direction } = useLocale();
@@ -38,7 +37,12 @@ const PleaseBackup: React.FC = () => {
     // Mark that the user has saved the backup
     wallet.setUserHasSavedExport(true);
     saveToDisk();
-    navigation.getParent()?.goBack();
+
+    // Reset stack and go directly to WalletsList
+    InteractionManager.runAfterInteractions(() => {
+      navigation.navigateToWalletsList();
+    });
+
     return true;
   }, [navigation, wallet, saveToDisk]);
 

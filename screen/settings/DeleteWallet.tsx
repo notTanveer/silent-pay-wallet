@@ -4,9 +4,15 @@ import ListItem from '../../components/ListItem';
 import { useStorage } from '../../hooks/context/useStorage';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import loc from '../../loc';
+import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
+import { DetailViewStackParamList } from "../../navigation/DetailViewStackParamList";
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'DeleteWallet'>;
 
 const DeleteWallet: React.FC = () => {
   const { wallets, handleWalletDeletion } = useStorage();
+  const { navigate } = useExtendedNavigation<NavigationProps>();
 
   const handleDeleteWallet = useCallback(async () => {
     const wallet = wallets.length > 0 ? wallets[0] : null;
@@ -30,6 +36,7 @@ const DeleteWallet: React.FC = () => {
             const deletionSucceeded = await handleWalletDeletion(wallet.getID());
             if (deletionSucceeded) {
               triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
+              navigate('Onboarding');
             }
           },
         },
@@ -43,10 +50,10 @@ const DeleteWallet: React.FC = () => {
   }
 
   return (
-    <ListItem 
-      title="Delete Wallet" 
-      onPress={handleDeleteWallet} 
-      testID="DeleteWalletButton" 
+    <ListItem
+      title="Delete Wallet"
+      onPress={handleDeleteWallet}
+      testID="DeleteWalletButton"
       chevron={false}
     />
   );
