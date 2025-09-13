@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { BackHandler, InteractionManager, LayoutAnimation, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { BackHandler, InteractionManager, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import Share from 'react-native-share';
 import * as BlueElectrum from '../../blue_modules/BlueElectrum';
 import { fiatToBTC, satoshiToBTC } from '../../blue_modules/currency';
@@ -15,7 +15,6 @@ import BottomModal, { BottomModalHandle } from '../../components/BottomModal';
 import Button from '../../components/Button';
 import CopyTextToClipboard from '../../components/CopyTextToClipboard';
 import HandOffComponent from '../../components/HandOffComponent';
-import HeaderMenuButton from '../../components/HeaderMenuButton';
 import QRCodeComponent from '../../components/QRCodeComponent';
 import SegmentedControl from '../../components/SegmentControl';
 import { useTheme } from '../../components/themes';
@@ -28,26 +27,24 @@ import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import loc, { formatBalance } from '../../loc';
 import { BitcoinUnit, Chain } from '../../models/bitcoinUnits';
 import { ReceiveDetailsStackParamList } from '../../navigation/ReceiveDetailsStackParamList';
-import { CommonToolTipActions } from '../../typings/CommonToolTipActions';
 import { SuccessView } from '../send/success';
 import { BlueSpacing20, BlueSpacing40 } from '../../components/BlueSpacing';
 import { BlueLoading } from '../../components/BlueLoading';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 
-const segmentControlValues = [loc.wallets.details_address, loc.bip47.payment_code];
+const segmentControlValues = [loc.wallets.details_address, loc.bip352.silent_payments];
 const HORIZONTAL_PADDING = 20;
 
 type StickyHeaderProps = {
   wallet: any;
-  isBIP47Enabled: boolean;
   tabValues: string[];
   currentTab: string;
   setCurrentTab: (tab: string) => void;
   backgroundColor: string;
 };
 
-const StickyHeader = React.memo(({ wallet, isBIP47Enabled, tabValues, currentTab, setCurrentTab, backgroundColor }: StickyHeaderProps) => {
-  if (!wallet || !isBIP47Enabled) return null;
+const StickyHeader = React.memo(({ wallet, tabValues, currentTab, setCurrentTab, backgroundColor }: StickyHeaderProps) => {
+  if (!wallet) return null;
 
   return (
     <View style={[styles.tabsContainer, { backgroundColor }]}>
@@ -92,7 +89,6 @@ const ReceiveDetails = () => {
   const [qrCodeSize, setQRCodeSize] = useState(90);
 
   const wallet = walletID ? wallets.find(w => w.getID() === walletID) : undefined;
-  const isBIP47Enabled = wallet?.isBIP47Enabled();
 
   const stylesHook = StyleSheet.create({
     customAmount: {
@@ -192,12 +188,10 @@ const ReceiveDetails = () => {
   }, [wallet, saveToDisk, address, setAddressBIP21Encoded, isElectrumDisabled, sleep]);
 
   const onEnablePaymentsCodeSwitchValue = useCallback(() => {
-    if (wallet && wallet.allowBIP47()) {
-      wallet.switchBIP47(!wallet.isBIP47Enabled());
-    }
+    // Remove BIP47 functionality - this callback is no longer needed
     saveToDisk();
     obtainWalletAddress();
-  }, [wallet, saveToDisk, obtainWalletAddress]);
+  }, [saveToDisk, obtainWalletAddress]);
 
   useEffect(() => {
     if (showConfirmedBalance) {
@@ -211,28 +205,7 @@ const ReceiveDetails = () => {
     }
   }, [address, setAddressBIP21Encoded]);
 
-  const toolTipActions = useMemo(() => {
-    const action = { ...CommonToolTipActions.PaymentsCode };
-    action.menuState = isBIP47Enabled;
-    return [action];
-  }, [isBIP47Enabled]);
-
-  const onPressMenuItem = useCallback(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    onEnablePaymentsCodeSwitchValue();
-  }, [onEnablePaymentsCodeSwitchValue]);
-
-  const HeaderRight = useMemo(
-    () => <HeaderMenuButton actions={toolTipActions} onPressMenuItem={onPressMenuItem} />,
-    [onPressMenuItem, toolTipActions],
-  );
-
-  useEffect(() => {
-    wallet?.allowBIP47() &&
-      setOptions({
-        headerRight: () => HeaderRight,
-      });
-  }, [HeaderRight, colors.foregroundColor, setOptions, wallet]);
+  // Remove BIP47 menu functionality since we're not using payment codes
 
   // re-fetching address balance periodically
   useEffect(() => {
@@ -406,22 +379,21 @@ const ReceiveDetails = () => {
           )}
         </View>
       );
-    } else if (wallet && isBIP47Enabled) {
-      // wallet is always defined here
-      const qrValue =
-        'getBIP47PaymentCode' in wallet && typeof wallet.getBIP47PaymentCode === 'function' ? wallet.getBIP47PaymentCode() : undefined;
+    } else if (currentTab === segmentControlValues[1] && wallet) {
+      const silentPaymentCode =
+        'getSilentPaymentAddress' in wallet && typeof wallet.getSilentPaymentAddress === 'function' ? wallet.getSilentPaymentAddress() : undefined;
       return (
         <View style={styles.container}>
-          {qrValue ? (
+          {silentPaymentCode ? (
             <>
-              <TipBox description={loc.receive.bip47_explanation} containerStyle={styles.tip} />
+              <TipBox description={loc.bip352.explanation} containerStyle={styles.tip} />
               <View style={styles.qrCodeContainer}>
-                <QRCodeComponent value={qrValue} size={qrCodeSize} />
+                <QRCodeComponent value={silentPaymentCode} size={qrCodeSize} />
               </View>
-              <CopyTextToClipboard text={qrValue} truncated={false} />
+              <CopyTextToClipboard text={silentPaymentCode} truncated={false} />
             </>
           ) : (
-            <Text>{loc.bip47.not_found}</Text>
+            <Text>{loc.bip352.not_supported}</Text>
           )}
         </View>
       );
@@ -522,12 +494,12 @@ const ReceiveDetails = () => {
     let message: string | false = false;
     if (currentTab === segmentControlValues[0]) {
       message = bip21encoded;
-    } else {
-      message = (wallet && 'getBIP47PaymentCode' in wallet && wallet.getBIP47PaymentCode()) ?? false;
+    } else if (currentTab === segmentControlValues[1] && wallet) {
+      message = (wallet && 'getSilentPaymentAddress' in wallet && wallet.getSilentPaymentAddress()) ?? false;
     }
 
     if (!message) {
-      presentAlert({ title: loc.errors.error, message: loc.bip47.not_found });
+      presentAlert({ title: loc.errors.error, message: loc.receive.address_not_found });
       return;
     }
 
@@ -546,12 +518,11 @@ const ReceiveDetails = () => {
         contentContainerStyle={[styles.root, stylesHook.root]}
         keyboardShouldPersistTaps="always"
         onLayout={onLayout}
-        stickyHeaderIndices={wallet && isBIP47Enabled ? [0] : []}
+        stickyHeaderIndices={wallet ? [0] : []}
       >
-        {wallet && isBIP47Enabled && (
+        {wallet && (
           <StickyHeader
             wallet={wallet}
-            isBIP47Enabled={isBIP47Enabled}
             tabValues={segmentControlValues}
             currentTab={currentTab}
             setCurrentTab={setCurrentTab}
@@ -584,7 +555,10 @@ const ReceiveDetails = () => {
             <Button
               onPress={handleShareButtonPressed}
               title={loc.receive.details_share}
-              disabled={!bip21encoded && !(currentTab === segmentControlValues[1] && isBIP47Enabled)}
+              disabled={
+                (currentTab === segmentControlValues[0] && !bip21encoded) ||
+                (currentTab === segmentControlValues[1])
+              }
             />
           </BlueCard>
         </View>

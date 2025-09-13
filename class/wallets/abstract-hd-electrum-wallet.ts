@@ -18,6 +18,7 @@ import { AbstractHDWallet } from './abstract-hd-wallet';
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types';
 import { SilentPayment, UTXOType as SPUTXOType, UTXO as SPUTXO } from 'silent-payments';
 import { isValidBech32Address } from '../../utils/isValidBech32Address';
+import { encodeSilentPaymentAddress } from '@silent-pay/core'
 
 const ECPair = ECPairFactory(ecc);
 const bip32 = BIP32Factory(ecc);
@@ -108,6 +109,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
     // BIP47
     this._enable_BIP47 = false;
     this._payment_code = '';
+
     this._receive_payment_codes = [];
     this._send_payment_codes = [];
     this._next_free_payment_code_address_index_receive = {};
@@ -1883,5 +1885,20 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
     const remotePaymentNode = senderBIP47_instance.getPaymentCodeNode();
     const hdNode = bip47_instance.getPaymentWallet(remotePaymentNode, index);
     return hdNode.publicKey;
+  }
+
+  getSilentPaymentAddress(): string | null {
+    const seed = this._getSeed();
+    
+    const silentPaymentRoot = bip32.fromSeed(seed);
+    
+    const spendKey = silentPaymentRoot.derivePath("m/352'/0'/0'/0'/0");
+    const scanKey = silentPaymentRoot.derivePath("m/352'/0'/0'/1'/0");
+
+    if (!scanKey.privateKey || !spendKey.privateKey) {
+      return null;
+    }
+
+    return encodeSilentPaymentAddress(scanKey.publicKey, spendKey.publicKey);
   }
 }
