@@ -159,10 +159,6 @@ export class AbstractWallet {
     return false;
   }
 
-  getSilentPaymentAddress(): string | null {
-    return null;
-  }
-
   allowRBF(): boolean {
     return false;
   }

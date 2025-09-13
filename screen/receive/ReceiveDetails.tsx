@@ -32,7 +32,7 @@ import { BlueSpacing20, BlueSpacing40 } from '../../components/BlueSpacing';
 import { BlueLoading } from '../../components/BlueLoading';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 
-const segmentControlValues = [loc.wallets.details_address, loc.bip352.silent_payments];
+const segmentControlValues = [loc.bip352.silent_payments, loc.wallets.details_address];
 const HORIZONTAL_PADDING = 20;
 
 type StickyHeaderProps = {
@@ -79,7 +79,7 @@ const ReceiveDetails = () => {
   const [showConfirmedBalance, setShowConfirmedBalance] = useState(false);
   const [showAddress, setShowAddress] = useState(false);
   const [currentTab, setCurrentTab] = useState(segmentControlValues[0]);
-  const { goBack, setParams, setOptions } = useExtendedNavigation<NavigationProps>();
+  const { goBack, setParams } = useExtendedNavigation<NavigationProps>();
   const bottomModalRef = useRef<BottomModalHandle | null>(null);
   const [intervalMs, setIntervalMs] = useState(5000);
   const [eta, setEta] = useState('');
@@ -187,12 +187,6 @@ const ReceiveDetails = () => {
     }
   }, [wallet, saveToDisk, address, setAddressBIP21Encoded, isElectrumDisabled, sleep]);
 
-  const onEnablePaymentsCodeSwitchValue = useCallback(() => {
-    // Remove BIP47 functionality - this callback is no longer needed
-    saveToDisk();
-    obtainWalletAddress();
-  }, [saveToDisk, obtainWalletAddress]);
-
   useEffect(() => {
     if (showConfirmedBalance) {
       triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
@@ -204,8 +198,6 @@ const ReceiveDetails = () => {
       setAddressBIP21Encoded(address);
     }
   }, [address, setAddressBIP21Encoded]);
-
-  // Remove BIP47 menu functionality since we're not using payment codes
 
   // re-fetching address balance periodically
   useEffect(() => {
@@ -352,7 +344,7 @@ const ReceiveDetails = () => {
   }, []);
 
   const renderTabContent = () => {
-    if (currentTab === segmentControlValues[0]) {
+    if (currentTab === segmentControlValues[1]) {
       return (
         <View style={styles.container}>
           {address && (
@@ -379,18 +371,20 @@ const ReceiveDetails = () => {
           )}
         </View>
       );
-    } else if (currentTab === segmentControlValues[1] && wallet) {
-      const silentPaymentCode =
-        'getSilentPaymentAddress' in wallet && typeof wallet.getSilentPaymentAddress === 'function' ? wallet.getSilentPaymentAddress() : undefined;
+    } else if (currentTab === segmentControlValues[0] && wallet) {
+      const qrValue =
+        'getSilentPaymentAddress' in wallet && typeof wallet.getSilentPaymentAddress === 'function'
+          ? wallet.getSilentPaymentAddress()
+          : undefined;
       return (
         <View style={styles.container}>
-          {silentPaymentCode ? (
+          {qrValue ? (
             <>
               <TipBox description={loc.bip352.explanation} containerStyle={styles.tip} />
               <View style={styles.qrCodeContainer}>
-                <QRCodeComponent value={silentPaymentCode} size={qrCodeSize} />
+                <QRCodeComponent value={qrValue} size={qrCodeSize} />
               </View>
-              <CopyTextToClipboard text={silentPaymentCode} truncated={false} />
+              <CopyTextToClipboard text={qrValue} truncated={false} />
             </>
           ) : (
             <Text>{loc.bip352.not_supported}</Text>
@@ -492,9 +486,9 @@ const ReceiveDetails = () => {
 
   const handleShareButtonPressed = () => {
     let message: string | false = false;
-    if (currentTab === segmentControlValues[0]) {
+    if (currentTab === segmentControlValues[1]) {
       message = bip21encoded;
-    } else if (currentTab === segmentControlValues[1] && wallet) {
+    } else if (currentTab === segmentControlValues[0] && wallet) {
       message = (wallet && 'getSilentPaymentAddress' in wallet && wallet.getSilentPaymentAddress()) ?? false;
     }
 
@@ -556,8 +550,16 @@ const ReceiveDetails = () => {
               onPress={handleShareButtonPressed}
               title={loc.receive.details_share}
               disabled={
-                (currentTab === segmentControlValues[0] && !bip21encoded) ||
-                (currentTab === segmentControlValues[1])
+                !bip21encoded &&
+                !(
+                  currentTab === segmentControlValues[0] &&
+                  !(
+                    wallet &&
+                    'getSilentPaymentAddress' in wallet &&
+                    typeof wallet.getSilentPaymentAddress === 'function' &&
+                    wallet.getSilentPaymentAddress()
+                  )
+                )
               }
             />
           </BlueCard>
