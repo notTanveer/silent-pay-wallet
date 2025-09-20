@@ -318,7 +318,7 @@ const WalletsAdd: React.FC = () => {
       addWallet(w);
       await saveToDisk();
       triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
-      if (w.type === HDSegwitP2SHWallet.type || w.type === HDSegwitBech32Wallet.type) {
+      if (w.type === HDSegwitBech32Wallet.type) {
         navigate('PleaseBackup', {
           walletID: w.getID(),
         });

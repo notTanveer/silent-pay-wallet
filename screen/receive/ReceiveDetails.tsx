@@ -489,7 +489,7 @@ const ReceiveDetails = () => {
     if (currentTab === segmentControlValues[1]) {
       message = bip21encoded;
     } else if (currentTab === segmentControlValues[0] && wallet) {
-      message = (wallet && 'getSilentPaymentAddress' in wallet && wallet.getSilentPaymentAddress()) ?? false;
+      message = (wallet && 'getSilentPaymentAddress' in wallet && typeof wallet.getSilentPaymentAddress === 'function' ? wallet.getSilentPaymentAddress() : false) ?? false;
     }
 
     if (!message) {
