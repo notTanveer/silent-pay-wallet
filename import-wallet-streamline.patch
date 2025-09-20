@@ -1,0 +1,402 @@
+diff --git a/navigation/AddWalletStack.tsx b/navigation/AddWalletStack.tsx
+index 66e906f76..864a871bd 100644
+--- a/navigation/AddWalletStack.tsx
++++ b/navigation/AddWalletStack.tsx
+@@ -9,7 +9,6 @@ import {
+   ImportCustomDerivationPathComponent,
+   ImportSpeedComponent,
+   ImportWalletComponent,
+-  ImportWalletDiscoveryComponent,
+   PleaseBackupComponent,
+   PleaseBackupLNDHubComponent,
+   ProvideEntropyComponent,
+@@ -31,11 +30,6 @@ export type AddWalletStackParamList = {
+     triggerImport?: boolean;
+     onBarScanned?: string;
+   };
+-  ImportWalletDiscovery: {
+-    importText: string;
+-    askPassphrase: boolean;
+-    searchAccounts: boolean;
+-  };
+   ImportSpeed: undefined;
+   ImportCustomDerivationPath: {
+     importText: string;
+@@ -100,13 +94,6 @@ const AddWalletStack = () => {
+         component={ImportSpeedComponent}
+         options={navigationStyle({ statusBarStyle: 'light', title: loc.wallets.import_title })(theme)}
+       />
+-      <Stack.Screen
+-        name="ImportWalletDiscovery"
+-        component={ImportWalletDiscoveryComponent}
+-        options={navigationStyle({
+-          title: loc.wallets.import_discovery_title,
+-        })(theme)}
+-      />
+       <Stack.Screen
+         name="PleaseBackup"
+         component={PleaseBackupComponent}
+diff --git a/navigation/LazyLoadAddWalletStack.tsx b/navigation/LazyLoadAddWalletStack.tsx
+index b2980b1a8..8d584b8bf 100644
+--- a/navigation/LazyLoadAddWalletStack.tsx
++++ b/navigation/LazyLoadAddWalletStack.tsx
+@@ -5,7 +5,6 @@ import { LazyLoadingIndicator } from './LazyLoadingIndicator';
+ // Define lazy imports with more reliable loading patterns
+ const WalletsAdd = lazy(() => import('../screen/wallets/Add'));
+ const ImportCustomDerivationPath = lazy(() => import('../screen/wallets/ImportCustomDerivationPath'));
+-const ImportWalletDiscovery = lazy(() => import('../screen/wallets/ImportWalletDiscovery'));
+ const ImportSpeed = lazy(() => import('../screen/wallets/ImportSpeed'));
+ const ImportWallet = lazy(() => import('../screen/wallets/ImportWallet'));
+ const PleaseBackup = lazy(() => import('../screen/wallets/PleaseBackup'));
+@@ -22,12 +21,6 @@ export const AddComponent: React.FC = () => (
+   </Suspense>
+ );
+ 
+-export const ImportWalletDiscoveryComponent = () => (
+-  <Suspense fallback={<LazyLoadingIndicator />}>
+-    <ImportWalletDiscovery />
+-  </Suspense>
+-);
+-
+ export const ImportCustomDerivationPathComponent = () => (
+   <Suspense fallback={<LazyLoadingIndicator />}>
+     <ImportCustomDerivationPath />
+diff --git a/screen/wallets/ImportWallet.tsx b/screen/wallets/ImportWallet.tsx
+index 5780bd475..f6a5c34cb 100644
+--- a/screen/wallets/ImportWallet.tsx
++++ b/screen/wallets/ImportWallet.tsx
+@@ -21,6 +21,11 @@ import { AddressInputScanButton } from '../../components/AddressInputScanButton'
+ import { useScreenProtect } from '../../hooks/useScreenProtect';
+ import SafeAreaScrollView from '../../components/SafeAreaScrollView';
+ import { BlueSpacing20 } from '../../components/BlueSpacing';
++import { HDSegwitBech32Wallet } from '../../class';
++import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet.ts';
++import { useStorage } from '../../hooks/context/useStorage';
++import presentAlert from '../../components/Alert';
++import prompt from '../../helpers/prompt';
+ 
+ type RouteProps = RouteProp<AddWalletStackParamList, 'ImportWallet'>;
+ type NavigationProps = NativeStackNavigationProp<AddWalletStackParamList, 'ImportWallet'>;
+@@ -39,6 +44,7 @@ const ImportWallet = () => {
+   const [clearClipboardMenuState, setClearClipboardMenuState] = useState<boolean>(true);
+   const { isPrivacyBlurEnabled } = useSettings();
+   const { enableScreenProtect, disableScreenProtect } = useScreenProtect();
++  const { addAndSaveWallet } = useStorage();
+   const styles = StyleSheet.create({
+     root: {
+       paddingTop: 10,
+@@ -84,14 +90,35 @@ const ImportWallet = () => {
+ 
+       Keyboard.dismiss();
+ 
+-      navigation.navigate('ImportWalletDiscovery', {
+-        importText: text,
+-        askPassphrase: askPassphraseMenuState,
+-        searchAccounts: searchAccountsMenuState,
+-      });
+-    },
++      try {
++        if (!text.trim()) {
++          presentAlert({ title: 'Error', message: 'Please enter a valid mnemonic phrase or private key.' });
++          return;
++        }
++
++        // Create HDSilentPaymentsWallet with hardcoded m/84'/0'/0' derivation path
++        const wallet = new HDSilentPaymentsWallet();
++        wallet.setSecret(text.trim());
++        
++        wallet.setDerivationPath("m/84'/0'/0'");
++        
++        if (!wallet.validateMnemonic() && !wallet.getSecret()) {
++          presentAlert({ title: 'Error', message: 'Invalid mnemonic phrase or private key.' });
++          return;
++        }
+ 
+-    [askPassphraseMenuState, clearClipboardMenuState, navigation, searchAccountsMenuState],
++        addAndSaveWallet(wallet);
++        navigation.getParent()?.goBack();
++        
++      } catch (error: any) {
++        console.error('Import error:', error);
++        presentAlert({ 
++          title: 'Import Error', 
++          message: error.message || 'Failed to import wallet. Please check your input and try again.' 
++        });
++      }
++    },
++    [askPassphraseMenuState, clearClipboardMenuState, addAndSaveWallet, navigation],
+   );
+ 
+   const handleImport = useCallback(() => {
+diff --git a/screen/wallets/ImportWalletDiscovery.tsx b/screen/wallets/ImportWalletDiscovery.tsx
+deleted file mode 100644
+index 9e0686514..000000000
+--- a/screen/wallets/ImportWalletDiscovery.tsx
++++ /dev/null
+@@ -1,266 +0,0 @@
+-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+-import { RouteProp, useRoute } from '@react-navigation/native';
+-import { ActivityIndicator, FlatList, LayoutAnimation, Platform, StyleSheet, UIManager, View } from 'react-native';
+-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
+-import { BlueButtonLink, BlueFormLabel, BlueText } from '../../BlueComponents';
+-import { HDSegwitBech32Wallet, WatchOnlyWallet } from '../../class';
+-import startImport, { TImport } from '../../class/wallet-import';
+-import presentAlert from '../../components/Alert';
+-import Button from '../../components/Button';
+-import SafeArea from '../../components/SafeArea';
+-import { useTheme } from '../../components/themes';
+-import WalletToImport from '../../components/WalletToImport';
+-import prompt from '../../helpers/prompt';
+-import loc from '../../loc';
+-import { useStorage } from '../../hooks/context/useStorage';
+-import { AddWalletStackParamList } from '../../navigation/AddWalletStack';
+-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+-import { THDWalletForWatchOnly, TWallet } from '../../class/wallets/types';
+-import { useSettings } from '../../hooks/context/useSettings';
+-import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
+-import { useScreenProtect } from '../../hooks/useScreenProtect';
+-import { BlueSpacing10, BlueSpacing20, BlueSpacing40 } from '../../components/BlueSpacing';
+-
+-type RouteProps = RouteProp<AddWalletStackParamList, 'ImportWalletDiscovery'>;
+-type NavigationProp = NativeStackNavigationProp<AddWalletStackParamList, 'ImportWalletDiscovery'>;
+-
+-type WalletEntry = {
+-  wallet: TWallet | THDWalletForWatchOnly;
+-  subtitle: string;
+-  id: string;
+-};
+-
+-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+-  UIManager.setLayoutAnimationEnabledExperimental(true);
+-}
+-
+-const ImportWalletDiscovery: React.FC = () => {
+-  const navigation = useExtendedNavigation<NavigationProp>();
+-  const { colors } = useTheme();
+-  const route = useRoute<RouteProps>();
+-  const { importText, askPassphrase, searchAccounts } = route.params;
+-  const { isElectrumDisabled, isPrivacyBlurEnabled } = useSettings();
+-  const { enableScreenProtect, disableScreenProtect } = useScreenProtect();
+-  const task = useRef<TImport | null>(null);
+-  const { addAndSaveWallet } = useStorage();
+-  const [loading, setLoading] = useState<boolean>(true);
+-  const [wallets, setWallets] = useState<WalletEntry[]>([]);
+-  const [password, setPassword] = useState<string | undefined>();
+-  const [selected, setSelected] = useState<number>(0);
+-  const [progress, setProgress] = useState<string | undefined>();
+-  const importing = useRef<boolean>(false);
+-  const bip39 = useMemo(() => {
+-    const hd = new HDSegwitBech32Wallet();
+-    hd.setSecret(importText);
+-    return hd.validateMnemonic();
+-  }, [importText]);
+-
+-  const stylesHook = StyleSheet.create({
+-    root: {
+-      backgroundColor: colors.elevated,
+-    },
+-    center: {
+-      backgroundColor: colors.elevated,
+-    },
+-  });
+-
+-  const saveWallet = useCallback(
+-    (wallet: TWallet | THDWalletForWatchOnly) => {
+-      if (importing.current) return;
+-      importing.current = true;
+-      addAndSaveWallet(wallet);
+-      navigation.getParent()?.goBack();
+-    },
+-    [addAndSaveWallet, navigation],
+-  );
+-
+-  const handleSave = () => {
+-    if (wallets.length === 0) return;
+-    saveWallet(wallets[selected].wallet);
+-  };
+-
+-  useEffect(() => {
+-    const onProgress = (data: string) => setProgress(data);
+-
+-    const onWallet = (wallet: TWallet | THDWalletForWatchOnly) => {
+-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+-      const id = wallet.getID();
+-      let subtitle: string | undefined;
+-
+-      try {
+-        // For watch-only wallets, display the descriptor or xpub
+-        if (wallet.type === WatchOnlyWallet.type) {
+-          if (wallet.isHd() && wallet.getSecret()) {
+-            subtitle = wallet.getSecret(); // Display descriptor
+-          } else {
+-            subtitle = wallet.getAddress(); // Display address
+-          }
+-        } else {
+-          subtitle = (wallet as THDWalletForWatchOnly).getDerivationPath?.();
+-        }
+-      } catch (e) {}
+-
+-      setWallets(w => [...w, { wallet, subtitle: subtitle || '', id }]);
+-    };
+-
+-    const onPassword = async (title: string, subtitle: string) => {
+-      try {
+-        const pass = await prompt(title, subtitle);
+-        setPassword(pass);
+-        return pass;
+-      } catch (e: any) {
+-        if (e.message === 'Cancel Pressed') {
+-          navigation.goBack();
+-        }
+-        throw e;
+-      }
+-    };
+-
+-    task.current = startImport(importText, askPassphrase, searchAccounts, isElectrumDisabled, onProgress, onWallet, onPassword);
+-
+-    task.current.promise
+-      .then(({ cancelled, wallets: w }) => {
+-        if (cancelled) return;
+-        if (w.length === 1) saveWallet(w[0]); // Instantly save wallet if only one has been discovered
+-        if (w.length === 0) {
+-          triggerHapticFeedback(HapticFeedbackTypes.ImpactLight);
+-        }
+-      })
+-      .catch(e => {
+-        console.warn('import error', e);
+-        console.warn('err.stack', e.stack);
+-        presentAlert({ title: 'Import error', message: e.message });
+-      })
+-      .finally(() => {
+-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+-        setLoading(false);
+-      });
+-
+-    return () => {
+-      task.current?.stop();
+-    };
+-  }, [askPassphrase, importText, isElectrumDisabled, navigation, saveWallet, searchAccounts]);
+-
+-  useEffect(() => {
+-    if (isPrivacyBlurEnabled) {
+-      enableScreenProtect();
+-    }
+-    return () => {
+-      disableScreenProtect();
+-    };
+-  }, [isPrivacyBlurEnabled, enableScreenProtect, disableScreenProtect]);
+-
+-  const handleCustomDerivation = () => {
+-    task.current?.stop();
+-    navigation.navigate('ImportCustomDerivationPath', { importText, password });
+-  };
+-
+-  const renderItem = ({ item, index }: { item: WalletEntry; index: number }) => (
+-    <WalletToImport
+-      key={item.id}
+-      title={item.wallet.typeReadable}
+-      subtitle={item.subtitle}
+-      active={selected === index}
+-      onPress={() => {
+-        setSelected(index);
+-        triggerHapticFeedback(HapticFeedbackTypes.Selection);
+-      }}
+-    />
+-  );
+-
+-  const keyExtractor = (w: WalletEntry) => w.id;
+-
+-  const ListHeaderComponent = useMemo(
+-    () => (
+-      <>
+-        {wallets.length > 0 ? (
+-          <>
+-            {isElectrumDisabled && (
+-              <>
+-                <BlueFormLabel>{loc.wallets.import_discovery_offline}</BlueFormLabel>
+-                <BlueSpacing20 />
+-              </>
+-            )}
+-            <BlueFormLabel>{loc.wallets.import_discovery_subtitle}</BlueFormLabel>
+-            <BlueSpacing10 />
+-          </>
+-        ) : null}
+-      </>
+-    ),
+-    [wallets, isElectrumDisabled],
+-  );
+-
+-  const ListEmptyComponent = useMemo(
+-    () => (
+-      <View style={styles.noWallets}>
+-        {loading ? (
+-          <>
+-            <BlueSpacing40 />
+-            <ActivityIndicator testID="Loading" />
+-            <BlueSpacing20 />
+-            <BlueFormLabel>{progress}</BlueFormLabel>
+-            <BlueSpacing40 />
+-          </>
+-        ) : (
+-          <>
+-            <BlueText style={styles.center}>{loc.wallets.import_discovery_no_wallets}</BlueText>
+-            <BlueSpacing20 />
+-          </>
+-        )}
+-      </View>
+-    ),
+-    [loading, progress],
+-  );
+-
+-  return (
+-    <SafeArea style={[styles.root, stylesHook.root]}>
+-      <FlatList
+-        ListHeaderComponent={ListHeaderComponent}
+-        contentContainerStyle={styles.flatListContainer}
+-        data={wallets}
+-        ListEmptyComponent={ListEmptyComponent}
+-        keyExtractor={keyExtractor}
+-        renderItem={renderItem}
+-        automaticallyAdjustContentInsets
+-        contentInsetAdjustmentBehavior="always"
+-      />
+-      <View style={[styles.center, stylesHook.center]}>
+-        {bip39 && (
+-          <BlueButtonLink
+-            title={loc.wallets.import_discovery_derivation}
+-            testID="CustomDerivationPathButton"
+-            onPress={handleCustomDerivation}
+-          />
+-        )}
+-        <BlueSpacing10 />
+-        <View style={styles.buttonContainer}>
+-          <Button disabled={wallets?.length === 0} title={loc.wallets.import_do_import} onPress={handleSave} />
+-        </View>
+-      </View>
+-    </SafeArea>
+-  );
+-};
+-
+-const styles = StyleSheet.create({
+-  root: {
+-    flex: 1,
+-  },
+-  flatListContainer: {
+-    marginHorizontal: 16,
+-  },
+-  center: {
+-    margin: 16,
+-    alignItems: 'center',
+-  },
+-  buttonContainer: {
+-    height: 45,
+-    marginBottom: 16,
+-  },
+-  noWallets: {
+-    flexGrow: 1,
+-    alignItems: 'center',
+-    justifyContent: 'center',
+-  },
+-});
+-
+-export default ImportWalletDiscovery;
