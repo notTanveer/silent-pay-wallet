@@ -15,7 +15,7 @@ import {
 import A from '../../blue_modules/analytics';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { BlueButtonLink, BlueFormLabel, BlueText } from '../../BlueComponents';
-import { HDSegwitBech32Wallet, HDSegwitP2SHWallet, LightningCustodianWallet, SegwitP2SHWallet } from '../../class';
+import { HDSegwitBech32Wallet, HDSegwitP2SHWallet, LightningCustodianWallet, SegwitP2SHWallet, HDSilentPaymentsWallet } from '../../class';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
 import { useTheme } from '../../components/themes';
@@ -33,7 +33,6 @@ import { AddWalletStackParamList } from '../../navigation/AddWalletStack';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 import { BlueSpacing20, BlueSpacing40 } from '../../components/BlueSpacing';
-import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet.ts';
 
 enum ButtonSelected {
   // @ts-ignore: Return later to update
@@ -318,7 +317,7 @@ const WalletsAdd: React.FC = () => {
       addWallet(w);
       await saveToDisk();
       triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
-      if (w.type === HDSegwitBech32Wallet.type) {
+      if (w.type === HDSilentPaymentsWallet.type) {
         navigate('PleaseBackup', {
           walletID: w.getID(),
         });

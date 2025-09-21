@@ -10,6 +10,7 @@ import {
   HDSegwitBech32Wallet,
   HDSegwitElectrumSeedP2WPKHWallet,
   HDSegwitP2SHWallet,
+  HDSilentPaymentsWallet,
   LegacyWallet,
   LightningCustodianWallet,
   MultisigHDWallet,
@@ -293,6 +294,18 @@ const startImport = (
       if (!walletFound) {
         yield { wallet: hd2 };
       }
+    }
+
+    yield { progress: 'silent payments' };
+    const silentPayments = new HDSilentPaymentsWallet();
+    silentPayments.setSecret(text);
+    if (password) {
+      silentPayments.setPassphrase(password);
+    }
+    if (silentPayments.validateMnemonic()) {
+      // TODO: implement scanning
+      // for now, just create the wallet without checking if it was used
+      yield { wallet: silentPayments };
     }
 
     yield { progress: 'wif' };

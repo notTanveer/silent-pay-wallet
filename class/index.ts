@@ -4,6 +4,7 @@ export * from './multisig-cosigner';
 export * from './wallets/abstract-hd-wallet';
 export * from './wallets/abstract-wallet';
 export * from './wallets/hd-aezeed-wallet';
+export * from './wallets/hd-bip352-wallet';
 export * from './wallets/hd-legacy-breadwallet-wallet';
 export * from './wallets/hd-legacy-electrum-seed-p2pkh-wallet';
 export * from './wallets/hd-legacy-p2pkh-wallet';
