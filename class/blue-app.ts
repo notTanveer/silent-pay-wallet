@@ -9,22 +9,9 @@ import Realm from 'realm';
 import * as encryption from '../blue_modules/encryption';
 import presentAlert from '../components/Alert';
 import { randomBytes } from './rng';
-import { HDAezeedWallet } from './wallets/hd-aezeed-wallet';
-import { HDLegacyBreadwalletWallet } from './wallets/hd-legacy-breadwallet-wallet';
-import { HDLegacyElectrumSeedP2PKHWallet } from './wallets/hd-legacy-electrum-seed-p2pkh-wallet';
-import { HDLegacyP2PKHWallet } from './wallets/hd-legacy-p2pkh-wallet';
-import { HDSegwitBech32Wallet } from './wallets/hd-segwit-bech32-wallet';
-import { HDSegwitElectrumSeedP2WPKHWallet } from './wallets/hd-segwit-electrum-seed-p2wpkh-wallet';
-import { HDSegwitP2SHWallet } from './wallets/hd-segwit-p2sh-wallet';
-import { LegacyWallet } from './wallets/legacy-wallet';
-import { LightningCustodianWallet } from './wallets/lightning-custodian-wallet';
-import { MultisigHDWallet } from './wallets/multisig-hd-wallet';
-import { SegwitBech32Wallet } from './wallets/segwit-bech32-wallet';
-import { SegwitP2SHWallet } from './wallets/segwit-p2sh-wallet';
-import { SLIP39LegacyP2PKHWallet, SLIP39SegwitBech32Wallet, SLIP39SegwitP2SHWallet } from './wallets/slip39-wallets';
 import { ExtendedTransaction, Transaction, TWallet } from './wallets/types';
 import { WatchOnlyWallet } from './wallets/watch-only-wallet';
-import { getLNDHub } from '../helpers/lndHub';
+import { HDSilentPaymentsWallet } from './wallets/hd-bip352-wallet.ts';
 
 let usedBucketNum: boolean | number = false;
 let savingInProgress = 0; // its both a flag and a counter of attempts to write to disk
@@ -378,106 +365,18 @@ export class BlueApp {
       if (!data.wallets) return false;
       const wallets = data.wallets;
       for (const key of wallets) {
-        // deciding which type is wallet and instantiating correct object
-        const tempObj = JSON.parse(key);
-        let unserializedWallet: TWallet;
-        switch (tempObj.type) {
-          case SegwitBech32Wallet.type:
-            unserializedWallet = SegwitBech32Wallet.fromJson(key) as unknown as SegwitBech32Wallet;
-            break;
-          case SegwitP2SHWallet.type:
-            unserializedWallet = SegwitP2SHWallet.fromJson(key) as unknown as SegwitP2SHWallet;
-            break;
-          case WatchOnlyWallet.type:
-            unserializedWallet = WatchOnlyWallet.fromJson(key) as unknown as WatchOnlyWallet;
-            unserializedWallet.init();
-            if (unserializedWallet.isHd() && !unserializedWallet.isXpubValid()) {
-              continue;
-            }
-            break;
-          case HDLegacyP2PKHWallet.type:
-            unserializedWallet = HDLegacyP2PKHWallet.fromJson(key) as unknown as HDLegacyP2PKHWallet;
-            break;
-          case HDSegwitP2SHWallet.type:
-            unserializedWallet = HDSegwitP2SHWallet.fromJson(key) as unknown as HDSegwitP2SHWallet;
-            break;
-          case HDSegwitBech32Wallet.type:
-            unserializedWallet = HDSegwitBech32Wallet.fromJson(key) as unknown as HDSegwitBech32Wallet;
-            break;
-          case HDLegacyBreadwalletWallet.type:
-            unserializedWallet = HDLegacyBreadwalletWallet.fromJson(key) as unknown as HDLegacyBreadwalletWallet;
-            break;
-          case HDLegacyElectrumSeedP2PKHWallet.type:
-            unserializedWallet = HDLegacyElectrumSeedP2PKHWallet.fromJson(key) as unknown as HDLegacyElectrumSeedP2PKHWallet;
-            break;
-          case HDSegwitElectrumSeedP2WPKHWallet.type:
-            unserializedWallet = HDSegwitElectrumSeedP2WPKHWallet.fromJson(key) as unknown as HDSegwitElectrumSeedP2WPKHWallet;
-            break;
-          case MultisigHDWallet.type:
-            unserializedWallet = MultisigHDWallet.fromJson(key) as unknown as MultisigHDWallet;
-            break;
-          case HDAezeedWallet.type:
-            unserializedWallet = HDAezeedWallet.fromJson(key) as unknown as HDAezeedWallet;
-            // migrate password to this.passphrase field
-            // remove this code somewhere in year 2022
-            if (unserializedWallet.secret.includes(':')) {
-              const [mnemonic, passphrase] = unserializedWallet.secret.split(':');
-              unserializedWallet.secret = mnemonic;
-              unserializedWallet.passphrase = passphrase;
-            }
-
-            break;
-          case SLIP39SegwitP2SHWallet.type:
-            unserializedWallet = SLIP39SegwitP2SHWallet.fromJson(key) as unknown as SLIP39SegwitP2SHWallet;
-            break;
-          case SLIP39LegacyP2PKHWallet.type:
-            unserializedWallet = SLIP39LegacyP2PKHWallet.fromJson(key) as unknown as SLIP39LegacyP2PKHWallet;
-            break;
-          case SLIP39SegwitBech32Wallet.type:
-            unserializedWallet = SLIP39SegwitBech32Wallet.fromJson(key) as unknown as SLIP39SegwitBech32Wallet;
-            break;
-          case LightningCustodianWallet.type: {
-            unserializedWallet = LightningCustodianWallet.fromJson(key) as unknown as LightningCustodianWallet;
-            let lndhub: false | any = false;
-            try {
-              lndhub = await getLNDHub();
-            } catch (error) {
-              console.warn(error);
-            }
-
-            if (unserializedWallet.baseURI) {
-              unserializedWallet.setBaseURI(unserializedWallet.baseURI); // not really necessary, just for the sake of readability
-              console.log('using saved uri for for ln wallet:', unserializedWallet.baseURI);
-            } else if (lndhub) {
-              console.log('using wallet-wide settings ', lndhub, 'for ln wallet');
-              unserializedWallet.setBaseURI(lndhub);
-            } else {
-              console.log('wallet does not have a baseURI. Continuing init...');
-            }
-            unserializedWallet.init();
-            break;
-          }
-          case 'lightningLdk':
-            // since ldk wallets are deprecated and removed, we need to handle a case when such wallet still exists in storage
-            unserializedWallet = new HDSegwitBech32Wallet();
-            unserializedWallet.setSecret(tempObj.secret.replace('ldk://', ''));
-            break;
-          case LegacyWallet.type:
-          default:
-            unserializedWallet = LegacyWallet.fromJson(key) as unknown as LegacyWallet;
-            break;
-        }
+        const deserializedWallet = HDSilentPaymentsWallet.fromJson(key) as HDSilentPaymentsWallet;
 
         try {
-          if (realm) this.inflateWalletFromRealm(realm, unserializedWallet);
+          if (realm) this.inflateWalletFromRealm(realm, deserializedWallet);
         } catch (error: any) {
           presentAlert({ message: error.message });
         }
 
         // done
-        const ID = unserializedWallet.getID();
+        const ID = deserializedWallet.getID();
         if (!this.wallets.some(wallet => wallet.getID() === ID)) {
-          this.wallets.push(unserializedWallet);
+          this.wallets.push(deserializedWallet);
           this.tx_metadata = data.tx_metadata;
           this.counterparty_metadata = data.counterparty_metadata;
         }
@@ -485,7 +384,7 @@ export class BlueApp {
       if (realm) realm.close();
       return true;
     } else {
-      return false; // failed loading data or loading/decryptin data
+      return false; // failed loading data or loading/decryption data
     }
   }
 
