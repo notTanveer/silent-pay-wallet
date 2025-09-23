@@ -365,7 +365,7 @@ export class BlueApp {
       if (!data.wallets) return false;
       const wallets = data.wallets;
       for (const key of wallets) {
-        const deserializedWallet = HDSilentPaymentsWallet.fromJson(key) as HDSilentPaymentsWallet;
+        const deserializedWallet = HDSilentPaymentsWallet.fromJson(key) as unknown as HDSilentPaymentsWallet;
 
         try {
           if (realm) this.inflateWalletFromRealm(realm, deserializedWallet);

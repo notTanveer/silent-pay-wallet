@@ -328,19 +328,10 @@ const ReceiveDetails = () => {
 
   const onLayout = useCallback((e: { nativeEvent: { layout: { height: number; width: number } } }) => {
     const { height, width } = e.nativeEvent.layout;
-
-    const isPortrait = height > width;
     const maxQRSize = 500;
-
-    if (isPortrait) {
-      const heightBasedSize = Math.min(height * 0.6, maxQRSize);
-      const widthBasedSize = width * 0.85 - HORIZONTAL_PADDING * 2;
-      setQRCodeSize(Math.min(heightBasedSize, widthBasedSize));
-    } else {
-      const heightBasedSize = Math.min(height * 0.7, maxQRSize);
-      const widthBasedSize = width * 0.45;
-      setQRCodeSize(Math.min(heightBasedSize, widthBasedSize));
-    }
+    const heightBasedSize = Math.min(height * 0.6, maxQRSize);
+    const widthBasedSize = width * 0.85 - HORIZONTAL_PADDING * 2;
+    setQRCodeSize(Math.min(heightBasedSize, widthBasedSize));
   }, []);
 
   const renderTabContent = () => {

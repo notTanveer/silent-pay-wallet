@@ -6,6 +6,13 @@ import { HDSegwitBech32Wallet } from './hd-segwit-bech32-wallet.ts';
 const bip32 = BIP32Factory(ecc);
 
 export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
+  static readonly type = 'HDSilentPaymentsWallet';
+  static readonly typeReadable = 'HD Silent Payments';
+  // @ts-ignore: override
+  public readonly type = HDSilentPaymentsWallet.type;
+  // @ts-ignore: override
+  public readonly typeReadable = HDSilentPaymentsWallet.typeReadable;
+
   private _silentPaymentAddress: string | null = null;
   private _scanKey: BIP32Interface | null = null;
   private _spendKey: BIP32Interface | null = null;
