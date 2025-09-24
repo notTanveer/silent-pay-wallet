@@ -4,30 +4,37 @@ import { useTheme } from '@react-navigation/native';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DetailViewStackParamList } from "../../navigation/DetailViewStackParamList";
-import { CommonActions } from '@react-navigation/native';
+import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
+import loc from '../../loc';
+import { useStorage } from '../../hooks/context/useStorage';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 
 type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'WalletsList'>;
 
 const OnboardingScreen: React.FC = () => {
   const { colors } = useTheme();
-  const { dispatch } = useExtendedNavigation<NavigationProps>();
+  const { navigate } = useExtendedNavigation<NavigationProps>();
+  const { addWallet, saveToDisk } = useStorage();
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    const w = new HDSilentPaymentsWallet();
+    w.setLabel(loc.wallets.details_title);
+    await w.generate();
+    addWallet(w);
+    await saveToDisk();
 
-    // Navigate to CreateWallet screen
-    dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [
-          {
-            name: 'Onboarding',
-            state: {
-              routes: [{ name: 'CreateWalletScreen' }],
-            },
-          },
-        ],
-      }),
-    );
+    triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
+
+    navigate('AddWalletRoot', {
+      screen: 'PleaseBackup',
+      params: {
+        walletID: w.getID(),
+      },
+    });
+  };
+
+  const importWallet = () => {
+    navigate('AddWalletRoot', { screen: 'ImportWallet' });
   };
 
   const renderCoverScreen = useCallback(() => {
@@ -56,17 +63,15 @@ const OnboardingScreen: React.FC = () => {
               </Text>
             </TouchableOpacity>
 
-
-            {/* uncomment to add restore wallet button */}
-            {/* <TouchableOpacity
-                    style={styles.restoreButton}
-                    onPress={() => navigation.navigate('AddWalletRoot')}
-                    testID="RestoreWalletButton"
-                  >
-                    <Text style={[styles.restoreButtonText, { color: colors.shadowColor }]}>
-                      Restore existing wallet
-                    </Text>
-                  </TouchableOpacity> */}
+            <TouchableOpacity
+              style={[styles.restoreButton]}
+              onPress={importWallet}
+              testID="ImportWallet"
+            >
+              <Text style={[styles.restoreButtonText]}>
+                Restore existing wallet
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.footerContainer}>
@@ -98,6 +103,8 @@ const styles = StyleSheet.create({
   buttonContainer: { width: '100%', marginBottom: 40 },
   createButton: { backgroundColor: '#ff9500', paddingVertical: 16, paddingHorizontal: 32, borderRadius: 8, marginBottom: 16 },
   createButtonText: { color: 'white', fontSize: 16, fontWeight: '600', textAlign: 'center' },
+  restoreButton: {  paddingVertical: 16, paddingHorizontal: 32, borderRadius: 8, marginBottom: 16 },
+  restoreButtonText: { color: '#ff9500', fontSize: 16, fontWeight: '600', textAlign: 'center' },
   footerContainer: { marginTop: 20 },
   footerText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
 });

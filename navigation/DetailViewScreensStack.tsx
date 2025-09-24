@@ -1,10 +1,8 @@
-import React, { useCallback, useMemo } from 'react';
-import { View } from 'react-native';
+import React, { useMemo } from 'react';
 import { NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import HeaderRightButton from '../components/HeaderRightButton';
 import navigationStyle, { CloseButtonPosition } from '../components/navigationStyle';
 import { useTheme } from '../components/themes';
-import { useExtendedNavigation } from '../hooks/useExtendedNavigation';
 import loc from '../loc';
 import LNDViewAdditionalInvoiceInformation from '../screen/lnd/LNDViewAdditionalInvoiceInformation';
 import LNDViewAdditionalInvoicePreImage from '../screen/lnd/lndViewAdditionalInvoicePreImage';
@@ -31,7 +29,6 @@ import SettingsButton from '../components/icons/SettingsButton';
 import { useSettings } from '../hooks/context/useSettings';
 import { useStorage } from '../hooks/context/useStorage';
 import WalletTransactions from '../screen/wallets/WalletTransactions';
-import AddWalletButton from '../components/AddWalletButton';
 import Settings from '../screen/settings/Settings';
 import Currency from '../screen/settings/Currency';
 import GeneralSettings from '../screen/settings/GeneralSettings';
@@ -59,31 +56,12 @@ import OnboardingStack from './OnboardingStack';
 
 const DetailViewStackScreensStack = () => {
   const theme = useTheme();
-  const navigation = useExtendedNavigation();
   const { wallets } = useStorage();
   const { isTotalBalanceEnabled } = useSettings();
   const { sizeClass } = useSizeClass();
 
   const DetailButton = useMemo(() => <HeaderRightButton testID="DetailButton" disabled={true} title={loc.send.create_details} />, []);
-
-  const navigateToAddWallet = useCallback(() => {
-    navigation.navigate('AddWalletRoot');
-  }, [navigation]);
-
-  const RightBarButtons = useMemo(
-    () =>
-      sizeClass === SizeClass.Large ? (
-        <SettingsButton />
-      ) : (
-        <>
-          {/* Only show AddWalletButton when there are no wallets (single wallet mode) */}
-          {wallets.length === 0 && <AddWalletButton onPress={navigateToAddWallet} />}
-          {wallets.length === 0 && <View style={styles.width24} />}
-          <SettingsButton />
-        </>
-      ),
-    [sizeClass, navigateToAddWallet, wallets.length],
-  );
+  const RightBarButtons = useMemo(() => <SettingsButton />, []);
 
   const useWalletListScreenOptions = useMemo<NativeStackNavigationOptions>(() => {
     const displayTitle = !isTotalBalanceEnabled || wallets.length <= 1;
@@ -343,13 +321,3 @@ const DetailViewStackScreensStack = () => {
 };
 
 export default DetailViewStackScreensStack;
-
-const styles = {
-  width24: {
-    width: 24,
-  },
-  walletDetails: {
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-  },
-};

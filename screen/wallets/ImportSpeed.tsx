@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, TextInput, View } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,7 +15,7 @@ import { BlueSpacing20 } from '../../components/BlueSpacing';
 type NavigationProp = NativeStackNavigationProp<AddWalletStackParamList, 'ImportSpeed'>;
 
 const ImportSpeed = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useExtendedNavigation<NavigationProp>();
   const { colors } = useTheme();
   const [loading, setLoading] = useState<boolean>(false);
   const [importText, setImportText] = useState<string>('');
@@ -74,8 +74,8 @@ const ImportSpeed = () => {
         wallet.setPassphrase(passphrase);
       }
       await wallet.fetchBalance();
-      navigation.getParent()?.goBack();
       addAndSaveWallet(wallet);
+      navigation.navigateToWalletsList();
     } catch (e: any) {
       presentAlert({ message: e.message });
     } finally {

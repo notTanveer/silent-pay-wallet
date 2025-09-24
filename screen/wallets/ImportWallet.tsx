@@ -106,7 +106,7 @@ const ImportWallet = () => {
         }
 
         addAndSaveWallet(wallet);
-        navigation.getParent()?.goBack();
+        navigation.navigateToWalletsList();
         
       } catch (error: any) {
         console.error('Import error:', error);
