@@ -1,56 +1,33 @@
 import React, { useCallback } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { useTheme } from '@react-navigation/native';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
-import { DetailViewStackParamList } from "../../navigation/DetailViewStackParamList";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CommonActions, useTheme } from '@react-navigation/native';
-import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
-import loc from '../../loc';
-import { useStorage } from '../../hooks/context/useStorage';
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
+import { DetailViewStackParamList } from "../../navigation/DetailViewStackParamList";
+import { CommonActions } from '@react-navigation/native';
 
 type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'WalletsList'>;
 
 const OnboardingScreen: React.FC = () => {
-  const { navigate, dispatch } = useExtendedNavigation<NavigationProps>();
   const { colors } = useTheme();
-  const { addWallet, saveToDisk } = useStorage();
+  const { dispatch } = useExtendedNavigation<NavigationProps>();
 
-  const createWallet = async () => {
-    try {
-      // Create a new HDSilentPaymentsWallet (native segwit) directly
-      const w = new HDSilentPaymentsWallet();
-      w.setLabel(loc.wallets.details_title);
+  const handleContinue = () => {
 
-      // Generate the wallet (this creates the seed phrase)
-      await w.generate();
-
-      // Add to storage immediately so it can be found by ID
-      addWallet(w);
-      await saveToDisk();
-
-      // haptic feedback
-      triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
-
-      // Navigate to AddWalletRoot's PleaseBackup screen to show seed phrase
-      dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [
-            {
-              name: 'AddWalletRoot',
-              state: {
-                routes: [{ name: 'PleaseBackup', params: { walletID: w.getID() } }],
-              },
+    // Navigate to CreateWallet screen
+    dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'Onboarding',
+            state: {
+              routes: [{ name: 'CreateWalletScreen' }],
             },
-          ],
-        }),
-      );
-    } catch (error) {
-      console.error('Error creating wallet:', error);
-      // Fallback to normal flow
-      navigate('AddWalletRoot');
-    }
+          },
+        ],
+      }),
+    );
   };
 
   const renderCoverScreen = useCallback(() => {
@@ -72,8 +49,7 @@ const OnboardingScreen: React.FC = () => {
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={[styles.createButton, { backgroundColor: '#ff9500' }]}
-              onPress={createWallet}
-              testID="CreateWalletButton"
+              onPress={handleContinue}
             >
               <Text style={[styles.createButtonText, { color: '#fff' }]}>
                 Create a new wallet
