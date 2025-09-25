@@ -1,17 +1,14 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { BackHandler, InteractionManager, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { BackHandler, InteractionManager, Platform, StyleSheet, Text, View } from 'react-native';
 import Share from 'react-native-share';
 import * as BlueElectrum from '../../blue_modules/BlueElectrum';
-import { fiatToBTC, satoshiToBTC } from '../../blue_modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { majorTomToGroundControl, tryToObtainPermissions } from '../../blue_modules/notifications';
-import { BlueButtonLink, BlueCard, BlueText } from '../../BlueComponents';
+import { BlueCard, BlueText } from '../../BlueComponents';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import presentAlert from '../../components/Alert';
-import * as AmountInput from '../../components/AmountInput';
-import BottomModal, { BottomModalHandle } from '../../components/BottomModal';
 import Button from '../../components/Button';
 import CopyTextToClipboard from '../../components/CopyTextToClipboard';
 import HandOffComponent from '../../components/HandOffComponent';
@@ -28,7 +25,7 @@ import loc, { formatBalance } from '../../loc';
 import { BitcoinUnit, Chain } from '../../models/bitcoinUnits';
 import { ReceiveDetailsStackParamList } from '../../navigation/ReceiveDetailsStackParamList';
 import { SuccessView } from '../send/success';
-import { BlueSpacing20, BlueSpacing40 } from '../../components/BlueSpacing';
+import { BlueSpacing40 } from '../../components/BlueSpacing';
 import { BlueLoading } from '../../components/BlueLoading';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 
@@ -67,20 +64,12 @@ const ReceiveDetails = () => {
   const { wallets, saveToDisk, sleep, fetchAndSaveWalletTransactions } = useStorage();
   const { isElectrumDisabled } = useSettings();
   const { colors } = useTheme();
-  const [customLabel, setCustomLabel] = useState('');
-  const [customAmount, setCustomAmount] = useState('');
-  const [customUnit, setCustomUnit] = useState<BitcoinUnit>(BitcoinUnit.BTC);
   const [bip21encoded, setBip21encoded] = useState('');
-  const [isCustom, setIsCustom] = useState(false);
-  const [tempCustomLabel, setTempCustomLabel] = useState('');
-  const [tempCustomAmount, setTempCustomAmount] = useState('');
-  const [tempCustomUnit, setTempCustomUnit] = useState<BitcoinUnit>(BitcoinUnit.BTC);
   const [showPendingBalance, setShowPendingBalance] = useState(false);
   const [showConfirmedBalance, setShowConfirmedBalance] = useState(false);
   const [showAddress, setShowAddress] = useState(false);
   const [currentTab, setCurrentTab] = useState(segmentControlValues[0]);
   const { goBack, setParams } = useExtendedNavigation<NavigationProps>();
-  const bottomModalRef = useRef<BottomModalHandle | null>(null);
   const [intervalMs, setIntervalMs] = useState(5000);
   const [eta, setEta] = useState('');
   const [initialConfirmed, setInitialConfirmed] = useState(0);
@@ -91,25 +80,11 @@ const ReceiveDetails = () => {
   const wallet = walletID ? wallets.find(w => w.getID() === walletID) : undefined;
 
   const stylesHook = StyleSheet.create({
-    customAmount: {
-      borderColor: colors.formBorder,
-      borderBottomColor: colors.formBorder,
-      backgroundColor: colors.inputBackgroundColor,
-    },
-    customAmountText: {
-      color: colors.foregroundColor,
-    },
     root: {
       backgroundColor: colors.elevated,
     },
-    amount: {
-      color: colors.foregroundColor,
-    },
     label: {
       color: colors.foregroundColor,
-    },
-    modalButton: {
-      backgroundColor: colors.modalButton,
     },
   });
 
@@ -293,11 +268,6 @@ const ReceiveDetails = () => {
   const renderConfirmedBalance = () => {
     return (
       <View style={styles.scrollBody}>
-        {isCustom && (
-          <BlueText style={[styles.label, stylesHook.label]} numberOfLines={1}>
-            {customLabel}
-          </BlueText>
-        )}
         <SuccessView />
         <BlueText style={[styles.label, stylesHook.label]} numberOfLines={1}>
           {displayBalance}
@@ -309,11 +279,6 @@ const ReceiveDetails = () => {
   const renderPendingBalance = () => {
     return (
       <View style={styles.scrollBody}>
-        {isCustom && (
-          <BlueText style={[styles.label, stylesHook.label]} numberOfLines={1}>
-            {customLabel}
-          </BlueText>
-        )}
         <TransactionPendingIconBig />
         <BlueSpacing40 />
         <BlueText style={[styles.label, stylesHook.label]} numberOfLines={1}>
@@ -340,24 +305,10 @@ const ReceiveDetails = () => {
         <View style={styles.container}>
           {address && (
             <View style={styles.scrollBody}>
-              {isCustom && (
-                <>
-                  {getDisplayAmount() && (
-                    <BlueText testID="BitcoinAmountText" style={[styles.amount, stylesHook.amount]} numberOfLines={1}>
-                      {getDisplayAmount()}
-                    </BlueText>
-                  )}
-                  {customLabel?.length > 0 && (
-                    <BlueText testID="CustomAmountDescriptionText" style={[styles.label, stylesHook.label]} numberOfLines={1}>
-                      {customLabel}
-                    </BlueText>
-                  )}
-                </>
-              )}
               <View style={styles.qrCodeContainer}>
                 <QRCodeComponent value={bip21encoded} size={qrCodeSize} />
               </View>
-              <CopyTextToClipboard text={isCustom ? bip21encoded : address} />
+              <CopyTextToClipboard text={address} />
             </View>
           )}
         </View>
@@ -406,81 +357,15 @@ const ReceiveDetails = () => {
     }, [wallet, address, obtainWalletAddress, setAddressBIP21Encoded]),
   );
 
-  const showCustomAmountModal = useCallback(() => {
-    setTempCustomLabel(customLabel);
-    setTempCustomAmount(customAmount);
-    setTempCustomUnit(customUnit);
-    bottomModalRef.current?.present();
-  }, [customLabel, customAmount, customUnit]);
-
-  const createCustomAmountAddress = () => {
-    bottomModalRef.current?.dismiss();
-    setIsCustom(true);
-    let amount = tempCustomAmount;
-    const amountNumber = Number(amount);
-    switch (tempCustomUnit) {
-      case BitcoinUnit.BTC:
-        // nop
-        break;
-      case BitcoinUnit.SATS:
-        amount = satoshiToBTC(amountNumber);
-        break;
-      case BitcoinUnit.LOCAL_CURRENCY:
-        if (AmountInput.conversionCache[amount + BitcoinUnit.LOCAL_CURRENCY]) {
-          // cache hit! we reuse old value that supposedly doesnt have rounding errors
-          amount = satoshiToBTC(Number(AmountInput.conversionCache[amount + BitcoinUnit.LOCAL_CURRENCY]));
-        } else {
-          amount = fiatToBTC(amountNumber);
-        }
-        break;
-    }
-    setCustomLabel(tempCustomLabel);
-    setCustomAmount(tempCustomAmount);
-    setCustomUnit(tempCustomUnit);
-    // address is always defined here
-    setBip21encoded(DeeplinkSchemaMatch.bip21encode(address!, { amount, label: tempCustomLabel }));
-    setShowAddress(true);
-  };
-
-  const resetCustomAmount = () => {
-    setTempCustomLabel('');
-    setTempCustomAmount('');
-    setTempCustomUnit(wallet?.getPreferredBalanceUnit() || BitcoinUnit.BTC);
-    setCustomLabel('');
-    setCustomAmount('');
-    setCustomUnit(wallet?.getPreferredBalanceUnit() || BitcoinUnit.BTC);
-    // address is always defined here
-    setBip21encoded(DeeplinkSchemaMatch.bip21encode(address!));
-    setShowAddress(true);
-    bottomModalRef.current?.dismiss();
-  };
-
-  /**
-   * @returns {string} BTC amount, accounting for current `customUnit` and `customUnit`
-   */
-  const getDisplayAmount = (): string | null => {
-    const number = Number(customAmount);
-    if (number > 0) {
-      switch (customUnit) {
-        case BitcoinUnit.BTC:
-          return customAmount + ' BTC';
-        case BitcoinUnit.SATS:
-          return satoshiToBTC(number) + ' BTC';
-        case BitcoinUnit.LOCAL_CURRENCY:
-          return fiatToBTC(number) + ' BTC';
-      }
-      return customAmount + ' ' + customUnit;
-    } else {
-      return null;
-    }
-  };
-
   const handleShareButtonPressed = () => {
     let message: string | false = false;
     if (currentTab === segmentControlValues[1]) {
       message = bip21encoded;
     } else if (currentTab === segmentControlValues[0] && wallet) {
-      message = (wallet && 'getSilentPaymentAddress' in wallet && typeof wallet.getSilentPaymentAddress === 'function' ? wallet.getSilentPaymentAddress() : false) ?? false;
+      message =
+        (wallet && 'getSilentPaymentAddress' in wallet && typeof wallet.getSilentPaymentAddress === 'function'
+          ? wallet.getSilentPaymentAddress()
+          : false) ?? false;
     }
 
     if (!message) {
@@ -529,14 +414,6 @@ const ReceiveDetails = () => {
 
         <View style={styles.share}>
           <BlueCard>
-            {showAddress && currentTab === loc.wallets.details_address && (
-              <BlueButtonLink
-                style={styles.link}
-                testID="SetCustomAmountButton"
-                title={loc.receive.details_setAmount}
-                onPress={showCustomAmountModal}
-              />
-            )}
             <Button
               onPress={handleShareButtonPressed}
               title={loc.receive.details_share}
@@ -556,72 +433,11 @@ const ReceiveDetails = () => {
           </BlueCard>
         </View>
       </SafeAreaScrollView>
-
-      <BottomModal
-        ref={bottomModalRef}
-        contentContainerStyle={styles.modalContainerJustify}
-        backgroundColor={colors.modal}
-        footer={
-          <View style={styles.modalButtonContainer}>
-            <Button
-              testID="CustomAmountResetButton"
-              style={[styles.modalButton, stylesHook.modalButton]}
-              title={loc.receive.reset}
-              onPress={resetCustomAmount}
-            />
-            <View style={styles.modalButtonSpacing} />
-            <Button
-              testID="CustomAmountSaveButton"
-              style={[styles.modalButton, stylesHook.modalButton]}
-              title={loc.receive.details_create}
-              onPress={createCustomAmountAddress}
-            />
-          </View>
-        }
-      >
-        <AmountInput.AmountInput
-          unit={tempCustomUnit}
-          amount={tempCustomAmount || ''}
-          onChangeText={setTempCustomAmount}
-          onAmountUnitChange={setTempCustomUnit}
-        />
-        <View style={[styles.customAmount, stylesHook.customAmount]}>
-          <TextInput
-            onChangeText={setTempCustomLabel}
-            placeholderTextColor="#81868e"
-            placeholder={loc.receive.details_label}
-            value={tempCustomLabel || ''}
-            numberOfLines={1}
-            style={[styles.customAmountText, stylesHook.customAmountText]}
-            testID="CustomAmountDescription"
-          />
-        </View>
-        <BlueSpacing20 />
-
-        <BlueSpacing20 />
-      </BottomModal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  modalContainerJustify: {
-    alignContent: 'center',
-    padding: 22,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  customAmount: {
-    flexDirection: 'row',
-    borderWidth: 1.0,
-    borderBottomWidth: 0.5,
-    minHeight: 44,
-    height: 44,
-    marginHorizontal: 20,
-    alignItems: 'center',
-    marginVertical: 8,
-    borderRadius: 4,
-  },
   root: {
     flexGrow: 1,
     justifyContent: 'space-between',
@@ -646,40 +462,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     marginBottom: 16,
   },
-  link: {
-    marginVertical: 16,
-    paddingHorizontal: 32,
-  },
-  amount: {
-    fontWeight: '600',
-    fontSize: 36,
-    textAlign: 'center',
-  },
   label: {
     fontWeight: '600',
     textAlign: 'center',
     paddingBottom: 12,
-  },
-  modalButton: {
-    paddingVertical: 14,
-    borderRadius: 50,
-    fontWeight: '700',
-    flex: 0.5,
-    alignItems: 'center',
-  },
-  modalButtonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 34,
-  },
-  modalButtonSpacing: {
-    width: 16,
-  },
-  customAmountText: {
-    flex: 1,
-    marginHorizontal: 8,
-    minHeight: 33,
   },
   container: {
     flex: 1,
