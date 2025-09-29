@@ -1,5 +1,6 @@
 import { BIP32Factory, BIP32Interface } from 'bip32';
 import { encodeSilentPaymentAddress } from '@silent-pay/core';
+import * as bip39 from 'bip39';
 import ecc from '../../blue_modules/noble_ecc';
 import { HDSegwitBech32Wallet } from './hd-segwit-bech32-wallet.ts';
 
@@ -16,6 +17,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   private _silentPaymentAddress: string | null = null;
   private _scanKey: BIP32Interface | null = null;
   private _spendKey: BIP32Interface | null = null;
+  private _cachedSeed: Buffer | null = null;
 
   ensureKeys(): void {
     if (this._scanKey !== null && this._spendKey !== null) return;
@@ -62,9 +64,27 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     return new Uint8Array(this._spendKey!.publicKey);
   }
 
+  /**
+   * Override to bypass passphrase processing for performance.
+   * Since we don't support passphrases for Silent Payments wallets, 
+   * we use an empty string to skip expensive passphrase derivation.
+   * 
+   * @return {Buffer} wallet seed without passphrase
+   */
+  _getSeed(): Buffer {
+    if (this._cachedSeed)
+      return this._cachedSeed;
+    
+    const mnemonic = this.secret;
+    // no passphrase support - use empty string to avoid PBKDF2 overhead
+    this._cachedSeed = bip39.mnemonicToSeedSync(mnemonic, '');
+    return this._cachedSeed!;
+  }
+
   clearCache(): void {
     this._silentPaymentAddress = null;
     this._scanKey = null;
     this._spendKey = null;
+    this._cachedSeed = null;
   }
 }
