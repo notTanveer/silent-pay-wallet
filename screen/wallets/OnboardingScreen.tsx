@@ -13,10 +13,15 @@ type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'Wall
 
 const OnboardingScreen: React.FC = () => {
   const { colors } = useTheme();
-  const { navigate } = useExtendedNavigation<NavigationProps>();
-  const { addWallet, saveToDisk } = useStorage();
+  const { navigate, navigateToWalletsList } = useExtendedNavigation<NavigationProps>();
+  const { addWallet, saveToDisk, wallets } = useStorage();
 
   const handleContinue = async () => {
+    if (wallets.length > 0) {
+      navigateToWalletsList();
+      return;
+    }
+
     const w = new HDSilentPaymentsWallet();
     w.setLabel(loc.wallets.details_title);
     await w.generate();
@@ -34,6 +39,10 @@ const OnboardingScreen: React.FC = () => {
   };
 
   const importWallet = () => {
+    if (wallets.length > 0) {
+      navigateToWalletsList();
+      return;
+    }
     navigate('AddWalletRoot', { screen: 'ImportWallet' });
   };
 
