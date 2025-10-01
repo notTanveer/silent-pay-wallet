@@ -154,34 +154,6 @@ const ImportWallet = () => {
     });
   };
 
-  const toolTipOnPressMenuItem = useCallback(
-    (menuItem: string) => {
-      Keyboard.dismiss();
-      if (menuItem === CommonToolTipActions.Passphrase.id) {
-        setAskPassphraseMenuState(!askPassphraseMenuState);
-      } else if (menuItem === CommonToolTipActions.SearchAccount.id) {
-        setSearchAccountsMenuState(!searchAccountsMenuState);
-      } else if (menuItem === CommonToolTipActions.ClearClipboard.id) {
-        setClearClipboardMenuState(!clearClipboardMenuState);
-      }
-    },
-    [askPassphraseMenuState, clearClipboardMenuState, searchAccountsMenuState],
-  );
-
-  // ToolTipMenu actions for advanced options
-  const toolTipActions = useMemo(() => {
-    return [
-      { ...CommonToolTipActions.Passphrase, menuState: askPassphraseMenuState },
-      { ...CommonToolTipActions.SearchAccount, menuState: searchAccountsMenuState },
-      { ...CommonToolTipActions.ClearClipboard, menuState: clearClipboardMenuState },
-    ];
-  }, [askPassphraseMenuState, clearClipboardMenuState, searchAccountsMenuState]);
-
-  const HeaderRight = useMemo(
-    () => <HeaderMenuButton onPressMenuItem={toolTipOnPressMenuItem} actions={toolTipActions} />,
-    [toolTipOnPressMenuItem, toolTipActions],
-  );
-
   useEffect(() => {
     if (isPrivacyBlurEnabled) {
       enableScreenProtect();
@@ -198,7 +170,6 @@ const ImportWallet = () => {
   // Adding the ToolTipMenu to the header
   useEffect(() => {
     navigation.setOptions({
-      headerRight: () => HeaderRight,
       headerLeft:
         navigation.getState().index === 0
           ? () => (
@@ -214,7 +185,7 @@ const ImportWallet = () => {
             )
           : undefined,
     });
-  }, [colors, navigation, toolTipActions, HeaderRight, styles.button, closeImage]);
+  }, [colors, navigation, styles.button, closeImage]);
 
   const renderOptionsAndImportButton = (
     <>
