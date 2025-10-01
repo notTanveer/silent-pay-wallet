@@ -128,7 +128,16 @@ const MainRoot = () => {
           <DetailViewStack.Screen name="DrawerRoot" component={LazyDrawerRoot} />
 
           {/* Modal stacks */}
-          <DetailViewStack.Screen name="AddWalletRoot" component={LazyAddWalletStack} options={NavigationDefaultOptions} />
+          <DetailViewStack.Screen
+            name="AddWalletRoot"
+            component={LazyAddWalletStack}
+            options={{
+              ...NavigationDefaultOptions,
+              presentation: 'fullScreenModal',
+              fullScreenGestureEnabled: false,
+              gestureEnabled: false,
+            }}
+          />
           <DetailViewStack.Screen name="SendDetailsRoot" component={LazySendDetailsStack} options={NavigationFormNoSwipeDefaultOptions} />
           <DetailViewStack.Screen name="LNDCreateInvoiceRoot" component={LazyLNDCreateInvoiceRoot} options={NavigationDefaultOptions} />
           <DetailViewStack.Screen name="ScanLNDInvoiceRoot" component={LazyScanLNDInvoiceRoot} options={NavigationDefaultOptions} />

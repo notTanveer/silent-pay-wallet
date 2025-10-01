@@ -30,7 +30,7 @@ const PleaseBackup: React.FC = () => {
     },
   });
 
-  const handleBackButton = useCallback(() => {
+  const handleContinue = useCallback(() => {
     // Mark that the user has saved the backup
     wallet.setUserHasSavedExport(true);
     saveToDisk();
@@ -44,12 +44,12 @@ const PleaseBackup: React.FC = () => {
   }, [navigation, wallet, saveToDisk]);
 
   useEffect(() => {
-    const subscription = BackHandler.addEventListener('hardwareBackPress', handleBackButton);
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
 
     return () => {
       subscription.remove();
     };
-  }, [handleBackButton]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -82,7 +82,7 @@ const PleaseBackup: React.FC = () => {
         ))}
       </View>
       <View style={styles.bottom}>
-        <TouchableOpacity style={styles.button} onPress={handleBackButton} testID="PleasebackupOk">
+        <TouchableOpacity style={styles.button} onPress={handleContinue} testID="PleasebackupOk">
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
       </View>
