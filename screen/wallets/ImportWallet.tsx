@@ -192,7 +192,7 @@ const ImportWallet = () => {
       <BlueSpacing20 />
       <View style={styles.center}>
         <>
-          <Button disabled={importText.trim().length === 0} title={loc.wallets.import_do_import} testID="DoImport" onPress={handleImport} />
+          <Button disabled={importText.trim().length === 0} title={loc.wallets.import_do_import} testID="DoImport" onPress={handleImport} backgroundColor='#ff9500'/>
           <BlueSpacing20 />
           <AddressInputScanButton type="link" onChangeText={setImportText} testID="ScanImport" />
         </>
