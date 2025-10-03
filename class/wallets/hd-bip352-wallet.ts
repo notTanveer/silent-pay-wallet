@@ -1,10 +1,17 @@
-import { BIP32Factory, BIP32Interface } from 'bip32';
-import { encodeSilentPaymentAddress } from '@silent-pay/core';
 import * as bip39 from 'bip39';
-import ecc from '../../blue_modules/noble_ecc';
+import { Buffer } from 'buffer';
 import { HDSegwitBech32Wallet } from './hd-segwit-bech32-wallet.ts';
+import { getDefaultIndexer } from '../../blue_modules/SilentPaymentIndexer';
+import {
+  SilentPaymentKeyDerivation,
+  UTXORepository,
+  TransactionProcessor,
+  type IndexerTransaction,
+  type SilentPaymentUTXO,
+  type ScanProgressCallback,
+} from '../../helpers/silent-payments';
+import { Transaction } from './types.ts';
 
-const bip32 = BIP32Factory(ecc);
 
 export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   static readonly type = 'HDSilentPaymentsWallet';
@@ -14,54 +21,66 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   // @ts-ignore: override
   public readonly typeReadable = HDSilentPaymentsWallet.typeReadable;
 
-  private _silentPaymentAddress: string | null = null;
-  private _scanKey: BIP32Interface | null = null;
-  private _spendKey: BIP32Interface | null = null;
-  private _cachedSeed: Buffer | null = null;
+  private cachedSeed: Buffer | null = null;
+  private keyDerivation: SilentPaymentKeyDerivation | null = null;
+  private utxoRepository: UTXORepository = new UTXORepository();
+  private transactionProcessor: TransactionProcessor | null = null;
+  private lastScannedBlock: number = 0;
 
-  ensureKeys(): void {
-    if (this._scanKey !== null && this._spendKey !== null) return;
+  static fromJson(obj: string): HDSilentPaymentsWallet {
+    const data = JSON.parse(obj);
+    const wallet = new HDSilentPaymentsWallet();
+    
+    for (const key of Object.keys(data)) {
+      if (key === '_utxos_serializable') {
+        wallet.utxoRepository.loadFromSerializable(data[key] || []);
+      } else if (key === 'lastScannedBlock') {
+        wallet.lastScannedBlock = data[key] || 0;
+      } else if (key !== '_utxos' && key !== 'utxoRepository') {
+        (wallet as any)[key] = data[key];
+      }
+    }
+    
+    return wallet;
+  }
 
-    const seed = this._getSeed();
-    const silentPaymentRoot = bip32.fromSeed(seed);
+  prepareForSerialization(): void {
+    super.prepareForSerialization();
+    (this as any)._utxos_serializable = this.utxoRepository.getSerializable();
+    (this as any).lastScannedBlock = this.lastScannedBlock;
+  }
 
-    this._spendKey = silentPaymentRoot.derivePath("m/352'/0'/0'/0'/0");
-    this._scanKey = silentPaymentRoot.derivePath("m/352'/0'/0'/1'/0");
+  private ensureServices(): void {
+    if (this.keyDerivation !== null && this.transactionProcessor !== null) return;
+
+    const seed = this.getSeed();
+    this.keyDerivation = new SilentPaymentKeyDerivation(seed);
+    this.transactionProcessor = new TransactionProcessor(this.keyDerivation);
   }
 
   getSilentPaymentAddress(): string | null {
-    if (this._silentPaymentAddress) {
-      return this._silentPaymentAddress;
-    }
-
-    this.ensureKeys();
-
-    this._silentPaymentAddress = encodeSilentPaymentAddress(
-      new Uint8Array(this._scanKey!.publicKey),
-      new Uint8Array(this._spendKey!.publicKey),
-    );
-
-    return this._silentPaymentAddress;
+    this.ensureServices();
+    return this.keyDerivation!.getSilentPaymentAddress();
   }
 
   getScanPrivateKey(): Uint8Array {
-    this.ensureKeys();
-    return new Uint8Array(this._scanKey!.privateKey!);
+    this.ensureServices();
+    return this.keyDerivation!.getScanPrivateKey();
   }
 
   getSpendPrivateKey(): Uint8Array {
-    this.ensureKeys();
-    return new Uint8Array(this._spendKey!.privateKey!);
+    this.ensureServices();
+    return this.keyDerivation!.getSpendPrivateKey();
   }
 
   getScanPublicKey(): Uint8Array {
-    this.ensureKeys();
-    return new Uint8Array(this._scanKey!.publicKey);
+    this.ensureServices();
+    return this.keyDerivation!.getScanPublicKey();
   }
 
   getSpendPublicKey(): Uint8Array {
-    this.ensureKeys();
-    return new Uint8Array(this._spendKey!.publicKey);
+    this.ensureServices();
+    return this.keyDerivation!.getSpendPublicKey();
   }
 
   /**
@@ -71,20 +90,343 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
    * 
    * @return {Buffer} wallet seed without passphrase
    */
-  _getSeed(): Buffer {
-    if (this._cachedSeed)
-      return this._cachedSeed;
-    
+  private getSeed(): Buffer {
+    if (this.cachedSeed)
+      return this.cachedSeed;
+
     const mnemonic = this.secret;
-    // no passphrase support - use empty string to avoid PBKDF2 overhead
-    this._cachedSeed = bip39.mnemonicToSeedSync(mnemonic, '');
-    return this._cachedSeed!;
+    this.cachedSeed = bip39.mnemonicToSeedSync(mnemonic, '');
+    return this.cachedSeed;
+  }
+
+  private processAndAddTransactions(transactions: any[], blockHeight: number): void {
+    this.ensureServices();
+    
+    for (const tx of transactions) {
+      if (tx.scanTweak && tx.outputs && tx.outputs.length > 0) {
+        const indexerTx: IndexerTransaction = {
+          blockHeight: tx.blockHeight || blockHeight,
+          blockHash: tx.blockHash || '',
+          txid: tx.id,
+          scanTweak: tx.scanTweak,
+          outputs: tx.outputs,
+        };
+        
+        const matchedUTXOs = this.transactionProcessor!.process(indexerTx);
+        for (const utxo of matchedUTXOs) {
+          this.utxoRepository.add(utxo);
+        }
+      }
+    }
+    
+    if (blockHeight > this.lastScannedBlock) {
+      this.lastScannedBlock = blockHeight;
+    }
+  }
+
+  /**
+   * Scan backwards for silent payments (most recent blocks first).
+   * This is called when the user refreshes or opens the wallet.
+   * Uses incremental scanning - only scans blocks since last scan.
+   * 
+   * @param {number} maxBlocks - Maximum number of blocks to scan backwards (default: 100)
+   * @param {ScanProgressCallback} onProgress - Optional callback for progress updates
+   * @param {boolean} forceFullScan - Force a full scan ignoring lastScannedBlock (default: false)
+   * @returns {Promise<number>} - Number of new UTXOs found
+   */
+  async scanForPayments(
+    maxBlocks: number = 100,
+    onProgress?: ScanProgressCallback,
+    forceFullScan: boolean = false
+  ): Promise<number> {
+    try {
+      const indexer = getDefaultIndexer();
+      const initialCount = this.utxoRepository.getAll().length;
+      
+      const latestHeight = await indexer.getLatestBlockHeight();
+      
+      // Implement incremental scanning
+      let blocksToScan = maxBlocks;
+      let startHeight = latestHeight;
+      
+      if (!forceFullScan && this.lastScannedBlock > 0) {
+        // Only scan blocks since last scan
+        const blocksSinceLastScan = latestHeight - this.lastScannedBlock;
+        
+        if (blocksSinceLastScan <= 0) {
+          console.log('Already up to date. No new blocks to scan.');
+          return 0;
+        }
+        
+        blocksToScan = Math.min(blocksSinceLastScan, maxBlocks);
+        console.log(
+          `Incremental scan: ${blocksSinceLastScan} new blocks since last scan (block ${this.lastScannedBlock}). ` +
+          `Scanning ${blocksToScan} blocks...`
+        );
+      } else {
+        console.log(`Full scan: Scanning last ${maxBlocks} blocks for silent payments...`);
+      }
+      
+      let blocksProcessed = 0;
+      
+      await indexer.scanBackwardsWithCallback(
+        blocksToScan,
+        async (transactions, blockHeight) => {
+          this.processAndAddTransactions(transactions, blockHeight);
+          blocksProcessed++;
+        },
+        startHeight,
+        onProgress
+      );
+      
+      const finalCount = this.utxoRepository.getAll().length;
+      const newUTXOCount = finalCount - initialCount;
+      
+      console.log(`Scan complete. Found ${newUTXOCount} new UTXOs.`);
+      
+      return newUTXOCount;
+      
+    } catch (error: any) {
+      if (error.message?.includes('not initialized')) {
+        console.error('[SP Wallet] Indexer not initialized. Cannot scan for payments.');
+        throw new Error('Silent Payment indexer is not configured. Please check app settings.');
+      }
+      
+      console.error('Error during silent payment scan:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Scan forward for silent payments (older blocks first).
+   * Use this for catching up from a specific block height.
+   * 
+   * @param {number} startHeight - Block height to start scanning from
+   * @param {number} endHeight - Block height to scan up to (optional, defaults to latest)
+   * @param {ScanProgressCallback} onProgress - Optional callback for progress updates
+   * @returns {Promise<number>} - Number of new UTXOs found
+   */
+  async scanForPaymentsForward(
+    startHeight: number,
+    endHeight?: number,
+    onProgress?: ScanProgressCallback
+  ): Promise<number> {
+    try {
+      const indexer = getDefaultIndexer();
+      const initialCount = this.utxoRepository.getAll().length;
+      
+      const start = startHeight;
+      const end = endHeight ?? await indexer.getLatestBlockHeight();
+      
+      const totalBlocks = end - start + 1;
+      let blocksScanned = 0;
+      
+      console.log(`Scanning blocks ${start} to ${end}...`);
+      
+      for (let height = start; height <= end; height++) {
+        try {
+          const response = await indexer.getTransactionsByHeight(height);
+          
+          if (response.transactions && response.transactions.length > 0) {
+            this.processAndAddTransactions(response.transactions, height);
+          }
+          
+          blocksScanned++;
+          
+          if (onProgress) {
+            const currentCount = this.utxoRepository.getAll().length;
+            onProgress({
+              currentBlock: height,
+              totalBlocks,
+              blocksScanned,
+              percentComplete: (blocksScanned / totalBlocks) * 100,
+              utxosFound: currentCount - initialCount,
+            });
+          }
+          
+        } catch (error) {
+          console.warn(`Failed to scan block ${height}:`, error);
+        }
+      }
+      
+      const finalCount = this.utxoRepository.getAll().length;
+      const newUTXOCount = finalCount - initialCount;
+      
+      console.log(`Forward scan complete. Found ${newUTXOCount} new UTXOs.`);
+      
+      return newUTXOCount;
+      
+    } catch (error) {
+      console.error('Error during forward silent payment scan:', error);
+      throw error;
+    }
+  }
+
+  async fetchBalance(): Promise<void> {
+    try {
+      console.log(`[SP Wallet] Fetching balance for ${this.getLabel()}...`);
+
+      await this.scanForPayments();
+      await this.refreshUTXOSpentStatus();
+      
+      console.log(`[SP Wallet] Balance: ${this.getBalance()} sats, UTXOs: ${this.getUTXOs().length}`);
+    } catch (error) {
+      console.error('[SP Wallet] Error fetching balance:', error);
+      throw error;
+    }
+  }
+
+  async fetchTransactions(): Promise<void> {
+    try {
+      console.log(`[SP Wallet] Fetching transactions for ${this.getLabel()}...`);
+
+      await this.scanForPayments();
+      await this.refreshUTXOSpentStatus();
+
+      console.log(`[SP Wallet] Transactions updated: ${this.getTransactions().length} transactions`);
+    } catch (error) {
+      console.error('[SP Wallet] Error fetching transactions:', error);
+      throw error;
+    }
+  }
+
+  getUTXOs(): SilentPaymentUTXO[] {
+    return this.utxoRepository.getAll();
+  }
+
+  getBalance(): number {
+    return this.utxoRepository.getBalance();
+  }
+
+  getLastScannedBlock(): number {
+    return this.lastScannedBlock;
+  }
+  
+  getTransactions(): Transaction[] {
+    const utxos = this.getUTXOs();
+    
+    const txMap = new Map<string, SilentPaymentUTXO[]>();
+    
+    for (const utxo of utxos) {
+      if (!txMap.has(utxo.txid)) {
+        txMap.set(utxo.txid, []);
+      }
+      txMap.get(utxo.txid)!.push(utxo);
+    }
+    
+    const transactions: Transaction[] = [];
+    
+    for (const [txid, utxoGroup] of txMap) {
+      const totalValue = utxoGroup.reduce((sum, utxo) => sum + utxo.value, 0);
+      const firstUtxo = utxoGroup[0];
+      const timestamp = firstUtxo.timestamp || Math.floor(Date.now() / 1000);
+      
+      transactions.push({
+        txid: txid,
+        hash: txid,
+        version: 2,
+        size: 0,
+        vsize: 0,
+        weight: 0,
+        locktime: 0,
+        value: totalValue,
+        confirmations: 6, // FIXME: Assume confirmed (could calculate from blockHeight)
+        blockhash: firstUtxo.blockHash,
+        time: timestamp,
+        blocktime: timestamp,
+        timestamp: timestamp,
+        inputs: [], // Silent Payments don't expose input details for privacy
+        outputs: utxoGroup.map((utxo, index) => ({
+          value: utxo.value,
+          n: utxo.vout,
+          scriptPubKey: {
+            asm: '',
+            hex: utxo.pubKey,
+            reqSigs: 1,
+            type: 'witness_v1_taproot',
+            addresses: [this.getSilentPaymentAddress() || ''],
+          },
+        })),
+      });
+    }
+    
+    transactions.sort((a, b) => {
+      const utxoA = utxos.find(u => u.txid === a.txid);
+      const utxoB = utxos.find(u => u.txid === b.txid);
+      if (!utxoA || !utxoB) return 0;
+      return utxoB.blockHeight - utxoA.blockHeight;
+    });
+    
+    return transactions;
+  }
+
+  allowSend(): boolean {
+    return false; // spending sp utxo not supported yet
+  }
+
+  setLastScannedBlock(height: number): void {
+    this.lastScannedBlock = height;
+  }
+
+  /**
+   * Check if UTXOs have been spent and update their status.
+   * This queries the indexer to check the spent status of stored UTXOs.
+   * 
+   * @returns {Promise<number>} - Number of UTXOs marked as spent
+   */
+  async refreshUTXOSpentStatus(): Promise<number> {
+    try {
+      const indexer = getDefaultIndexer();
+      const utxos = this.utxoRepository.getAll();
+      let spentCount = 0;
+      
+      console.log(`Checking spent status for ${utxos.length} UTXOs...`);
+      
+      // group UTXOs by block height for efficient querying
+      const utxosByBlock = new Map<number, SilentPaymentUTXO[]>();
+      for (const utxo of utxos) {
+        if (!utxosByBlock.has(utxo.blockHeight)) {
+          utxosByBlock.set(utxo.blockHeight, []);
+        }
+        utxosByBlock.get(utxo.blockHeight)!.push(utxo);
+      }
+      
+      // check for spent status
+      for (const [blockHeight, blockUtxos] of utxosByBlock) {
+        try {
+          const response = await indexer.getTransactionsByHeight(blockHeight);
+          
+          for (const utxo of blockUtxos) {
+            const tx = response.transactions.find(t => t.id === utxo.txid);
+            if (tx) {
+              const output = tx.outputs.find(o => o.vout === utxo.vout);
+              if (output && output.isSpent && !utxo.isSpent) {
+                this.utxoRepository.markAsSpent(utxo.txid, utxo.vout);
+                spentCount++;
+                console.log(`UTXO ${utxo.txid}:${utxo.vout} marked as spent`);
+              }
+            }
+          }
+        } catch (error) {
+          console.warn(`Failed to check block ${blockHeight} for spent status:`, error);
+        }
+      }
+      
+      console.log(`Spent status check complete. ${spentCount} UTXOs marked as spent.`);
+      return spentCount;
+      
+    } catch (error) {
+      console.error('Error refreshing UTXO spent status:', error);
+      throw error;
+    }
   }
 
   clearCache(): void {
-    this._silentPaymentAddress = null;
-    this._scanKey = null;
-    this._spendKey = null;
-    this._cachedSeed = null;
+    this.keyDerivation?.clear();
+    this.keyDerivation = null;
+    this.transactionProcessor = null;
+    this.cachedSeed = null;
+    this.utxoRepository.clear();
+    this.lastScannedBlock = 0;
   }
 }
