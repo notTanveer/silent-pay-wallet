@@ -16,11 +16,11 @@ export const getRelevantAddress = (item: Transaction): string | null => {
       }
     }
   } else {
-    // incoming transactions, show the first input address
-    if (item.inputs && item.inputs.length > 0) {
-      for (const input of item.inputs) {
-        if (input.addresses?.[0]) {
-          return input.addresses[0];
+    // incoming transactions, show the receiving address
+    if (item.outputs && item.outputs.length > 0) {
+      for (const output of item.outputs) {
+        if (output.scriptPubKey?.addresses?.[0]) {
+          return output.scriptPubKey.addresses[0];
         }
       }
     }

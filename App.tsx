@@ -9,8 +9,16 @@ import MasterView from './navigation/MasterView';
 import { navigationRef } from './NavigationService';
 import { useLogger } from '@react-navigation/devtools';
 import { StorageProvider } from './components/Context/StorageProvider';
+import { initializeIndexer } from './blue_modules/SilentPaymentIndexer';
 
 const App = () => {
+
+  initializeIndexer({
+    baseUrl: 'https://cushionlike-isabel-retrievable.ngrok-free.dev/',
+    timeout: 100000, // 100 seconds for blockchain scanning operations (increased for slower connections)
+  });
+  
+
   const colorScheme = useColorScheme();
 
   useLogger(navigationRef);

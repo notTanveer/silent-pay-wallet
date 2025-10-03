@@ -8,6 +8,7 @@ import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import loc from '../../loc';
 import { useStorage } from '../../hooks/context/useStorage';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
+import { getDefaultIndexer } from "../../blue_modules/SilentPaymentIndexer";
 
 type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'WalletsList'>;
 
@@ -27,6 +28,15 @@ const OnboardingScreen: React.FC = () => {
     await w.generate();
     addWallet(w);
     await saveToDisk();
+
+    try {
+        const indexer = getDefaultIndexer();
+        const latestHeightResponse = await indexer.getLatestBlockHeight();
+        w.setBirthHeight(latestHeightResponse.height);
+        console.log(`Wallet birth height set to: ${latestHeightResponse.height}`);
+    } catch (error) {
+        console.warn('Could not set birth height, will default to 0:', error);
+    }
 
     triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
 
