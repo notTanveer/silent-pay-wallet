@@ -1,6 +1,6 @@
-import React, { useCallback } from 'react';
+import React, { useCallback } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import { useTheme, CommonActions } from '@react-navigation/native';
+import { useTheme } from '@react-navigation/native';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DetailViewStackParamList } from "../../navigation/DetailViewStackParamList";
@@ -54,13 +54,22 @@ const OnboardingScreen: React.FC = () => {
             <Image source={require('../../img/bitcoin.png')} style={styles.bitcoinLogo} />
           </View>
 
-          <Text style={[styles.welcomeTitle, { color: colors.text }]}>Bitcoin wallet</Text>
+          <Text style={[styles.welcomeTitle, { color: colors.text }]}>
+            Bitcoin wallet
+          </Text>
 
-          <Text style={[styles.welcomeSubtitle, { color: colors.text }]}>A simple bitcoin wallet for{'\n'} all your payments.</Text>
+          <Text style={[styles.welcomeSubtitle, { color: colors.text }]}>
+            A simple bitcoin wallet for{'\n'} all your payments.
+          </Text>
 
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={[styles.createButton, { backgroundColor: '#ff9500' }]} onPress={handleContinue}>
-              <Text style={[styles.createButtonText, { color: '#fff' }]}>Create a new wallet</Text>
+            <TouchableOpacity
+              style={[styles.createButton, { backgroundColor: '#ff9500' }]}
+              onPress={handleContinue}
+            >
+              <Text style={[styles.createButtonText, { color: '#fff' }]}>
+                Create a new wallet
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -75,15 +84,16 @@ const OnboardingScreen: React.FC = () => {
           </View>
 
           <View style={styles.footerContainer}>
-            <Text style={[styles.footerText, { color: colors.text }]}>Your wallet, your coins{'\n'}100% open-source & open-design</Text>
+            <Text style={[styles.footerText, { color: colors.text }]}>
+              Your wallet, your coins{'\n'}100% open-source & open-design
+            </Text>
           </View>
         </View>
-      </View>
-    );
+      </View>);
   }, [colors]);
 
   return renderCoverScreen();
-};
+}
 
 export default OnboardingScreen;
 

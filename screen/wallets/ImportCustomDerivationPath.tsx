@@ -34,7 +34,7 @@ type TWalletsByPath = { [path: string]: TWalletsByType | 'WRONG_PATH' };
 type TUsedByType = { [type: string]: STATUS };
 type TUsedByPath = { [path: string]: TUsedByType };
 
-type TItem = [type: string, typeReadable: string, STATUS | undefined];
+type TItem = [string, string, STATUS | undefined];
 
 const ImportCustomDerivationPath: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -125,7 +125,10 @@ const ImportCustomDerivationPath: React.FC = () => {
     if (importing.current) return;
     importing.current = true;
     if (wallets[path] === WRONG_PATH) return;
-    addAndSaveWallet(wallets[path][type]);
+    const pathWallets = wallets[path];
+    if (typeof pathWallets === 'object' && pathWallets !== null) {
+      addAndSaveWallet(pathWallets[type]);
+    }
     navigation.getParent()?.goBack();
   };
 
@@ -149,7 +152,8 @@ const ImportCustomDerivationPath: React.FC = () => {
     return <WalletToImport key={type} title={title} subtitle={subtitle} active={selected === type} onPress={() => setSelected(type)} />;
   };
 
-  const disabled = wallets[path] === WRONG_PATH || wallets[path]?.[selected] === undefined;
+  const disabled =
+    wallets[path] === WRONG_PATH || typeof wallets[path] !== 'object' || (wallets[path] as TWalletsByType)?.[selected] === undefined;
 
   return (
     <SafeArea style={[styles.root, stylesHook.root]}>

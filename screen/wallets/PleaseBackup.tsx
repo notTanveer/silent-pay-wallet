@@ -1,4 +1,4 @@
-import { RouteProp, useFocusEffect, useLocale, useRoute } from '@react-navigation/native';
+import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native';
 import React, { useCallback, useEffect } from 'react';
 import { BackHandler, ScrollView, StyleSheet, Text, TouchableOpacity, View, InteractionManager } from 'react-native';
 import { useTheme } from '../../components/themes';
@@ -17,16 +17,11 @@ const PleaseBackup: React.FC = () => {
   const navigation = useExtendedNavigation();
   const { isPrivacyBlurEnabled } = useSettings();
   const { colors } = useTheme();
-  const { direction } = useLocale();
   const { enableScreenProtect, disableScreenProtect } = useScreenProtect();
 
   const stylesHook = StyleSheet.create({
     flex: {
       backgroundColor: colors.elevated,
-    },
-    pleaseText: {
-      color: colors.foregroundColor,
-      writingDirection: direction,
     },
   });
 

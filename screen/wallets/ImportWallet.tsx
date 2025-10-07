@@ -116,7 +116,7 @@ const ImportWallet = () => {
         });
       }
     },
-    [askPassphraseMenuState, clearClipboardMenuState, addAndSaveWallet, navigation],
+    [clearClipboardMenuState, addAndSaveWallet, navigation],
   );
 
   const handleImport = useCallback(() => {

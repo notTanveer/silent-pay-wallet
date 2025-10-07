@@ -102,9 +102,9 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
         }
       }
 
-      const drawerRoute = state.routes.find(route => route.name === 'DrawerRoot');
+      const drawerRoute = (state.routes as any[]).find((route: any) => route.name === 'DrawerRoot');
       if (drawerRoute?.state?.routes) {
-        const detailViewStack = drawerRoute.state.routes.find(route => route.name === 'DetailViewStackScreensStack');
+        const detailViewStack = (drawerRoute.state.routes as any[]).find((route: any) => route.name === 'DetailViewStackScreensStack');
         if (detailViewStack?.state?.routes) {
           for (const route of detailViewStack.state.routes) {
             if (screensToCheck.includes(route.name) && (route.params as { walletID?: string })?.walletID) {

@@ -371,6 +371,13 @@ const buttonContentStaticStyles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  centeredContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
+  },
 });
 
 interface FContainerProps {
@@ -429,7 +436,7 @@ const ButtonContent = ({ icon, text, textStyle, iconStyle }: ButtonContentProps)
 
   if (!text || text.trim() === '') {
     return (
-      <View style={[buttonContentStaticStyles.contentContainer, { justifyContent: 'center' }]}>
+      <View style={buttonContentStaticStyles.centeredContainer}>
         <View style={buttonStyles.iconContainer}>{scaledIcon}</View>
       </View>
     );
@@ -437,7 +444,7 @@ const ButtonContent = ({ icon, text, textStyle, iconStyle }: ButtonContentProps)
 
   if (!icon) {
     return (
-      <View style={[buttonContentStaticStyles.contentContainer, { justifyContent: 'center' }]}>
+      <View style={buttonContentStaticStyles.centeredContainer}>
         <Text numberOfLines={1} adjustsFontSizeToFit style={[textStyle, buttonStyles.centeredText, { lineHeight: fontSize * 1.2 }]}>
           {text}
         </Text>

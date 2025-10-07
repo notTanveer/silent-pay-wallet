@@ -179,10 +179,10 @@ const DrawerList: React.FC<DrawerContentComponentProps> = memo((props: DrawerCon
   }, [wallets, fadeAnim]);
 
   const isWalletsListActive = useMemo(() => {
-    const drawerRoute = navigationState?.routes?.find(route => route.name === 'DrawerRoot');
+    const drawerRoute = (navigationState?.routes as any[] | undefined)?.find((route: any) => route.name === 'DrawerRoot');
     if (!drawerRoute || !drawerRoute.state) return true;
 
-    const detailStack = drawerRoute.state.routes.find(route => route.name === 'DetailViewStackScreensStack');
+    const detailStack = (drawerRoute.state.routes as any[]).find((route: any) => route.name === 'DetailViewStackScreensStack');
     if (!detailStack || !detailStack.state) return true;
 
     const currentScreenName = detailStack.state.routes[detailStack.state.index || 0]?.name;

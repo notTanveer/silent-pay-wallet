@@ -43,7 +43,7 @@ const DeleteWallet: React.FC = () => {
       ],
       { cancelable: false },
     );
-  }, [wallets, handleWalletDeletion]);
+  }, [wallets, handleWalletDeletion, navigate]);
 
   if (wallets.length === 0) {
     return null;

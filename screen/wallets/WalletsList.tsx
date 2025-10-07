@@ -323,7 +323,7 @@ const WalletsList: React.FC = () => {
         </TouchableOpacity>
       </View>
     );
-  }, [wallets, stylesHook, dataSource]);
+  }, [wallets, stylesHook, changeWalletBalanceUnit]);
 
   const renderSectionItem = useCallback(
     (item: { section: any; item: ExtendedTransaction }) => {
@@ -391,7 +391,7 @@ const WalletsList: React.FC = () => {
           <FButton
             onPress={onScanButtonPressed}
             icon={
-              <View style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
+              <View style={styles.scanIconContainer}>
                 <ScanIcon />
               </View>
             }
@@ -629,5 +629,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
     textAlign: 'center',
+  },
+  scanIconContainer: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

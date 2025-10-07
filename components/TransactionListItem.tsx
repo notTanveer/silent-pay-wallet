@@ -133,7 +133,7 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
       sub += txMemo;
       if (item.memo) sub += item.memo;
       return sub || undefined;
-    }, [relevantAddress, timeText, txMemo, item.confirmations, item.memo]);
+    }, [timeText, txMemo, item.confirmations, item.memo]);
 
     const formattedAmount = useMemo(() => {
       return formatBalanceWithoutSuffix(item.value && item.value, itemPriceUnit, true).toString();
