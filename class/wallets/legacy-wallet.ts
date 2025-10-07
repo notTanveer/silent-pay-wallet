@@ -7,7 +7,7 @@ import { ECPairAPI, ECPairFactory, Signer } from 'ecpair';
 
 import * as BlueElectrum from '../../blue_modules/BlueElectrum';
 import ecc from '../../blue_modules/noble_ecc';
-import { HDSegwitBech32Wallet } from '..';
+import { HDSegwitBech32Wallet } from './hd-segwit-bech32-wallet';
 import { randomBytes } from '../rng';
 import { AbstractWallet } from './abstract-wallet';
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types';

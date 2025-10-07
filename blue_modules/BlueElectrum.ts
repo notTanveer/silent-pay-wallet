@@ -5,7 +5,10 @@ import RNFS from 'react-native-fs';
 import Realm from 'realm';
 import { sha256 as _sha256 } from '@noble/hashes/sha256';
 
-import { LegacyWallet, SegwitBech32Wallet, SegwitP2SHWallet, TaprootWallet } from '../class';
+import { LegacyWallet } from '../class/wallets/legacy-wallet';
+import { SegwitBech32Wallet } from '../class/wallets/segwit-bech32-wallet';
+import { SegwitP2SHWallet } from '../class/wallets/segwit-p2sh-wallet';
+import { TaprootWallet } from '../class/wallets/taproot-wallet';
 import presentAlert from '../components/Alert';
 import loc from '../loc';
 import { GROUP_IO_BLUEWALLET } from './currency';
