@@ -74,12 +74,15 @@ const PleaseBackup: React.FC = () => {
         <Text style={styles.subtitle}>You would need this to recover your account.</Text>
       </View>
       <View style={styles.seedGrid}>
-        {wallet.getSecret()?.split(' ').map((word, idx) => (
-          <View key={idx} style={styles.seedItem}>
-            <Text style={styles.seedIndex}>{idx + 1}</Text>
-            <Text style={styles.seedWord}>{word}</Text>
-          </View>
-        ))}
+        {wallet
+          .getSecret()
+          ?.split(' ')
+          .map((word, idx) => (
+            <View key={idx} style={styles.seedItem}>
+              <Text style={styles.seedIndex}>{idx + 1}</Text>
+              <Text style={styles.seedWord}>{word}</Text>
+            </View>
+          ))}
       </View>
       <View style={styles.bottom}>
         <TouchableOpacity style={styles.button} onPress={handleContinue} testID="PleasebackupOk">
@@ -105,8 +108,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   title: {
-    paddingTop: 80
-    ,
+    paddingTop: 80,
     fontSize: 25,
     fontWeight: 'bold',
     textAlign: 'center',

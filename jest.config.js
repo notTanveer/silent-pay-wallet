@@ -19,7 +19,9 @@ module.exports = {
   },
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   moduleFileExtensions: ['js', 'json', 'ts', 'tsx'],
-  transformIgnorePatterns: ['node_modules/(?!((jest-)?react-native(-.*)?|@react-native(-community)?)|@rneui|silent-payments|@silent-pay/core/)'],
+  transformIgnorePatterns: [
+    'node_modules/(?!((jest-)?react-native(-.*)?|@react-native(-community)?)|@rneui|silent-payments|@silent-pay/core/)',
+  ],
   moduleNameMapper: {
     '^@silent-pay/core$': '<rootDir>/node_modules/@silent-pay/core/dist/index.js',
   },

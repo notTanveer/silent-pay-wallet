@@ -97,9 +97,9 @@ const ImportWallet = () => {
         // create HDSilentPaymentsWallet with hardcoded m/84'/0'/0' derivation path
         const wallet = new HDSilentPaymentsWallet();
         wallet.setSecret(text.trim());
-        
+
         wallet.setDerivationPath("m/84'/0'/0'");
-        
+
         if (!wallet.validateMnemonic() && !wallet.getSecret()) {
           presentAlert({ title: 'Error', message: 'Invalid mnemonic phrase or private key.' });
           return;
@@ -110,9 +110,9 @@ const ImportWallet = () => {
         
       } catch (error: any) {
         console.error('Import error:', error);
-        presentAlert({ 
-          title: 'Import Error', 
-          message: error.message || 'Failed to import wallet. Please check your input and try again.' 
+        presentAlert({
+          title: 'Import Error',
+          message: error.message || 'Failed to import wallet. Please check your input and try again.',
         });
       }
     },

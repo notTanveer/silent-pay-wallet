@@ -5,7 +5,7 @@ import { useStorage } from '../../hooks/context/useStorage';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import loc from '../../loc';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
-import { DetailViewStackParamList } from "../../navigation/DetailViewStackParamList";
+import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'DeleteWallet'>;
@@ -49,14 +49,7 @@ const DeleteWallet: React.FC = () => {
     return null;
   }
 
-  return (
-    <ListItem
-      title="Delete Wallet"
-      onPress={handleDeleteWallet}
-      testID="DeleteWalletButton"
-      chevron={false}
-    />
-  );
+  return <ListItem title="Delete Wallet" onPress={handleDeleteWallet} testID="DeleteWalletButton" chevron={false} />;
 };
 
 export default DeleteWallet;

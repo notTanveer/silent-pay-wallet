@@ -66,15 +66,14 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
 
   /**
    * Override to bypass passphrase processing for performance.
-   * Since we don't support passphrases for Silent Payments wallets, 
+   * Since we don't support passphrases for Silent Payments wallets,
    * we use an empty string to skip expensive passphrase derivation.
-   * 
+   *
    * @return {Buffer} wallet seed without passphrase
    */
   _getSeed(): Buffer {
-    if (this._cachedSeed)
-      return this._cachedSeed;
-    
+    if (this._cachedSeed) return this._cachedSeed;
+
     const mnemonic = this.secret;
     // no passphrase support - use empty string to avoid PBKDF2 overhead
     this._cachedSeed = bip39.mnemonicToSeedSync(mnemonic, '');
