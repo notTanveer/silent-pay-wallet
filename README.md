@@ -1,29 +1,24 @@
-# BlueWallet - A Bitcoin & Lightning Wallet
+# Shroud Wallet
 
-[![GitHub tag](https://img.shields.io/badge/dynamic/json.svg?url=https://raw.githubusercontent.com/BlueWallet/BlueWallet/master/package.json&query=$.version&label=Version)](https://github.com/BlueWallet/BlueWallet)
-[![CircleCI](https://circleci.com/gh/BlueWallet/BlueWallet.svg?style=svg)](https://circleci.com/gh/BlueWallet/BlueWallet)
-[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
-![](https://img.shields.io/github/license/BlueWallet/BlueWallet.svg)
+⚠️ **Work in Progress** - This wallet is currently under active development.
 
-Thin Bitcoin Wallet.
-Built with React Native and Electrum.
+A non-custodial, Bitcoin-only mobile wallet with support for Silent Payments (BIP-352).
 
-[![Appstore](https://bluewallet.io/uploads/app-store-badge-blue.svg)](https://itunes.apple.com/us/app/bluewallet-bitcoin-wallet/id1376878040?l=ru&ls=1&mt=8)
-[![Playstore](https://bluewallet.io/uploads/play-store-badge-blue.svg)](https://play.google.com/store/apps/details?id=io.bluewallet.bluewallet)
+## Related Projects
 
-Website: [bluewallet.io](https://bluewallet.io)
+This wallet is built using the following sister repositories:
 
-Community: [telegram group](https://t.me/bluewallet)
+- **[BlueWallet](https://github.com/BlueWallet/BlueWallet)** - Original codebase was forked from BlueWallet
+- **[silent-pay](https://github.com/Bitshala-Incubator/silent-pay)** - Core Silent Payments library implementing BIP-352 protocol
+- **[silent-pay-indexer](https://github.com/Bitshala-Incubator/silent-pay-indexer)** - Indexer service for efficient Silent Payment transaction scanning
 
-* Private keys never leave your device
-* Lightning Network supported
-* SegWit-first. Replace-By-Fee support
-* Encryption. Plausible deniability
-* And many more [features...](https://bluewallet.io/features)
+## Getting Started
 
-
-<img src="https://i.imgur.com/hHYJnMj.png" width="100%">
-
+### Prerequisites
+- Node.js >= 20
+- npm
+- Android Studio (for Android development)
+- Xcode (for iOS development)
 
 ## BUILD & RUN IT
 
@@ -38,8 +33,8 @@ node --version && npm --version
 * In your console:
 
 ```
-git clone https://github.com/BlueWallet/BlueWallet.git
-cd BlueWallet
+git clone https://github.com/Bitshala-Incubator/silent-pay-wallet.git
+cd silent-pay-wallet
 npm install
 ```
 
@@ -72,11 +67,11 @@ npx pod-install
 npm start
 ```
 
-In another terminal window within the BlueWallet folder:
+In another terminal window within the Shroud folder:
 ```
 npx react-native run-ios
 ```
-**To debug BlueWallet on the iOS Simulator, you must choose a Rosetta-compatible iOS Simulator. This can be done by navigating to the Product menu in Xcode, selecting Destination Architectures, and then opting for "Show Both." This action will reveal the simulators that support Rosetta.
+**To debug Shroud on the iOS Simulator, you must choose a Rosetta-compatible iOS Simulator. This can be done by navigating to the Product menu in Xcode, selecting Destination Architectures, and then opting for "Show Both." This action will reveal the simulators that support Rosetta.
 **
 
 * To run on macOS using Mac Catalyst:
@@ -94,41 +89,12 @@ Open ios/BlueWallet.xcworkspace. Once the project loads, select the scheme/targe
 npm run test
 ```
 
+### Developer Community
 
-## LICENSE
+The dev community lurks in a small corner of Discord [here](https://discord.gg/Rfyp2nRGj7) (say 👋, if you drop there from this readme).
+
+Dev discussions predominantly happen via FOSS best practices, and by using Github as the Community Forum.
+
+## License
 
 MIT
-
-## WANT TO CONTRIBUTE?
-
-Grab an issue from [the backlog](https://github.com/BlueWallet/BlueWallet/issues), try to start or submit a PR, any doubts we will try to guide you. Contributors have a private telegram group, request access by email bluewallet@bluewallet.io
-
-## Translations
-
-We accept translations via [Transifex](https://www.transifex.com/bluewallet/bluewallet/)
-
-To participate you need to:
-1. Sign up to Transifex
-2. Find BlueWallet project
-3. Send join request
-4. After we accept your request you will be able to start translating! That's it!
-
-Please note the values in curly braces should not be translated. These are the names of the variables that will be inserted into the translated string. For example, the original string `"{number} of {total}"` in Russian will be `"{number} из {total}"`.
-
-Transifex automatically creates Pull Request when language reaches 100% translation. We also trigger this by hand before each release, so don't worry if you can't translate everything, every word counts.
-
-## Q&A
-
-Builds automated and tested with BrowserStack
-
-<a href="https://www.browserstack.com/"><img src="https://i.imgur.com/syscHCN.png" width="160px"></a>
-
-Bugs reported via BugSnag
-
-<a href="https://www.bugsnag.com"><img src="https://images.typeform.com/images/QKuaAssrFCq7/image/default" width="160px"></a>
-
-
-## RESPONSIBLE DISCLOSURE
-
-Found critical bugs/vulnerabilities? Please email them bluewallet@bluewallet.io
-Thanks!
