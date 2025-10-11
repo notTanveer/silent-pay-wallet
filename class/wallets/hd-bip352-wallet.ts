@@ -1,16 +1,19 @@
 import * as bip39 from 'bip39';
 import { Buffer } from 'buffer';
+import * as bitcoin from 'bitcoinjs-lib';
 import { HDSegwitBech32Wallet } from './hd-segwit-bech32-wallet.ts';
 import { getDefaultIndexer } from '../../blue_modules/SilentPaymentIndexer';
 import {
   SilentPaymentKeyDerivation,
   UTXORepository,
   TransactionProcessor,
+  SilentPaymentSpender,
   type IndexerTransaction,
   type SilentPaymentUTXO,
   type ScanProgressCallback,
 } from '../../helpers/silent-payments';
-import { Transaction } from './types.ts';
+import { Transaction, CreateTransactionUtxo, CreateTransactionTarget, CreateTransactionResult } from './types.ts';
+import { CoinSelectTarget } from 'coinselect';
 
 
 export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
@@ -361,7 +364,145 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   }
 
   allowSend(): boolean {
-    return false; // spending sp utxo not supported yet
+    return true; // Spending is now supported!
+  }
+
+  /**
+   * Creates a transaction to spend Silent Payment UTXOs
+   * Overrides parent implementation to handle tweaked Taproot keys
+   * 
+   * @param utxos - Array of UTXOs to spend (should be Silent Payment UTXOs)
+   * @param targets - Array of outputs (address + value)
+   * @param feeRate - Fee rate in sat/vByte
+   * @param changeAddress - Address for change output (will use Silent Payment address)
+   * @param sequence - Transaction sequence number (for RBF)
+   * @param skipSigning - If true, returns unsigned PSBT
+   * @param masterFingerprint - Master fingerprint (unused for Silent Payments)
+   * @returns Transaction result with tx, inputs, outputs, fee, and psbt
+   */
+  createTransaction(
+    utxos: CreateTransactionUtxo[],
+    targets: CreateTransactionTarget[],
+    feeRate: number,
+    changeAddress: string,
+    sequence: number = 0xffffffff,
+    skipSigning: boolean = false,
+    masterFingerprint: number = 0,
+  ): CreateTransactionResult {
+    if (targets.length === 0) {
+      throw new Error('No destination provided');
+    }
+
+    // Ensure services are initialized
+    this.ensureServices();
+
+    // Get the spend private key and public key
+    const spendPrivKey = this.getSpendPrivateKey();
+    const spendPubKey = this.getSpendPublicKey();
+    const silentPaymentAddress = this.getSilentPaymentAddress();
+
+    if (!silentPaymentAddress) {
+      throw new Error('Failed to derive Silent Payment address');
+    }
+
+    // Get Silent Payment UTXOs from repository
+    const spUtxos = this.getUTXOs();
+    
+    // Create a map of txid:vout to SilentPaymentUTXO for quick lookup
+    const utxoMap = new Map<string, SilentPaymentUTXO>();
+    for (const spUtxo of spUtxos) {
+      const key = `${spUtxo.txid}:${spUtxo.vout}`;
+      utxoMap.set(key, spUtxo);
+    }
+
+    // Verify all input UTXOs are Silent Payment UTXOs we own
+    for (const utxo of utxos) {
+      const key = `${utxo.txid}:${utxo.vout}`;
+      const spUtxo = utxoMap.get(key);
+      
+      if (!spUtxo) {
+        throw new Error(`UTXO ${key} not found in wallet`);
+      }
+
+      // Verify the tweaked key matches
+      if (!SilentPaymentSpender.verifyTweakedKey(spUtxo, spendPrivKey)) {
+        throw new Error(`UTXO ${key} verification failed - tweaked key mismatch`);
+      }
+    }
+
+    // Use coin selection from parent
+    const { inputs, outputs, fee } = this.coinselect(utxos, targets, feeRate);
+
+    // Create PSBT
+    const psbt = new bitcoin.Psbt();
+
+    // Add inputs using @silent-pay/core pattern
+    inputs.forEach((input, idx) => {
+      const key = `${input.txid}:${input.vout}`;
+      const spUtxo = utxoMap.get(key);
+
+      if (!spUtxo) {
+        throw new Error(`Silent Payment UTXO not found for input: ${key}`);
+      }
+
+      // Create Taproot input following @silent-pay/core Coin.toInput() pattern
+      const taprootInput = SilentPaymentSpender.createTaprootInput(spUtxo, spendPubKey);
+
+      // Add to PSBT
+      psbt.addInput({
+        hash: taprootInput.hash,
+        index: taprootInput.index,
+        sequence,
+        witnessUtxo: {
+          script: taprootInput.witnessUtxo.script,
+          value: BigInt(taprootInput.witnessUtxo.value),
+        },
+        tapInternalKey: taprootInput.tapInternalKey,
+      });
+    });
+
+    // Add outputs
+    outputs.forEach(output => {
+      // If no address, use Silent Payment address for change
+      if (!output.address) {
+        output.address = silentPaymentAddress;
+      }
+
+      psbt.addOutput({
+        address: output.address,
+        value: BigInt(output.value),
+      });
+    });
+
+    // Sign if not skipping
+    let tx: bitcoin.Transaction | undefined;
+    
+    if (!skipSigning) {
+      // Sign each input with the tweaked key
+      inputs.forEach((input, idx) => {
+        const key = `${input.txid}:${input.vout}`;
+        const spUtxo = utxoMap.get(key);
+
+        if (!spUtxo) {
+          throw new Error(`Silent Payment UTXO not found for signing: ${key}`);
+        }
+
+        // Sign with tweaked key
+        SilentPaymentSpender.signTaprootInput(psbt, idx, spUtxo, spendPrivKey);
+      });
+
+      // Finalize and extract transaction
+      psbt.finalizeAllInputs();
+      tx = psbt.extractTransaction();
+    }
+
+    return {
+      tx,
+      inputs,
+      outputs,
+      fee,
+      psbt,
+    };
   }
 
   setLastScannedBlock(height: number): void {
