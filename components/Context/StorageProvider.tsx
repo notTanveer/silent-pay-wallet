@@ -172,6 +172,9 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
   }, []);
 
   const deleteWallet = useCallback((wallet: TWallet) => {
+    if ('clearCache' in wallet && typeof wallet.clearCache === 'function')
+      wallet.clearCache();
+    
     BlueApp.deleteWallet(wallet);
     setWallets([...BlueApp.getWallets()]);
   }, []);
