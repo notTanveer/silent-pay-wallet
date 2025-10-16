@@ -1,48 +1,66 @@
 import { RouteProp, useFocusEffect, useLocale, useRoute } from '@react-navigation/native';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { BackHandler, ScrollView, StyleSheet, Text, TouchableOpacity, View, InteractionManager } from 'react-native';
-import { useTheme } from '../../components/themes';
 import { useSettings } from '../../hooks/context/useSettings';
 import { useStorage } from '../../hooks/context/useStorage';
-import { AddWalletStackParamList } from '../../navigation/AddWalletStack';
 import { useScreenProtect } from '../../hooks/useScreenProtect';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation.ts';
+import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
+import { AddWalletStackParamList } from '../../navigation/AddWalletStack';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import SeedWords from '../../components/SeedWords.tsx';
+import loc from '../../loc';
+import SeedVerification from '../../components/SeedVerification';
 
 type RouteProps = RouteProp<AddWalletStackParamList, 'PleaseBackup'>;
 
 const PleaseBackup: React.FC = () => {
-  const { wallets, saveToDisk } = useStorage();
-  const { walletID } = useRoute<RouteProps>().params;
-  const wallet = wallets.find(w => w.getID() === walletID)!;
+  const { saveToDisk, addWallet } = useStorage();
+  const { seedPhrase } = useRoute<RouteProps>().params;
   const navigation = useExtendedNavigation();
   const { isPrivacyBlurEnabled } = useSettings();
-  const { colors } = useTheme();
-  const { direction } = useLocale();
   const { enableScreenProtect, disableScreenProtect } = useScreenProtect();
+  const [currentStep, setCurrentStep] = useState<'show-seed' | 'verify'>('show-seed');
 
-  const stylesHook = StyleSheet.create({
-    flex: {
-      backgroundColor: colors.elevated,
-    },
-    pleaseText: {
-      color: colors.foregroundColor,
-      writingDirection: direction,
-    },
-  });
-
-  const handleContinue = useCallback(() => {
-    // Mark that the user has saved the backup
-    wallet.setUserHasSavedExport(true);
-    saveToDisk();
-
+  const handleverifycomplete = useCallback(() => {
     // Reset stack and go directly to WalletsList
     InteractionManager.runAfterInteractions(() => {
       navigation.navigateToWalletsList();
     });
 
     return true;
-  }, [navigation, wallet, saveToDisk]);
+  }, [navigation]);
 
+  const handleProceedToVerification = () => {
+    setCurrentStep('verify');
+  };
+
+  const handleBackToSeed = () => {
+    setCurrentStep('show-seed');
+  };
+
+  const handleVerificationSuccess = async () => {
+    try {
+      // Create a new HDSilentPaymentsWallet
+      const wallet = new HDSilentPaymentsWallet();
+
+      wallet.setLabel(loc.wallets.details_title);
+      wallet.setSecret(seedPhrase);
+
+      addWallet(wallet);
+      await saveToDisk();
+      wallet.setUserHasSavedExport(true);
+
+      // Navigate to wallet list after successful verification
+      handleverifycomplete();
+    } catch (error) {
+      console.error(error);
+      // Show error or fallback to seed screen in case of error
+      setCurrentStep('show-seed');
+    }
+  };
+
+  // Handle Android hardware back button to prevent unintended navigation
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
 
@@ -51,6 +69,7 @@ const PleaseBackup: React.FC = () => {
     };
   }, []);
 
+  // Enable screen protection if privacy blur is enabled
   useFocusEffect(
     useCallback(() => {
       if (isPrivacyBlurEnabled) enableScreenProtect();
@@ -59,34 +78,46 @@ const PleaseBackup: React.FC = () => {
       };
     }, [disableScreenProtect, enableScreenProtect, isPrivacyBlurEnabled]),
   );
-
+  // Render different steps based on currentStep state
+  // if 'show-seed', display the seed phrase with instructions
+  // if 'verify', render SeedVerification component
   return (
-    <ScrollView
-      style={styles.root}
-      contentContainerStyle={[styles.flex, stylesHook.flex]}
-      testID="PleaseBackupScrollView"
-      automaticallyAdjustContentInsets
-      contentInsetAdjustmentBehavior="automatic"
-    >
-      <View style={styles.headerContainer}>
-        <Text style={styles.title}>This is your recovery phrase</Text>
-        <Text style={styles.subtitle}>Make sure to write it down as shown here.</Text>
-        <Text style={styles.subtitle}>You would need this to recover your account.</Text>
-      </View>
-      <View style={styles.seedGrid}>
-        {wallet.getSecret()?.split(' ').map((word, idx) => (
-          <View key={idx} style={styles.seedItem}>
-            <Text style={styles.seedIndex}>{idx + 1}</Text>
-            <Text style={styles.seedWord}>{word}</Text>
-          </View>
-        ))}
-      </View>
-      <View style={styles.bottom}>
-        <TouchableOpacity style={styles.button} onPress={handleContinue} testID="PleasebackupOk">
-          <Text style={styles.buttonText}>Continue</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+    <>
+      <SafeAreaView style={{ flex: 1 }}>
+        {currentStep === 'show-seed' && (
+          <ScrollView
+            style={styles.root}
+            contentContainerStyle={[styles.flex]}
+            testID="PleaseBackupScrollView"
+            automaticallyAdjustContentInsets
+            contentInsetAdjustmentBehavior="automatic"
+          >
+            <View style={styles.headerContainer}>
+              <Text style={styles.title}>{loc.pleasebackup.title}</Text>
+              <Text style={styles.subtitle}>{loc.pleasebackup.text}</Text>
+            </View>
+            <View style={styles.seedGrid}>
+              {seedPhrase.split(' ').map((word: string, idx: number) => (
+                <SeedWords key={idx} word={word} index={idx} />
+              ))}
+            </View>
+            <View style={styles.bottom}>
+              <TouchableOpacity style={styles.button} onPress={handleProceedToVerification}>
+                <Text style={styles.buttonText}>{loc.pleasebackup.noted}</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        )}
+
+        {currentStep === 'verify' && (
+          <SeedVerification
+            seed={seedPhrase}
+            onSuccess={handleVerificationSuccess}
+            onBack={handleBackToSeed}
+          />
+        )}
+      </SafeAreaView>
+    </>
   );
 };
 
@@ -123,38 +154,8 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     marginBottom: 32,
-    paddingHorizontal: 8,
-  },
-  seedItem: {
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    borderWidth: 1,
-    borderColor: '#222',
-    width: '42%',
-    backgroundColor: '#F5F5F7',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    margin: 6,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-  },
-  seedIndex: {
-    fontWeight: 'bold',
-    fontSize: 15,
-    marginRight: 8,
-    color: '#000000ff',
-  },
-  seedWord: {
-    fontSize: 15,
-    color: '#222',
-    fontWeight: '500',
+    paddingHorizontal: 16,
+    marginTop: 20,
   },
   bottom: {
     marginBottom: 32,

@@ -6,23 +6,22 @@ import PleaseBackup from "../screen/wallets/PleaseBackup";
 import { RouteProp } from '@react-navigation/native';
 
 export type OnboardingStackParamList = {
-    OnboardingMain: undefined;
-    CreateWalletScreen: undefined;
-    PleaseBackup: { walletID: string };
-}
+  OnboardingMain: undefined;
+  CreateWalletScreen: undefined;
+  PleaseBackup: { walletID: string, seedPhrase: string };
+};
 
 const Stack = createNativeStackNavigator<OnboardingStackParamList>();
 
 const OnboardingStack = ({ route }: { route?: RouteProp<any, any> }) => {
-    const initialRouteName = route?.params?.screen || 'OnboardingMain';
-    const initialParams = route?.params?.params || undefined;
-    return (
-        <Stack.Navigator screenOptions={{ headerShown: false, gestureEnabled: false, headerBackVisible: false }} initialRouteName={initialRouteName}>
-            <Stack.Screen name="OnboardingMain" component={OnboardingScreen} />
-            <Stack.Screen name="CreateWalletScreen" component={CreateWalletScreen} initialParams={initialParams} />
-            <Stack.Screen name="PleaseBackup" component={PleaseBackup} />
-        </Stack.Navigator>
-    );
+  const initialRouteName = route?.params?.screen || 'OnboardingMain';
+  const initialParams = route?.params?.params || undefined;
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false, gestureEnabled: false, headerBackVisible: false }} initialRouteName={initialRouteName}>
+      <Stack.Screen name="OnboardingMain" component={OnboardingScreen} />
+      <Stack.Screen name="CreateWalletScreen" component={CreateWalletScreen} initialParams={initialParams} />
+      <Stack.Screen name="PleaseBackup" component={PleaseBackup} />
+    </Stack.Navigator>
+  );
 };
-
 export default OnboardingStack;

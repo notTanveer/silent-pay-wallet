@@ -36,6 +36,7 @@ export type AddWalletStackParamList = {
     password: string | undefined;
   };
   PleaseBackup: {
+    seedPhrase: string;
     walletID: string;
   };
   PleaseBackupLNDHub: {
@@ -100,7 +101,7 @@ const AddWalletStack = () => {
         options={navigationStyle({
           gestureEnabled: false,
           headerBackVisible: false,
-          title: loc.pleasebackup.title,
+          title: loc.pleasebackup.null,
         })(theme)}
       />
       <Stack.Screen

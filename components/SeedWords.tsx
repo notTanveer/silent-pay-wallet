@@ -1,68 +1,115 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 
-import { useTheme } from './themes';
-import { useLocale } from '@react-navigation/native';
+type StatusType = 'default' | 'correct' | 'incorrect';
 
-const SeedWords = ({ seed }: { seed: string }) => {
-  const words = seed.split(/\s/);
-  const { colors } = useTheme();
-  const { direction } = useLocale();
+interface SeedWordsProps {
+  word: string;
+  index: number;
+  status?: StatusType;
+  onPress?: () => void;
+  disabled?: boolean;
+  selectionOrder?: number | null;
+  isVerification?: boolean;
+}
 
-  const stylesHook = StyleSheet.create({
-    word: {
-      backgroundColor: colors.inputBackgroundColor,
-    },
-    wortText: {
-      color: colors.labelText,
-    },
-    secret: {
-      flexDirection: direction === 'rtl' ? 'row-reverse' : 'row',
-      backgroundColor: colors.lightBorder,
-    },
-  });
+const SeedWords: React.FC<SeedWordsProps> = ({
+  word,
+  index,
+  status = 'default',
+  onPress,
+  disabled = false,
+  selectionOrder = null,
+  isVerification = false
+}) => {
+  const getIndexBackgroundColor = () => {
+    switch (status) {
+      case 'correct':
+        return '#4CAF50'; // Green
+      case 'incorrect':
+        return '#F44336'; // Red
+      default:
+        return '#f1f1f1'; // Default gray
+    }
+  };
+
+  const getIndexTextColor = () => {
+    return status !== 'default' ? 'white' : '#000';
+  };
+
+  const indexContainerStyle = {
+    ...styles.indexContainer,
+    backgroundColor: getIndexBackgroundColor(),
+  };
+
+  const indexTextStyle = {
+    ...styles.seedIndex,
+    color: getIndexTextColor(),
+  };
 
   return (
-    <View style={[styles.secret, stylesHook.secret]}>
-      {words.map((secret, index) => {
-        const text = `${index + 1}. ${secret}  `;
-        return (
-          <View style={[styles.word, stylesHook.word]} key={index}>
-            <Text style={[styles.wortText, stylesHook.wortText]} textBreakStrategy="simple">
-              {text}
-            </Text>
-          </View>
-        );
-      })}
-      <Text style={styles.hiddenText} testID="Secret">
-        {seed}
-      </Text>
-    </View>
+    <TouchableOpacity
+      style={styles.seedItemContainer}
+      onPress={disabled ? undefined : onPress}
+      disabled={disabled}
+      activeOpacity={0.7}
+    >
+      <View style={indexContainerStyle}>
+        {/* Show either the selection order (if provided and in verification mode) 
+            or the original index (if not in verification mode) */}
+        {(!isVerification || (isVerification && selectionOrder !== null)) && (
+          <Text style={indexTextStyle}>
+            {isVerification && selectionOrder !== null ? selectionOrder + 1 : index + 1}
+          </Text>
+        )}
+      </View>
+      <View style={styles.wordContainer}>
+        <Text style={styles.seedWord}>{word}</Text>
+      </View>
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  word: {
-    marginRight: 8,
-    marginBottom: 8,
-    paddingTop: 6,
-    paddingBottom: 6,
-    paddingLeft: 8,
-    paddingRight: 8,
-    borderRadius: 4,
+  seedItemContainer: {
+    width: '45%',
+    flexDirection: 'row',
+    marginVertical: 8,
+    marginHorizontal: 6,
   },
-  wortText: {
-    fontWeight: 'bold',
-    textAlign: 'left',
-    fontSize: 17,
-  },
-  secret: {
-    flexWrap: 'wrap',
+  indexContainer: {
+    width: 36,
+    height: 36,
+    borderTopLeftRadius: 18,
+    borderBottomLeftRadius: 18,
+    backgroundColor: '#f1f1f1',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
     justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 4,
   },
-  hiddenText: {
-    height: 0,
-    width: 0,
+  wordContainer: {
+    flex: 1,
+    height: 36,
+    borderTopRightRadius: 18,
+    borderBottomRightRadius: 18,
+    backgroundColor: '#f1f1f1',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+  },
+  seedIndex: {
+    fontWeight: 'bold',
+    fontSize: 14,
+    color: '#000',
+  },
+  seedWord: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000',
   },
 });
 
