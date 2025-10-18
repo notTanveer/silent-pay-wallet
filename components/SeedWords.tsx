@@ -1,12 +1,16 @@
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 
-type StatusType = 'default' | 'correct' | 'incorrect';
+export enum WordStatus {
+  DEFAULT = 'default',
+  CORRECT = 'correct',
+  INCORRECT = 'incorrect',
+}
 
 interface SeedWordsProps {
   word: string;
   index: number;
-  status?: StatusType;
+  status?: WordStatus;
   onPress?: () => void;
   disabled?: boolean;
   selectionOrder?: number | null;
@@ -24,17 +28,17 @@ const SeedWords: React.FC<SeedWordsProps> = ({
 }) => {
   const getIndexBackgroundColor = () => {
     switch (status) {
-      case 'correct':
-        return '#4CAF50'; // Green
-      case 'incorrect':
-        return '#F44336'; // Red
+      case WordStatus.CORRECT:
+        return '#34C571'; // Green
+      case WordStatus.INCORRECT:
+        return '#EB5757'; // Red
       default:
-        return '#f1f1f1'; // Default gray
+        return '#EDEDED'; // Default gray
     }
   };
 
   const getIndexTextColor = () => {
-    return status !== 'default' ? 'white' : '#000';
+    return status !== WordStatus.DEFAULT ? 'white' : '#000';
   };
 
   const indexContainerStyle = {
@@ -79,7 +83,7 @@ const styles = StyleSheet.create({
   },
   indexContainer: {
     width: 36,
-    height: 36,
+    height: 42,
     borderTopLeftRadius: 18,
     borderBottomLeftRadius: 18,
     backgroundColor: '#f1f1f1',
@@ -87,28 +91,28 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 4,
+    marginRight: 2,
   },
   wordContainer: {
     flex: 1,
-    height: 36,
+    height: 42,
     borderTopRightRadius: 18,
     borderBottomRightRadius: 18,
     backgroundColor: '#f1f1f1',
     borderWidth: 1,
     borderColor: '#e0e0e0',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: 12,
   },
   seedIndex: {
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 16,
     color: '#000',
   },
   seedWord: {
+    fontWeight: 'bold',
     fontSize: 16,
-    fontWeight: '500',
     color: '#000',
   },
 });

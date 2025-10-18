@@ -321,7 +321,6 @@ const WalletsAdd: React.FC = () => {
       if (w.type === HDSilentPaymentsWallet.type) {
         navigate('PleaseBackup', {
           walletID: w.getID(),
-          seedPhrase: w.getSecret(),
         });
       } else {
         goBack();

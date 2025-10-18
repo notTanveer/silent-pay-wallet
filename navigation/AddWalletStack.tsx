@@ -36,7 +36,6 @@ export type AddWalletStackParamList = {
     password: string | undefined;
   };
   PleaseBackup: {
-    seedPhrase: string;
     walletID: string;
   };
   PleaseBackupLNDHub: {

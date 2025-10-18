@@ -95,11 +95,11 @@
     "ok_lnd": "OK, I have saved it.",
     "text": "Make sure to write it down as shown here\nYou would need this to recover your account",
     "text_lnd": "Please save this wallet backup. It allows you to restore the wallet in case of loss.",
-    "title": "This is your recovery phrase",
+    "title": "This is your Recovery Phrase",
     "noted": "I have noted it down",
     "null": "",
     "heading": "Verify Your Recovery Phrase",
-    "subheading": "Tap the words in the correct order to verify your recovery phrase.",
+    "subheading": "Tap the words in the correct order\nto verify your recovery phrase",
     "show": "Show Seed Again",
     "error": "The words you selected are not in the correct order. Please try again."
   },

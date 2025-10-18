@@ -8,7 +8,7 @@ import { RouteProp } from '@react-navigation/native';
 export type OnboardingStackParamList = {
   OnboardingMain: undefined;
   CreateWalletScreen: undefined;
-  PleaseBackup: { walletID: string, seedPhrase: string };
+  PleaseBackup: { walletID: string };
 };
 
 const Stack = createNativeStackNavigator<OnboardingStackParamList>();

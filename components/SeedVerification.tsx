@@ -1,38 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import loc from '../loc';
-import SeedWords from './SeedWords';
+import SeedWords, { WordStatus } from './SeedWords';
 
 interface SeedVerificationProps {
-  seed: string;
+  seed: string[];
   onSuccess: () => void;
   onBack: () => void;
 }
 
 const SeedVerification: React.FC<SeedVerificationProps> = ({ seed, onSuccess, onBack }) => {
-  const seedWords = seed.split(' ');
   const [shuffledWords, setShuffledWords] = useState<string[]>([]);
-  const [selectedWords, setSelectedWords] = useState<string[]>([]);
-  const [wordStatus, setWordStatus] = useState<{ [key: number]: 'default' | 'correct' | 'incorrect' }>({});
+  const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
+  const [wordStatus, setWordStatus] = useState<{ [key: number]: WordStatus }>({});
   const [selectionOrder, setSelectionOrder] = useState<{ [key: number]: number }>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Shuffle the seed words
   useEffect(() => {
-    const shuffled = [...seedWords].sort(() => 0.5 - Math.random());
+    const shuffled = [...seed].sort(() => 0.5 - Math.random());
     setShuffledWords(shuffled);
   }, [seed]);
 
   // Handle word selection
   const handleWordSelect = (word: string, index: number) => {
-    const expectedWord = seedWords[selectedWords.length];
+    const seedArray = seed;
+    const expectedWord = seedArray[selectedIndices.length];
     const isCorrect = word === expectedWord;
-    const currentSelectionIndex = selectedWords.length;
+    const currentSelectionIndex = selectedIndices.length;
 
     // Update the word status (correct or incorrect)
     setWordStatus(prev => ({
       ...prev,
-      [index]: isCorrect ? 'correct' : 'incorrect'
+      [index]: isCorrect ? WordStatus.CORRECT : WordStatus.INCORRECT
     }));
 
     // Track the selection order for correct words
@@ -41,10 +41,8 @@ const SeedVerification: React.FC<SeedVerificationProps> = ({ seed, onSuccess, on
         ...prev,
         [index]: currentSelectionIndex
       }));
+      setSelectedIndices(prev => [...prev, index]);
     }
-
-    // Add the selected word to the array
-    setSelectedWords(prev => [...prev, word]);
 
     // If incorrect, show error and reset after a delay
     if (!isCorrect) {
@@ -52,7 +50,7 @@ const SeedVerification: React.FC<SeedVerificationProps> = ({ seed, onSuccess, on
       setErrorMessage(loc.pleasebackup.error);
 
       setTimeout(() => {
-        setSelectedWords([]);
+        setSelectedIndices([]);
         setWordStatus({});
         setSelectionOrder({});
         setErrorMessage(null);
@@ -60,8 +58,8 @@ const SeedVerification: React.FC<SeedVerificationProps> = ({ seed, onSuccess, on
       return;
     }
 
-    // If all words are selected correctly, call onSuccess
-    if (selectedWords.length + 1 === seedWords.length) {
+    // check ALL words are selected
+    if (selectedIndices.length + 1 === seed.length) {
       setTimeout(() => {
         onSuccess();
       }, 500);
@@ -69,98 +67,101 @@ const SeedVerification: React.FC<SeedVerificationProps> = ({ seed, onSuccess, on
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{loc.pleasebackup.heading}</Text>
-        <Text style={styles.subtitle}>
-          {loc.pleasebackup.subheading}
-        </Text>
-      </View>
+    <>
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={[styles.flex]}
+      >
+        <View>
+          <View>
+            <Text style={styles.title}>{loc.pleasebackup.heading}</Text>
+            <Text style={styles.subtitle}>
+              {loc.pleasebackup.subheading}
+            </Text>
+          </View>
 
-      {/* Error message */}
-      {errorMessage && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{errorMessage}</Text>
+          <View style={styles.wordsGrid}>
+            {shuffledWords.map((word, index) => {
+              const status = wordStatus[index] || WordStatus.DEFAULT;
+              const isDisabled = selectedIndices.includes(index);
+              return (
+                <SeedWords
+                  key={index}
+                  word={word}
+                  index={index}
+                  status={status}
+                  onPress={() => !isDisabled && handleWordSelect(word, index)}
+                  disabled={isDisabled}
+                  selectionOrder={selectionOrder[index] !== undefined ? selectionOrder[index] : null}
+                  isVerification={true}
+                />
+              );
+            })}
+          </View>
         </View>
-      )}
 
-      {/* Word selection grid */}
-      <View style={styles.wordsGrid}>
-        {shuffledWords.map((word, index) => {
-          const status = wordStatus[index] || 'default';
-          const isDisabled = selectedWords.includes(word);
+        {errorMessage && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          </View>
+        )}
 
-          return (
-            <SeedWords
-              key={index}
-              word={word}
-              index={index}
-              status={status}
-              onPress={() => !isDisabled && handleWordSelect(word, index)}
-              disabled={isDisabled}
-              selectionOrder={selectionOrder[index] !== undefined ? selectionOrder[index] : null}
-              isVerification={true}
-            />
-          );
-        })}
-      </View>
-
-      {/* Back button */}
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.button} onPress={onBack}>
-          <Text style={styles.buttonText}>{loc.pleasebackup.show}</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+        <View style={styles.footer}>
+          <TouchableOpacity style={styles.button} onPress={onBack}>
+            <Text style={styles.buttonText}>{loc.pleasebackup.show}</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
+  root: {
+    padding: 10,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
+  flex: {
+    flex: 1,
+    justifyContent: 'space-between',
   },
   errorContainer: {
     backgroundColor: '#FFEBEE',
     padding: 12,
     borderRadius: 8,
-    marginBottom: 16,
     borderLeftWidth: 4,
-    borderLeftColor: '#F44336',
+    borderLeftColor: '#EB5757',
   },
   errorText: {
-    color: '#D32F2F',
+    color: '#EB5757',
     fontSize: 14,
   },
   title: {
-    fontSize: 22,
+    fontSize: 25,
     fontWeight: 'bold',
+    textAlign: 'center',
     marginBottom: 8,
     color: '#222',
   },
   subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
+    fontSize: 15,
     color: '#666',
-    marginBottom: 16,
+    textAlign: 'center',
+    paddingBottom: 10,
   },
   wordsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-around',
-    marginBottom: 24,
+    justifyContent: 'center',
+    marginBottom: 32,
+    paddingHorizontal: 16,
+    marginTop: 20,
   },
   footer: {
-    alignItems: 'center',
-    marginTop: 'auto',
-    paddingVertical: 16,
+    justifyContent: 'center',
+    padding: 10,
   },
   button: {
-    backgroundColor: '#FFA726',
+    backgroundColor: '#F7931a',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 10,
@@ -169,6 +170,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: '500',
+    textAlign: 'center',
   },
 });
 

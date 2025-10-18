@@ -5,40 +5,37 @@ import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DetailViewStackParamList } from "../../navigation/DetailViewStackParamList";
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
+import loc from '../../loc';
 import { useStorage } from '../../hooks/context/useStorage';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 
 type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'WalletsList'>;
 
 const OnboardingScreen: React.FC = () => {
   const { colors } = useTheme();
   const { navigate, navigateToWalletsList } = useExtendedNavigation<NavigationProps>();
-  const { wallets } = useStorage();
+  const { addWallet, saveToDisk, wallets } = useStorage();
 
-  const handleCreateWallet = async () => {
+  const handleContinue = async () => {
     if (wallets.length > 0) {
       navigateToWalletsList();
       return;
     }
 
-    try {
-      // Generate seed phrase
-      const tempWallet = new HDSilentPaymentsWallet();
-      await tempWallet.generate();
-      const seedPhrase = tempWallet.getSecret();
-      const walletID = tempWallet.getID();
+    const w = new HDSilentPaymentsWallet();
+    w.setLabel(loc.wallets.details_title);
+    await w.generate();
+    addWallet(w);
+    await saveToDisk();
 
-      // Navigate to PleaseBackup with the generated seed phrase
-      navigate('AddWalletRoot', {
-        screen: 'PleaseBackup',
-        params: {
-          seedPhrase,
-          walletID,
-        },
-      });
-    } catch (error) {
-      console.error(error);
-      navigate('AddWalletRoot');
-    }
+    triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
+
+    navigate('AddWalletRoot', {
+      screen: 'PleaseBackup',
+      params: {
+        walletID: w.getID(),
+      },
+    });
   };
 
   const importWallet = () => {
@@ -68,7 +65,7 @@ const OnboardingScreen: React.FC = () => {
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={[styles.createButton, { backgroundColor: '#ff9500' }]}
-              onPress={handleCreateWallet}
+              onPress={handleContinue}
             >
               <Text style={[styles.createButtonText, { color: '#fff' }]}>
                 Create a new wallet
