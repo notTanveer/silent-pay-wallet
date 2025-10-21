@@ -213,7 +213,7 @@
     "about": "About",
     "about_awesome": "Built with the awesome",
     "about_backup": "Always backup your keys!",
-    "about_free": "BlueWallet is a free and open-source project. Crafted by Bitcoin users.",
+    "about_free": "Shroud Wallet is a non-custodial, Bitcoin-only mobile wallet with support for Silent Payments",
     "about_license": "MIT License",
     "about_release_notes": "Release notes",
     "about_review": "Leave us a review",
@@ -323,6 +323,7 @@
     "total_balance": "Total Balance",
     "total_balance_explanation": "Display the total balance of all your wallets on your home screen widgets.",
     "widgets": "Widgets",
+    "warning": "⚠️ Work in Progress - This wallet is currently under active development.",
     "tools": "Tools"
   },
   "notifications": {
@@ -684,7 +685,7 @@
     "notification_tx_unconfirmed": "Notification transaction is not confirmed yet, please wait",
     "failed_create_notif_tx": "Failed to create on-chain transaction",
     "onchain_tx_needed": "On-chain transaction needed",
-    "notif_tx_sent" : "Notification transaction sent. Please wait for it to confirm",
+    "notif_tx_sent": "Notification transaction sent. Please wait for it to confirm",
     "notif_tx": "Notification transaction"
   },
   "bip352": {

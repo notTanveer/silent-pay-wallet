@@ -1,29 +1,16 @@
 import React from 'react';
-import Clipboard from '@react-native-clipboard/clipboard';
-import { Alert, Image, Linking, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { getApplicationName, getBuildNumber, getBundleId, getUniqueIdSync, getVersion, hasGmsSync } from 'react-native-device-info';
-import { Icon } from '@rneui/themed';
-import Rate, { AndroidMarket } from 'react-native-rate';
-import A from '../../blue_modules/analytics';
-import { BlueCard, BlueTextCentered } from '../../BlueComponents';
-import { HDSegwitBech32Wallet } from '../../class';
-import presentAlert from '../../components/Alert';
-import Button from '../../components/Button';
+import { Image, Linking, StyleSheet, Text, View } from 'react-native';
+import { BlueCard } from '../../BlueComponents';
 import ListItem from '../../components/ListItem';
 import { useTheme } from '../../components/themes';
 import loc, { formatStringAddTwoWhiteSpaces } from '../../loc';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
-import { useSettings } from '../../hooks/context/useSettings';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import { BlueSpacing20 } from '../../components/BlueSpacing';
 
-const branch = require('../../current-branch.json');
 
 const About: React.FC = () => {
   const { navigate } = useExtendedNavigation();
   const { colors } = useTheme();
-  const { width, height } = useWindowDimensions();
-  const { isElectrumDisabled } = useSettings();
 
   const stylesHook = StyleSheet.create({
     textBackup: {
@@ -40,196 +27,45 @@ const About: React.FC = () => {
     },
   });
 
-  const handleOnReleaseNotesPress = () => {
-    navigate('ReleaseNotes');
-  };
-
-  const handleOnSelfTestPress = () => {
-    if (isElectrumDisabled) {
-      presentAlert({ message: loc.settings.about_selftest_electrum_disabled });
-    } else {
-      navigate('SelfTest');
-    }
-  };
-
   const handleOnLicensingPress = () => {
     navigate('Licensing');
   };
 
-  const handleOnTwitterPress = () => {
-    Linking.openURL('https://twitter.com/bluewalletio');
-  };
-
   const handleOnDiscordPress = () => {
-    Linking.openURL('https://discord.gg/btWq2Aby2z');
-  };
-
-  const handleOnTelegramPress = () => {
-    Linking.openURL('https://t.me/bluewallethat');
+    Linking.openURL('https://discord.com/invite/STeQFVEWf9');
   };
 
   const handleOnGithubPress = () => {
-    Linking.openURL('https://github.com/BlueWallet/BlueWallet');
-  };
-
-  const handleOnRatePress = () => {
-    const options = {
-      AppleAppID: '1376878040',
-      GooglePackageName: 'io.bluewallet.bluewallet',
-      preferredAndroidMarket: AndroidMarket.Google,
-      preferInApp: Platform.OS !== 'android',
-      openAppStoreIfInAppFails: true,
-      fallbackPlatformURL: 'https://bluewallet.io',
-    };
-    Rate.rate(options, success => {
-      if (success) {
-        console.log('User Rated.');
-      }
-    });
+    Linking.openURL('https://github.com/Bitshala-Incubator/silent-pay-wallet');
   };
 
   return (
     <SafeAreaScrollView testID="AboutScrollView" contentInsetAdjustmentBehavior="automatic" automaticallyAdjustContentInsets>
       <BlueCard>
         <View style={styles.center}>
-          <Image style={styles.logo} source={require('../../img/bluebeast.png')} />
+          <Image style={styles.logo} source={require('../../img/icon.png')} />
           <Text style={styles.textFree}>{loc.settings.about_free}</Text>
-          <Text style={[styles.textBackup, stylesHook.textBackup]}>{formatStringAddTwoWhiteSpaces(loc.settings.about_backup)}</Text>
-          {((Platform.OS === 'android' && hasGmsSync()) || Platform.OS !== 'android') && (
-            <Button onPress={handleOnRatePress} title={loc.settings.about_review + ' ⭐🙏'} />
-          )}
+          <Text style={[styles.textBackup, stylesHook.textBackup]}>{formatStringAddTwoWhiteSpaces(loc.settings.warning)}</Text>
         </View>
-      </BlueCard>
-      <ListItem
-        leftIcon={{
-          name: 'twitter',
-          type: 'font-awesome',
-          color: '#1da1f2',
-        }}
-        onPress={handleOnTwitterPress}
-        title={loc.settings.about_sm_twitter}
-      />
-      <ListItem
-        leftIcon={{
-          name: 'telegram',
-          type: 'font-awesome',
-          color: '#0088cc',
-        }}
-        onPress={handleOnTelegramPress}
-        title={loc.settings.about_sm_telegram}
-      />
-      <ListItem
-        leftIcon={{
-          name: 'discord',
-          type: 'font-awesome-5',
-          color: '#7289da',
-        }}
-        onPress={handleOnDiscordPress}
-        title={loc.settings.about_sm_discord}
-      />
-      <BlueCard>
-        <View style={[styles.buildWith, stylesHook.buildWith]}>
-          <BlueSpacing20 />
-          <BlueTextCentered>{loc.settings.about_awesome} 👍</BlueTextCentered>
-          <BlueSpacing20 />
-          <BlueTextCentered>React Native</BlueTextCentered>
-          <BlueTextCentered>bitcoinjs-lib</BlueTextCentered>
-          <BlueTextCentered>Nodejs</BlueTextCentered>
-          <BlueTextCentered>Electrum server</BlueTextCentered>
-          <BlueSpacing20 />
-          <Pressable
-            accessibilityRole="button"
-            onPress={handleOnGithubPress}
-            android_ripple={{ color: colors.androidRippleColor }}
-            style={({ pressed }) => [Platform.OS === 'ios' && pressed ? styles.pressed : null, styles.buttonLink, stylesHook.buttonLink]}
-          >
-            <Icon size={22} name="github" type="font-awesome-5" color={colors.foregroundColor} />
-            <Text style={[styles.textLink, stylesHook.textLink]}>{formatStringAddTwoWhiteSpaces(loc.settings.about_sm_github)}</Text>
-          </Pressable>
-        </View>
-      </BlueCard>
-      <ListItem
-        leftIcon={{
-          name: 'book',
-          type: 'font-awesome',
-          color: '#9AA0AA',
-        }}
-        chevron
-        onPress={handleOnReleaseNotesPress}
-        title={loc.settings.about_release_notes}
-      />
-      <ListItem
-        leftIcon={{
-          name: 'balance-scale',
-          type: 'font-awesome',
-          color: colors.foregroundColor,
-        }}
-        chevron
-        onPress={handleOnLicensingPress}
-        title={loc.settings.about_license}
-      />
-      <ListItem
-        leftIcon={{
-          name: 'flask',
-          type: 'font-awesome',
-          color: '#FC0D44',
-        }}
-        chevron
-        onPress={handleOnSelfTestPress}
-        testID="RunSelfTestButton"
-        title={loc.settings.about_selftest}
-      />
-      <ListItem
-        leftIcon={{
-          name: 'flask',
-          type: 'font-awesome',
-          color: '#FC0D44',
-        }}
-        chevron
-        onPress={async () => {
-          const secret = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
-          const w = new HDSegwitBech32Wallet();
-          w.setSecret(secret);
-
-          const start = Date.now();
-          let num;
-          for (num = 0; num < 1000; num++) {
-            w._getExternalAddressByIndex(num);
-            if (Date.now() - start > 10 * 1000) {
-              break;
-            }
-          }
-
-          Alert.alert(loc.formatString(loc.settings.performance_score, { num }));
-        }}
-        title={loc.settings.run_performance_test}
-      />
-      <BlueSpacing20 />
-      <BlueSpacing20 />
-      <BlueTextCentered>
-        {getApplicationName()} ver {getVersion()} (build {getBuildNumber() + ' ' + branch})
-      </BlueTextCentered>
-      <BlueTextCentered>{new Date(Number(getBuildNumber()) * 1000).toUTCString()}</BlueTextCentered>
-      <BlueTextCentered>{getBundleId()}</BlueTextCentered>
-      <BlueTextCentered>
-        w, h = {width}, {height}
-      </BlueTextCentered>
-      <BlueTextCentered>Unique ID: {getUniqueIdSync()}</BlueTextCentered>
-      <View style={styles.copyToClipboard}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => {
-            const stringToCopy = 'userId:' + getUniqueIdSync();
-            A.logError('copied unique id');
-            Clipboard.setString(stringToCopy);
+        <ListItem
+          leftIcon={{
+            name: 'discord',
+            type: 'font-awesome-5',
+            color: '#7289da',
           }}
-          style={({ pressed }) => [pressed && styles.pressed]}
-        >
-          <Text style={styles.copyToClipboardText}>{loc.transactions.details_copy}</Text>
-        </Pressable>
-      </View>
-      <BlueSpacing20 />
-      <BlueSpacing20 />
+          onPress={handleOnDiscordPress}
+          title={loc.settings.about_sm_discord}
+        />
+        <ListItem
+          leftIcon={{
+            name: 'github',
+            type: 'font-awesome-5',
+            color: '#000000',
+          }}
+          onPress={handleOnGithubPress}
+          title={loc.settings.about_sm_github}
+        />
+      </BlueCard>
     </SafeAreaScrollView>
   );
 };
