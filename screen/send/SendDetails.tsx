@@ -22,6 +22,7 @@ import {
   TextInput,
   Pressable,
   View,
+  TouchableOpacity,
 } from 'react-native';
 import RNFS from 'react-native-fs';
 import { btcToSatoshi, fiatToBTC } from '../../blue_modules/currency';
@@ -369,7 +370,7 @@ const SendDetails = () => {
     useCallback(() => {
       setIsLoading(false);
       setDumb(v => !v);
-      return () => {};
+      return () => { };
     }, []),
   );
 
@@ -389,7 +390,7 @@ const SendDetails = () => {
       // otherwise, lets call widely-used getChangeAddressAsync()
       try {
         change = await Promise.race([sleep(2000), wallet?.getChangeAddressAsync()]);
-      } catch (_) {}
+      } catch (_) { }
 
       if (!change) {
         // either sleep expired or getChangeAddressAsync threw an exception
@@ -962,7 +963,7 @@ const SendDetails = () => {
     Alert.alert(loc.send.details_recipients_title, loc.send.details_add_recc_rem_all_alert_description, [
       {
         text: loc._.cancel,
-        onPress: () => {},
+        onPress: () => { },
         style: 'cancel',
       },
       {
@@ -1275,17 +1276,15 @@ const SendDetails = () => {
     const isDisabled = totalWithFee === 0 || totalWithFee > balance || balance === 0 || isLoading || addresses.length === 0;
 
     return (
-      <View style={styles.createButton}>
-        {isLoading ? (
-          <ActivityIndicator />
-        ) : (
-          <Button onPress={createTransaction} disabled={isDisabled} title={loc.send.details_next} testID="CreateTransactionButton" />
-        )}
+      <View style={styles.bottom}>
+        <TouchableOpacity style={styles.button} onPress={createTransaction}>
+          <Text style={styles.buttonText}>{loc.send.details_next}</Text>
+        </TouchableOpacity>
       </View>
     );
   };
 
-const renderCoinsSelected = () => {
+  const renderCoinsSelected = () => {
   if (isVisible) return null;
   if (utxos && utxos?.length > 0) {
     return (
@@ -1309,7 +1308,7 @@ const renderCoinsSelected = () => {
       </View>
     </View>
   );
-};
+  };
 
   const renderBitcoinTransactionInfoFields = (params: { item: IPaymentDestinations; index: number }) => {
     const { item, index } = params;
@@ -1496,7 +1495,6 @@ const renderCoinsSelected = () => {
           )}
         </Pressable>
         {renderCustomFeeWarning()}
-        {renderCreateButton()}
       </View>
       <DismissKeyboardInputAccessory />
       {Platform.select({
@@ -1507,6 +1505,7 @@ const renderCoinsSelected = () => {
       })}
 
       {renderCoinsSelected()}
+      {renderCreateButton()}
     </SafeArea>
   );
 };
@@ -1630,5 +1629,20 @@ const styles = StyleSheet.create({
   },
   warningHeader: {
     fontWeight: 'bold',
+  },
+  bottom: {
+    padding: 16,
+  },
+  button: {
+    backgroundColor: '#754CE8',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });

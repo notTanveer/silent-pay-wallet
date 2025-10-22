@@ -91,13 +91,13 @@ const FeeOption: FC<FeeOptionProps> = ({ label, time, fee, rate, active, disable
       backgroundColor: colors.feeActive,
     },
     feeOptionText: {
-      color: colors.successColor,
+      color: colors.feeValue,
     },
     feeOptionTextDisabled: {
       color: colors.buttonDisabledTextColor,
     },
     feeTimeBackground: {
-      backgroundColor: colors.successColor,
+      backgroundColor: colors.feeValue,
     },
     feeTimeBackgroundDisabled: {
       backgroundColor: colors.buttonDisabledBackgroundColor,
@@ -160,17 +160,17 @@ const SelectFeeScreen = () => {
       backgroundColor: colors.feeActive,
     },
     customLabelColor: {
-      color: colors.successColor,
+      color: colors.feeValue,
     },
     satVbyteText: {
-      color: colors.successColor,
+      color: colors.feeValue,
     },
     customFeeInputColors: {
-      color: colors.successColor,
+      color: colors.feeValue,
       borderColor: colors.formBorder,
     },
     feeTimeBackground: {
-      backgroundColor: colors.successColor,
+      backgroundColor: colors.feeValue,
     },
     feeTimeBackgroundDisabled: {
       backgroundColor: colors.buttonDisabledBackgroundColor,

@@ -75,7 +75,7 @@ const AddressInput = ({
         keyboardType={keyboardType}
         onBlur={onBlur}
       />
-      {editable ? <AddressInputScanButton isLoading={isLoading} onChangeText={onChangeText} /> : null}
+      {/* {editable ? <AddressInputScanButton isLoading={isLoading} onChangeText={onChangeText} /> : null} */}
     </View>
   );
 };
