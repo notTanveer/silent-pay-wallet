@@ -1122,47 +1122,47 @@ const SendDetails = () => {
     ];
     walletActions.push(sendMaxAction);
 
-    const rbfAction: Action[] = [
-      {
-        ...CommonToolTipActions.AllowRBF,
-        menuState: isTransactionReplaceable,
-        hidden: !(wallet.type === HDSegwitBech32Wallet.type && isTransactionReplaceable !== undefined),
-      },
-    ];
-    walletActions.push(rbfAction);
+    // const rbfAction: Action[] = [
+    //   {
+    //     ...CommonToolTipActions.AllowRBF,
+    //     menuState: isTransactionReplaceable,
+    //     hidden: !(wallet.type === HDSegwitBech32Wallet.type && isTransactionReplaceable !== undefined),
+    //   },
+    // ];
+    // walletActions.push(rbfAction);
 
-    const transactionActions: Action[] = [
-      {
-        ...CommonToolTipActions.ImportTransaction,
-        hidden: !(wallet.type === WatchOnlyWallet.type && wallet.isHd()),
-      },
-      {
-        ...CommonToolTipActions.ImportTransactionQR,
-        hidden: !(wallet.type === WatchOnlyWallet.type && wallet.isHd()),
-      },
-      {
-        ...CommonToolTipActions.ImportTransactionMultsig,
-        hidden: !(wallet.type === MultisigHDWallet.type),
-      },
-      {
-        ...CommonToolTipActions.CoSignTransaction,
-        hidden: !(wallet.type === MultisigHDWallet.type && wallet.howManySignaturesCanWeMake() > 0),
-      },
-      {
-        ...CommonToolTipActions.SignPSBT,
-        hidden: !(wallet as MultisigHDWallet)?.allowCosignPsbt(),
-      },
-    ];
-    walletActions.push(transactionActions);
+    // const transactionActions: Action[] = [
+    //   {
+    //     ...CommonToolTipActions.ImportTransaction,
+    //     hidden: !(wallet.type === WatchOnlyWallet.type && wallet.isHd()),
+    //   },
+    //   {
+    //     ...CommonToolTipActions.ImportTransactionQR,
+    //     hidden: !(wallet.type === WatchOnlyWallet.type && wallet.isHd()),
+    //   },
+    //   {
+    //     ...CommonToolTipActions.ImportTransactionMultsig,
+    //     hidden: !(wallet.type === MultisigHDWallet.type),
+    //   },
+    //   {
+    //     ...CommonToolTipActions.CoSignTransaction,
+    //     hidden: !(wallet.type === MultisigHDWallet.type && wallet.howManySignaturesCanWeMake() > 0),
+    //   },
+    //   {
+    //     ...CommonToolTipActions.SignPSBT,
+    //     hidden: !(wallet as MultisigHDWallet)?.allowCosignPsbt(),
+    //   },
+    // ];
+    // walletActions.push(transactionActions);
 
-    const specificWalletActions: Action[] = [
-      {
-        ...CommonToolTipActions.InsertContact,
-        hidden: !(isEditable && wallet.allowBIP47() && wallet.isBIP47Enabled()),
-      },
-      CommonToolTipActions.CoinControl,
-    ];
-    walletActions.push(specificWalletActions);
+    // const specificWalletActions: Action[] = [
+    //   {
+    //     ...CommonToolTipActions.InsertContact,
+    //     hidden: !(isEditable && wallet.allowBIP47() && wallet.isBIP47Enabled()),
+    //   },
+    //   CommonToolTipActions.CoinControl,
+    // ];
+    // walletActions.push(specificWalletActions);
 
     return walletActions;
   }, [addresses, isEditable, wallet, isTransactionReplaceable]);
