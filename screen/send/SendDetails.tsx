@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RouteProp, useFocusEffect, useRoute, useLocale } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Icon } from '@rneui/themed';
 import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { TOptions } from 'bip21';
@@ -1286,52 +1285,31 @@ const SendDetails = () => {
     );
   };
 
-  const renderWalletSelectionOrCoinsSelected = () => {
-    if (isVisible) return null;
-    if (utxos && utxos?.length > 0) {
-      return (
-        <View style={styles.select}>
-          <CoinsSelected
-            number={utxos.length}
-            onContainerPress={handleCoinControl}
-            onClose={() => {
-              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-              setParams({ utxos: null });
-            }}
-          />
-        </View>
-      );
-    }
-
+const renderCoinsSelected = () => {
+  if (isVisible) return null;
+  if (utxos && utxos?.length > 0) {
     return (
       <View style={styles.select}>
-        {!isLoading && isEditable && (
-          <Pressable
-            accessibilityRole="button"
-            style={({ pressed }) => [pressed && styles.pressed, styles.selectTouch]}
-            onPress={() => {
-              navigation.navigate('SelectWallet', { chainType: Chain.ONCHAIN, selectedWalletID: wallet?.getID() });
-            }}
-          >
-            <Text style={styles.selectText}>{loc.wallets.select_wallet.toLowerCase()}</Text>
-            <Icon name={direction === 'rtl' ? 'angle-left' : 'angle-right'} size={18} type="font-awesome" color="#9aa0aa" />
-          </Pressable>
-        )}
-        <View style={styles.selectWrap}>
-          <Pressable
-            accessibilityRole="button"
-            style={({ pressed }) => [pressed && styles.pressed, styles.selectTouch]}
-            onPress={() => {
-              navigation.navigate('SelectWallet', { chainType: Chain.ONCHAIN, selectedWalletID: wallet?.getID() });
-            }}
-            disabled={!isEditable || isLoading}
-          >
-            <Text style={[styles.selectLabel, stylesHook.selectLabel]}>{wallet?.getLabel()}</Text>
-          </Pressable>
-        </View>
+        <CoinsSelected
+          number={utxos.length}
+          onContainerPress={handleCoinControl}
+          onClose={() => {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+            setParams({ utxos: null });
+          }}
+        />
       </View>
     );
-  };
+  }
+
+  return (
+    <View style={styles.select}>
+      <View style={styles.selectWrap}>
+        <Text style={[styles.selectLabel, stylesHook.selectLabel]}>{wallet?.getLabel()}</Text>
+      </View>
+    </View>
+  );
+};
 
   const renderBitcoinTransactionInfoFields = (params: { item: IPaymentDestinations; index: number }) => {
     const { item, index } = params;
@@ -1528,7 +1506,7 @@ const SendDetails = () => {
         ),
       })}
 
-      {renderWalletSelectionOrCoinsSelected()}
+      {renderCoinsSelected()}
     </SafeArea>
   );
 };
