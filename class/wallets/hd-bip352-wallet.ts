@@ -40,9 +40,14 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   private pollingIntervalId: NodeJS.Timeout | null = null;
   private isPollingActive: boolean = false;
   private onBalanceChangeCallback: (() => void) | null = null;
+  private onPersistCallback: (() => void) | null = null;
 
   setOnBalanceChangeCallback(callback: (() => void) | null): void {
     this.onBalanceChangeCallback = callback;
+  }
+
+  setOnPersistCallback(callback: (() => void) | null): void {
+    this.onPersistCallback = callback;
   }
 
   static fromJson(obj: string): HDSilentPaymentsWallet {
@@ -124,6 +129,10 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
         this.onBalanceChangeCallback();
       }
       
+      if (this.onPersistCallback) {
+        this.onPersistCallback();
+      }
+      
       return true;
     }
     
@@ -199,12 +208,21 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
       }
     }
     
+    // Always update lastScannedBlock to track progress, even if no UTXOs found
     if (newLastScannedBlock > this.lastScannedBlock) {
       this.lastScannedBlock = newLastScannedBlock;
     }
     
-    if (addedCount > 0 && this.onBalanceChangeCallback) {
-      this.onBalanceChangeCallback();
+    // Trigger callbacks if state changed
+    if (addedCount > 0) {
+      if (this.onBalanceChangeCallback) {
+        this.onBalanceChangeCallback();
+      }
+    }
+    
+    // Always persist when lastScannedBlock updates to track scan progress
+    if (newLastScannedBlock > 0 && this.onPersistCallback) {
+      this.onPersistCallback();
     }
     
     return addedCount;
@@ -583,5 +601,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     
     this.stopPolling();
     this.invalidateUTXOCache();
+    this.onBalanceChangeCallback = null;
+    this.onPersistCallback = null;
   }
 }

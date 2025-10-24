@@ -170,14 +170,30 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
     setWallets([...BlueApp.getWallets()]);
   }, []);
 
+  // Debounced persist to avoid excessive saves during rapid scans
+  const persistTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debouncedPersist = useCallback(() => {
+    if (persistTimeoutRef.current) clearTimeout(persistTimeoutRef.current);
+    persistTimeoutRef.current = setTimeout(() => saveToDisk(), 2000);
+  }, [saveToDisk]);
+
+  useEffect(() => {
+    return () => {
+      if (persistTimeoutRef.current) clearTimeout(persistTimeoutRef.current);
+    };
+  }, []);
+
   const addWallet = useCallback((wallet: TWallet) => {
     if ('setOnBalanceChangeCallback' in wallet && typeof wallet.setOnBalanceChangeCallback === 'function') {
       wallet.setOnBalanceChangeCallback(forceWalletsUpdate);
     }
+    if ('setOnPersistCallback' in wallet && typeof wallet.setOnPersistCallback === 'function') {
+      wallet.setOnPersistCallback(debouncedPersist);
+    }
     
     BlueApp.wallets.push(wallet);
     setWallets([...BlueApp.getWallets()]);
-  }, [forceWalletsUpdate]);
+  }, [forceWalletsUpdate, debouncedPersist]);
 
   const deleteWallet = useCallback((wallet: TWallet) => {
     if ('clearCache' in wallet && typeof wallet.clearCache === 'function')
@@ -324,11 +340,14 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
         if ('setOnBalanceChangeCallback' in wallet && typeof wallet.setOnBalanceChangeCallback === 'function') {
           wallet.setOnBalanceChangeCallback(forceWalletsUpdate);
         }
+        if ('setOnPersistCallback' in wallet && typeof wallet.setOnPersistCallback === 'function') {
+          wallet.setOnPersistCallback(debouncedPersist);
+        }
       });
       
       setWallets(currentWallets);
     }
-  }, [walletsInitialized, forceWalletsUpdate]);
+  }, [walletsInitialized, forceWalletsUpdate, debouncedPersist]);
 
   // Add a refresh lock to prevent concurrent refreshes
   const refreshingRef = useRef<boolean>(false);
