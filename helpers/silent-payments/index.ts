@@ -3,6 +3,7 @@ export { UTXORepository } from './UTXORepository';
 export { TransactionProcessor } from './TransactionProcessor';
 export { IndexerHttpClient } from './IndexerHttpClient';
 export { SilentPaymentSpender } from './SilentPaymentSpender';
+export { SilentPaymentTransactionBuilder } from './SilentPaymentTransactionBuilder';
 export type {
   SilentPaymentIndexerConfig,
   HealthResponse,
