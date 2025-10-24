@@ -166,10 +166,18 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
     [txMetadata.current, counterpartyMetadata.current],
   );
 
-  const addWallet = useCallback((wallet: TWallet) => {
-    BlueApp.wallets.push(wallet);
+  const forceWalletsUpdate = useCallback(() => {
     setWallets([...BlueApp.getWallets()]);
   }, []);
+
+  const addWallet = useCallback((wallet: TWallet) => {
+    if ('setOnBalanceChangeCallback' in wallet && typeof wallet.setOnBalanceChangeCallback === 'function') {
+      wallet.setOnBalanceChangeCallback(forceWalletsUpdate);
+    }
+    
+    BlueApp.wallets.push(wallet);
+    setWallets([...BlueApp.getWallets()]);
+  }, [forceWalletsUpdate]);
 
   const deleteWallet = useCallback((wallet: TWallet) => {
     if ('clearCache' in wallet && typeof wallet.clearCache === 'function')
@@ -310,9 +318,17 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
     if (walletsInitialized) {
       txMetadata.current = BlueApp.tx_metadata;
       counterpartyMetadata.current = BlueApp.counterparty_metadata;
-      setWallets(BlueApp.getWallets());
+      const currentWallets = BlueApp.getWallets();
+      
+      currentWallets.forEach(wallet => {
+        if ('setOnBalanceChangeCallback' in wallet && typeof wallet.setOnBalanceChangeCallback === 'function') {
+          wallet.setOnBalanceChangeCallback(forceWalletsUpdate);
+        }
+      });
+      
+      setWallets(currentWallets);
     }
-  }, [walletsInitialized]);
+  }, [walletsInitialized, forceWalletsUpdate]);
 
   // Add a refresh lock to prevent concurrent refreshes
   const refreshingRef = useRef<boolean>(false);

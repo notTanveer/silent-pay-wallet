@@ -39,6 +39,11 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   private shouldCancelScan: boolean = false;
   private pollingIntervalId: NodeJS.Timeout | null = null;
   private isPollingActive: boolean = false;
+  private onBalanceChangeCallback: (() => void) | null = null;
+
+  setOnBalanceChangeCallback(callback: (() => void) | null): void {
+    this.onBalanceChangeCallback = callback;
+  }
 
   static fromJson(obj: string): HDSilentPaymentsWallet {
     const data = JSON.parse(obj);
@@ -114,6 +119,11 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     if (utxo && 'isSpent' in utxo && !utxo.isSpent) {
       utxo.isSpent = true;
       this.invalidateUTXOCache();
+      
+      if (this.onBalanceChangeCallback) {
+        this.onBalanceChangeCallback();
+      }
+      
       return true;
     }
     
@@ -191,6 +201,10 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     
     if (newLastScannedBlock > this.lastScannedBlock) {
       this.lastScannedBlock = newLastScannedBlock;
+    }
+    
+    if (addedCount > 0 && this.onBalanceChangeCallback) {
+      this.onBalanceChangeCallback();
     }
     
     return addedCount;
