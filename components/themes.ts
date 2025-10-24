@@ -70,6 +70,8 @@ export const BlueDefaultTheme = {
     receiveText: '#37C0A1',
     navigationBarColor: '#FFFFFF',
     androidRippleColor: '#CCCCCC',
+    primary: '#754CE8',
+    secondary: '#472EBF',
   },
 };
 
