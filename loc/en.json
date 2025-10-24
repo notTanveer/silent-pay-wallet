@@ -698,5 +698,12 @@
     "silent_payments": "Silent Payments",
     "not_supported": "Silent Payments not supported by this wallet",
     "explanation": "Silent Payment addresses are reusable, allowing you to share a single address for multiple payments without compromising privacy."
+  },
+  "onboarding": {
+    "shroud": "Bitcoin wallet",
+    "subtitle": "A simple bitcoin wallet for\nall your payments.",
+    "create_wallet": "Create a new wallet",
+    "import_wallet": "Restore existing wallet",
+    "footer": "Your wallet, your coins\n100% open-source & open-design"
   }
 }

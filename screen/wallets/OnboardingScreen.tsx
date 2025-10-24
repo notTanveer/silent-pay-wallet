@@ -61,25 +61,18 @@ const OnboardingScreen: React.FC = () => {
       <View style={[styles.welcomeContainer, { backgroundColor: colors.background }]}>
         <View style={styles.welcomeContent}>
           <View style={styles.logoContainer}>
-            <Image source={require('../../img/bitcoin.png')} style={styles.bitcoinLogo} />
+            <Image source={require('../../img/icon.png')} style={styles.bitcoinLogo} />
           </View>
 
-          <Text style={[styles.welcomeTitle, { color: colors.text }]}>
-            Bitcoin wallet
-          </Text>
-
-          <Text style={[styles.welcomeSubtitle, { color: colors.text }]}>
-            A simple bitcoin wallet for{'\n'} all your payments.
-          </Text>
+          <Text style={[styles.welcomeTitle, { color: colors.text }]}>{loc.onboarding.shroud}</Text>
+          <Text style={[styles.welcomeSubtitle, { color: colors.text }]}>{loc.onboarding.subtitle}</Text>
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={[styles.createButton, { backgroundColor: '#ff9500' }]}
               onPress={handleContinue}
             >
-              <Text style={[styles.createButtonText, { color: '#fff' }]}>
-                Create a new wallet
-              </Text>
+              <Text style={[styles.createButtonText, { color: '#fff' }]}>{loc.onboarding.create_wallet}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -87,16 +80,12 @@ const OnboardingScreen: React.FC = () => {
               onPress={importWallet}
               testID="ImportWallet"
             >
-              <Text style={[styles.restoreButtonText]}>
-                Restore existing wallet
-              </Text>
+              <Text style={[styles.restoreButtonText]}>{loc.onboarding.import_wallet}</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.footerContainer}>
-            <Text style={[styles.footerText, { color: colors.text }]}>
-              Your wallet, your coins{'\n'}100% open-source & open-design
-            </Text>
+            <Text style={[styles.footerText, { color: colors.text }]}> {loc.onboarding.footer}</Text>
           </View>
         </View>
       </View>);
