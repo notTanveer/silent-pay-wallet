@@ -12,7 +12,7 @@ export const BlueDefaultTheme = {
     customHeader: '#ffffff',
     foregroundColor: '#0c2550',
     borderTopColor: 'rgba(0, 0, 0, 0.1)',
-    buttonBackgroundColor: '#F7931A',
+    buttonBackgroundColor: '#754CE8',
     buttonTextColor: '#ffffff',
     secondButtonTextColor: '#50555C',
     buttonAlternativeTextColor: '#ffffff',
