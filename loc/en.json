@@ -93,9 +93,15 @@
     "ask_yes": "Yes, I have.",
     "ok": "OK, I wrote it down.",
     "ok_lnd": "OK, I have saved it.",
-    "text": "Please take a moment to write down this mnemonic phrase on a piece of paper.\nIt’s your backup and you can use it to recover the wallet.",
+    "text": "Make sure to write it down as shown here\nYou would need this to recover your account",
     "text_lnd": "Please save this wallet backup. It allows you to restore the wallet in case of loss.",
-    "title": "Your wallet has been created."
+    "title": "This is your Recovery Phrase",
+    "noted": "I have noted it down",
+    "null": "",
+    "heading": "Verify Your Recovery Phrase",
+    "subheading": "Tap the words in the correct order\nto verify your recovery phrase",
+    "show": "Show Seed Again",
+    "error": "The words you selected are not in the correct order. Please try again."
   },
   "receive": {
     "details_create": "Create",
@@ -684,7 +690,7 @@
     "notification_tx_unconfirmed": "Notification transaction is not confirmed yet, please wait",
     "failed_create_notif_tx": "Failed to create on-chain transaction",
     "onchain_tx_needed": "On-chain transaction needed",
-    "notif_tx_sent" : "Notification transaction sent. Please wait for it to confirm",
+    "notif_tx_sent": "Notification transaction sent. Please wait for it to confirm",
     "notif_tx": "Notification transaction"
   },
   "bip352": {

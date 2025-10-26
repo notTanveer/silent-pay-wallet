@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   buttonContainer: { width: '100%', marginBottom: 40 },
   createButton: { backgroundColor: '#ff9500', paddingVertical: 16, paddingHorizontal: 32, borderRadius: 8, marginBottom: 16 },
   createButtonText: { color: 'white', fontSize: 16, fontWeight: '600', textAlign: 'center' },
-  restoreButton: {  paddingVertical: 16, paddingHorizontal: 32, borderRadius: 8, marginBottom: 16 },
+  restoreButton: { paddingVertical: 16, paddingHorizontal: 32, borderRadius: 8, marginBottom: 16 },
   restoreButtonText: { color: '#ff9500', fontSize: 16, fontWeight: '600', textAlign: 'center' },
   footerContainer: { marginTop: 20 },
   footerText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
