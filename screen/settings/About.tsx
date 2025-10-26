@@ -43,8 +43,8 @@ const About: React.FC = () => {
     <SafeAreaScrollView testID="AboutScrollView" contentInsetAdjustmentBehavior="automatic" automaticallyAdjustContentInsets>
       <BlueCard>
         <View style={styles.center}>
-          <Image style={styles.logo} source={require('../../img/icon.png')} />
-          <Text style={styles.textFree}>{loc.settings.about_free}</Text>
+          <Image style={styles.logo} source={require('../../img/logo.png')} />
+          <Text style={[styles.textFree, stylesHook.textBackup]}>{loc.settings.about_free}</Text>
           <Text style={[styles.textBackup, stylesHook.textBackup]}>{formatStringAddTwoWhiteSpaces(loc.settings.warning)}</Text>
         </View>
         <ListItem
@@ -88,8 +88,8 @@ const styles = StyleSheet.create({
     marginTop: 54,
   },
   logo: {
-    width: 102,
-    height: 124,
+    width: 50,
+    height: 50,
   },
   textFree: {
     maxWidth: 260,
