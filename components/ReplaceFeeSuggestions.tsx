@@ -23,16 +23,16 @@ const ReplaceFeeSuggestions: React.FC<ReplaceFeeSuggestionsProps> = ({ onFeeSele
       backgroundColor: colors.incomingBackgroundColor,
     },
     buttonText: {
-      color: colors.successColor,
+      color: colors.feeValue,
     },
     timeContainer: {
-      backgroundColor: colors.successColor,
+      backgroundColor: colors.feeValue,
     },
     timeText: {
       color: colors.background,
     },
     rateText: {
-      color: colors.successColor,
+      color: colors.feeValue,
     },
     customFeeInput: {
       backgroundColor: colors.inputBackgroundColor,
