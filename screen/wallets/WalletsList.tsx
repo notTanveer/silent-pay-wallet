@@ -588,7 +588,7 @@ export default WalletsList;
 const styles = StyleSheet.create({
   listHeaderBack: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
     minHeight: 56,
@@ -598,6 +598,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginVertical: 16,
     flexWrap: 'wrap',
+    textAlign: 'center',
   },
   footerRoot: {
     top: 80,
