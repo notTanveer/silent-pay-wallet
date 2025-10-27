@@ -9,8 +9,8 @@
     <color name="container_green">#4ADCBA</color>
     <color name="container_red">#F83661</color>
     
-    <color name="button_background_color">#ccddf9</color>
-    <color name="button_text_color">#0c2550</color>
+    <color name="button_background_color">#754CE8</color>
+    <color name="button_text_color">#FFFFFF</color>
     <color name="button_alternative_text_color">#2f5fb3</color>
     <color name="button_disabled_background_color">#eef0f4</color>
     <color name="button_disabled_text_color">#9aa0aa</color>

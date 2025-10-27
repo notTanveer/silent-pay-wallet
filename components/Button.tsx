@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     minHeight: 45,
     height: 48,
     maxHeight: 48,
-    borderRadius: 25,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   },
   pressableWrapper: {
     overflow: 'hidden',
-    borderRadius: 25,
+    borderRadius: 8,
   },
   pressed: {
     opacity: 0.6,
