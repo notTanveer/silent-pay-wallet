@@ -25,7 +25,7 @@ const App = () => {
 
   return (
     <SizeClassProvider>
-      <NavigationContainer ref={navigationRef} theme={colorScheme === 'dark' ? BlueDarkTheme : BlueDefaultTheme}>
+      <NavigationContainer ref={navigationRef} theme={BlueDefaultTheme}>
         <SafeAreaProvider>
           <StorageProvider>
             <SettingsProvider>
