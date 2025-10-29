@@ -97,8 +97,8 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
       return this.spUTXOsCache;
     }
     
-    this.spUTXOsCache = this._utxo.filter((u): u is SilentPaymentUTXO => 
-      'tweak' in u && u.tweak instanceof Uint8Array
+    this.spUTXOsCache = this._utxo.filter((u): u is SilentPaymentUTXO =>
+      'tweak' in u && u.tweak instanceof Uint8Array && !u.isSpent
     );
     
     return this.spUTXOsCache;
