@@ -31,7 +31,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   private readonly POLLING_INTERVAL_MS = 30000;
   private readonly DEFAULT_MAX_BLOCKS = 100;
   private readonly BATCH_SIZE = 3;
-  private readonly TAPROOT_ACTIVATION_HEIGHT = 709632;
+  private readonly TAPROOT_ACTIVATION_HEIGHT = 921311;
 
   private cachedSeed: Buffer | null = null;
   private transactionProcessor: TransactionProcessor | null = null;

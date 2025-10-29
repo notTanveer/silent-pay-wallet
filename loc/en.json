@@ -107,7 +107,7 @@
     "details_create": "Create",
     "details_label": "Description",
     "details_setAmount": "Receive with amount",
-    "details_share": "Share...",
+    "details_share": "Share Address",
     "address_not_found": "Unable to generate receiving address.",
     "header": "Receive",
     "reset": "Reset",
@@ -700,7 +700,7 @@
     "explanation": "Silent Payment addresses are reusable, allowing you to share a single address for multiple payments without compromising privacy."
   },
   "onboarding": {
-    "shroud": "Shroud Wallet",
+    "shroud": "Shroud",
     "subtitle": "A simple bitcoin wallet for\nall your payments.",
     "create_wallet": "Create a new wallet",
     "import_wallet": "Restore existing wallet",

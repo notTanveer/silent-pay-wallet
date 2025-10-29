@@ -9,6 +9,7 @@ import loc from '../../loc';
 import { useStorage } from '../../hooks/context/useStorage';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { getDefaultIndexer } from "../../blue_modules/SilentPaymentIndexer";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'WalletsList'>;
 
@@ -30,12 +31,12 @@ const OnboardingScreen: React.FC = () => {
     await saveToDisk();
 
     try {
-        const indexer = getDefaultIndexer();
-        const latestHeightResponse = await indexer.getLatestBlockHeight();
-        w.setBirthHeight(latestHeightResponse.height);
-        console.log(`Wallet birth height set to: ${latestHeightResponse.height}`);
+      const indexer = getDefaultIndexer();
+      const latestHeightResponse = await indexer.getLatestBlockHeight();
+      w.setBirthHeight(latestHeightResponse.height);
+      console.log(`Wallet birth height set to: ${latestHeightResponse.height}`);
     } catch (error) {
-        console.warn('Could not set birth height, will default to 0:', error);
+      console.warn('Could not set birth height, will default to 0:', error);
     }
 
     triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
@@ -58,14 +59,14 @@ const OnboardingScreen: React.FC = () => {
 
   const renderCoverScreen = useCallback(() => {
     return (
-      <View style={[styles.welcomeContainer, { backgroundColor: colors.background }]}>
+      <SafeAreaView style={[styles.welcomeContainer, { backgroundColor: colors.background }]}>
         <View style={styles.welcomeContent}>
           <View style={styles.logoContainer}>
-            <Image source={require('../../img/logo.png')} style={styles.bitcoinLogo} />
+            <Image source={require('../../img/icon.png')} style={styles.bitcoinLogo} resizeMode="contain" />
           </View>
 
           <Text style={[styles.welcomeTitle, { color: colors.primary }]}>{loc.onboarding.shroud}</Text>
-          <Text style={[styles.welcomeSubtitle, { color: colors.labelText}]}>{loc.onboarding.subtitle}</Text>
+          <Text style={[styles.welcomeSubtitle, { color: colors.labelText }]}>{loc.onboarding.subtitle}</Text>
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity
@@ -88,7 +89,7 @@ const OnboardingScreen: React.FC = () => {
             <Text style={[styles.footerText, { color: colors.labelText }]}> {loc.onboarding.footer}</Text>
           </View>
         </View>
-      </View>);
+      </SafeAreaView>);
   }, [colors]);
 
   return renderCoverScreen();
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
   buttonContainer: { width: '100%', marginBottom: 40 },
   createButton: { backgroundColor: '#754CE8', paddingVertical: 16, paddingHorizontal: 32, borderRadius: 8, marginBottom: 16 },
   createButtonText: { color: 'white', fontSize: 16, fontWeight: '600', textAlign: 'center' },
-  restoreButton: {  paddingVertical: 16, paddingHorizontal: 32, borderRadius: 8, marginBottom: 16 },
+  restoreButton: { paddingVertical: 16, paddingHorizontal: 32, borderRadius: 8, marginBottom: 16 },
   restoreButtonText: { color: '#754CE8', fontSize: 16, fontWeight: '600', textAlign: 'center' },
   footerContainer: { marginTop: 20 },
   footerText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
