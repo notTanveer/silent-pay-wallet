@@ -1,6 +1,7 @@
 import * as bip39 from 'bip39';
 import { Buffer } from 'buffer';
 import { HDSegwitBech32Wallet } from './hd-segwit-bech32-wallet.ts';
+import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet.ts';
 import { getDefaultIndexer } from '../../blue_modules/SilentPaymentIndexer';
 import {
   getSilentPaymentAddress,
@@ -9,12 +10,14 @@ import {
   getScanPublicKey,
   getSpendPublicKey,
   TransactionProcessor,
+  SilentPaymentTransactionBuilder,
   type IndexerTransaction,
   type SilentPaymentUTXO,
   type SilentPaymentUTXOSerializable,
   type ScanProgressCallback,
 } from '../../helpers/silent-payments';
-import { Transaction } from './types.ts';
+import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types.ts';
+import * as bitcoin from 'bitcoinjs-lib';
 
 
 export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
@@ -442,6 +445,17 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     return this.getSilentPaymentUTXOs().filter(u => !u.isSpent);
   }
 
+  /**
+   * override parent's getUtxo() to include both regular UTXOs and SP UTXOs.
+   * ensures coin control and transaction creation have access to all available UTXOs.
+   */
+  getUtxo(respectFrozen = false): Utxo[] {
+    const regularUtxos = super.getUtxo(respectFrozen);
+    const spUtxos = this.getUTXOs();
+    
+    return [...regularUtxos, ...spUtxos];
+  }
+
   getBalance(): number {
     const regularBalance = super.getBalance();
     const silentPaymentBalance = this.getSilentPaymentUTXOs()
@@ -540,7 +554,134 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   }
 
   allowSend(): boolean {
-    return false;
+    return true;
+  }
+
+  createTransaction(
+    utxos: CreateTransactionUtxo[],
+    targets: CreateTransactionTarget[],
+    feeRate: number,
+    changeAddress: string,
+    sequence: number = AbstractHDElectrumWallet.defaultRBFSequence,
+    skipSigning = false,
+    masterFingerprint: number = 0,
+  ): CreateTransactionResult {
+    if (targets.length === 0) throw new Error('No destination provided');
+    if (utxos.length === 0) throw new Error('No UTXOs provided');
+
+    const spUtxos: SilentPaymentUTXO[] = [];
+    const regularUtxos: CreateTransactionUtxo[] = [];
+    
+    for (const utxo of utxos) {
+      if ('tweak' in utxo && utxo.tweak instanceof Uint8Array) {
+        spUtxos.push(utxo as SilentPaymentUTXO);
+      } else {
+        regularUtxos.push(utxo);
+      }
+    }
+    
+    console.log(`[SP] Transaction: ${spUtxos.length} SP UTXOs, ${regularUtxos.length} regular UTXOs`);
+    
+    // Case 1: Only SP UTXOs - use SP builder exclusively
+    if (spUtxos.length > 0 && regularUtxos.length === 0) {
+      return this.createSPTransaction(spUtxos, targets, feeRate, changeAddress, sequence, skipSigning);
+    }
+    
+    // Case 2: Only regular UTXOs - delegate to parent
+    if (spUtxos.length === 0 && regularUtxos.length > 0) {
+      return super.createTransaction(regularUtxos, targets, feeRate, changeAddress, sequence, skipSigning, masterFingerprint);
+    }
+    
+    // Case 3: Mixed UTXOs - not yet implemented
+    throw new Error('Mixed UTXO spending (SP + regular) is not yet implemented. Please select only SP UTXOs or only regular UTXOs.');
+  }
+
+  private createSPTransaction(
+    spUtxos: SilentPaymentUTXO[],
+    targets: CreateTransactionTarget[],
+    feeRate: number,
+    changeAddress: string,
+    sequence: number,
+    skipSigning: boolean
+  ): CreateTransactionResult {
+    console.log('[SP] Creating pure SP transaction');
+    
+    const validTargets = targets.filter(t => t.address);
+    if (validTargets.length === 0) {
+      throw new Error('No valid target addresses provided');
+    }
+    
+    const builderTargets = validTargets.map(t => ({
+      address: t.address!,
+      value: t.value,
+    }));
+    
+    const builder = new SilentPaymentTransactionBuilder(
+      this.getSpendPrivateKey(),
+      this.getSpendPublicKey()
+    );
+    
+    const validation = builder.validateUTXOs(spUtxos);
+    if (!validation.valid) {
+      throw new Error(`UTXO validation failed: ${validation.errors.join(', ')}`);
+    }
+    
+    const psbt = builder.createCompletePSBT(
+      spUtxos,
+      builderTargets,
+      feeRate,
+      changeAddress,
+      sequence
+    );
+    
+    let tx: bitcoin.Transaction | undefined;
+    
+    if (!skipSigning) {
+      try {
+        psbt.finalizeAllInputs();
+        tx = psbt.extractTransaction();
+        console.log(`[SP] Transaction created: ${tx.getId()}`);
+        
+        // mark utxos as spent & update balance
+        for (const utxo of spUtxos) {
+          this.markUTXOAsSpent(utxo.txid, utxo.vout);
+        }
+        console.log(`[SP] Marked ${spUtxos.length} UTXOs as spent`);
+      } catch (error) {
+        console.error('[SP] Failed to finalize transaction:', error);
+        throw new Error(`Failed to finalize SP transaction: ${error}`);
+      }
+    }
+    
+    const totalInput = spUtxos.reduce((sum, u) => sum + u.value, 0);
+    let totalOutput = 0;
+    
+    const psbtOutputs = psbt.txOutputs;
+    for (const output of psbtOutputs) {
+      totalOutput += Number(output.value);
+    }
+    
+    const fee = totalInput - totalOutput;
+    
+    const outputs = psbtOutputs.map((output, index) => ({
+      address: output.address,
+      value: Number(output.value),
+    }));
+    
+    const inputs = spUtxos.map(u => ({
+      txid: u.txid,
+      vout: u.vout,
+      address: u.address,
+      value: u.value,
+    }));
+    
+    return {
+      tx,
+      psbt,
+      inputs,
+      outputs,
+      fee,
+    };
   }
 
   setLastScannedBlock(height: number): void {
