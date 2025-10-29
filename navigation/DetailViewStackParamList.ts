@@ -3,6 +3,7 @@ import { LightningTransaction, Transaction, TWallet } from '../class/wallets/typ
 import { Chain } from '../models/bitcoinUnits';
 import { ElectrumServerItem } from '../screen/settings/ElectrumSettings';
 import { SendDetailsParams, TNavigationWrapper } from './SendDetailsStackParamList';
+import { AddWalletStackParamList } from './AddWalletStack';
 
 export type ScanQRCodeParamList = {
   cameraStatusGranted?: boolean;
@@ -56,8 +57,8 @@ export type DetailViewStackParamList = {
   Success: undefined;
   WalletAddresses: { walletID: string };
   AddWalletRoot?: {
-    screen?: keyof AddWalletRootParamList;
-    params?: AddWalletRootParamList[keyof AddWalletRootParamList];
+    screen?: keyof AddWalletStackParamList;
+    params?: AddWalletStackParamList[keyof AddWalletStackParamList];
   };
   SendDetailsRoot: SendDetailsParams;
   LNDCreateInvoiceRoot: undefined;
@@ -120,8 +121,4 @@ export type DetailViewStackParamList = {
   ManageWallets: undefined;
   Onboarding: undefined;
   DeleteWallet: undefined;
-};
-
-export type AddWalletRootParamList = {
-  PleaseBackup: { walletID: string };
 };

@@ -4,6 +4,7 @@ import assert from 'assert';
 
 import * as BlueElectrum from '../blue_modules/BlueElectrum';
 import { HDSegwitBech32Wallet } from './wallets/hd-segwit-bech32-wallet';
+import { HDSilentPaymentsWallet } from './wallets/hd-bip352-wallet';
 import { SegwitBech32Wallet } from './wallets/segwit-bech32-wallet';
 import { CreateTransactionUtxo } from './wallets/types.ts';
 import { CoinSelectOutput, CoinSelectReturnInput } from 'coinselect';
@@ -31,11 +32,11 @@ export class HDSegwitBech32Transaction {
     this._txid = txid;
 
     if (wallet) {
-      if (wallet.type === HDSegwitBech32Wallet.type) {
+      if (wallet.type === HDSegwitBech32Wallet.type || wallet.type === HDSilentPaymentsWallet.type) {
         /** @type {HDSegwitBech32Wallet} */
         this._wallet = wallet;
       } else {
-        throw new Error('Only HD Bech32 wallets supported');
+        throw new Error('Only HD Bech32 and HD Silent Payments wallets supported');
       }
     }
 

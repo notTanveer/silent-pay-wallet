@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RouteProp, useFocusEffect, useRoute, useLocale } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Icon } from '@rneui/themed';
 import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { TOptions } from 'bip21';
@@ -23,6 +22,7 @@ import {
   TextInput,
   Pressable,
   View,
+  TouchableOpacity,
 } from 'react-native';
 import RNFS from 'react-native-fs';
 import { btcToSatoshi, fiatToBTC } from '../../blue_modules/currency';
@@ -370,7 +370,7 @@ const SendDetails = () => {
     useCallback(() => {
       setIsLoading(false);
       setDumb(v => !v);
-      return () => {};
+      return () => { };
     }, []),
   );
 
@@ -390,7 +390,7 @@ const SendDetails = () => {
       // otherwise, lets call widely-used getChangeAddressAsync()
       try {
         change = await Promise.race([sleep(2000), wallet?.getChangeAddressAsync()]);
-      } catch (_) {}
+      } catch (_) { }
 
       if (!change) {
         // either sleep expired or getChangeAddressAsync threw an exception
@@ -963,7 +963,7 @@ const SendDetails = () => {
     Alert.alert(loc.send.details_recipients_title, loc.send.details_add_recc_rem_all_alert_description, [
       {
         text: loc._.cancel,
-        onPress: () => {},
+        onPress: () => { },
         style: 'cancel',
       },
       {
@@ -1123,47 +1123,47 @@ const SendDetails = () => {
     ];
     walletActions.push(sendMaxAction);
 
-    const rbfAction: Action[] = [
-      {
-        ...CommonToolTipActions.AllowRBF,
-        menuState: isTransactionReplaceable,
-        hidden: !(wallet.type === HDSegwitBech32Wallet.type && isTransactionReplaceable !== undefined),
-      },
-    ];
-    walletActions.push(rbfAction);
+    // const rbfAction: Action[] = [
+    //   {
+    //     ...CommonToolTipActions.AllowRBF,
+    //     menuState: isTransactionReplaceable,
+    //     hidden: !(wallet.type === HDSegwitBech32Wallet.type && isTransactionReplaceable !== undefined),
+    //   },
+    // ];
+    // walletActions.push(rbfAction);
 
-    const transactionActions: Action[] = [
-      {
-        ...CommonToolTipActions.ImportTransaction,
-        hidden: !(wallet.type === WatchOnlyWallet.type && wallet.isHd()),
-      },
-      {
-        ...CommonToolTipActions.ImportTransactionQR,
-        hidden: !(wallet.type === WatchOnlyWallet.type && wallet.isHd()),
-      },
-      {
-        ...CommonToolTipActions.ImportTransactionMultsig,
-        hidden: !(wallet.type === MultisigHDWallet.type),
-      },
-      {
-        ...CommonToolTipActions.CoSignTransaction,
-        hidden: !(wallet.type === MultisigHDWallet.type && wallet.howManySignaturesCanWeMake() > 0),
-      },
-      {
-        ...CommonToolTipActions.SignPSBT,
-        hidden: !(wallet as MultisigHDWallet)?.allowCosignPsbt(),
-      },
-    ];
-    walletActions.push(transactionActions);
+    // const transactionActions: Action[] = [
+    //   {
+    //     ...CommonToolTipActions.ImportTransaction,
+    //     hidden: !(wallet.type === WatchOnlyWallet.type && wallet.isHd()),
+    //   },
+    //   {
+    //     ...CommonToolTipActions.ImportTransactionQR,
+    //     hidden: !(wallet.type === WatchOnlyWallet.type && wallet.isHd()),
+    //   },
+    //   {
+    //     ...CommonToolTipActions.ImportTransactionMultsig,
+    //     hidden: !(wallet.type === MultisigHDWallet.type),
+    //   },
+    //   {
+    //     ...CommonToolTipActions.CoSignTransaction,
+    //     hidden: !(wallet.type === MultisigHDWallet.type && wallet.howManySignaturesCanWeMake() > 0),
+    //   },
+    //   {
+    //     ...CommonToolTipActions.SignPSBT,
+    //     hidden: !(wallet as MultisigHDWallet)?.allowCosignPsbt(),
+    //   },
+    // ];
+    // walletActions.push(transactionActions);
 
-    const specificWalletActions: Action[] = [
-      {
-        ...CommonToolTipActions.InsertContact,
-        hidden: !(isEditable && wallet.allowBIP47() && wallet.isBIP47Enabled()),
-      },
-      CommonToolTipActions.CoinControl,
-    ];
-    walletActions.push(specificWalletActions);
+    // const specificWalletActions: Action[] = [
+    //   {
+    //     ...CommonToolTipActions.InsertContact,
+    //     hidden: !(isEditable && wallet.allowBIP47() && wallet.isBIP47Enabled()),
+    //   },
+    //   CommonToolTipActions.CoinControl,
+    // ];
+    // walletActions.push(specificWalletActions);
 
     return walletActions;
   }, [addresses, isEditable, wallet, isTransactionReplaceable]);
@@ -1276,61 +1276,38 @@ const SendDetails = () => {
     const isDisabled = totalWithFee === 0 || totalWithFee > balance || balance === 0 || isLoading || addresses.length === 0;
 
     return (
-      <View style={styles.createButton}>
-        {isLoading ? (
-          <ActivityIndicator />
-        ) : (
-          <Button onPress={createTransaction} disabled={isDisabled} title={loc.send.details_next} testID="CreateTransactionButton" />
-        )}
+      <View style={styles.bottom}>
+        <TouchableOpacity style={styles.button} onPress={createTransaction}>
+          <Text style={styles.buttonText}>{loc.send.details_next}</Text>
+        </TouchableOpacity>
       </View>
     );
   };
 
-  const renderWalletSelectionOrCoinsSelected = () => {
-    if (isVisible) return null;
-    if (utxos && utxos?.length > 0) {
-      return (
-        <View style={styles.select}>
-          <CoinsSelected
-            number={utxos.length}
-            onContainerPress={handleCoinControl}
-            onClose={() => {
-              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-              setParams({ utxos: null });
-            }}
-          />
-        </View>
-      );
-    }
-
+  const renderCoinsSelected = () => {
+  if (isVisible) return null;
+  if (utxos && utxos?.length > 0) {
     return (
       <View style={styles.select}>
-        {!isLoading && isEditable && (
-          <Pressable
-            accessibilityRole="button"
-            style={({ pressed }) => [pressed && styles.pressed, styles.selectTouch]}
-            onPress={() => {
-              navigation.navigate('SelectWallet', { chainType: Chain.ONCHAIN, selectedWalletID: wallet?.getID() });
-            }}
-          >
-            <Text style={styles.selectText}>{loc.wallets.select_wallet.toLowerCase()}</Text>
-            <Icon name={direction === 'rtl' ? 'angle-left' : 'angle-right'} size={18} type="font-awesome" color="#9aa0aa" />
-          </Pressable>
-        )}
-        <View style={styles.selectWrap}>
-          <Pressable
-            accessibilityRole="button"
-            style={({ pressed }) => [pressed && styles.pressed, styles.selectTouch]}
-            onPress={() => {
-              navigation.navigate('SelectWallet', { chainType: Chain.ONCHAIN, selectedWalletID: wallet?.getID() });
-            }}
-            disabled={!isEditable || isLoading}
-          >
-            <Text style={[styles.selectLabel, stylesHook.selectLabel]}>{wallet?.getLabel()}</Text>
-          </Pressable>
-        </View>
+        <CoinsSelected
+          number={utxos.length}
+          onContainerPress={handleCoinControl}
+          onClose={() => {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+            setParams({ utxos: null });
+          }}
+        />
       </View>
     );
+  }
+
+  return (
+    <View style={styles.select}>
+      <View style={styles.selectWrap}>
+        <Text style={[styles.selectLabel, stylesHook.selectLabel]}>{wallet?.getLabel()}</Text>
+      </View>
+    </View>
+  );
   };
 
   const renderBitcoinTransactionInfoFields = (params: { item: IPaymentDestinations; index: number }) => {
@@ -1518,7 +1495,6 @@ const SendDetails = () => {
           )}
         </Pressable>
         {renderCustomFeeWarning()}
-        {renderCreateButton()}
       </View>
       <DismissKeyboardInputAccessory />
       {Platform.select({
@@ -1528,7 +1504,8 @@ const SendDetails = () => {
         ),
       })}
 
-      {renderWalletSelectionOrCoinsSelected()}
+      {renderCoinsSelected()}
+      {renderCreateButton()}
     </SafeArea>
   );
 };
@@ -1652,5 +1629,20 @@ const styles = StyleSheet.create({
   },
   warningHeader: {
     fontWeight: 'bold',
+  },
+  bottom: {
+    padding: 16,
+  },
+  button: {
+    backgroundColor: '#754CE8',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });

@@ -7,12 +7,13 @@ import loc from '../../loc';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { DetailViewStackParamList } from "../../navigation/DetailViewStackParamList";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { CommonActions } from '@react-navigation/native';
 
 type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'DeleteWallet'>;
 
 const DeleteWallet: React.FC = () => {
   const { wallets, handleWalletDeletion } = useStorage();
-  const { navigate } = useExtendedNavigation<NavigationProps>();
+  const { dispatch } = useExtendedNavigation<NavigationProps>();
 
   const handleDeleteWallet = useCallback(async () => {
     const wallet = wallets.length > 0 ? wallets[0] : null;
@@ -36,7 +37,12 @@ const DeleteWallet: React.FC = () => {
             const deletionSucceeded = await handleWalletDeletion(wallet.getID());
             if (deletionSucceeded) {
               triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
-              navigate('Onboarding');
+              dispatch(
+                CommonActions.reset({
+                  index: 0,
+                  routes: [{ name: 'Onboarding' }],
+                })
+              );
             }
           },
         },

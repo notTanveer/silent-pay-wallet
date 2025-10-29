@@ -93,9 +93,15 @@
     "ask_yes": "Yes, I have.",
     "ok": "OK, I wrote it down.",
     "ok_lnd": "OK, I have saved it.",
-    "text": "Please take a moment to write down this mnemonic phrase on a piece of paper.\nIt’s your backup and you can use it to recover the wallet.",
+    "text": "Make sure to write it down as shown here\nYou would need this to recover your account",
     "text_lnd": "Please save this wallet backup. It allows you to restore the wallet in case of loss.",
-    "title": "Your wallet has been created."
+    "title": "This is your Recovery Phrase",
+    "noted": "I have noted it down",
+    "null": "",
+    "heading": "Verify Your Recovery Phrase",
+    "subheading": "Tap the words in the correct order\nto verify your recovery phrase",
+    "show": "Show Seed Again",
+    "error": "The words you selected are not in the correct order. Please try again."
   },
   "receive": {
     "details_create": "Create",
@@ -213,7 +219,7 @@
     "about": "About",
     "about_awesome": "Built with the awesome",
     "about_backup": "Always backup your keys!",
-    "about_free": "Shroud is a free and open-source project. Crafted by Bitcoin users.",
+    "about_free": "Shroud Wallet is a non-custodial, Bitcoin-only mobile wallet with support for Silent Payments",
     "about_license": "MIT License",
     "about_release_notes": "Release notes",
     "about_review": "Leave us a review",
@@ -323,6 +329,7 @@
     "total_balance": "Total Balance",
     "total_balance_explanation": "Display the total balance of all your wallets on your home screen widgets.",
     "widgets": "Widgets",
+    "warning": "⚠️ Work in Progress - This wallet is currently under active development.",
     "tools": "Tools"
   },
   "notifications": {
@@ -446,7 +453,7 @@
     "import_passphrase_title": "Passphrase",
     "import_passphrase_message": "Enter passphrase if you have used any",
     "import_error": "Failed to import. Please make sure that the provided data is valid.",
-    "import_explanation": "Please enter your seed words, public key, WIF, or anything you’ve got. Shroud will do its best to guess the correct format and import your wallet.",
+    "import_explanation": "Please enter your seed words.",
     "import_imported": "Imported",
     "import_scan_qr": "Scan or import a file",
     "import_success": "Your wallet has been successfully imported.",
@@ -684,12 +691,19 @@
     "notification_tx_unconfirmed": "Notification transaction is not confirmed yet, please wait",
     "failed_create_notif_tx": "Failed to create on-chain transaction",
     "onchain_tx_needed": "On-chain transaction needed",
-    "notif_tx_sent" : "Notification transaction sent. Please wait for it to confirm",
+    "notif_tx_sent": "Notification transaction sent. Please wait for it to confirm",
     "notif_tx": "Notification transaction"
   },
   "bip352": {
     "silent_payments": "Silent Payments",
     "not_supported": "Silent Payments not supported by this wallet",
     "explanation": "Silent Payment addresses are reusable, allowing you to share a single address for multiple payments without compromising privacy."
+  },
+  "onboarding": {
+    "shroud": "Shroud Wallet",
+    "subtitle": "A simple bitcoin wallet for\nall your payments.",
+    "create_wallet": "Create a new wallet",
+    "import_wallet": "Restore existing wallet",
+    "footer": "Your wallet, your coins\n100% open-source & open-design"
   }
 }

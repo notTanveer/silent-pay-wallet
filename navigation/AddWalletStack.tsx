@@ -100,7 +100,7 @@ const AddWalletStack = () => {
         options={navigationStyle({
           gestureEnabled: false,
           headerBackVisible: false,
-          title: loc.pleasebackup.title,
+          title: loc.pleasebackup.null,
         })(theme)}
       />
       <Stack.Screen
