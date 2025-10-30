@@ -31,7 +31,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   private readonly POLLING_INTERVAL_MS = 30000;
   private readonly DEFAULT_MAX_BLOCKS = 100;
   private readonly BATCH_SIZE = 3;
-  private readonly TAPROOT_ACTIVATION_HEIGHT = 921311;
+  private readonly TAPROOT_ACTIVATION_HEIGHT = 921353;
 
   private cachedSeed: Buffer | null = null;
   private transactionProcessor: TransactionProcessor | null = null;
@@ -64,10 +64,15 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
           ...utxo,
           tweak: new Uint8Array(Buffer.from(utxo.tweakHex, 'hex')),
         }));
+        
+        const spentCount = wallet._utxo.filter((u: any) => u.isSpent).length;
+        console.log(`[SP] Deserialized ${wallet._utxo.length} SP UTXOs (${spentCount} spent, ${wallet._utxo.length - spentCount} unspent)`);
       } else if (key === 'lastScannedBlock') {
         wallet.lastScannedBlock = data[key] || 0;
+        console.log(`[SP] Deserialized lastScannedBlock: ${wallet.lastScannedBlock}`);
       } else if (key === '_birthHeight') {
         wallet._birthHeight = data[key] || wallet.TAPROOT_ACTIVATION_HEIGHT;
+        console.log(`[SP] Deserialized birthHeight: ${wallet._birthHeight}`);
       } else if (key !== '_utxo' && key !== 'transactionProcessor' && key !== 'cachedSeed' && key !== 'spUTXOsCache' && key !== 'activeScanPromise') {
         (wallet as any)[key] = data[key];
       }
@@ -79,8 +84,15 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   prepareForSerialization(): void {
     super.prepareForSerialization();
     
-    const spUtxos = this.getSilentPaymentUTXOs();
-    (this as any)._utxos_serializable = spUtxos.map((utxo): SilentPaymentUTXOSerializable => {
+    // Get ALL SP UTXOs (including spent ones) for serialization
+    const allSPUtxos = this._utxo.filter((u): u is SilentPaymentUTXO =>
+      'tweak' in u && u.tweak instanceof Uint8Array
+    );
+    
+    const spentCount = allSPUtxos.filter(u => u.isSpent).length;
+    console.log(`[SP] Serializing ${allSPUtxos.length} SP UTXOs (${spentCount} spent, ${allSPUtxos.length - spentCount} unspent)`);
+    
+    (this as any)._utxos_serializable = allSPUtxos.map((utxo): SilentPaymentUTXOSerializable => {
       const { tweak, ...rest } = utxo;
       return {
         ...rest,
@@ -90,21 +102,31 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     
     (this as any).lastScannedBlock = this.lastScannedBlock;
     (this as any)._birthHeight = this._birthHeight;
+    
+    console.log(`[SP] Serialization complete - lastScannedBlock: ${this.lastScannedBlock}, birthHeight: ${this._birthHeight}`);
   }
 
   private getSilentPaymentUTXOs(): SilentPaymentUTXO[] {
     if (this.spUTXOsCache !== null) {
+      console.log('[SP] Using cached SP UTXOs:', this.spUTXOsCache.length);
       return this.spUTXOsCache;
     }
     
-    this.spUTXOsCache = this._utxo.filter((u): u is SilentPaymentUTXO =>
-      'tweak' in u && u.tweak instanceof Uint8Array && !u.isSpent
+    const allSPUtxos = this._utxo.filter((u): u is SilentPaymentUTXO =>
+      'tweak' in u && u.tweak instanceof Uint8Array
     );
     
+    console.log(`[SP] Total SP UTXOs in _utxo: ${allSPUtxos.length}`);
+    
+    const unspentUtxos = allSPUtxos.filter(u => !u.isSpent);
+    console.log(`[SP] Unspent SP UTXOs: ${unspentUtxos.length}, Spent: ${allSPUtxos.length - unspentUtxos.length}`);
+    
+    this.spUTXOsCache = unspentUtxos;
     return this.spUTXOsCache;
   }
 
   private invalidateUTXOCache(): void {
+    console.log('[SP] Invalidating UTXO cache');
     this.spUTXOsCache = null;
   }
 
@@ -113,33 +135,52 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     const exists = this._utxo.some(u => `${u.txid}:${u.vout}` === key);
     
     if (exists) {
+      console.log(`[SP] UTXO ${key} already exists, skipping add`);
       return false;
     }
     
+    console.log(`[SP] Adding new SP UTXO: ${key} (value: ${utxo.value}, isSpent: ${utxo.isSpent})`);
     this._utxo.push(utxo);
+    console.log(`[SP] _utxo array now has ${this._utxo.length} UTXOs`);
     this.invalidateUTXOCache();
     return true;
   }
 
   private markUTXOAsSpent(txid: string, vout: number): boolean {
+    console.log(`[SP] Attempting to mark UTXO as spent: ${txid}:${vout}`);
+    
     const utxo = this._utxo.find(u => u.txid === txid && u.vout === vout) as SilentPaymentUTXO | undefined;
     
-    if (utxo && 'isSpent' in utxo && !utxo.isSpent) {
-      utxo.isSpent = true;
-      this.invalidateUTXOCache();
-      
-      if (this.onBalanceChangeCallback) {
-        this.onBalanceChangeCallback();
-      }
-      
-      if (this.onPersistCallback) {
-        this.onPersistCallback();
-      }
-      
-      return true;
+    if (!utxo) {
+      console.warn(`[SP] UTXO not found in _utxo array: ${txid}:${vout}`);
+      return false;
     }
     
-    return false;
+    if (!('isSpent' in utxo)) {
+      console.warn(`[SP] UTXO ${txid}:${vout} is not a Silent Payment UTXO`);
+      return false;
+    }
+    
+    if (utxo.isSpent) {
+      console.log(`[SP] UTXO ${txid}:${vout} already marked as spent`);
+      return false;
+    }
+    
+    utxo.isSpent = true;
+    this.invalidateUTXOCache();
+    console.log(`[SP] ✓ Successfully marked UTXO as spent: ${txid}:${vout}`);
+    
+    if (this.onBalanceChangeCallback) {
+      console.log('[SP] Triggering balance change callback');
+      this.onBalanceChangeCallback();
+    }
+    
+    if (this.onPersistCallback) {
+      console.log('[SP] Triggering persist callback');
+      this.onPersistCallback();
+    }
+    
+    return true;
   }
 
   private ensureTransactionProcessor(): void {
@@ -425,6 +466,58 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
       });
   }
 
+  async fetchUtxo(): Promise<void> {
+    console.log('[SP] fetchUtxo() called - preserving SP UTXOs');
+    
+    // Save SP UTXOs before parent overwrites _utxo array
+    const spUtxos = this._utxo.filter((u): u is SilentPaymentUTXO =>
+      'tweak' in u && u.tweak instanceof Uint8Array
+    );
+    
+    console.log(`[SP] Saved ${spUtxos.length} SP UTXOs before parent fetch`);
+    
+    // Fetch regular UTXOs from parent
+    try {
+      await super.fetchUtxo();
+    } catch (error) {
+      console.error('[SP] Error fetching regular UTXOs:', error);
+    }
+    
+    // Get regular UTXOs (parent's fetchUtxo replaces _utxo array)
+    const regularUtxos = this._utxo.filter((u): u is Utxo =>
+      !('tweak' in u)
+    );
+    
+    console.log(`[SP] Fetched ${regularUtxos.length} regular UTXOs from parent`);
+    
+    // Deduplicate before merging (in case of any overlap)
+    const utxoMap = new Map<string, Utxo>();
+    
+    // Add regular UTXOs
+    for (const utxo of regularUtxos) {
+      const key = `${utxo.txid}:${utxo.vout}`;
+      utxoMap.set(key, utxo);
+    }
+    
+    // Add SP UTXOs (will not override if key exists)
+    for (const utxo of spUtxos) {
+      const key = `${utxo.txid}:${utxo.vout}`;
+      if (!utxoMap.has(key)) {
+        utxoMap.set(key, utxo);
+      } else {
+        console.warn(`[SP] Duplicate UTXO found during merge: ${key}, keeping regular version`);
+      }
+    }
+    
+    // Merge: deduplicated UTXOs
+    this._utxo = Array.from(utxoMap.values());
+    
+    const spCount = this._utxo.filter((u): u is SilentPaymentUTXO => 'tweak' in u && u.tweak instanceof Uint8Array).length;
+    console.log(`[SP] Merged _utxo array: ${this._utxo.length} total (${this._utxo.length - spCount} regular + ${spCount} SP)`);
+    
+    this.invalidateUTXOCache();
+  }
+
   async fetchTransactions(): Promise<void> {
     try {
       await super.fetchTransactions();
@@ -442,7 +535,9 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   }
 
   getUTXOs(): SilentPaymentUTXO[] {
-    return this.getSilentPaymentUTXOs().filter(u => !u.isSpent);
+    const unspent = this.getSilentPaymentUTXOs().filter(u => !u.isSpent);
+    console.log(`[SP] getUTXOs() returning ${unspent.length} unspent UTXOs`);
+    return unspent;
   }
 
   /**
@@ -453,14 +548,43 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     const regularUtxos = super.getUtxo(respectFrozen);
     const spUtxos = this.getUTXOs();
     
-    return [...regularUtxos, ...spUtxos];
+    // Deduplicate by txid:vout to avoid duplicate input errors
+    const utxoMap = new Map<string, Utxo>();
+    
+    // Add regular UTXOs first
+    for (const utxo of regularUtxos) {
+      const key = `${utxo.txid}:${utxo.vout}`;
+      utxoMap.set(key, utxo);
+    }
+    
+    // Add SP UTXOs (will not override if key exists)
+    for (const utxo of spUtxos) {
+      const key = `${utxo.txid}:${utxo.vout}`;
+      if (!utxoMap.has(key)) {
+        utxoMap.set(key, utxo);
+      } else {
+        console.warn(`[SP] Duplicate UTXO detected in getUtxo(): ${key}, using first occurrence`);
+      }
+    }
+    
+    const dedupedUtxos = Array.from(utxoMap.values());
+    console.log(`[SP] getUtxo() returning ${dedupedUtxos.length} UTXOs (${regularUtxos.length} regular + ${spUtxos.length} SP, deduped from ${regularUtxos.length + spUtxos.length})`);
+    
+    return dedupedUtxos;
   }
 
   getBalance(): number {
     const regularBalance = super.getBalance();
-    const silentPaymentBalance = this.getSilentPaymentUTXOs()
-      .filter(u => !u.isSpent)
-      .reduce((sum, utxo) => sum + utxo.value, 0);
+    
+    // Filter SP UTXOs directly from _utxo to avoid cache issues
+    const allSPUtxos = this._utxo.filter((u): u is SilentPaymentUTXO =>
+      'tweak' in u && u.tweak instanceof Uint8Array
+    );
+    
+    const unspentSPUtxos = allSPUtxos.filter(u => !u.isSpent);
+    const silentPaymentBalance = unspentSPUtxos.reduce((sum, utxo) => sum + utxo.value, 0);
+    
+    console.log(`[SP] Balance calculation - Regular: ${regularBalance}, SP Total UTXOs: ${allSPUtxos.length}, SP Unspent: ${unspentSPUtxos.length}, SP Balance: ${silentPaymentBalance}, Total: ${regularBalance + silentPaymentBalance}`);
     
     return regularBalance + silentPaymentBalance;
   }
@@ -569,6 +693,24 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     if (targets.length === 0) throw new Error('No destination provided');
     if (utxos.length === 0) throw new Error('No UTXOs provided');
 
+    console.log(`[SP] createTransaction called with ${utxos.length} UTXOs`);
+    
+    // Check for duplicates in input UTXOs
+    const utxoKeys = new Set<string>();
+    const duplicates: string[] = [];
+    for (const utxo of utxos) {
+      const key = `${utxo.txid}:${utxo.vout}`;
+      if (utxoKeys.has(key)) {
+        duplicates.push(key);
+      }
+      utxoKeys.add(key);
+    }
+    
+    if (duplicates.length > 0) {
+      console.error(`[SP] DUPLICATE UTXOs detected in createTransaction: ${duplicates.join(', ')}`);
+      throw new Error(`Duplicate input detected: ${duplicates[0]}`);
+    }
+
     const spUtxos: SilentPaymentUTXO[] = [];
     const regularUtxos: CreateTransactionUtxo[] = [];
     
@@ -605,6 +747,8 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     skipSigning: boolean
   ): CreateTransactionResult {
     console.log('[SP] Creating pure SP transaction');
+    console.log(`[SP] Input UTXOs: ${spUtxos.length}, Total value: ${spUtxos.reduce((sum, u) => sum + u.value, 0)}`);
+    console.log(`[SP] Targets: ${targets.length}, skipSigning: ${skipSigning}`);
     
     const validTargets = targets.filter(t => t.address);
     if (validTargets.length === 0) {
@@ -637,20 +781,32 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     let tx: bitcoin.Transaction | undefined;
     
     if (!skipSigning) {
+      console.log('[SP] Signing and finalizing transaction...');
       try {
         psbt.finalizeAllInputs();
         tx = psbt.extractTransaction();
-        console.log(`[SP] Transaction created: ${tx.getId()}`);
+        const txid = tx.getId();
+        console.log(`[SP] Transaction successfully signed and finalized: ${txid}`);
         
         // mark utxos as spent & update balance
+        console.log(`[SP] Marking ${spUtxos.length} UTXOs as spent...`);
+        let markedCount = 0;
         for (const utxo of spUtxos) {
-          this.markUTXOAsSpent(utxo.txid, utxo.vout);
+          if (this.markUTXOAsSpent(utxo.txid, utxo.vout)) {
+            markedCount++;
+          }
         }
-        console.log(`[SP] Marked ${spUtxos.length} UTXOs as spent`);
+        console.log(`[SP] Successfully marked ${markedCount}/${spUtxos.length} UTXOs as spent`);
+        
+        // Log balance after marking spent
+        const newBalance = this.getBalance();
+        console.log(`[SP] Balance after marking UTXOs spent: ${newBalance}`);
       } catch (error) {
         console.error('[SP] Failed to finalize transaction:', error);
         throw new Error(`Failed to finalize SP transaction: ${error}`);
       }
+    } else {
+      console.log('[SP] Skipping signing (hardware wallet or PSBT export)');
     }
     
     const totalInput = spUtxos.reduce((sum, u) => sum + u.value, 0);
@@ -662,6 +818,8 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     }
     
     const fee = totalInput - totalOutput;
+    
+    console.log(`[SP] Transaction summary - Input: ${totalInput}, Output: ${totalOutput}, Fee: ${fee}`);
     
     const outputs = psbtOutputs.map((output, index) => ({
       address: output.address,
