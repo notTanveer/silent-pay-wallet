@@ -1,4 +1,4 @@
-package io.bluewallet.bluewallet
+package io.bluewallet.shroud
 
 import android.content.Context
 import android.net.ConnectivityManager

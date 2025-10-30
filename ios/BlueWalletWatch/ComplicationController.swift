@@ -25,7 +25,7 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
   @available(watchOSApplicationExtension 7.0, *)
   func complicationDescriptors() async -> [CLKComplicationDescriptor] {
     return  [CLKComplicationDescriptor(
-      identifier: "io.bluewallet.bluewallet",
+      identifier: "io.bluewallet.shroud",
       displayName: "Market Price",
       supportedFamilies: CLKComplicationFamily.allCases)]
   }

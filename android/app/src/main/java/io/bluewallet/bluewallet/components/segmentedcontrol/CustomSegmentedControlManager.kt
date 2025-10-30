@@ -1,4 +1,4 @@
-package io.bluewallet.bluewallet.components.segmentedcontrol
+package io.bluewallet.shroud.components.segmentedcontrol
 
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.common.MapBuilder

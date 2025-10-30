@@ -1,4 +1,4 @@
-package io.bluewallet.bluewallet
+package io.bluewallet.shroud
 
 import android.content.pm.ActivityInfo
 import android.os.Bundle

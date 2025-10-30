@@ -1,4 +1,4 @@
-package io.bluewallet.bluewallet
+package io.bluewallet.shroud
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
