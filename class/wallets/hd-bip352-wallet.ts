@@ -1,8 +1,10 @@
 import * as bip39 from 'bip39';
 import { Buffer } from 'buffer';
+import { ECPairFactory } from 'ecpair';
 import { HDSegwitBech32Wallet } from './hd-segwit-bech32-wallet.ts';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet.ts';
 import { getDefaultIndexer } from '../../blue_modules/SilentPaymentIndexer';
+import ecc from '../../blue_modules/noble_ecc';
 import {
   getSilentPaymentAddress,
   getScanPrivateKey,
@@ -10,7 +12,6 @@ import {
   getScanPublicKey,
   getSpendPublicKey,
   TransactionProcessor,
-  SilentPaymentTransactionBuilder,
   type IndexerTransaction,
   type SilentPaymentUTXO,
   type SilentPaymentUTXOSerializable,
@@ -19,6 +20,7 @@ import {
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types.ts';
 import * as bitcoin from 'bitcoinjs-lib';
 
+const ECPair = ECPairFactory(ecc);
 
 export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   static readonly type = 'HDSilentPaymentsWallet';
@@ -31,7 +33,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   private readonly POLLING_INTERVAL_MS = 30000;
   private readonly DEFAULT_MAX_BLOCKS = 100;
   private readonly BATCH_SIZE = 3;
-  private readonly TAPROOT_ACTIVATION_HEIGHT = 921410;
+  private readonly TAPROOT_ACTIVATION_HEIGHT = 922298;
 
   private cachedSeed: Buffer | null = null;
   private transactionProcessor: TransactionProcessor | null = null;
@@ -562,7 +564,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     targets: CreateTransactionTarget[],
     feeRate: number,
     changeAddress: string,
-    sequence: number = AbstractHDElectrumWallet.defaultRBFSequence,
+    sequence: number = AbstractHDElectrumWallet.finalRBFSequence,
     skipSigning = false,
     masterFingerprint: number = 0,
   ): CreateTransactionResult {
@@ -606,80 +608,95 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   ): CreateTransactionResult {
     console.log('[SP] Creating pure SP transaction');
     
-    const validTargets = targets.filter(t => t.address);
-    if (validTargets.length === 0) {
-      throw new Error('No valid target addresses provided');
-    }
+    if (targets.length === 0) throw new Error('No destination provided');
     
-    const builderTargets = validTargets.map(t => ({
-      address: t.address!,
-      value: t.value,
-    }));
+    const { inputs, outputs, fee } = this.coinselect(spUtxos as CreateTransactionUtxo[], targets, feeRate);
+    const utxoMap = new Map(spUtxos.map(u => [`${u.txid}:${u.vout}`, u]));
     
-    const builder = new SilentPaymentTransactionBuilder(
-      this.getSpendPrivateKey(),
-      this.getSpendPublicKey()
-    );
+    const spendPrivKey = this.getSpendPrivateKey();
+    const spendPubKey = this.getSpendPublicKey();
+    const xOnlyPub = spendPubKey.subarray(1, 33);
     
-    const validation = builder.validateUTXOs(spUtxos);
-    if (!validation.valid) {
-      throw new Error(`UTXO validation failed: ${validation.errors.join(', ')}`);
-    }
+    const psbt = new bitcoin.Psbt();
     
-    const psbt = builder.createCompletePSBT(
-      spUtxos,
-      builderTargets,
-      feeRate,
-      changeAddress,
-      sequence
-    );
+    // add taproot inputs with tweaked public keys
+    inputs.forEach((input) => {
+      const spUtxo = utxoMap.get(`${input.txid}:${input.vout}`);
+      if (!spUtxo) {
+        throw new Error(`UTXO not found: ${input.txid}:${input.vout}`);
+      }
+      
+      const result = ecc.xOnlyPointAddTweak(xOnlyPub, spUtxo.tweak);
+      if (!result) {
+        throw new Error('Failed to compute tweaked public key');
+      }
+      
+      const witnessScript = Buffer.concat([
+        Buffer.from([0x51, 0x20]), // OP_1 + PUSH32 (Taproot script)
+        result.xOnlyPubkey,
+      ]);
+      
+      psbt.addInput({
+        hash: input.txid,
+        index: input.vout,
+        sequence,
+        witnessUtxo: {
+          script: witnessScript,
+          value: BigInt(input.value),
+        },
+        tapInternalKey: Buffer.from(xOnlyPub),
+      });
+    });
+    
+    outputs.forEach(output => {
+      psbt.addOutput({
+        address: output.address || changeAddress,
+        value: BigInt(output.value),
+      });
+    });
     
     let tx: bitcoin.Transaction | undefined;
     
     if (!skipSigning) {
-      try {
-        psbt.finalizeAllInputs();
-        tx = psbt.extractTransaction();
-        console.log(`[SP] Transaction created: ${tx.getId()}`);
-        
-        // mark utxos as spent & update balance
-        for (const utxo of spUtxos) {
-          this.markUTXOAsSpent(utxo.txid, utxo.vout);
+      // sign each input with its tweaked key pair
+      inputs.forEach((input, idx) => {
+        const spUtxo = utxoMap.get(`${input.txid}:${input.vout}`);
+        if (!spUtxo) {
+          throw new Error(`UTXO not found: ${input.txid}:${input.vout}`);
         }
-        console.log(`[SP] Marked ${spUtxos.length} UTXOs as spent`);
-      } catch (error) {
-        console.error('[SP] Failed to finalize transaction:', error);
-        throw new Error(`Failed to finalize SP transaction: ${error}`);
+
+        const tweakedPrivKey = ecc.privateAdd(spendPrivKey, spUtxo.tweak);
+        if (!tweakedPrivKey) {
+          throw new Error('Failed to compute tweaked private key');
+        }
+        
+        const tweakedKeyPair = ECPair.fromPrivateKey(Buffer.from(tweakedPrivKey), { compressed: true });
+        psbt.signTaprootInput(idx, tweakedKeyPair);
+      });
+      
+      psbt.finalizeAllInputs();
+      tx = psbt.extractTransaction();
+      console.log(`[SP] Transaction created: ${tx.getId()}`);
+      
+      for (const input of inputs) {
+        this.markUTXOAsSpent(input.txid, input.vout);
       }
+      console.log(`[SP] Marked ${inputs.length} UTXOs as spent`);
     }
-    
-    const totalInput = spUtxos.reduce((sum, u) => sum + u.value, 0);
-    let totalOutput = 0;
-    
-    const psbtOutputs = psbt.txOutputs;
-    for (const output of psbtOutputs) {
-      totalOutput += Number(output.value);
-    }
-    
-    const fee = totalInput - totalOutput;
-    
-    const outputs = psbtOutputs.map((output, index) => ({
-      address: output.address,
-      value: Number(output.value),
-    }));
-    
-    const inputs = spUtxos.map(u => ({
-      txid: u.txid,
-      vout: u.vout,
-      address: u.address,
-      value: u.value,
-    }));
     
     return {
       tx,
       psbt,
-      inputs,
-      outputs,
+      inputs: inputs.map(i => ({
+        txid: i.txid,
+        vout: i.vout,
+        address: i.address,
+        value: i.value,
+      })),
+      outputs: outputs.map(o => ({
+        address: o.address,
+        value: o.value,
+      })),
       fee,
     };
   }
