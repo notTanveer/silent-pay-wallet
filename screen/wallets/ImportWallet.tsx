@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { Keyboard, Platform, StyleSheet, TouchableWithoutFeedback, View, TouchableOpacity, Image } from 'react-native';
+import { ActivityIndicator, Keyboard, Platform, StyleSheet, TouchableWithoutFeedback, View, TouchableOpacity, Image } from 'react-native';
 import { BlueFormLabel, BlueFormMultiInput } from '../../BlueComponents';
 import Button from '../../components/Button';
 import {
@@ -22,9 +22,45 @@ import { BlueSpacing20 } from '../../components/BlueSpacing';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet.ts';
 import { useStorage } from '../../hooks/context/useStorage';
 import presentAlert from '../../components/Alert';
+import { WalletBirthSection } from '../../components/WalletBirthSection';
+import { BIP352_ACTIVATION_HEIGHT } from '../../blue_modules/constants';
+import { getDefaultIndexer } from '../../blue_modules/SilentPaymentIndexer';
 
 type RouteProps = RouteProp<AddWalletStackParamList, 'ImportWallet'>;
 type NavigationProps = NativeStackNavigationProp<AddWalletStackParamList, 'ImportWallet'>;
+
+type BirthHeightResult = { ok: true; height: number } | { ok: false; error: 'invalid_date' | 'future_date' | 'network' };
+
+async function resolveBirthHeight(dateStr: string, currentHeight: number): Promise<BirthHeightResult> {
+  const trimmed = dateStr.trim();
+  if (trimmed.length === 0) {
+    return { ok: true, height: BIP352_ACTIVATION_HEIGHT };
+  }
+
+  // Append T00:00:00 to treat YYYY-MM-DD as local time, not UTC
+  const normalised = /^\d{4}-\d{2}-\d{2}$/.test(trimmed) ? `${trimmed}T00:00:00` : trimmed;
+  const parsedTimestamp = Date.parse(normalised);
+
+  if (Number.isNaN(parsedTimestamp)) {
+    return { ok: false, error: 'invalid_date' };
+  }
+
+  const inputDate = new Date(parsedTimestamp);
+  if (inputDate > new Date()) {
+    return { ok: false, error: 'future_date' };
+  }
+
+  try {
+    const indexer = getDefaultIndexer();
+    const timestampSeconds = Math.floor(inputDate.getTime() / 1000);
+    const response = await indexer.getBlockHeightByTimestamp(timestampSeconds);
+    const height = Math.min(Math.max(response.blockHeight, BIP352_ACTIVATION_HEIGHT), currentHeight);
+    return { ok: true, height };
+  } catch (error) {
+    console.warn('Failed to lookup block height by timestamp, using BIP352 activation height:', error);
+    return { ok: true, height: BIP352_ACTIVATION_HEIGHT };
+  }
+}
 
 const ImportWallet = () => {
   const navigation = useExtendedNavigation<NavigationProps>();
@@ -33,25 +69,19 @@ const ImportWallet = () => {
   const label = route?.params?.label ?? '';
   const triggerImport = route?.params?.triggerImport ?? false;
   const [importText, setImportText] = useState<string>(label);
+  const [birthDate, setBirthDate] = useState<string>('');
   const [isToolbarVisibleForAndroid, setIsToolbarVisibleForAndroid] = useState<boolean>(false);
   const [, setSpeedBackdoor] = useState<number>(0);
-  const [clearClipboardMenuState] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const { isPrivacyBlurEnabled } = useSettings();
   const { enableScreenProtect, disableScreenProtect } = useScreenProtect();
   const { addAndSaveWallet } = useStorage();
-  const styles = StyleSheet.create({
+  const stylesHook = StyleSheet.create({
     root: {
-      paddingTop: 10,
       backgroundColor: colors.elevated,
-      flex: 1,
     },
     center: {
-      flex: 1,
-      marginHorizontal: 16,
       backgroundColor: colors.elevated,
-    },
-    button: {
-      padding: 10,
     },
   });
 
@@ -72,21 +102,21 @@ const ImportWallet = () => {
 
   const importMnemonic = useCallback(
     async (text: string) => {
-      if (clearClipboardMenuState) {
-        try {
-          if (await Clipboard.hasString()) {
-            Clipboard.setString('');
-          }
-        } catch (error) {
-          console.error('Failed to clear clipboard:', error);
+      try {
+        if (await Clipboard.hasString()) {
+          Clipboard.setString('');
         }
+      } catch (error) {
+        console.error('Failed to clear clipboard:', error);
       }
 
       Keyboard.dismiss();
+      setIsLoading(true);
 
       try {
         if (!text.trim()) {
-          presentAlert({ title: 'Error', message: 'Please enter a valid mnemonic phrase or private key.' });
+          presentAlert({ title: loc.errors.error, message: loc.wallet_birth.error_empty_mnemonic });
+          setIsLoading(false);
           return;
         }
 
@@ -97,21 +127,49 @@ const ImportWallet = () => {
         wallet.setDerivationPath("m/84'/0'/0'");
 
         if (!wallet.validateMnemonic() && !wallet.getSecret()) {
-          presentAlert({ title: 'Error', message: 'Invalid mnemonic phrase or private key.' });
+          presentAlert({ title: loc.errors.error, message: loc.wallet_birth.error_invalid_mnemonic });
+          setIsLoading(false);
           return;
         }
 
-        addAndSaveWallet(wallet);
+        const indexer = getDefaultIndexer();
+        let currentHeight: number;
+        try {
+          currentHeight = (await indexer.getLatestBlockHeight()).height;
+        } catch (error) {
+          console.error('Failed to fetch latest block height:', error);
+          presentAlert({ title: loc.errors.error, message: loc.wallet_birth.error_network });
+          setIsLoading(false);
+          return;
+        }
+
+        const birthHeightResult = await resolveBirthHeight(birthDate, currentHeight);
+        if (!birthHeightResult.ok) {
+          const messages: Record<string, string> = {
+            invalid_date: loc.wallet_birth.error_invalid_date,
+            future_date: loc.wallet_birth.error_future_date,
+            network: loc.wallet_birth.error_network,
+          };
+          presentAlert({ title: loc.errors.error, message: messages[birthHeightResult.error] });
+          setIsLoading(false);
+          return;
+        }
+
+        wallet.updateBirthHeight(birthHeightResult.height, true);
+
+        await addAndSaveWallet(wallet);
         navigation.navigateToWalletsList();
       } catch (error: any) {
         console.error('Import error:', error);
         presentAlert({
-          title: 'Import Error',
-          message: error.message || 'Failed to import wallet. Please check your input and try again.',
+          title: loc.wallets.import_error,
+          message: error.message || loc.wallet_birth.error_import_failed,
         });
+      } finally {
+        setIsLoading(false);
       }
     },
-    [clearClipboardMenuState, addAndSaveWallet, navigation],
+    [birthDate, addAndSaveWallet, navigation],
   );
 
   const handleImport = useCallback(() => {
@@ -180,15 +238,15 @@ const ImportWallet = () => {
             )
           : undefined,
     });
-  }, [colors, navigation, styles.button, closeImage]);
+  }, [colors, navigation, closeImage]);
 
   const renderOptionsAndImportButton = (
     <>
       <BlueSpacing20 />
-      <View style={styles.center}>
+      <View style={[styles.center, stylesHook.center]}>
         <>
           <Button
-            disabled={importText.trim().length === 0}
+            disabled={importText.trim().length === 0 || isLoading}
             title={loc.wallets.import_do_import}
             testID="DoImport"
             onPress={handleImport}
@@ -202,19 +260,31 @@ const ImportWallet = () => {
   );
 
   return (
-    <SafeAreaScrollView contentContainerStyle={styles.root} keyboardShouldPersistTaps="always" automaticallyAdjustKeyboardInsets>
+    <SafeAreaScrollView
+      contentContainerStyle={[styles.root, stylesHook.root]}
+      keyboardShouldPersistTaps="always"
+      automaticallyAdjustKeyboardInsets
+    >
       <BlueSpacing20 />
       <TouchableWithoutFeedback accessibilityRole="button" onPress={speedBackdoorTap} testID="SpeedBackdoor">
         <BlueFormLabel>{loc.wallets.import_explanation}</BlueFormLabel>
       </TouchableWithoutFeedback>
       <BlueSpacing20 />
-      <BlueFormMultiInput
-        value={importText}
-        onBlur={onBlur}
-        onChangeText={setImportText}
-        testID="MnemonicInput"
-        inputAccessoryViewID={DoneAndDismissKeyboardInputAccessoryViewID}
-      />
+      <View style={styles.mnemonicInputContainer}>
+        <BlueFormMultiInput
+          value={importText}
+          onBlur={onBlur}
+          onChangeText={setImportText}
+          testID="MnemonicInput"
+          inputAccessoryViewID={DoneAndDismissKeyboardInputAccessoryViewID}
+          numberOfLines={3}
+        />
+      </View>
+
+      <BlueSpacing20 />
+      <WalletBirthSection birthDate={birthDate} setBirthDate={setBirthDate} />
+
+      {isLoading && <ActivityIndicator size="large" color={colors.mainColor} style={styles.activityIndicator} />}
 
       {Platform.select({ android: !isToolbarVisibleForAndroid && renderOptionsAndImportButton, default: renderOptionsAndImportButton })}
       {Platform.select({
@@ -234,5 +304,24 @@ const ImportWallet = () => {
     </SafeAreaScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  root: {
+    paddingTop: 10,
+  },
+  center: {
+    flex: 1,
+    marginHorizontal: 16,
+  },
+  button: {
+    padding: 10,
+  },
+  mnemonicInputContainer: {
+    minHeight: 120,
+  },
+  activityIndicator: {
+    marginVertical: 16,
+  },
+});
 
 export default ImportWallet;

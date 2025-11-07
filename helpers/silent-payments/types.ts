@@ -26,6 +26,10 @@ export interface LatestBlockHeightResponse {
   height: number;
 }
 
+export interface BlockHeightByTimestampResponse {
+  blockHeight: number;
+}
+
 export interface SilentPaymentUTXO extends Utxo {
   silentPaymentAddress: string;
   pubKey: string;

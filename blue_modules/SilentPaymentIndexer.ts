@@ -2,6 +2,7 @@ import { IndexerHttpClient } from '../helpers/silent-payments/IndexerHttpClient'
 import type {
   HealthResponse,
   LatestBlockHeightResponse,
+  BlockHeightByTimestampResponse,
   TransactionResponse,
   IndexerTransaction,
   SilentPaymentIndexerConfig,
@@ -34,6 +35,13 @@ export class SilentPaymentIndexer {
 
   async getLatestBlockHeight(): Promise<LatestBlockHeightResponse> {
     return this.httpClient.get<LatestBlockHeightResponse>('/silent-block/latest-height', 'Error fetching latest block height');
+  }
+
+  async getBlockHeightByTimestamp(timestamp: number): Promise<BlockHeightByTimestampResponse> {
+    return this.httpClient.get<BlockHeightByTimestampResponse>(
+      `/transactions/timestamp-to-height?timestamp=${timestamp}`,
+      `Error fetching block height for timestamp ${timestamp}`,
+    );
   }
 
   /**

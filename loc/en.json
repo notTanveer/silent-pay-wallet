@@ -682,5 +682,15 @@
     "create_wallet": "Create a new wallet",
     "import_wallet": "Restore existing wallet",
     "footer": "Your wallet, your coins\n100% open-source & open-design"
+  },
+  "wallet_birth": {
+    "birth_date_label": "Wallet creation date (optional)",
+    "birth_date_placeholder": "YYYY-MM-DD",
+    "error_invalid_date": "Please enter a valid date in YYYY-MM-DD format.",
+    "error_future_date": "Date cannot be in the future. Please enter a past date.",
+    "error_import_failed": "Failed to import wallet. Please try again.",
+    "error_empty_mnemonic": "Please enter a valid mnemonic phrase or private key.",
+    "error_invalid_mnemonic": "Invalid mnemonic phrase or private key.",
+    "error_network": "Unable to connect to the network. Please check your connection and try again."
   }
 }

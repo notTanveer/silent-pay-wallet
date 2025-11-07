@@ -16,6 +16,7 @@ import {
   type SilentPaymentUTXOSerializable,
   type ScanProgressCallback,
 } from '../../helpers/silent-payments';
+import { BIP352_ACTIVATION_HEIGHT } from '../../blue_modules/constants';
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types.ts';
 import * as bitcoin from 'bitcoinjs-lib';
 import { HDTaprootWallet } from './hd-taproot-wallet.ts';
@@ -33,12 +34,11 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
   private readonly POLLING_INTERVAL_MS = 30000;
   private readonly DEFAULT_MAX_BLOCKS = 100;
   private readonly BATCH_SIZE = 3;
-  private readonly TAPROOT_ACTIVATION_HEIGHT = 927101;
 
   private cachedSeed: Buffer | null = null;
   private transactionProcessor: TransactionProcessor | null = null;
   private lastScannedBlock: number = 0;
-  private _birthHeight: number = this.TAPROOT_ACTIVATION_HEIGHT;
+  private _birthHeight: number = BIP352_ACTIVATION_HEIGHT;
   private spUTXOsCache: SilentPaymentUTXO[] | null = null;
   private activeScanPromise: Promise<number> | null = null;
   private cancelScanCallbackScan: boolean = false;
@@ -71,7 +71,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       } else if (key === 'lastScannedBlock') {
         wallet.lastScannedBlock = data[key] || 0;
       } else if (key === '_birthHeight') {
-        wallet._birthHeight = data[key] || wallet.TAPROOT_ACTIVATION_HEIGHT;
+        wallet._birthHeight = data[key] || BIP352_ACTIVATION_HEIGHT;
       } else if (key === '_sp_spending_txs') {
         wallet._sp_spending_txs = data[key] || [];
       } else if (key === '_sp_pending_inputs') {
@@ -376,7 +376,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       const indexer = getDefaultIndexer();
       const latestHeightResponse = await indexer.getLatestBlockHeight();
       const latestHeight = latestHeightResponse.height;
-      const effectiveBirthHeight = Math.max(this._birthHeight, this.TAPROOT_ACTIVATION_HEIGHT);
+      const effectiveBirthHeight = Math.max(this._birthHeight, BIP352_ACTIVATION_HEIGHT);
 
       if (latestHeight <= 0) {
         throw new Error(`Invalid latest block height: ${latestHeight}`);
