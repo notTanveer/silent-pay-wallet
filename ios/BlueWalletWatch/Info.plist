@@ -49,7 +49,7 @@
 	<key>WKApplication</key>
 	<true/>
 	<key>WKCompanionAppBundleIdentifier</key>
-	<string>io.bluewallet.shroud</string>
+	<string>org.bitshala.shroud</string>
 	<key>bugsnag</key>
 	<dict>
 		<key>apiKey</key>

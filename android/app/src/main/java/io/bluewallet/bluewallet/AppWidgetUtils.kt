@@ -1,4 +1,4 @@
-package io.bluewallet.shroud
+package org.bitshala.shroud
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName

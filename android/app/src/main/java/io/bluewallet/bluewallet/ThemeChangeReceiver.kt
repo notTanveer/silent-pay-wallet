@@ -1,4 +1,4 @@
-package io.bluewallet.shroud
+package org.bitshala.shroud
 
 import android.content.BroadcastReceiver
 import android.content.Context

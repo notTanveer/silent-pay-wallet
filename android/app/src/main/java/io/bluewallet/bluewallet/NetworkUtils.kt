@@ -1,4 +1,4 @@
-package io.bluewallet.shroud
+package org.bitshala.shroud
 
 import android.content.Context
 import android.net.ConnectivityManager

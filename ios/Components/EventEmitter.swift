@@ -23,7 +23,7 @@ class EventEmitter: RCTEventEmitter {
     
     @objc func getMostRecentUserActivity(_ resolve: @escaping RCTPromiseResolveBlock,
                                            rejecter reject: RCTPromiseRejectBlock) {
-        if let defaults = UserDefaults(suiteName: "group.io.bluewallet.shroud") {
+        if let defaults = UserDefaults(suiteName: "group.org.bitshala.shroud") {
             resolve(defaults.value(forKey: "onUserActivityOpen"))
         } else {
             resolve(nil)

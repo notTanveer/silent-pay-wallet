@@ -1,4 +1,4 @@
-package io.bluewallet.shroud
+package org.bitshala.shroud
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -15,7 +15,7 @@ class BitcoinPriceWidget : AppWidgetProvider() {
 
     companion object {
         private const val TAG = "BitcoinPriceWidget"
-        private const val SHARED_PREF_NAME = "group.io.bluewallet.shroud"
+        private const val SHARED_PREF_NAME = "group.org.bitshala.shroud"
         
         /**
          * Update network status and apply proper theme

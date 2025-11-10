@@ -9,11 +9,11 @@ type(ENV["MATCH_TYPE"] || "appstore")
 
 # App identifiers for all BlueWallet apps
 app_identifier([
-  "io.bluewallet.shroud", 
-  "io.bluewallet.shroud.watch", 
-  "io.bluewallet.shroud.watch.extension", 
-  "io.bluewallet.shroud.Stickers", 
-  "io.bluewallet.shroud.MarketWidget"
+  "org.bitshala.shroud", 
+  "org.bitshala.shroud.watch", 
+  "org.bitshala.shroud.watch.extension", 
+  "org.bitshala.shroud.Stickers", 
+  "org.bitshala.shroud.MarketWidget"
 ])
 
 # Your Apple Developer account email address

@@ -1,4 +1,4 @@
-package io.bluewallet.shroud
+package org.bitshala.shroud
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -26,7 +26,7 @@ class WidgetUpdateWorker(context: Context, workerParams: WorkerParameters) : Cor
         const val WORK_NAME = "bitcoin_price_widget_update_work"
         const val NETWORK_RETRY_WORK_NAME = "bitcoin_price_network_retry_work"
         const val REPEAT_INTERVAL_MINUTES = 15L
-        private const val SHARED_PREF_NAME = "group.io.bluewallet.shroud"
+        private const val SHARED_PREF_NAME = "group.org.bitshala.shroud"
         private const val DEFAULT_CURRENCY = "USD"
         private const val NETWORK_RETRY_DELAY_SECONDS = 30L
 
