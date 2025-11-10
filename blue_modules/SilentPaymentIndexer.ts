@@ -63,15 +63,9 @@ export class SilentPaymentIndexer {
     onProgress?: ScanProgressCallback,
     batchSize: number = 10
   ): Promise<void> {
-    try {
-      console.log(`Scanning forward from block ${startHeight} to ${endHeight} (${endHeight - startHeight + 1} blocks)...`);
-      
-      await this.scanBlocks(startHeight, endHeight, processTransactions, onProgress, batchSize);
-      console.log('Forward scan with callback complete.');
-    } catch (error) {
-      console.error('Error during forward scan with callback:', error);
-      throw error;
-    }
+    console.log(`Scanning forward from block ${startHeight} to ${endHeight} (${endHeight - startHeight + 1} blocks)...`);
+    await this.scanBlocks(startHeight, endHeight, processTransactions, onProgress, batchSize);
+    console.log('Forward scan with callback complete.');
   }
 
   private async scanBlocks(
@@ -194,6 +188,10 @@ export function getDefaultIndexer(): SilentPaymentIndexer {
     throw new Error('Silent Payment Indexer not initialized. Call initializeIndexer() first.');
   }
   return defaultIndexer;
+}
+
+export function disconnectIndexer(): void {
+  defaultIndexer = null;
 }
 
 export default SilentPaymentIndexer;

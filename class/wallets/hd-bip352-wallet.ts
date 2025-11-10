@@ -3,7 +3,7 @@ import { Buffer } from 'buffer';
 import { ECPairFactory } from 'ecpair';
 import { HDSegwitBech32Wallet } from './hd-segwit-bech32-wallet.ts';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet.ts';
-import { getDefaultIndexer } from '../../blue_modules/SilentPaymentIndexer';
+import { disconnectIndexer, getDefaultIndexer } from '../../blue_modules/SilentPaymentIndexer';
 import ecc from '../../blue_modules/noble_ecc';
 import {
   getSilentPaymentAddress,
@@ -196,7 +196,12 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
       tx => tx.scanTweak && tx.outputs && tx.outputs.length > 0
     );
     
-    const newUTXOs = await this.transactionProcessor!.processBatch(validTransactions, silentPaymentAddress);
+    const newUTXOs = await this.transactionProcessor!.processBatch(
+      validTransactions, 
+      silentPaymentAddress,
+      10,
+      () => this.shouldCancelScan
+    );
     
     return {
       utxos: newUTXOs,
@@ -238,6 +243,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
       console.log('[SP] Cancelling active scan...');
       this.shouldCancelScan = true;
     }
+    disconnectIndexer();
     this.stopPolling();
   }
 
@@ -412,35 +418,19 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   }
 
   async fetchBalance(): Promise<void> {
-    try {
-      await super.fetchBalance();
-    } catch (regularError) {
-      console.error('[SP] Error fetching regular balance:', regularError);
-    }
+    await super.fetchBalance();
     
-    // Run silent payment scanning in the background without blocking
-    // This prevents timeouts during wallet refresh operations
-    this.scanForPayments()
-      .then(() => this.refreshUTXOSpentStatus())
-      .catch(spError => {
-        console.warn('[SP] Scan failed:', spError.message);
-      });
+    if (!this.shouldCancelScan) {
+      await this.scanForPayments();
+    }
   }
 
   async fetchTransactions(): Promise<void> {
-    try {
-      await super.fetchTransactions();
-    } catch (regularError) {
-      console.error('[SP] Error fetching regular transactions:', regularError);
-    }
+    await super.fetchTransactions();
     
-    // Run silent payment scanning in the background without blocking
-    // This prevents timeouts during wallet refresh operations
-    this.scanForPayments()
-      .then(() => this.refreshUTXOSpentStatus())
-      .catch(spError => {
-        console.warn('[SP] Scan failed:', spError.message);
-      });
+    if (!this.shouldCancelScan) {
+      await this.scanForPayments();
+    }
   }
 
   getUTXOs(): SilentPaymentUTXO[] {
@@ -706,6 +696,11 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   }
 
   async refreshUTXOSpentStatus(): Promise<number> {
+    if (this.shouldCancelScan) {
+      console.log('[SP] Skipping UTXO refresh - wallet scan cancelled');
+      return 0;
+    }
+    
     try {
       const indexer = getDefaultIndexer();
       const utxos = this.getSilentPaymentUTXOs();

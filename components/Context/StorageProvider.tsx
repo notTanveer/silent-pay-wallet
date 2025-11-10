@@ -196,6 +196,11 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
   }, [forceWalletsUpdate, debouncedPersist]);
 
   const deleteWallet = useCallback((wallet: TWallet) => {
+    if ('cancelScan' in wallet && typeof wallet.cancelScan === 'function') {
+      console.log('[StorageProvider] Cancelling active scan for wallet before deletion...');
+      wallet.cancelScan();
+    }
+    
     if ('clearCache' in wallet && typeof wallet.clearCache === 'function')
       wallet.clearCache();
     

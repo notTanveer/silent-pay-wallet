@@ -95,17 +95,24 @@ export class TransactionProcessor {
    * @param {IndexerTransaction[]} transactions - Array of transactions to process
    * @param {string} silentPaymentAddress - The wallet's Silent Payment address
    * @param {number} chunkSize - Number of transactions to process before yielding (default: 10)
+   * @param {() => boolean} shouldCancel - Optional callback to check if processing should be cancelled
    * @returns {Promise<SilentPaymentUTXO[]>} - Combined array of all matched UTXOs
    */
   async processBatch(
     transactions: IndexerTransaction[], 
     silentPaymentAddress: string,
-    chunkSize: number = 10
+    chunkSize: number = 10,
+    shouldCancel?: () => boolean
   ): Promise<SilentPaymentUTXO[]> {
     const allUTXOs: SilentPaymentUTXO[] = [];
     
     // process transactions in chunks to avoid blocking the UI thread
     for (let i = 0; i < transactions.length; i += chunkSize) {
+      if (shouldCancel?.()) {
+        console.log(`[TransactionProcessor] Processing cancelled at transaction ${i}/${transactions.length}`);
+        break;
+      }
+      
       const chunk = transactions.slice(i, i + chunkSize);
       
       const chunkResults = chunk.map(tx => this.process(tx, silentPaymentAddress));
