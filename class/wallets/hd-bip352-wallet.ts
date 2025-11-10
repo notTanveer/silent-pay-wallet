@@ -419,17 +419,30 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
 
   async fetchBalance(): Promise<void> {
     await super.fetchBalance();
-    
-    if (!this.shouldCancelScan) {
-      await this.scanForPayments();
-    }
   }
 
   async fetchTransactions(): Promise<void> {
-    await super.fetchTransactions();
+    try {
+      await super.fetchTransactions();
+    } catch (regularError: any) {
+      console.warn('[SP] Error fetching regular transactions:', regularError?.message || regularError);
+    }
     
-    if (!this.shouldCancelScan) {
+    void this.runSilentPaymentScan();
+  }
+
+  private async runSilentPaymentScan(): Promise<void> {
+    if (this.shouldCancelScan) {
+      console.log('[SP] Skipping scan - wallet cancelled');
+      return;
+    }
+    
+    try {
       await this.scanForPayments();
+    } catch (spError: any) {
+      if (spError?.message !== 'SCAN_CANCELLED') {
+        console.warn('[SP] Scan failed:', spError?.message || spError);
+      }
     }
   }
 
