@@ -46,6 +46,8 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   private isPollingActive: boolean = false;
   private onBalanceChangeCallback: (() => void) | null = null;
   private onPersistCallback: (() => void) | null = null;
+  private _sp_spending_txs: Transaction[] = [];
+  private _sp_pending_inputs: Set<string> = new Set(); // "txid:vout"
 
   setOnBalanceChangeCallback(callback: (() => void) | null): void {
     this.onBalanceChangeCallback = callback;
@@ -70,9 +72,17 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
         wallet.lastScannedBlock = data[key] || 0;
       } else if (key === '_birthHeight') {
         wallet._birthHeight = data[key] || wallet.TAPROOT_ACTIVATION_HEIGHT;
-      } else if (key !== '_utxo' && key !== 'transactionProcessor' && key !== 'cachedSeed' && key !== 'spUTXOsCache' && key !== 'activeScanPromise') {
+      } else if (key === '_sp_spending_txs') {
+        wallet._sp_spending_txs = data[key] || [];
+      } else if (key === '_sp_pending_inputs') {
+        wallet._sp_pending_inputs = new Set(data[key] || []);
+      } else if (key !== '_utxo' && key !== 'transactionProcessor' && key !== 'cachedSeed' && key !== 'spUTXOsCache' && key !== 'activeScanPromise' && key !== '_sp_pending_inputs' && key !== '_sp_spending_txs') {
         (wallet as any)[key] = data[key];
       }
+    }
+    
+    if (!(wallet._sp_pending_inputs instanceof Set)) {
+      wallet._sp_pending_inputs = new Set();
     }
     
     return wallet;
@@ -81,8 +91,13 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   prepareForSerialization(): void {
     super.prepareForSerialization();
     
-    const spUtxos = this.getSilentPaymentUTXOs();
-    (this as any)._utxos_serializable = spUtxos.map((utxo): SilentPaymentUTXOSerializable => {
+    // IMPORTANT: serialize ALL SP UTXOs (both spent and unspent)
+    // we need spent UTXOs for transaction history and value calculations
+    const allSpUtxos = this._utxo.filter((u): u is SilentPaymentUTXO =>
+      'tweak' in u && u.tweak instanceof Uint8Array
+    );
+    
+    (this as any)._utxos_serializable = allSpUtxos.map((utxo): SilentPaymentUTXOSerializable => {
       const { tweak, ...rest } = utxo;
       return {
         ...rest,
@@ -92,6 +107,8 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     
     (this as any).lastScannedBlock = this.lastScannedBlock;
     (this as any)._birthHeight = this._birthHeight;
+    (this as any)._sp_spending_txs = this._sp_spending_txs;
+    (this as any)._sp_pending_inputs = Array.from(this._sp_pending_inputs);
   }
 
   private getSilentPaymentUTXOs(): SilentPaymentUTXO[] {
@@ -130,18 +147,41 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
       utxo.isSpent = true;
       this.invalidateUTXOCache();
       
-      if (this.onBalanceChangeCallback) {
-        this.onBalanceChangeCallback();
-      }
-      
-      if (this.onPersistCallback) {
-        this.onPersistCallback();
-      }
+      this.onBalanceChangeCallback?.();
+      this.onPersistCallback?.();
       
       return true;
     }
     
     return false;
+  }
+
+  private ensurePendingInputsInitialized(): void {
+    if (!this._sp_pending_inputs || !(this._sp_pending_inputs instanceof Set)) {
+      this._sp_pending_inputs = new Set();
+    }
+  }
+
+  private releaseUTXOsFromTx(hex: string): number {
+    try {
+      const tx = bitcoin.Transaction.fromHex(hex);
+      let releasedCount = 0;
+      
+      for (const input of tx.ins) {
+        const txid = Buffer.from(input.hash).reverse().toString('hex');
+        const vout = input.index;
+        const inputKey = `${txid}:${vout}`;
+        
+        if (this._sp_pending_inputs.delete(inputKey)) {
+          releasedCount++;
+        }
+      }
+      
+      return releasedCount;
+    } catch (error) {
+      console.error('[SP] Error parsing transaction hex in releaseUTXOsFromTx:', error);
+      return 0;
+    }
   }
 
   private ensureTransactionProcessor(): void {
@@ -225,9 +265,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     
     // Trigger callbacks if state changed
     if (addedCount > 0) {
-      if (this.onBalanceChangeCallback) {
-        this.onBalanceChangeCallback();
-      }
+      this.onBalanceChangeCallback?.();
     }
     
     // Always persist when lastScannedBlock updates to track scan progress
@@ -455,16 +493,23 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
    * ensures coin control and transaction creation have access to all available UTXOs.
    */
   getUtxo(respectFrozen = false): Utxo[] {
-    const regularUtxos = super.getUtxo(respectFrozen);
     const spUtxos = this.getUTXOs();
-    
-    return [...regularUtxos, ...spUtxos];
+    let ret = [];
+
+    if (this._utxo.length === 0) {
+      ret = this.getDerivedUtxoFromOurTransaction(); // oy vey, no stored utxo. lets attempt to derive it from stored transactions
+    } else {
+      ret = this._utxo;
+    }
+    if (!respectFrozen) {
+      ret = ret.filter(({ txid, vout }) => !this.getUTXOMetadata(txid, vout).frozen);
+    }
+    return [...ret, ...spUtxos];
   }
 
   getBalance(): number {
     const regularBalance = super.getBalance();
-    const silentPaymentBalance = this.getSilentPaymentUTXOs()
-      .filter(u => !u.isSpent)
+    const silentPaymentBalance = this.getUTXOs()
       .reduce((sum, utxo) => sum + utxo.value, 0);
     
     return regularBalance + silentPaymentBalance;
@@ -501,7 +546,8 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   getTransactions(): Transaction[] {
     const regularTransactions = super.getTransactions();
     
-    const utxos = this.getSilentPaymentUTXOs().filter(u => !u.isSpent);
+    // Include ALL UTXOs (both spent and unspent) so spending transactions appear in the list
+    const utxos = this.getSilentPaymentUTXOs();
     
     const txMap = new Map<string, SilentPaymentUTXO[]>();
     
@@ -547,7 +593,8 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
       });
     }
     
-    const allTransactions = [...regularTransactions, ...spTransactions];
+    // Include spending transactions (when we spend SP UTXOs)
+    const allTransactions = [...regularTransactions, ...spTransactions, ...this._sp_spending_txs];
     
     allTransactions.sort((a, b) => {
       const timeA = a.timestamp || a.blocktime || 0;
@@ -569,7 +616,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     changeAddress: string,
     sequence: number = AbstractHDElectrumWallet.finalRBFSequence,
     skipSigning = false,
-    masterFingerprint: number = 0,
+    masterFingerprint: number,
   ): CreateTransactionResult {
     if (targets.length === 0) throw new Error('No destination provided');
     if (utxos.length === 0) throw new Error('No UTXOs provided');
@@ -616,92 +663,224 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     const { inputs, outputs, fee } = this.coinselect(spUtxos as CreateTransactionUtxo[], targets, feeRate);
     const utxoMap = new Map(spUtxos.map(u => [`${u.txid}:${u.vout}`, u]));
     
-    const spendPrivKey = this.getSpendPrivateKey();
-    const spendPubKey = this.getSpendPublicKey();
-    const xOnlyPub = spendPubKey.subarray(1, 33);
+    this.ensurePendingInputsInitialized();
     
-    const psbt = new bitcoin.Psbt();
+    // Reserve UTXOs to prevent double-spend attempts
+    const inputKeys = inputs.map(input => `${input.txid}:${input.vout}`);
+    inputKeys.forEach(key => this._sp_pending_inputs.add(key));
     
-    // add taproot inputs with tweaked public keys
-    inputs.forEach((input) => {
-      const spUtxo = utxoMap.get(`${input.txid}:${input.vout}`);
-      if (!spUtxo) {
-        throw new Error(`UTXO not found: ${input.txid}:${input.vout}`);
-      }
+    try {
+      const spendPrivKey = this.getSpendPrivateKey();
+      const spendPubKey = this.getSpendPublicKey();
+      const xOnlyPub = spendPubKey.subarray(1, 33);
       
-      const result = ecc.xOnlyPointAddTweak(xOnlyPub, spUtxo.tweak);
-      if (!result) {
-        throw new Error('Failed to compute tweaked public key');
-      }
+      const psbt = new bitcoin.Psbt();
       
-      const witnessScript = Buffer.concat([
-        Buffer.from([0x51, 0x20]), // OP_1 + PUSH32 (Taproot script)
-        result.xOnlyPubkey,
-      ]);
-      
-      psbt.addInput({
-        hash: input.txid,
-        index: input.vout,
-        sequence,
-        witnessUtxo: {
-          script: witnessScript,
-          value: BigInt(input.value),
-        },
-        tapInternalKey: Buffer.from(xOnlyPub),
-      });
-    });
-    
-    outputs.forEach(output => {
-      psbt.addOutput({
-        address: output.address || changeAddress,
-        value: BigInt(output.value),
-      });
-    });
-    
-    let tx: bitcoin.Transaction | undefined;
-    
-    if (!skipSigning) {
-      // sign each input with its tweaked key pair
-      inputs.forEach((input, idx) => {
+      // add taproot inputs with tweaked public keys
+      inputs.forEach((input) => {
         const spUtxo = utxoMap.get(`${input.txid}:${input.vout}`);
         if (!spUtxo) {
           throw new Error(`UTXO not found: ${input.txid}:${input.vout}`);
         }
-
-        const tweakedPrivKey = ecc.privateAdd(spendPrivKey, spUtxo.tweak);
-        if (!tweakedPrivKey) {
-          throw new Error('Failed to compute tweaked private key');
+        
+        const result = ecc.xOnlyPointAddTweak(xOnlyPub, spUtxo.tweak);
+        if (!result) {
+          throw new Error('Failed to compute tweaked public key');
         }
         
-        const tweakedKeyPair = ECPair.fromPrivateKey(Buffer.from(tweakedPrivKey), { compressed: true });
-        psbt.signTaprootInput(idx, tweakedKeyPair);
+        const witnessScript = Buffer.concat([
+          Buffer.from([0x51, 0x20]), // OP_1 + PUSH32 (Taproot script)
+          result.xOnlyPubkey,
+        ]);
+        
+        psbt.addInput({
+          hash: input.txid,
+          index: input.vout,
+          sequence,
+          witnessUtxo: {
+            script: witnessScript,
+            value: BigInt(input.value),
+          },
+          tapInternalKey: Buffer.from(xOnlyPub),
+        });
       });
       
-      psbt.finalizeAllInputs();
-      tx = psbt.extractTransaction();
-      console.log(`[SP] Transaction created: ${tx.getId()}`);
+      outputs.forEach(output => {
+        psbt.addOutput({
+          address: output.address || changeAddress,
+          value: BigInt(output.value),
+        });
+      });
       
-      for (const input of inputs) {
-        this.markUTXOAsSpent(input.txid, input.vout);
+      let tx: bitcoin.Transaction | undefined;
+      
+      if (!skipSigning) {
+        // sign each input with its tweaked key pair
+        inputs.forEach((input, idx) => {
+          const spUtxo = utxoMap.get(`${input.txid}:${input.vout}`);
+          if (!spUtxo) {
+            throw new Error(`UTXO not found: ${input.txid}:${input.vout}`);
+          }
+
+          const tweakedPrivKey = ecc.privateAdd(spendPrivKey, spUtxo.tweak);
+          if (!tweakedPrivKey) {
+            throw new Error('Failed to compute tweaked private key');
+          }
+          
+          const tweakedKeyPair = ECPair.fromPrivateKey(Buffer.from(tweakedPrivKey), { compressed: true });
+          psbt.signTaprootInput(idx, tweakedKeyPair);
+        });
+        
+        psbt.finalizeAllInputs();
+        tx = psbt.extractTransaction();
+        console.log(`[SP] Transaction created: ${tx.getId()}`);
+        console.log(`[SP] Reserved ${inputs.length} UTXOs (will mark spent after broadcast)`);
       }
-      console.log(`[SP] Marked ${inputs.length} UTXOs as spent`);
+      
+      return {
+        tx,
+        psbt,
+        inputs: inputs.map(i => ({
+          txid: i.txid,
+          vout: i.vout,
+          address: i.address,
+          value: i.value,
+        })),
+        outputs: outputs.map(o => ({
+          address: o.address || changeAddress,
+          value: o.value,
+        })),
+        fee,
+      };
+    } catch (error) {
+      // If transaction creation fails, release the reserved UTXOs
+      inputKeys.forEach(key => this._sp_pending_inputs.delete(key));
+      throw error;
     }
-    
-    return {
-      tx,
-      psbt,
-      inputs: inputs.map(i => ({
-        txid: i.txid,
-        vout: i.vout,
-        address: i.address,
-        value: i.value,
-      })),
-      outputs: outputs.map(o => ({
-        address: o.address,
-        value: o.value,
-      })),
-      fee,
-    };
+  }
+
+  /**
+   * Override broadcastTx to mark SP UTXOs as spent only after successful broadcast
+   */
+  async broadcastTx(hex: string): Promise<boolean> {
+    try {
+      this.ensurePendingInputsInitialized();
+      
+      const tx = bitcoin.Transaction.fromHex(hex);
+      const spInputs: Array<{ txid: string; vout: number }> = [];
+      
+      for (const input of tx.ins) {
+        const txid = Buffer.from(input.hash).reverse().toString('hex');
+        const vout = input.index;
+        const inputKey = `${txid}:${vout}`;
+        
+        if (this._sp_pending_inputs.has(inputKey)) {
+          spInputs.push({ txid, vout });
+        }
+      }
+      
+      // broadcast using parent implementation
+      const txid = await super.broadcastTx(hex);
+      
+      // only after successful broadcast, mark SP UTXOs as spent
+      if (txid && spInputs.length > 0) {
+        console.log(`[SP] Broadcast successful, marking ${spInputs.length} UTXOs as spent`);
+        
+        const broadcastedTxid = tx.getId();
+        
+        // start with 0, subtract our inputs, add our outputs (change)
+        let value = 0;
+        
+        // subtract all SP inputs (money leaving our wallet)
+        for (const { txid, vout } of spInputs) {
+          const utxo = this._utxo.find(u => u.txid === txid && u.vout === vout);
+          if (utxo) {
+            value -= utxo.value;
+          } else {
+            console.warn(`[SP] UTXO not found for input ${txid}:${vout}, value calculation may be incorrect`);
+          }
+        }
+        
+        // add back any outputs going to our addresses (change)
+        for (const output of tx.outs) {
+          try {
+            const address = bitcoin.address.fromOutputScript(output.script, bitcoin.networks.bitcoin);
+            if (this.weOwnAddress(address)) {
+              value += Number(output.value);
+            }
+          } catch (e) {
+            // If we can't decode the address, assume it's not ours
+            console.warn('[SP] Failed to decode output address for value calculation:', e);
+          }
+        }
+        
+        const spendingTx: Transaction = {
+          txid: broadcastedTxid,
+          hash: broadcastedTxid,
+          version: tx.version,
+          size: tx.byteLength(),
+          vsize: tx.virtualSize(),
+          weight: tx.weight(),
+          locktime: tx.locktime,
+          value,
+          confirmations: 0,
+          blockhash: '',
+          time: Math.floor(Date.now() / 1000),
+          blocktime: Math.floor(Date.now() / 1000),
+          timestamp: Math.floor(Date.now() / 1000),
+          inputs: spInputs.map((input, idx) => ({
+            txid: input.txid,
+            vout: input.vout,
+            scriptSig: { asm: '', hex: '' },
+            txinwitness: [],
+            sequence: tx.ins[idx]?.sequence || 0xfffffffd,
+            addresses: [this.getSilentPaymentAddress() || ''],
+            value: this._utxo.find(u => u.txid === input.txid && u.vout === input.vout)?.value || 0,
+          })),
+          outputs: tx.outs.map((output, n) => {
+            // Decode the address from the output script
+            let addresses: string[] = [];
+            try {
+              const address = bitcoin.address.fromOutputScript(output.script, bitcoin.networks.bitcoin);
+              addresses = [address];
+            } catch (e) {
+              // If address decoding fails, leave empty
+              console.warn('[SP] Failed to decode output address:', e);
+            }
+            
+            return {
+              value: Number(output.value),
+              n,
+              scriptPubKey: {
+                asm: '',
+                hex: Buffer.from(output.script).toString('hex'),
+                reqSigs: 1,
+                type: output.script[0] === 0x00 && output.script[1] === 0x14 ? 'witness_v0_keyhash' : 
+                      output.script[0] === 0x51 && output.script[1] === 0x20 ? 'witness_v1_taproot' : 'unknown',
+                addresses,
+              },
+            };
+          }),
+        };
+        
+        this._sp_spending_txs.push(spendingTx);
+        
+        for (const { txid, vout } of spInputs) {
+          const inputKey = `${txid}:${vout}`;
+          this._sp_pending_inputs.delete(inputKey);
+          this.markUTXOAsSpent(txid, vout);
+        }
+
+        this.onPersistCallback?.();
+        this.onBalanceChangeCallback?.();
+      }
+      
+      return txid;
+    } catch (error) {
+      this.releaseUTXOsFromTx(hex);
+      console.log('[SP] Broadcast failed, released reserved UTXOs');
+      throw error;
+    }
   }
 
   setLastScannedBlock(height: number): void {
@@ -767,6 +946,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     
     this.stopPolling();
     this.invalidateUTXOCache();
+    this._sp_pending_inputs.clear();
     this.onBalanceChangeCallback = null;
     this.onPersistCallback = null;
   }
