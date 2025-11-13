@@ -1,6 +1,5 @@
 import * as bip39 from 'bip39';
 import { Buffer } from 'buffer';
-import { HDSegwitBech32Wallet } from './hd-segwit-bech32-wallet.ts';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet.ts';
 import { getDefaultIndexer } from '../../blue_modules/SilentPaymentIndexer';
 import {
@@ -18,9 +17,10 @@ import {
 } from '../../helpers/silent-payments';
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types.ts';
 import * as bitcoin from 'bitcoinjs-lib';
+import { HDTaprootWallet } from './hd-taproot-wallet.ts';
 
 
-export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
+export class HDSilentPaymentsWallet extends HDTaprootWallet {
   static readonly type = 'HDSilentPaymentsWallet';
   static readonly typeReadable = 'HD Silent Payments';
   // @ts-ignore: override

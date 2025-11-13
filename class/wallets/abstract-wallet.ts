@@ -30,7 +30,7 @@ export class AbstractWallet {
     return temp;
   }
 
-  segwitType?: 'p2wpkh' | 'p2sh(p2wpkh)';
+  segwitType?: 'p2wpkh' | 'p2sh(p2wpkh)' | 'p2tr';
   _derivationPath?: string;
   label: string;
   secret: string;
@@ -311,12 +311,19 @@ export class AbstractWallet {
     }
 
     // is it output descriptor?
-    if (this.secret.startsWith('wpkh(') || this.secret.startsWith('pkh(') || this.secret.startsWith('sh(')) {
+    if (this.secret.startsWith('wpkh(') || this.secret.startsWith('pkh(') || this.secret.startsWith('sh(') || this.secret.startsWith('tr(')) {
       const xpubIndex = Math.max(this.secret.indexOf('xpub'), this.secret.indexOf('ypub'), this.secret.indexOf('zpub'));
-      const fpAndPath = this.secret.substring(this.secret.indexOf('(') + 1, xpubIndex);
-      const xpub = this.secret.substring(xpubIndex).replace(/\(|\)/, '');
+      let fpAndPath;
+      if (this.secret.includes('[')) {
+        fpAndPath = this.secret.substring(this.secret.indexOf('['), xpubIndex).replace(/[\[\]]/g, '');
+      } else {
+        // old (or broken) format..? no square brackets, only "()"
+        fpAndPath = this.secret.substring(this.secret.indexOf('('), xpubIndex).replace(/[()]/g, '');
+      }
+      const xpub = this.secret.substring(xpubIndex).replace(/\(|\)/, '').split('/')[0];
+
       const pathIndex = fpAndPath.indexOf('/');
-      const path = 'm' + fpAndPath.substring(pathIndex);
+      const path = 'm' + fpAndPath.substring(pathIndex).replace(/h/g, "'");
       const fp = fpAndPath.substring(0, pathIndex);
 
       this._derivationPath = path;
