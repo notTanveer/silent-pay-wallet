@@ -41,7 +41,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   private _birthHeight: number = this.TAPROOT_ACTIVATION_HEIGHT;
   private spUTXOsCache: SilentPaymentUTXO[] | null = null;
   private activeScanPromise: Promise<number> | null = null;
-  private shouldCancelScan: boolean = false;
+  private cancelScanCallbackScan: boolean = false;
   private pollingIntervalId: NodeJS.Timeout | null = null;
   private isPollingActive: boolean = false;
   private onBalanceChangeCallback: (() => void) | null = null;
@@ -200,7 +200,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
       validTransactions, 
       silentPaymentAddress,
       10,
-      () => this.shouldCancelScan
+      () => this.cancelScanCallbackScan
     );
     
     return {
@@ -241,7 +241,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   cancelScan(): void {
     if (this.activeScanPromise !== null) {
       console.log('[SP] Cancelling active scan...');
-      this.shouldCancelScan = true;
+      this.cancelScanCallbackScan = true;
     }
     disconnectIndexer();
     this.stopPolling();
@@ -307,7 +307,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
       return this.activeScanPromise;
     }
     
-    this.shouldCancelScan = false;
+    this.cancelScanCallbackScan = false;
     this.activeScanPromise = this.performScan(maxBlocks, onProgress, forceFullScan);
     
     try {
@@ -315,7 +315,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
       return result;
     } finally {
       this.activeScanPromise = null;
-      this.shouldCancelScan = false;
+      this.cancelScanCallbackScan = false;
     }
   }
 
@@ -372,7 +372,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
         startHeight,
         endHeight,
         async (transactions, blockHeight) => {
-          if (this.shouldCancelScan) {
+          if (this.cancelScanCallbackScan) {
             console.log('[SP] Scan cancelled at block', blockHeight);
             throw new Error('SCAN_CANCELLED');
           }
@@ -424,15 +424,15 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   async fetchTransactions(): Promise<void> {
     try {
       await super.fetchTransactions();
-    } catch (regularError: any) {
-      console.warn('[SP] Error fetching regular transactions:', regularError?.message || regularError);
+    } catch (regularError) {
+      console.error('[SP] Error fetching regular transactions:', regularError);
     }
     
-    void this.runSilentPaymentScan();
+    void this.scanForSilentPayments();
   }
 
-  private async runSilentPaymentScan(): Promise<void> {
-    if (this.shouldCancelScan) {
+  private async scanForSilentPayments(): Promise<void> {
+    if (this.cancelScanCallbackScan) {
       console.log('[SP] Skipping scan - wallet cancelled');
       return;
     }
@@ -709,7 +709,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   }
 
   async refreshUTXOSpentStatus(): Promise<number> {
-    if (this.shouldCancelScan) {
+    if (this.cancelScanCallbackScan) {
       console.log('[SP] Skipping UTXO refresh - wallet scan cancelled');
       return 0;
     }
