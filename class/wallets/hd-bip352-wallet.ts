@@ -11,7 +11,7 @@ import {
   getSpendPrivateKey,
   getScanPublicKey,
   getSpendPublicKey,
-  TransactionProcessor,
+  WorkletTransactionProcessor,
   type IndexerTransaction,
   type SilentPaymentUTXO,
   type SilentPaymentUTXOSerializable,
@@ -36,7 +36,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
   private readonly TAPROOT_ACTIVATION_HEIGHT = 922298;
 
   private cachedSeed: Buffer | null = null;
-  private transactionProcessor: TransactionProcessor | null = null;
+  private transactionProcessor: WorkletTransactionProcessor | null = null;
   private lastScannedBlock: number = 0;
   private _birthHeight: number = this.TAPROOT_ACTIVATION_HEIGHT;
   private spUTXOsCache: SilentPaymentUTXO[] | null = null;
@@ -148,7 +148,7 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
     if (this.transactionProcessor !== null) return;
 
     const seed = this.getSeed();
-    this.transactionProcessor = new TransactionProcessor(seed);
+    this.transactionProcessor = new WorkletTransactionProcessor(seed);
   }
 
   getSilentPaymentAddress(): string | null {
@@ -196,7 +196,10 @@ export class HDSilentPaymentsWallet extends HDSegwitBech32Wallet {
       tx => tx.scanTweak && tx.outputs && tx.outputs.length > 0
     );
     
-    const newUTXOs = await this.transactionProcessor!.processBatch(validTransactions, silentPaymentAddress);
+    const newUTXOs = await this.transactionProcessor!.processBatchWithWorklet(
+      validTransactions, 
+      silentPaymentAddress
+    );
     
     return {
       utxos: newUTXOs,
