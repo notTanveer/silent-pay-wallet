@@ -19,5 +19,3 @@ export type {
   SilentPaymentUTXOSerializable,
   ScanProgressCallback,
 } from './types';
-export { SilentPaymentSpender } from './SilentPaymentSpender';
-export { SilentPaymentTransactionBuilder } from './SilentPaymentTransactionBuilder';
