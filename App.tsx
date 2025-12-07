@@ -10,8 +10,18 @@ import { navigationRef } from './NavigationService';
 import { useLogger } from '@react-navigation/devtools';
 import { StorageProvider } from './components/Context/StorageProvider';
 import { initializeIndexer } from './blue_modules/SilentPaymentIndexer';
+import { initializeRustJsiBridge, helloFromRust, multiplyFromRust } from './blue_modules/RustJsiBridge';
 
 const App = () => {
+  React.useEffect(() => {
+    initializeRustJsiBridge();
+    try {
+      console.log('Rust says:', helloFromRust());
+      console.log('6 * 7 =', multiplyFromRust(6, 7));
+    } catch (e) {
+      console.error('Rust Bridge failed:', e);
+    }
+  }, []);
 
   initializeIndexer({
     baseUrl: 'https://cushionlike-isabel-retrievable.ngrok-free.dev/',
