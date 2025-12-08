@@ -117,7 +117,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     }
     
     this.spUTXOsCache = this._utxo.filter((u): u is SilentPaymentUTXO =>
-      'tweak' in u && u.tweak instanceof Uint8Array && !u.isSpent
+      'tweak' in u && u.tweak instanceof Uint8Array
     );
     
     return this.spUTXOsCache;
@@ -870,6 +870,8 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
           this._sp_pending_inputs.delete(inputKey);
           this.markUTXOAsSpent(txid, vout);
         }
+        this.fetchUtxo()
+          .catch(error => console.warn('[SP] Post-broadcast fetchUtxo failed:', error));
 
         this.onPersistCallback?.();
         this.onBalanceChangeCallback?.();
