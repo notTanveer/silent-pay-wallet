@@ -18,16 +18,16 @@
       <string>export</string>
       <key>provisioningProfiles</key>
       <dict>
-          <key>io.bluewallet.bluewallet</key>
-          <string>match AppStore io.bluewallet.bluewallet</string>
-          <key>io.bluewallet.bluewallet.watch</key>
-          <string>match AppStore io.bluewallet.bluewallet.watch</string>
-          <key>io.bluewallet.bluewallet.watch.extension</key>
-          <string>match AppStore io.bluewallet.bluewallet.watch.extension</string>
-          <key>io.bluewallet.bluewallet.Stickers</key>
-          <string>match AppStore io.bluewallet.bluewallet.Stickers</string>
-          <key>io.bluewallet.bluewallet.MarketWidget</key>
-          <string>match AppStore io.bluewallet.bluewallet.MarketWidget</string>
+          <key>org.bitshala.shroud</key>
+          <string>match AppStore org.bitshala.shroud</string>
+          <key>org.bitshala.shroud.watch</key>
+          <string>match AppStore org.bitshala.shroud.watch</string>
+          <key>org.bitshala.shroud.watch.extension</key>
+          <string>match AppStore org.bitshala.shroud.watch.extension</string>
+          <key>org.bitshala.shroud.Stickers</key>
+          <string>match AppStore org.bitshala.shroud.Stickers</string>
+          <key>org.bitshala.shroud.MarketWidget</key>
+          <string>match AppStore org.bitshala.shroud.MarketWidget</string>
       </dict>
   </dict>
 </plist>

@@ -304,7 +304,7 @@ class AppDelegate: RCTAppDelegate, UNUserNotificationCenterDelegate {
 
         userDefaultsGroup?.setValue(userActivityData, forKey: "onUserActivityOpen")
 
-        if ["io.bluewallet.bluewallet.receiveonchain", "io.bluewallet.bluewallet.xpub", "io.bluewallet.bluewallet.blockexplorer"].contains(activityType) {
+        if ["org.bitshala.shroud.receiveonchain", "org.bitshala.shroud.xpub", "org.bitshala.shroud.blockexplorer"].contains(activityType) {
           EventEmitter.shared().sendUserActivity(userActivityData)
             return true
         }

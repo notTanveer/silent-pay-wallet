@@ -1,4 +1,4 @@
-package io.bluewallet.bluewallet
+package org.bitshala.shroud
 
 import android.content.pm.ActivityInfo
 import android.os.Bundle

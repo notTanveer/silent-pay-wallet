@@ -1,4 +1,4 @@
-package io.bluewallet.bluewallet
+package org.bitshala.shroud
 
 /**
  * Exception thrown when an API rate limit is encountered
