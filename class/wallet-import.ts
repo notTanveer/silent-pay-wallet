@@ -10,6 +10,7 @@ import {
   HDSegwitBech32Wallet,
   HDSegwitElectrumSeedP2WPKHWallet,
   HDSegwitP2SHWallet,
+  HDTaprootWallet,
   LegacyWallet,
   LightningCustodianWallet,
   MultisigHDWallet,
@@ -24,6 +25,14 @@ import {
 import bip39WalletFormats from './bip39_wallet_formats.json'; // https://github.com/spesmilo/electrum/blob/master/electrum/bip39_wallet_formats.json
 import bip39WalletFormatsBlueWallet from './bip39_wallet_formats_bluewallet.json';
 import type { TWallet } from './wallets/types';
+
+// because original file bip39WalletFormats is from Electrum and doesn't contain p2tr wallets, we need to add it
+bip39WalletFormats.push({
+  description: 'Standard BIP86 native taproot',
+  derivation_path: "m/86'/0'/0'",
+  script_type: 'p2tr',
+  iterate_accounts: true,
+});
 
 // https://github.com/bitcoinjs/bip32/blob/master/ts-src/bip32.ts#L43
 export const validateBip32 = (path: string) => path.match(/^(m\/)?(\d+'?\/)*\d+'?$/) !== null;
@@ -232,6 +241,9 @@ const startImport = (
             break;
           case 'p2wpkh-p2sh':
             WalletClass = HDSegwitP2SHWallet;
+            break;
+          case 'p2tr':
+            WalletClass = HDTaprootWallet;
             break;
           default:
             // p2wpkh
