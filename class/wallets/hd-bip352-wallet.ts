@@ -163,6 +163,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
   }
 
   private releaseUTXOsFromTx(hex: string): number {
+    this.ensurePendingInputsInitialized();
     try {
       const tx = bitcoin.Transaction.fromHex(hex);
       let releasedCount = 0;
@@ -948,7 +949,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     
     this.stopPolling();
     this.invalidateUTXOCache();
-    this._sp_pending_inputs.clear();
+    this._sp_pending_inputs = new Set();
     this.onBalanceChangeCallback = null;
     this.onPersistCallback = null;
   }
