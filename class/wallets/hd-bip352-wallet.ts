@@ -33,7 +33,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
   private readonly POLLING_INTERVAL_MS = 30000;
   private readonly DEFAULT_MAX_BLOCKS = 100;
   private readonly BATCH_SIZE = 3;
-  private readonly TAPROOT_ACTIVATION_HEIGHT = 922298;
+  private readonly TAPROOT_ACTIVATION_HEIGHT = 927101;
 
   private cachedSeed: Buffer | null = null;
   private transactionProcessor: TransactionProcessor | null = null;
@@ -143,17 +143,29 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
   private markUTXOAsSpent(txid: string, vout: number): boolean {
     const utxo = this._utxo.find(u => u.txid === txid && u.vout === vout) as SilentPaymentUTXO | undefined;
     
-    if (utxo && 'isSpent' in utxo && !utxo.isSpent) {
-      utxo.isSpent = true;
-      this.invalidateUTXOCache();
-      
-      this.onBalanceChangeCallback?.();
-      this.onPersistCallback?.();
-      
-      return true;
+    if (!utxo) {
+      console.warn(`[SP] markUTXOAsSpent: UTXO not found ${txid}:${vout}`);
+      return false;
     }
     
-    return false;
+    if (!('tweak' in utxo)) {
+      console.warn(`[SP] markUTXOAsSpent: Not an SP UTXO ${txid}:${vout}`);
+      return false;
+    }
+    
+    if (utxo.isSpent) {
+      console.log(`[SP] markUTXOAsSpent: Already spent ${txid}:${vout}`);
+      return false;
+    }
+    
+    console.log(`[SP] markUTXOAsSpent: Marking ${txid}:${vout} as spent`);
+    utxo.isSpent = true;
+    this.invalidateUTXOCache();
+    
+    this.onBalanceChangeCallback?.();
+    this.onPersistCallback?.();
+    
+    return true;
   }
 
   private ensurePendingInputsInitialized(): void {
@@ -456,6 +468,32 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     }
   }
 
+  async fetchUtxo(): Promise<void> {
+    const spUtxos = this.getSilentPaymentUTXOs();
+    
+    try {
+      await super.fetchUtxo();
+    } catch (error) {
+      console.warn('[SP] super.fetchUtxo failed:', error);
+    } finally {
+      // Restore SP UTXOs
+      const existingKeys = new Set(this._utxo.map(u => `${u.txid}:${u.vout}`));
+      let restoredCount = 0;
+      
+      for (const utxo of spUtxos) {
+        const key = `${utxo.txid}:${utxo.vout}`;
+        if (!existingKeys.has(key)) {
+          this._utxo.push(utxo);
+          restoredCount++;
+        }
+      }
+      
+      if (restoredCount > 0) {
+        this.invalidateUTXOCache();
+      }
+    }
+  }
+
   async fetchBalance(): Promise<void> {
     await super.fetchBalance();
   }
@@ -486,32 +524,48 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
   }
 
   getUTXOs(): SilentPaymentUTXO[] {
-    return this.getSilentPaymentUTXOs().filter(u => !u.isSpent);
+    const allSpUtxos = this.getSilentPaymentUTXOs();
+    const unspentUtxos = allSpUtxos.filter(u => !u.isSpent);
+    console.log(`[SP] getUTXOs: total SP=${allSpUtxos.length}, unspent=${unspentUtxos.length}, spent=${allSpUtxos.length - unspentUtxos.length}`);
+    return unspentUtxos;
+  }
+
+  /**
+   * Get only regular (non-SP) UTXOs from the wallet.
+   * Filters out Silent Payment UTXOs to avoid duplicates.
+   */
+  private getRegularUtxos(): Utxo[] {
+    if (this._utxo.length === 0) {
+      return this.getDerivedUtxoFromOurTransaction();
+    }
+    // Filter out SP UTXOs - they have a 'tweak' property
+    return this._utxo.filter(u => !('tweak' in u));
   }
 
   /**
    * override parent's getUtxo() to include both regular UTXOs and SP UTXOs.
    * ensures coin control and transaction creation have access to all available UTXOs.
+   * IMPORTANT: We separate regular and SP UTXOs to avoid duplicates.
    */
   getUtxo(respectFrozen = false): Utxo[] {
-    const spUtxos = this.getUTXOs();
-    let ret = [];
+    const spUtxos = this.getUTXOs(); // unspent SP UTXOs only
+    let regularUtxos = this.getRegularUtxos();
 
-    if (this._utxo.length === 0) {
-      ret = this.getDerivedUtxoFromOurTransaction(); // oy vey, no stored utxo. lets attempt to derive it from stored transactions
-    } else {
-      ret = this._utxo;
-    }
     if (!respectFrozen) {
-      ret = ret.filter(({ txid, vout }) => !this.getUTXOMetadata(txid, vout).frozen);
+      regularUtxos = regularUtxos.filter(({ txid, vout }) => !this.getUTXOMetadata(txid, vout).frozen);
     }
-    return [...ret, ...spUtxos];
+    
+    // Combine regular UTXOs with SP UTXOs (no duplicates since they're from different sources)
+    return [...regularUtxos, ...spUtxos];
   }
 
   getBalance(): number {
     const regularBalance = super.getBalance();
-    const silentPaymentBalance = this.getUTXOs()
-      .reduce((sum, utxo) => sum + utxo.value, 0);
+    // Only add SP balance - regular balance is already computed by parent
+    const unspentSpUtxos = this.getUTXOs();
+    const silentPaymentBalance = unspentSpUtxos.reduce((sum, utxo) => sum + utxo.value, 0);
+    
+    console.log(`[SP] getBalance: regular=${regularBalance}, SP unspent UTXOs=${unspentSpUtxos.length}, SP balance=${silentPaymentBalance}, total=${regularBalance + silentPaymentBalance}`);
     
     return regularBalance + silentPaymentBalance;
   }
@@ -547,8 +601,10 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
   getTransactions(): Transaction[] {
     const regularTransactions = super.getTransactions();
     
-    // Include ALL UTXOs (both spent and unspent) so spending transactions appear in the list
+    // Include ALL UTXOs (both spent and unspent) so incoming SP transactions appear in the list
     const utxos = this.getSilentPaymentUTXOs();
+    
+    console.log(`[SP] getTransactions: ${utxos.length} SP UTXOs, ${this._sp_spending_txs.length} spending txs`);
     
     const txMap = new Map<string, SilentPaymentUTXO[]>();
     
@@ -559,13 +615,14 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       txMap.get(utxo.txid)!.push(utxo);
     }
     
-    const spTransactions: Transaction[] = [];
+    // Create incoming SP transactions (receiving payments)
+    const spIncomingTransactions: Transaction[] = [];
     
     for (const [txid, utxoGroup] of txMap) {
       const totalValue = utxoGroup.reduce((sum, utxo) => sum + utxo.value, 0);
       const firstUtxo = utxoGroup[0];
       
-      spTransactions.push({
+      spIncomingTransactions.push({
         txid: txid,
         hash: txid,
         version: 2,
@@ -595,7 +652,10 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     }
     
     // Include spending transactions (when we spend SP UTXOs)
-    const allTransactions = [...regularTransactions, ...spTransactions, ...this._sp_spending_txs];
+    // These have negative value since money is leaving our wallet
+    const allTransactions = [...regularTransactions, ...spIncomingTransactions, ...this._sp_spending_txs];
+    
+    console.log(`[SP] getTransactions total: ${allTransactions.length} (regular: ${regularTransactions.length}, incoming SP: ${spIncomingTransactions.length}, spending: ${this._sp_spending_txs.length})`);
     
     allTransactions.sort((a, b) => {
       const timeA = a.timestamp || a.blocktime || 0;
@@ -770,13 +830,20 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       const tx = bitcoin.Transaction.fromHex(hex);
       const spInputs: Array<{ txid: string; vout: number }> = [];
       
+      // check each input against both pending inputs AND our SP UTXOs
       for (const input of tx.ins) {
         const txid = Buffer.from(input.hash).reverse().toString('hex');
         const vout = input.index;
         const inputKey = `${txid}:${vout}`;
         
-        if (this._sp_pending_inputs.has(inputKey)) {
+        // check if it's in pending inputs OR if it's one of our SP UTXOs
+        const isSpUtxo = this._utxo.some(u => 
+          u.txid === txid && u.vout === vout && 'tweak' in u
+        );
+        
+        if (this._sp_pending_inputs.has(inputKey) || isSpUtxo) {
           spInputs.push({ txid, vout });
+          console.log(`[SP] Found SP input: ${txid}:${vout}`);
         }
       }
       
@@ -864,7 +931,9 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
           }),
         };
         
+        console.log(`[SP] Adding spending tx to list: ${spendingTx.txid}, value: ${spendingTx.value}`);
         this._sp_spending_txs.push(spendingTx);
+        console.log(`[SP] Total spending txs: ${this._sp_spending_txs.length}`);
         
         for (const { txid, vout } of spInputs) {
           const inputKey = `${txid}:${vout}`;
