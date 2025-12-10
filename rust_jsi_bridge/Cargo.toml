@@ -1,0 +1,12 @@
+[package]
+name = "rust_jsi_bridge"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = [
+    "staticlib",  # C-compatible static library for iOS/Android
+    "lib",        # Rust library for tests and examples
+]
+
+[dependencies]
