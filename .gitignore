@@ -94,3 +94,8 @@ android/.settings/org.eclipse.buildship.core.prefs
 android/app/.classpath
 android/app/.project
 android/app/src/main/assets/index.android.bundle
+android/app/src/main/jniLibs
+
+
+# rust
+rust_jsi_bridge/target/
