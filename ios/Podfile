@@ -39,6 +39,7 @@ def configure_target()
 
   )
   pod 'react-native-bw-file-access', :path => '../blue_modules/react-native-bw-file-access'
+  pod 'RustJsiBridge', :path => '.'
 end
 
 
