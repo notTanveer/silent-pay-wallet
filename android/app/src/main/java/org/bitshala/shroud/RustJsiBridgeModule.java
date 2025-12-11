@@ -1,4 +1,4 @@
-package io.bluewallet.bluewallet;
+package org.bitshala.shroud;
 
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
