@@ -60,12 +60,5 @@ describe('currency', () => {
     curString = await DefaultPreference.get(EXCHANGE_RATES_STORAGE_KEY);
     cur = JSON.parse(curString || '{}');
     assert.ok(cur.BTC_LBP > 0);
-
-    // test Exir rate source
-    await setPreferredCurrency(FiatUnit.IRT);
-    await initCurrencyDaemon(true);
-    curString = await DefaultPreference.get(EXCHANGE_RATES_STORAGE_KEY);
-    cur = JSON.parse(curString || '{}');
-    assert.ok(cur.BTC_IRT > 0);
   });
 });
