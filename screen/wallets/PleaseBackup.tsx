@@ -61,13 +61,9 @@ const PleaseBackup: React.FC = () => {
 
   return (
     <>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea}>
         {currentStep === BackupStep.SHOW_SEED && (
-          <ScrollView
-            style={styles.root}
-            contentContainerStyle={[styles.flex]}
-            testID="PleaseBackupScrollView"
-          >
+          <ScrollView style={styles.root} contentContainerStyle={[styles.flex]} testID="PleaseBackupScrollView">
             <View>
               <Text style={styles.title}>{loc.pleasebackup.title}</Text>
               <Text style={styles.subtitle}>{loc.pleasebackup.text}</Text>
@@ -86,11 +82,7 @@ const PleaseBackup: React.FC = () => {
         )}
 
         {currentStep === 'verify' && (
-          <SeedVerification
-            seed={seedPhrase.split(' ')}
-            onSuccess={handleVerifyComplete}
-            onBack={handleBackToSeed}
-          />
+          <SeedVerification seed={seedPhrase.split(' ')} onSuccess={handleVerifyComplete} onBack={handleBackToSeed} />
         )}
       </SafeAreaView>
     </>
@@ -98,6 +90,9 @@ const PleaseBackup: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   root: {
     padding: 10,
   },

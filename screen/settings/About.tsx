@@ -4,32 +4,16 @@ import { BlueCard } from '../../BlueComponents';
 import ListItem from '../../components/ListItem';
 import { useTheme } from '../../components/themes';
 import loc, { formatStringAddTwoWhiteSpaces } from '../../loc';
-import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 
-
 const About: React.FC = () => {
-  const { navigate } = useExtendedNavigation();
   const { colors } = useTheme();
 
   const stylesHook = StyleSheet.create({
     textBackup: {
       color: colors.foregroundColor,
     },
-    buildWith: {
-      backgroundColor: colors.inputBackgroundColor,
-    },
-    buttonLink: {
-      backgroundColor: colors.lightButton,
-    },
-    textLink: {
-      color: colors.foregroundColor,
-    },
   });
-
-  const handleOnLicensingPress = () => {
-    navigate('Licensing');
-  };
 
   const handleOnDiscordPress = () => {
     Linking.openURL('https://discord.com/invite/STeQFVEWf9');
@@ -73,15 +57,6 @@ const About: React.FC = () => {
 export default About;
 
 const styles = StyleSheet.create({
-  copyToClipboard: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  copyToClipboardText: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#68bbe1',
-  },
   center: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -105,23 +80,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
     fontWeight: '500',
-  },
-  buildWith: {
-    padding: 16,
-    paddingTop: 0,
-    borderRadius: 8,
-  },
-  buttonLink: {
-    borderRadius: 12,
-    justifyContent: 'center',
-    padding: 8,
-    flexDirection: 'row',
-  },
-  textLink: {
-    marginLeft: 8,
-    fontWeight: '600',
-  },
-  pressed: {
-    opacity: 0.6,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { Keyboard, Platform, StyleSheet, TouchableWithoutFeedback, View, TouchableOpacity, Image } from 'react-native';
@@ -8,13 +8,11 @@ import {
   DoneAndDismissKeyboardInputAccessory,
   DoneAndDismissKeyboardInputAccessoryViewID,
 } from '../../components/DoneAndDismissKeyboardInputAccessory';
-import HeaderMenuButton from '../../components/HeaderMenuButton';
 import { useTheme } from '../../components/themes';
 import { useSettings } from '../../hooks/context/useSettings';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useKeyboard } from '../../hooks/useKeyboard';
 import loc from '../../loc';
-import { CommonToolTipActions } from '../../typings/CommonToolTipActions';
 import { AddWalletStackParamList } from '../../navigation/AddWalletStack';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AddressInputScanButton } from '../../components/AddressInputScanButton';
@@ -37,9 +35,7 @@ const ImportWallet = () => {
   const [importText, setImportText] = useState<string>(label);
   const [isToolbarVisibleForAndroid, setIsToolbarVisibleForAndroid] = useState<boolean>(false);
   const [, setSpeedBackdoor] = useState<number>(0);
-  const [searchAccountsMenuState, setSearchAccountsMenuState] = useState<boolean>(false);
-  const [askPassphraseMenuState, setAskPassphraseMenuState] = useState<boolean>(false);
-  const [clearClipboardMenuState, setClearClipboardMenuState] = useState<boolean>(true);
+  const [clearClipboardMenuState] = useState<boolean>(true);
   const { isPrivacyBlurEnabled } = useSettings();
   const { enableScreenProtect, disableScreenProtect } = useScreenProtect();
   const { addAndSaveWallet } = useStorage();
@@ -97,9 +93,9 @@ const ImportWallet = () => {
         // create HDSilentPaymentsWallet with hardcoded m/84'/0'/0' derivation path
         const wallet = new HDSilentPaymentsWallet();
         wallet.setSecret(text.trim());
-        
+
         wallet.setDerivationPath("m/84'/0'/0'");
-        
+
         if (!wallet.validateMnemonic() && !wallet.getSecret()) {
           presentAlert({ title: 'Error', message: 'Invalid mnemonic phrase or private key.' });
           return;
@@ -107,16 +103,15 @@ const ImportWallet = () => {
 
         addAndSaveWallet(wallet);
         navigation.navigateToWalletsList();
-        
       } catch (error: any) {
         console.error('Import error:', error);
-        presentAlert({ 
-          title: 'Import Error', 
-          message: error.message || 'Failed to import wallet. Please check your input and try again.' 
+        presentAlert({
+          title: 'Import Error',
+          message: error.message || 'Failed to import wallet. Please check your input and try again.',
         });
       }
     },
-    [askPassphraseMenuState, clearClipboardMenuState, addAndSaveWallet, navigation],
+    [clearClipboardMenuState, addAndSaveWallet, navigation],
   );
 
   const handleImport = useCallback(() => {
@@ -192,7 +187,13 @@ const ImportWallet = () => {
       <BlueSpacing20 />
       <View style={styles.center}>
         <>
-          <Button disabled={importText.trim().length === 0} title={loc.wallets.import_do_import} testID="DoImport" onPress={handleImport} backgroundColor='#754CE8'/>
+          <Button
+            disabled={importText.trim().length === 0}
+            title={loc.wallets.import_do_import}
+            testID="DoImport"
+            onPress={handleImport}
+            backgroundColor="#754CE8"
+          />
           <BlueSpacing20 />
           <AddressInputScanButton type="link" onChangeText={setImportText} testID="ScanImport" />
         </>

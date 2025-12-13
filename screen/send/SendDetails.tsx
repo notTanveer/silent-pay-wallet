@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { RouteProp, useFocusEffect, useRoute, useLocale } from '@react-navigation/native';
+import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import assert from 'assert';
 import BigNumber from 'bignumber.js';
@@ -37,7 +37,6 @@ import { CreateTransactionTarget, CreateTransactionUtxo, TWallet } from '../../c
 import AddressInput from '../../components/AddressInput';
 import presentAlert from '../../components/Alert';
 import * as AmountInput from '../../components/AmountInput';
-import Button from '../../components/Button';
 import CoinsSelected from '../../components/CoinsSelected';
 import { DismissKeyboardInputAccessory, DismissKeyboardInputAccessoryViewID } from '../../components/DismissKeyboardInputAccessory';
 import HeaderMenuButton from '../../components/HeaderMenuButton';
@@ -76,7 +75,6 @@ type RouteProps = RouteProp<SendDetailsStackParamList, 'SendDetails'>;
 const SendDetails = () => {
   const { wallets, sleep, txMetadata, saveToDisk } = useStorage();
   const navigation = useExtendedNavigation<NavigationProps>();
-  const { direction } = useLocale();
   const selectedDataProcessor = useRef<ToolTipAction | undefined>();
   const setParams = navigation.setParams;
   const route = useRoute<RouteProps>();
@@ -370,7 +368,7 @@ const SendDetails = () => {
     useCallback(() => {
       setIsLoading(false);
       setDumb(v => !v);
-      return () => { };
+      return () => {};
     }, []),
   );
 
@@ -390,7 +388,7 @@ const SendDetails = () => {
       // otherwise, lets call widely-used getChangeAddressAsync()
       try {
         change = await Promise.race([sleep(2000), wallet?.getChangeAddressAsync()]);
-      } catch (_) { }
+      } catch (_) {}
 
       if (!change) {
         // either sleep expired or getChangeAddressAsync threw an exception
@@ -963,7 +961,7 @@ const SendDetails = () => {
     Alert.alert(loc.send.details_recipients_title, loc.send.details_add_recc_rem_all_alert_description, [
       {
         text: loc._.cancel,
-        onPress: () => { },
+        onPress: () => {},
         style: 'cancel',
       },
       {
@@ -1166,7 +1164,7 @@ const SendDetails = () => {
     // walletActions.push(specificWalletActions);
 
     return walletActions;
-  }, [addresses, isEditable, wallet, isTransactionReplaceable]);
+  }, [addresses, isEditable, wallet]);
 
   const HeaderRight = useCallback(
     () => <HeaderMenuButton disabled={isLoading} onPressMenuItem={headerRightOnPress} actions={headerRightActions()} />,
@@ -1265,16 +1263,7 @@ const SendDetails = () => {
     },
   });
 
-  const calculateTotalAmount = () => {
-    const totalAmount = addresses.reduce((total, item) => total + Number(item.amountSats || 0), 0);
-    const totalWithFee = totalAmount + (feePrecalc.current || 0);
-    return totalWithFee;
-  };
-
   const renderCreateButton = () => {
-    const totalWithFee = calculateTotalAmount();
-    const isDisabled = totalWithFee === 0 || totalWithFee > balance || balance === 0 || isLoading || addresses.length === 0;
-
     return (
       <View style={styles.bottom}>
         <TouchableOpacity style={styles.button} onPress={createTransaction}>
@@ -1285,29 +1274,29 @@ const SendDetails = () => {
   };
 
   const renderCoinsSelected = () => {
-  if (isVisible) return null;
-  if (utxos && utxos?.length > 0) {
+    if (isVisible) return null;
+    if (utxos && utxos?.length > 0) {
+      return (
+        <View style={styles.select}>
+          <CoinsSelected
+            number={utxos.length}
+            onContainerPress={handleCoinControl}
+            onClose={() => {
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+              setParams({ utxos: null });
+            }}
+          />
+        </View>
+      );
+    }
+
     return (
       <View style={styles.select}>
-        <CoinsSelected
-          number={utxos.length}
-          onContainerPress={handleCoinControl}
-          onClose={() => {
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-            setParams({ utxos: null });
-          }}
-        />
+        <View style={styles.selectWrap}>
+          <Text style={[styles.selectLabel, stylesHook.selectLabel]}>{wallet?.getLabel()}</Text>
+        </View>
       </View>
     );
-  }
-
-  return (
-    <View style={styles.select}>
-      <View style={styles.selectWrap}>
-        <Text style={[styles.selectLabel, stylesHook.selectLabel]}>{wallet?.getLabel()}</Text>
-      </View>
-    </View>
-  );
   };
 
   const renderBitcoinTransactionInfoFields = (params: { item: IPaymentDestinations; index: number }) => {
@@ -1526,25 +1515,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     right: 8,
   },
-  createButton: {
-    marginVertical: 16,
-    marginHorizontal: 16,
-    alignContent: 'center',
-    minHeight: 44,
-  },
   select: {
     marginBottom: 24,
     marginHorizontal: 24,
     alignItems: 'center',
-  },
-  selectTouch: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  selectText: {
-    color: '#9aa0aa',
-    fontSize: 14,
-    marginRight: 8,
   },
   selectWrap: {
     flexDirection: 'row',

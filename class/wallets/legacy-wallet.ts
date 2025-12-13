@@ -7,7 +7,6 @@ import { ECPairAPI, ECPairFactory, Signer } from 'ecpair';
 
 import * as BlueElectrum from '../../blue_modules/BlueElectrum';
 import ecc from '../../blue_modules/noble_ecc';
-import { HDSegwitBech32Wallet } from '..';
 import { randomBytes } from '../rng';
 import { AbstractWallet } from './abstract-wallet';
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types';
@@ -345,6 +344,7 @@ export class LegacyWallet extends AbstractWallet {
     this._txs_by_external_index = this._txs_by_external_index || [];
     this._txs_by_internal_index = [];
 
+    const { HDSegwitBech32Wallet } = require('./hd-segwit-bech32-wallet');
     const hd = new HDSegwitBech32Wallet();
     return hd.getTransactions.apply(this);
   }

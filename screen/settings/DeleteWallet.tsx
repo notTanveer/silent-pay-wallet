@@ -5,7 +5,7 @@ import { useStorage } from '../../hooks/context/useStorage';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import loc from '../../loc';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
-import { DetailViewStackParamList } from "../../navigation/DetailViewStackParamList";
+import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CommonActions } from '@react-navigation/native';
 
@@ -41,7 +41,7 @@ const DeleteWallet: React.FC = () => {
                 CommonActions.reset({
                   index: 0,
                   routes: [{ name: 'Onboarding' }],
-                })
+                }),
               );
             }
           },
@@ -49,20 +49,13 @@ const DeleteWallet: React.FC = () => {
       ],
       { cancelable: false },
     );
-  }, [wallets, handleWalletDeletion]);
+  }, [wallets, handleWalletDeletion, dispatch]);
 
   if (wallets.length === 0) {
     return null;
   }
 
-  return (
-    <ListItem
-      title="Delete Wallet"
-      onPress={handleDeleteWallet}
-      testID="DeleteWalletButton"
-      chevron={false}
-    />
-  );
+  return <ListItem title="Delete Wallet" onPress={handleDeleteWallet} testID="DeleteWalletButton" chevron={false} />;
 };
 
 export default DeleteWallet;

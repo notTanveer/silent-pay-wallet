@@ -183,27 +183,29 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
     };
   }, []);
 
-  const addWallet = useCallback((wallet: TWallet) => {
-    if ('setOnBalanceChangeCallback' in wallet && typeof wallet.setOnBalanceChangeCallback === 'function') {
-      wallet.setOnBalanceChangeCallback(forceWalletsUpdate);
-    }
-    if ('setOnPersistCallback' in wallet && typeof wallet.setOnPersistCallback === 'function') {
-      wallet.setOnPersistCallback(debouncedPersist);
-    }
-    
-    BlueApp.wallets.push(wallet);
-    setWallets([...BlueApp.getWallets()]);
-  }, [forceWalletsUpdate, debouncedPersist]);
+  const addWallet = useCallback(
+    (wallet: TWallet) => {
+      if ('setOnBalanceChangeCallback' in wallet && typeof wallet.setOnBalanceChangeCallback === 'function') {
+        wallet.setOnBalanceChangeCallback(forceWalletsUpdate);
+      }
+      if ('setOnPersistCallback' in wallet && typeof wallet.setOnPersistCallback === 'function') {
+        wallet.setOnPersistCallback(debouncedPersist);
+      }
+
+      BlueApp.wallets.push(wallet);
+      setWallets([...BlueApp.getWallets()]);
+    },
+    [forceWalletsUpdate, debouncedPersist],
+  );
 
   const deleteWallet = useCallback((wallet: TWallet) => {
     if ('cancelScan' in wallet && typeof wallet.cancelScan === 'function') {
       console.log('[StorageProvider] Cancelling active scan for wallet before deletion...');
       wallet.cancelScan();
     }
-    
-    if ('clearCache' in wallet && typeof wallet.clearCache === 'function')
-      wallet.clearCache();
-    
+
+    if ('clearCache' in wallet && typeof wallet.clearCache === 'function') wallet.clearCache();
+
     BlueApp.deleteWallet(wallet);
     setWallets([...BlueApp.getWallets()]);
   }, []);
@@ -340,7 +342,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       txMetadata.current = BlueApp.tx_metadata;
       counterpartyMetadata.current = BlueApp.counterparty_metadata;
       const currentWallets = BlueApp.getWallets();
-      
+
       currentWallets.forEach(wallet => {
         if ('setOnBalanceChangeCallback' in wallet && typeof wallet.setOnBalanceChangeCallback === 'function') {
           wallet.setOnBalanceChangeCallback(forceWalletsUpdate);
@@ -349,7 +351,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
           wallet.setOnPersistCallback(debouncedPersist);
         }
       });
-      
+
       setWallets(currentWallets);
     }
   }, [walletsInitialized, forceWalletsUpdate, debouncedPersist]);

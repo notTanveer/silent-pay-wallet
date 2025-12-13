@@ -1,7 +1,6 @@
 import React from 'react';
 import { StyleProp, StyleSheet, TextInput, View, ViewStyle } from 'react-native';
 import loc from '../loc';
-import { AddressInputScanButton } from './AddressInputScanButton';
 import { useTheme } from './themes';
 
 interface AddressInputProps {

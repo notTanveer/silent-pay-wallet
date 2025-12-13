@@ -311,11 +311,16 @@ export class AbstractWallet {
     }
 
     // is it output descriptor?
-    if (this.secret.startsWith('wpkh(') || this.secret.startsWith('pkh(') || this.secret.startsWith('sh(') || this.secret.startsWith('tr(')) {
+    if (
+      this.secret.startsWith('wpkh(') ||
+      this.secret.startsWith('pkh(') ||
+      this.secret.startsWith('sh(') ||
+      this.secret.startsWith('tr(')
+    ) {
       const xpubIndex = Math.max(this.secret.indexOf('xpub'), this.secret.indexOf('ypub'), this.secret.indexOf('zpub'));
       let fpAndPath;
       if (this.secret.includes('[')) {
-        fpAndPath = this.secret.substring(this.secret.indexOf('['), xpubIndex).replace(/[\[\]]/g, '');
+        fpAndPath = this.secret.substring(this.secret.indexOf('['), xpubIndex).replace(/[[\]]/g, '');
       } else {
         // old (or broken) format..? no square brackets, only "()"
         fpAndPath = this.secret.substring(this.secret.indexOf('('), xpubIndex).replace(/[()]/g, '');

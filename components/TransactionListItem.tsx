@@ -107,7 +107,7 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
         const txDate = new Date(item.timestamp * 1000);
         const timeDifferenceMs = now.getTime() - txDate.getTime();
         const hoursDifference = timeDifferenceMs / (1000 * 60 * 60);
-        
+
         if (hoursDifference > 24) {
           return txDate.toLocaleDateString('en-US', {
             month: 'short',
@@ -133,7 +133,7 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
       sub += txMemo;
       if (item.memo) sub += item.memo;
       return sub || undefined;
-    }, [relevantAddress, timeText, txMemo, item.confirmations, item.memo]);
+    }, [timeText, txMemo, item.confirmations, item.memo]);
 
     const formattedAmount = useMemo(() => {
       return formatBalanceWithoutSuffix(item.value && item.value, itemPriceUnit, true).toString();
@@ -361,9 +361,7 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
               renderHighlightedText ? (
                 renderHighlightedText(subtitle, searchQuery ?? '')
               ) : relevantAddress ? (
-                <Text style={[styles.subtitle, styles.subtitleTime]}>
-                  {subtitle}
-                </Text>
+                <Text style={[styles.subtitle, styles.subtitleTime]}>{subtitle}</Text>
               ) : (
                 <HighlightedText
                   text={subtitle}

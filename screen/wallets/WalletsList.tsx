@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useReducer, useRef, useMemo } from 'react';
-import { useFocusEffect, useIsFocused, useRoute, RouteProp } from '@react-navigation/native';
-import { Alert, findNodeHandle, Image, InteractionManager, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
-import { Icon } from '@rneui/themed';
+import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
+import { Alert, findNodeHandle, InteractionManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import A from '../../blue_modules/analytics';
 import { getClipboardContent } from '../../blue_modules/clipboard';
 import { isDesktop } from '../../blue_modules/environment';
@@ -14,7 +13,7 @@ import { FButton, FContainer } from '../../components/FloatButtons';
 import { useTheme } from '../../components/themes';
 import { TransactionListItem } from '../../components/TransactionListItem';
 import { useSizeClass, SizeClass } from '../../blue_modules/sizeClass';
-import loc, { formatBalance, transactionTimeToReadable } from '../../loc';
+import loc, { formatBalance } from '../../loc';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
 import ActionSheet from '../ActionSheet';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -140,7 +139,7 @@ const WalletsList: React.FC = () => {
     },
     balanceAmountText: {
       color: colors.foregroundColor,
-      fontSize: 36 ,
+      fontSize: 36,
       fontWeight: 'bold',
       marginBottom: 8,
       textAlign: 'center',
@@ -305,16 +304,12 @@ const WalletsList: React.FC = () => {
 
   const renderWalletItem = useCallback(() => {
     const wallet = wallets.length > 0 ? wallets[0] : null;
-    
+
     if (!wallet) {
       return (
         <View style={[styles.walletContainer, stylesHook.walletContainer]}>
-          <Text style={[styles.noWalletText, stylesHook.noWalletText]}>
-            {loc.wallets.list_empty_txs1}
-          </Text>
-          <Text style={[styles.noWalletSubText, stylesHook.noWalletSubText]}>
-            {loc.wallets.list_create_a_wallet}
-          </Text>
+          <Text style={[styles.noWalletText, stylesHook.noWalletText]}>{loc.wallets.list_empty_txs1}</Text>
+          <Text style={[styles.noWalletSubText, stylesHook.noWalletSubText]}>{loc.wallets.list_create_a_wallet}</Text>
         </View>
       );
     }
@@ -324,13 +319,11 @@ const WalletsList: React.FC = () => {
     return (
       <View style={[styles.balanceHeader, stylesHook.walletContainer]}>
         <TouchableOpacity onPress={changeWalletBalanceUnit}>
-          <Text style={[styles.balanceAmount, stylesHook.balanceAmountText]}>
-            {balanceText}
-          </Text>
+          <Text style={[styles.balanceAmount, stylesHook.balanceAmountText]}>{balanceText}</Text>
         </TouchableOpacity>
       </View>
     );
-  }, [wallets, stylesHook, dataSource]);
+  }, [wallets, stylesHook, changeWalletBalanceUnit]);
 
   const renderSectionItem = useCallback(
     (item: { section: any; item: ExtendedTransaction }) => {
@@ -394,17 +387,11 @@ const WalletsList: React.FC = () => {
     if (wallets.length > 0) {
       return (
         <FContainer ref={walletActionButtonsRef.current}>
-          <FButton
-            onPress={onReceiveButtonPressed}
-            icon={null}
-            text="Request"
-            widthRatio={1.3}
-            testID="HomeScreenReceiveButton"
-          />
+          <FButton onPress={onReceiveButtonPressed} icon={null} text="Request" widthRatio={1.3} testID="HomeScreenReceiveButton" />
           <FButton
             onPress={onScanButtonPressed}
             icon={
-              <View style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
+              <View style={styles.scanIconContainer}>
                 <ScanIcon />
               </View>
             }
@@ -643,5 +630,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
     textAlign: 'center',
+  },
+  scanIconContainer: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

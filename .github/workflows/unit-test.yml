@@ -1,0 +1,44 @@
+name: Unit Tests
+
+env:
+  TRAVIS: 1
+
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout project
+      uses: actions/checkout@v6
+
+    - name: Specify node version
+      uses: actions/setup-node@v6
+      with:
+        node-version: 22
+        cache: 'npm'
+        cache-dependency-path: package-lock.json
+
+    - name: Cache node modules
+      id: cache-node-modules
+      uses: actions/cache@v4
+      with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+    - name: Install Dependencies
+      if: steps.cache-node-modules.outputs.cache-hit != 'true'
+      run: npm install
+
+    - name: Run unit tests
+      run: npm run unit
+      env:
+        BIP47_HD_MNEMONIC: ${{ secrets.BIP47_HD_MNEMONIC }}
+        HD_MNEMONIC: ${{ secrets.HD_MNEMONIC }}
+        HD_MNEMONIC_BIP49: ${{ secrets.HD_MNEMONIC_BIP49 }}
+        HD_MNEMONIC_BIP49_MANY_TX: ${{ secrets.HD_MNEMONIC_BIP49_MANY_TX }}
+        HD_MNEMONIC_BIP84: ${{ secrets.HD_MNEMONIC_BIP84 }}
+        HD_MNEMONIC_BREAD: ${{ secrets.HD_MNEMONIC_BREAD }}
+        FAULTY_ZPUB: ${{ secrets.FAULTY_ZPUB }}
+        MNEMONICS_COBO: ${{ secrets.MNEMONICS_COBO }}
+        MNEMONICS_COLDCARD: ${{ secrets.MNEMONICS_COLDCARD }}
+        RETRY: 1

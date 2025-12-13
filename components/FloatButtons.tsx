@@ -429,7 +429,7 @@ const ButtonContent = ({ icon, text, textStyle, iconStyle }: ButtonContentProps)
 
   if (!text || text.trim() === '') {
     return (
-      <View style={[buttonContentStaticStyles.contentContainer, { justifyContent: 'center' }]}>
+      <View style={buttonContentStaticStyles.contentContainer}>
         <View style={buttonStyles.iconContainer}>{scaledIcon}</View>
       </View>
     );
@@ -437,7 +437,7 @@ const ButtonContent = ({ icon, text, textStyle, iconStyle }: ButtonContentProps)
 
   if (!icon) {
     return (
-      <View style={[buttonContentStaticStyles.contentContainer, { justifyContent: 'center' }]}>
+      <View style={buttonContentStaticStyles.contentContainer}>
         <Text numberOfLines={1} adjustsFontSizeToFit style={[textStyle, buttonStyles.centeredText, { lineHeight: fontSize * 1.2 }]}>
           {text}
         </Text>
@@ -448,7 +448,11 @@ const ButtonContent = ({ icon, text, textStyle, iconStyle }: ButtonContentProps)
   return (
     <View style={buttonContentStaticStyles.contentContainer}>
       <View style={buttonStyles.iconContainer}>{scaledIcon}</View>
-      <Text numberOfLines={1} adjustsFontSizeToFit style={[textStyle, buttonStyles.centeredText, { lineHeight: fontSize * 1.2, marginLeft: LAYOUT.ICON_MARGIN }]}>
+      <Text
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        style={[textStyle, buttonStyles.centeredText, { lineHeight: fontSize * 1.2, marginLeft: LAYOUT.ICON_MARGIN }]}
+      >
         {text}
       </Text>
     </View>

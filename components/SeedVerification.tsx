@@ -32,14 +32,14 @@ const SeedVerification: React.FC<SeedVerificationProps> = ({ seed, onSuccess, on
     // Update the word status (correct or incorrect)
     setWordStatus(prev => ({
       ...prev,
-      [index]: isCorrect ? WordStatus.CORRECT : WordStatus.INCORRECT
+      [index]: isCorrect ? WordStatus.CORRECT : WordStatus.INCORRECT,
     }));
 
     // Track the selection order for correct words
     if (isCorrect) {
       setSelectionOrder(prev => ({
         ...prev,
-        [index]: currentSelectionIndex
+        [index]: currentSelectionIndex,
       }));
       setSelectedIndices(prev => [...prev, index]);
     }
@@ -68,16 +68,11 @@ const SeedVerification: React.FC<SeedVerificationProps> = ({ seed, onSuccess, on
 
   return (
     <>
-      <ScrollView
-        style={styles.root}
-        contentContainerStyle={[styles.flex]}
-      >
+      <ScrollView style={styles.root} contentContainerStyle={[styles.flex]}>
         <View>
           <View>
             <Text style={styles.title}>{loc.pleasebackup.heading}</Text>
-            <Text style={styles.subtitle}>
-              {loc.pleasebackup.subheading}
-            </Text>
+            <Text style={styles.subtitle}>{loc.pleasebackup.subheading}</Text>
           </View>
 
           <View style={styles.wordsGrid}>
@@ -175,4 +170,3 @@ const styles = StyleSheet.create({
 });
 
 export default SeedVerification;
-

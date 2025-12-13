@@ -1,15 +1,15 @@
-import React, { useCallback } from "react";
+import React, { useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useTheme } from '../../components/themes';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { DetailViewStackParamList } from "../../navigation/DetailViewStackParamList";
+import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import loc from '../../loc';
 import { useStorage } from '../../hooks/context/useStorage';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
-import { getDefaultIndexer } from "../../blue_modules/SilentPaymentIndexer";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { getDefaultIndexer } from '../../blue_modules/SilentPaymentIndexer';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'WalletsList'>;
 
@@ -18,7 +18,7 @@ const OnboardingScreen: React.FC = () => {
   const { navigate, navigateToWalletsList } = useExtendedNavigation<NavigationProps>();
   const { addWallet, saveToDisk, wallets } = useStorage();
 
-  const handleContinue = async () => {
+  const handleContinue = useCallback(async () => {
     if (wallets.length > 0) {
       navigateToWalletsList();
       return;
@@ -47,15 +47,15 @@ const OnboardingScreen: React.FC = () => {
         walletID: w.getID(),
       },
     });
-  };
+  }, [wallets, navigateToWalletsList, addWallet, saveToDisk, navigate]);
 
-  const importWallet = () => {
+  const importWallet = useCallback(() => {
     if (wallets.length > 0) {
       navigateToWalletsList();
       return;
     }
     navigate('AddWalletRoot', { screen: 'ImportWallet' });
-  };
+  }, [wallets, navigateToWalletsList, navigate]);
 
   const renderCoverScreen = useCallback(() => {
     return (
@@ -69,19 +69,12 @@ const OnboardingScreen: React.FC = () => {
           <Text style={[styles.welcomeSubtitle, { color: colors.labelText }]}>{loc.onboarding.subtitle}</Text>
 
           <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.createButton, { backgroundColor: '#754CE8' }]}
-              onPress={handleContinue}
-            >
-              <Text style={[styles.createButtonText, { color: '#fff' }]}>{loc.onboarding.create_wallet}</Text>
+            <TouchableOpacity style={styles.createButton} onPress={handleContinue}>
+              <Text style={styles.createButtonText}>{loc.onboarding.create_wallet}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.restoreButton]}
-              onPress={importWallet}
-              testID="ImportWallet"
-            >
-              <Text style={[styles.restoreButtonText]}>{loc.onboarding.import_wallet}</Text>
+            <TouchableOpacity style={styles.restoreButton} onPress={importWallet} testID="ImportWallet">
+              <Text style={styles.restoreButtonText}>{loc.onboarding.import_wallet}</Text>
             </TouchableOpacity>
           </View>
 
@@ -89,11 +82,12 @@ const OnboardingScreen: React.FC = () => {
             <Text style={[styles.footerText, { color: colors.labelText }]}> {loc.onboarding.footer}</Text>
           </View>
         </View>
-      </SafeAreaView>);
-  }, [colors]);
+      </SafeAreaView>
+    );
+  }, [colors, handleContinue, importWallet]);
 
   return renderCoverScreen();
-}
+};
 
 export default OnboardingScreen;
 

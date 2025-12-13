@@ -24,7 +24,7 @@ const SeedWords: React.FC<SeedWordsProps> = ({
   onPress,
   disabled = false,
   selectionOrder = null,
-  isVerification = false
+  isVerification = false,
 }) => {
   const getIndexBackgroundColor = () => {
     switch (status) {
@@ -52,19 +52,12 @@ const SeedWords: React.FC<SeedWordsProps> = ({
   };
 
   return (
-    <TouchableOpacity
-      style={styles.seedItemContainer}
-      onPress={disabled ? undefined : onPress}
-      disabled={disabled}
-      activeOpacity={0.7}
-    >
+    <TouchableOpacity style={styles.seedItemContainer} onPress={disabled ? undefined : onPress} disabled={disabled} activeOpacity={0.7}>
       <View style={indexContainerStyle}>
         {/* Show either the selection order (if provided and in verification mode) 
             or the original index (if not in verification mode) */}
         {(!isVerification || (isVerification && selectionOrder !== null)) && (
-          <Text style={indexTextStyle}>
-            {isVerification && selectionOrder !== null ? selectionOrder + 1 : index + 1}
-          </Text>
+          <Text style={indexTextStyle}>{isVerification && selectionOrder !== null ? selectionOrder + 1 : index + 1}</Text>
         )}
       </View>
       <View style={styles.wordContainer}>
