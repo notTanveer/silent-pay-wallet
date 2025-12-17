@@ -1,7 +1,7 @@
 [package]
 name = "rust_jsi_bridge"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [lib]
 crate-type = [
@@ -10,3 +10,21 @@ crate-type = [
 ]
 
 [dependencies]
+# Bitcoin/secp256k1 cryptography
+secp256k1 = { version = "0.29", features = ["global-context", "rand-std"] }
+silentpayments = "0.3"
+bitcoin = { version = "0.32", features = ["serde"] }
+bitcoin_hashes = "0.14"
+
+# Parallel processing
+rayon = "1.10"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Hex encoding/decoding
+hex = "0.4"
+
+[dev-dependencies]
+rand = "0.8"
