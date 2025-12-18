@@ -10,8 +10,18 @@ import { navigationRef } from './NavigationService';
 import { useLogger } from '@react-navigation/devtools';
 import { StorageProvider } from './components/Context/StorageProvider';
 import { initializeIndexer } from './blue_modules/SilentPaymentIndexer';
+import { initializeRustJsiBridge } from './blue_modules/RustJsiBridge';
 
 const App = () => {
+  // Initialize Rust JSI Bridge for high-performance Silent Payment scanning
+  React.useEffect(() => {
+    const success = initializeRustJsiBridge();
+    if (success) {
+      console.log('[App] ✅ Rust JSI Bridge initialized');
+    } else {
+      console.warn('[App] ⚠️ Rust JSI Bridge failed to initialize - falling back to JS implementation');
+    }
+  }, []);
 
   initializeIndexer({
     baseUrl: 'https://cushionlike-isabel-retrievable.ngrok-free.dev/',
