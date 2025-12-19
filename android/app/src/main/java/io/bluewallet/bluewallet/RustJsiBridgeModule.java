@@ -22,9 +22,19 @@ public class RustJsiBridgeModule extends ReactContextBaseJavaModule {
     public boolean install() {
         try {
             System.loadLibrary("rust-jsi-bridge");
-            nativeInstall(getReactApplicationContext().getJavaScriptContextHolder().get());
+
+            // Hermes/JSI required: if pointer is 0, we're running JSC or remote debug
+            long jsiPtr = getReactApplicationContext().getJavaScriptContextHolder().get();
+            if (jsiPtr == 0) {
+                // Avoid false "installed" state when JSI runtime is unavailable
+                android.util.Log.e(NAME, "JSI runtime pointer is 0. Enable Hermes and disable Remote Debugging.");
+                return false;
+            }
+
+            nativeInstall(jsiPtr);
             return true;
         } catch (Exception exception) {
+            android.util.Log.e(NAME, "Failed to install Rust JSI Bridge", exception);
             return false;
         }
     }

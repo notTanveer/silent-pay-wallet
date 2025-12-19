@@ -8,11 +8,8 @@ LIB_NAME="librust_jsi_bridge.a"
 IOS_DEST="../ios/lib"
 ANDROID_DEST_BASE="../android/app/src/main/jniLibs"
 
-# Setup Android NDK environment if not already set
 if [ -z "${ANDROID_NDK_HOME:-}" ]; then
-    # Try to find NDK in Android SDK
     if [ -d "${ANDROID_HOME:-}/ndk" ]; then
-        # Use the latest NDK version available
         NDK_VERSION=$(ls -1 "${ANDROID_HOME}/ndk" | sort -V | tail -1)
         export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${NDK_VERSION}"
         echo "ℹ️  Setting ANDROID_NDK_HOME to ${ANDROID_NDK_HOME}"
@@ -24,7 +21,6 @@ if [ -z "${ANDROID_NDK_HOME:-}" ]; then
     fi
 fi
 
-# Add NDK toolchain to PATH
 export PATH="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin:${PATH}"
 
 # map rust targets to descriptive names and destination paths
@@ -47,6 +43,37 @@ log() { echo -e "\033[1;34m$1\033[0m"; }
 success() { echo -e "\033[1;32m  ✅ $1\033[0m"; }
 warn() { echo -e "\033[1;33m  ⚠️  $1\033[0m"; }
 error() { echo -e "\033[1;31m❌ $1\033[0m"; exit 1; }
+
+ensure_rust_targets() {
+    log "Checking Rust targets..."
+    
+    local targets=(
+        "aarch64-apple-ios"
+        "aarch64-apple-ios-sim"
+        "x86_64-apple-ios"
+        "aarch64-linux-android"
+        "armv7-linux-androideabi"
+        "x86_64-linux-android"
+        "i686-linux-android"
+    )
+    
+    local missing_targets=()
+    
+    for target in "${targets[@]}"; do
+        if ! rustup target list | grep -q "^${target} (installed)"; then
+            missing_targets+=("$target")
+        fi
+    done
+    
+    if [ ${#missing_targets[@]} -gt 0 ]; then
+        log "Installing missing targets: ${missing_targets[*]}"
+        for target in "${missing_targets[@]}"; do
+            rustup target add "$target" || warn "Failed to install $target"
+        done
+    else
+        success "All Rust targets already installed"
+    fi
+}
 
 build_and_copy_android() {
     IFS='|' read -r target name subdir <<< "$1"
@@ -89,6 +116,9 @@ main() {
     echo "🦀 Starting Rust JSI Bridge Build System"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+    # Ensure all required Rust targets are installed
+    ensure_rust_targets
+    
     echo -e "\n🤖 Android Targets:"
     for item in "${ANDROID_TARGETS[@]}"; do
         build_and_copy_android "$item"
