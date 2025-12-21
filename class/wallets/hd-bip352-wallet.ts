@@ -10,7 +10,6 @@ import {
   getSpendPrivateKey,
   getScanPublicKey,
   getSpendPublicKey,
-  TransactionProcessor,
   RustTransactionProcessor,
   createTransactionProcessor,
   type IndexerTransaction,

@@ -7,7 +7,6 @@ export {
   getSilentPaymentAddress,
   type SilentPaymentKeys,
 } from './SilentPaymentKeyDerivation';
-export { TransactionProcessor } from './TransactionProcessor';
 export { IndexerHttpClient } from './IndexerHttpClient';
 export type {
   SilentPaymentIndexerConfig,
