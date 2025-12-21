@@ -21,13 +21,35 @@ const RustJsiBridgeModule = NativeModules.RustJsiBridge
       }
     );
 
-// Type definitions for global JSI functions
+export interface RustMatchedUTXO {
+  txid: string;
+  vout: number;
+  value: number;
+  height: number;
+  pubKey: string;
+  tweakHex: string;
+  blockHash: string;
+  blockTime: number;
+  isSpent: boolean;
+}
+
+export interface RustBatchScanResult {
+  matchedUtxos: RustMatchedUTXO[];
+  transactionsScanned: number;
+  outputsScanned: number;
+}
+
+interface RustErrorResult {
+  error: string;
+}
+
 interface RustJsiBridgeGlobal {
   helloFromRust: () => string;
   multiplyFromRust: (a: number, b: number) => number;
+  spScanTransactions: (scanPrivkeyHex: string, spendPubkeyHex: string, transactionsJson: string) => string;
+  spScanSingleTransaction: (scanPrivkeyHex: string, spendPubkeyHex: string, transactionJson: string) => string;
 }
 
-// Initialize JSI bindings
 let isInstalled = false;
 
 export function initializeRustJsiBridge(): boolean {
@@ -65,6 +87,46 @@ export function multiplyFromRust(a: number, b: number): number {
     throw new Error('RustJsiBridge not installed. Call initializeRustJsiBridge() first.');
   }
   return getGlobal().multiplyFromRust(a, b);
+}
+
+export function spScanTransactions<T extends { id: string; blockHeight: number; blockHash: string; blockTime: number; scanTweak: string; outputs: Array<{ transactionId: string; vout: number; pubKey: string; value: number; isSpent: boolean | number }> }>(
+  scanPrivkeyHex: string,
+  spendPubkeyHex: string,
+  transactions: T[]
+): RustBatchScanResult {
+  if (!isInstalled) {
+    throw new Error('RustJsiBridge not installed. Call initializeRustJsiBridge() first.');
+  }
+
+  const transactionsJson = JSON.stringify(transactions);
+  const resultJson = getGlobal().spScanTransactions(scanPrivkeyHex, spendPubkeyHex, transactionsJson);
+  const result: RustBatchScanResult | RustErrorResult = JSON.parse(resultJson);
+
+  if ('error' in result) {
+    throw new Error(`Rust scan error: ${result.error}`);
+  }
+
+  return result;
+}
+
+export function spScanSingleTransaction<T extends { id: string; blockHeight: number; blockHash: string; blockTime: number; scanTweak: string; outputs: Array<{ transactionId: string; vout: number; pubKey: string; value: number; isSpent: boolean | number }> }>(
+  scanPrivkeyHex: string,
+  spendPubkeyHex: string,
+  transaction: T
+): RustMatchedUTXO[] {
+  if (!isInstalled) {
+    throw new Error('RustJsiBridge not installed. Call initializeRustJsiBridge() first.');
+  }
+
+  const transactionJson = JSON.stringify(transaction);
+  const resultJson = getGlobal().spScanSingleTransaction(scanPrivkeyHex, spendPubkeyHex, transactionJson);
+  const result: RustMatchedUTXO[] | RustErrorResult = JSON.parse(resultJson);
+
+  if ('error' in result) {
+    throw new Error(`Rust scan error: ${(result as RustErrorResult).error}`);
+  }
+
+  return result as RustMatchedUTXO[];
 }
 
 // Export module for advanced use cases

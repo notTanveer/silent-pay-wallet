@@ -19,3 +19,4 @@ export type {
   SilentPaymentUTXOSerializable,
   ScanProgressCallback,
 } from './types';
+export { RustTransactionProcessor, createTransactionProcessor } from './RustTransactionProcessor';
