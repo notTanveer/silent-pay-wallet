@@ -44,8 +44,6 @@ interface RustErrorResult {
 }
 
 interface RustJsiBridgeGlobal {
-  helloFromRust: () => string;
-  multiplyFromRust: (a: number, b: number) => number;
   spScanTransactions: (scanPrivkeyHex: string, spendPubkeyHex: string, transactionsJson: string) => string;
   spScanSingleTransaction: (scanPrivkeyHex: string, spendPubkeyHex: string, transactionJson: string) => string;
 }
@@ -74,20 +72,6 @@ export function initializeRustJsiBridge(): boolean {
 const getGlobal = (): RustJsiBridgeGlobal => {
   return global as any as RustJsiBridgeGlobal;
 };
-
-export function helloFromRust(): string {
-  if (!isInstalled) {
-    throw new Error('RustJsiBridge not installed. Call initializeRustJsiBridge() first.');
-  }
-  return getGlobal().helloFromRust();
-}
-
-export function multiplyFromRust(a: number, b: number): number {
-  if (!isInstalled) {
-    throw new Error('RustJsiBridge not installed. Call initializeRustJsiBridge() first.');
-  }
-  return getGlobal().multiplyFromRust(a, b);
-}
 
 export function spScanTransactions<T extends { id: string; blockHeight: number; blockHash: string; blockTime: number; scanTweak: string; outputs: Array<{ transactionId: string; vout: number; pubKey: string; value: number; isSpent: boolean | number }> }>(
   scanPrivkeyHex: string,
