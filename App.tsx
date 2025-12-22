@@ -9,8 +9,10 @@ import { navigationRef } from './NavigationService';
 import { useLogger } from '@react-navigation/devtools';
 import { StorageProvider } from './components/Context/StorageProvider';
 import { initializeIndexer } from './blue_modules/SilentPaymentIndexer';
+import { initializeRustJsiBridge } from './blue_modules/RustJsiBridge';
 
 const App = () => {
+  initializeRustJsiBridge();
   initializeIndexer({
     baseUrl: 'https://cushionlike-isabel-retrievable.ngrok-free.dev/',
     timeout: 100000, // 100 seconds for blockchain scanning operations (increased for slower connections)

@@ -33,6 +33,10 @@ export class SilentPaymentIndexer {
     return this.httpClient.get<TransactionResponse>(`/transactions/height/${height}`, `Error fetching transactions by height ${height}`);
   }
 
+  async getTransactionsByRange(startHeight: number, endHeight: number): Promise<TransactionResponse> {
+    return this.httpClient.get<TransactionResponse>(`/transactions/range?startHeight=${startHeight}&endHeight=${endHeight}&filterSpent=true`, `Error fetching transactions by range ${startHeight}-${endHeight}`);
+  }
+
   async getLatestBlockHeight(): Promise<LatestBlockHeightResponse> {
     return this.httpClient.get<LatestBlockHeightResponse>('/silent-block/latest-height', 'Error fetching latest block height');
   }
@@ -45,133 +49,82 @@ export class SilentPaymentIndexer {
   }
 
   /**
-   * Scan forward with batch processing for better performance.
-   * Fetches multiple blocks in parallel to speed up scanning.
+   * Scan forward using range queries for better performance.
+   * Uses the range API to fetch up to 50 blocks at a time.
    *
    * @param {number} startHeight - Starting block height
    * @param {number} endHeight - Ending block height
-   * @param {Function} processTransactions - Callback to process transactions from each block
+   * @param {Function} processTransactions - Callback to process transactions from each range
    * @param {ScanProgressCallback} onProgress - Optional progress callback
-   * @param {number} batchSize - Number of blocks to fetch in parallel (default: 10)
    */
   async scanForwardWithCallback(
     startHeight: number,
     endHeight: number,
-    processTransactions: (transactions: IndexerTransaction[], blockHeight: number) => Promise<number>,
+    processTransactions: (transactions: IndexerTransaction[]) => Promise<number>,
     onProgress?: ScanProgressCallback,
-    batchSize: number = 10,
   ): Promise<void> {
-    console.log(`Scanning forward from block ${startHeight} to ${endHeight} (${endHeight - startHeight + 1} blocks)...`);
-    await this.scanBlocks(startHeight, endHeight, processTransactions, onProgress, batchSize);
-    console.log('Forward scan with callback complete.');
+    console.log(`[Indexer] Scanning forward from block ${startHeight} to ${endHeight} (${endHeight - startHeight + 1} blocks)...`);
+    await this.scanBlocks(startHeight, endHeight, processTransactions, onProgress);
+    console.log('[Indexer] Forward scan with callback complete.');
   }
 
   private async scanBlocks(
     startHeight: number,
     endHeight: number,
-    onBlockProcessed?: (transactions: IndexerTransaction[], height: number) => Promise<number>,
+    onRangeProcessed?: (transactions: IndexerTransaction[]) => Promise<number>,
     onProgress?: ScanProgressCallback,
-    batchSize: number = 10,
   ): Promise<void> {
+    const RANGE_BATCH_SIZE = 50;
     const totalBlocks = endHeight - startHeight + 1;
     let blocksScanned = 0;
     let utxosFound = 0;
-    const failedBlocks: number[] = [];
+    let totalTransactions = 0;
 
-    console.log(
-      `[Indexer] Scanning forward from block ${startHeight} to ${endHeight} (${totalBlocks} blocks, batch size: ${batchSize})...`,
-    );
+    for (let rangeStart = startHeight; rangeStart <= endHeight; rangeStart += RANGE_BATCH_SIZE) {
+      const rangeEnd = Math.min(rangeStart + RANGE_BATCH_SIZE - 1, endHeight);
+      const rangeSize = rangeEnd - rangeStart + 1;
 
-    // First pass: scan blocks in batches for better performance
-    for (let batchStart = startHeight; batchStart <= endHeight; batchStart += batchSize) {
-      const batchEnd = Math.min(batchStart + batchSize - 1, endHeight);
-      const batchPromises: Promise<{ height: number; response: TransactionResponse | null }>[] = [];
+      try {
+        const response = await this.getTransactionsByRange(rangeStart, rangeEnd);
 
-      console.log(`[Indexer] Fetching batch: blocks ${batchStart} to ${batchEnd}...`);
-
-      // fetch multiple blocks in parallel
-      for (let height = batchStart; height <= batchEnd; height++) {
-        batchPromises.push(
-          this.getTransactionsByHeight(height)
-            .then(response => {
-              console.log(`[Indexer] ✓ Fetched block ${height}: ${response.transactions.length} transaction(s)`);
-              return { height, response };
-            })
-            .catch(error => {
-              console.warn(`[Indexer] ✗ Failed to fetch block ${height}:`, error.message);
-              failedBlocks.push(height);
-              return { height, response: null };
-            }),
+        console.log(
+          `[Indexer] ✓ Fetched range ${rangeStart}-${rangeEnd}: ` +
+          `${response.transactions.length} transactions in ${fetchDuration}ms`
         );
-      }
 
-      // wait for all blocks in this batch
-      const batchResults = await Promise.all(batchPromises);
+        totalTransactions += response.transactions.length;
 
-      console.log(`[Indexer] Processing batch results for blocks ${batchStart} to ${batchEnd}...`);
-      for (const { height, response } of batchResults) {
-        if (response && response.transactions && response.transactions.length > 0 && onBlockProcessed) {
-          console.log(`[Indexer] Calling onBlockProcessed for block ${height}...`);
-          const foundInBlock = await onBlockProcessed(response.transactions, height);
-          utxosFound += foundInBlock;
-
-          // Yield to UI after processing each block with transactions
-          // This prevents long-running transaction processing from freezing the UI
-          await new Promise(resolve => setTimeout(resolve, 0));
-        } else if (response) {
-          console.log(`[Indexer] Block ${height} has no transactions, skipping...`);
+        if (response.transactions.length > 0 && onRangeProcessed) {
+          const foundInRange = await onRangeProcessed(response.transactions);
+          
+          utxosFound += foundInRange;
+          console.log(
+            `[Indexer] ✓ Processed ${response.transactions.length} txns in ${processDuration}ms, ` +
+            `found ${foundInRange} UTXOs`
+          );
         }
 
-        blocksScanned++;
+        blocksScanned += rangeSize;
 
         if (onProgress) {
           onProgress({
-            currentBlock: height,
+            currentBlock: rangeEnd,
             totalBlocks,
             blocksScanned,
             percentComplete: (blocksScanned / totalBlocks) * 100,
             utxosFound,
           });
         }
-      }
-
-      console.log(`[Indexer] Batch complete: ${blocksScanned}/${totalBlocks} blocks scanned, ${utxosFound} UTXOs found so far`);
-
-      // Yield to event loop between batches to prevent UI freeze
-      // This allows React Native to process UI updates, user interactions, etc.
-      // Using setTimeout(0) instead of setImmediate for React Native compatibility
-      if (batchEnd < endHeight) {
-        await new Promise(resolve => setTimeout(resolve, 50));
+      } catch (error) {
+        console.error(`[Indexer] ✗ Failed to fetch range ${rangeStart}-${rangeEnd}:`, error);
       }
     }
 
-    // Second pass: retry failed blocks
-    if (failedBlocks.length > 0) {
-      console.log(`Retrying ${failedBlocks.length} failed blocks...`);
-
-      for (const height of failedBlocks) {
-        try {
-          const response = await this.getTransactionsByHeight(height);
-
-          if (response.transactions && response.transactions.length > 0 && onBlockProcessed) {
-            const foundInBlock = await onBlockProcessed(response.transactions, height);
-            utxosFound += foundInBlock;
-          }
-
-          console.log(`Successfully retried block ${height}`);
-
-          // small delay to prevent UI freezing during retries
-          await new Promise(resolve => setTimeout(resolve, 100));
-        } catch (error) {
-          console.error(`Failed to retry block ${height}:`, error);
-        }
-      }
-    }
-
+    const totalDuration = Date.now() - scanStart;
     console.log(
-      `[Indexer] ✓ Scan complete: ${blocksScanned} blocks processed, ` +
-        `${failedBlocks.length} blocks failed permanently, ` +
-        `${utxosFound} UTXOs found`,
+      `[Indexer] ✓ Scan complete: ${blocksScanned} blocks, ${totalTransactions} transactions ` +
+      `in ${totalDuration}ms (${(totalTransactions / (totalDuration / 1000)).toFixed(2)} txns/sec), ` +
+      `${utxosFound} UTXOs found`,
     );
   }
 }

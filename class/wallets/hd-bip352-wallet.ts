@@ -34,7 +34,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
   private readonly POLLING_INTERVAL_MS = 30000;
   private readonly DEFAULT_MAX_BLOCKS = 100;
-  private readonly BATCH_SIZE = 3;
 
   private cachedSeed: Buffer | null = null;
   private transactionProcessor: RustTransactionProcessor | null = null;
@@ -206,12 +205,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     if (this.transactionProcessor !== null) return;
 
     const seed = this.getSeed();
-    // Use the Rust-backed transaction processor for ~30-40x performance improvement
     this.transactionProcessor = createTransactionProcessor(seed);
-    
-    if (!this.transactionProcessor.isAvailable()) {
-      console.warn('[SP] Rust transaction processor not available, performance may be degraded');
-    }
   }
 
   getSilentPaymentAddress(): string | null {
@@ -249,23 +243,27 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
   private async processTransactions(
     transactions: IndexerTransaction[],
-    blockHeight: number,
   ): Promise<{ utxos: SilentPaymentUTXO[]; lastScannedBlock: number }> {
     this.ensureTransactionProcessor();
 
     const silentPaymentAddress = this.getSilentPaymentAddress()!;
     const validTransactions = transactions.filter(tx => tx.scanTweak && tx.outputs && tx.outputs.length > 0);
 
+    // Derive the highest block height from transactions
+    const maxBlockHeight = validTransactions.reduce(
+      (max, tx) => Math.max(max, tx.blockHeight),
+      this.lastScannedBlock
+    );
+
     const newUTXOs = await this.transactionProcessor!.processBatch(
       validTransactions,
       silentPaymentAddress,
-      10,
       () => this.cancelScanCallbackScan,
     );
 
     return {
       utxos: newUTXOs,
-      lastScannedBlock: Math.max(blockHeight, this.lastScannedBlock),
+      lastScannedBlock: maxBlockHeight,
     };
   }
 
@@ -425,24 +423,23 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       await indexer.scanForwardWithCallback(
         startHeight,
         endHeight,
-        async (transactions, blockHeight) => {
+        async (transactions) => {
           if (this.cancelScanCallbackScan) {
-            console.log('[SP] Scan cancelled at block', blockHeight);
+            console.log('[SP] Scan cancelled');
             throw new Error('SCAN_CANCELLED');
           }
 
-          const result = await this.processTransactions(transactions, blockHeight);
-          const addedCount = this.commitUTXOs(result.utxos, blockHeight);
+          const result = await this.processTransactions(transactions);
+          const addedCount = this.commitUTXOs(result.utxos, result.lastScannedBlock);
           totalUTXOsAdded += addedCount;
 
           if (addedCount > 0) {
-            console.log(`[SP] Block ${blockHeight}: +${addedCount} UTXO(s)`);
+            console.log(`[SP] Range processed: +${addedCount} UTXO(s), last block: ${result.lastScannedBlock}`);
           }
 
           return addedCount;
         },
         onProgress,
-        this.BATCH_SIZE,
       );
 
       if (totalUTXOsAdded > 0) {
