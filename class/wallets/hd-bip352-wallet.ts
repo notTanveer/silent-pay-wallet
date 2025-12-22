@@ -158,11 +158,9 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     }
 
     if (utxo.isSpent) {
-      console.log(`[SP] markUTXOAsSpent: Already spent ${txid}:${vout}`);
       return false;
     }
 
-    console.log(`[SP] markUTXOAsSpent: Marking ${txid}:${vout} as spent`);
     utxo.isSpent = true;
     this.invalidateUTXOCache();
 
@@ -296,7 +294,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
   cancelScan(): void {
     if (this.activeScanPromise !== null) {
-      console.log('[SP] Cancelling active scan...');
       this.cancelScanCallbackScan = true;
     }
     disconnectIndexer();
@@ -309,16 +306,13 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
   private startPolling(): void {
     if (this.isPollingActive) {
-      console.log('[SP] Polling already active, skipping...');
       return;
     }
 
-    console.log(`[SP] Starting polling every ${this.POLLING_INTERVAL_MS / 1000} seconds...`);
     this.isPollingActive = true;
 
     this.pollingIntervalId = setInterval(async () => {
       try {
-        console.log('[SP] Polling for new blocks...');
         await this.scanForPayments(this.DEFAULT_MAX_BLOCKS);
       } catch (error) {
         console.error('[SP] Error during polling:', error);
@@ -328,7 +322,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
   private stopPolling(): void {
     if (this.pollingIntervalId !== null) {
-      console.log('[SP] Stopping polling...');
       clearInterval(this.pollingIntervalId);
       this.pollingIntervalId = null;
       this.isPollingActive = false;
@@ -359,7 +352,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     forceFullScan: boolean = false,
   ): Promise<number> {
     if (this.activeScanPromise !== null) {
-      console.log('[SP] Scan in progress, reusing...');
       return this.activeScanPromise;
     }
 
@@ -401,8 +393,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
         if (blocksSinceLastScan > maxBlocks) {
           endHeight = this.lastScannedBlock + maxBlocks;
         }
-
-        console.log(`[SP] Incremental: scanning ${startHeight} to ${endHeight}`);
       } else {
         startHeight = effectiveBirthHeight;
         const totalAvailableBlocks = latestHeight - effectiveBirthHeight + 1;
@@ -425,7 +415,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
         endHeight,
         async (transactions) => {
           if (this.cancelScanCallbackScan) {
-            console.log('[SP] Scan cancelled');
             throw new Error('SCAN_CANCELLED');
           }
 
@@ -433,28 +422,18 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
           const addedCount = this.commitUTXOs(result.utxos, result.lastScannedBlock);
           totalUTXOsAdded += addedCount;
 
-          if (addedCount > 0) {
-            console.log(`[SP] Range processed: +${addedCount} UTXO(s), last block: ${result.lastScannedBlock}`);
-          }
-
           return addedCount;
         },
         onProgress,
       );
 
-      if (totalUTXOsAdded > 0) {
-        console.log(`[SP] Scan complete: ${totalUTXOsAdded} new UTXO(s)`);
-      }
-
       if (this.lastScannedBlock >= latestHeight && !this.isPollingActive) {
-        console.log('[SP] Reached latest block height, starting polling...');
         this.startPolling();
       }
 
       return totalUTXOsAdded;
     } catch (error: any) {
       if (error.message === 'SCAN_CANCELLED') {
-        console.log('[SP] Scan was cancelled by user');
         return 0;
       }
 
@@ -509,7 +488,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
   private async scanForSilentPayments(): Promise<void> {
     if (this.cancelScanCallbackScan) {
-      console.log('[SP] Skipping scan - wallet cancelled');
       return;
     }
 
@@ -525,9 +503,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
   getUTXOs(): SilentPaymentUTXO[] {
     const allSpUtxos = this.getSilentPaymentUTXOs();
     const unspentUtxos = allSpUtxos.filter(u => !u.isSpent);
-    console.log(
-      `[SP] getUTXOs: total SP=${allSpUtxos.length}, unspent=${unspentUtxos.length}, spent=${allSpUtxos.length - unspentUtxos.length}`,
-    );
     return unspentUtxos;
   }
 
@@ -566,10 +541,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     const unspentSpUtxos = this.getUTXOs();
     const silentPaymentBalance = unspentSpUtxos.reduce((sum, utxo) => sum + utxo.value, 0);
 
-    console.log(
-      `[SP] getBalance: regular=${regularBalance}, SP unspent UTXOs=${unspentSpUtxos.length}, SP balance=${silentPaymentBalance}, total=${regularBalance + silentPaymentBalance}`,
-    );
-
     return regularBalance + silentPaymentBalance;
   }
 
@@ -606,8 +577,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
     // Include ALL UTXOs (both spent and unspent) so incoming SP transactions appear in the list
     const utxos = this.getSilentPaymentUTXOs();
-
-    console.log(`[SP] getTransactions: ${utxos.length} SP UTXOs, ${this._sp_spending_txs.length} spending txs`);
 
     const txMap = new Map<string, SilentPaymentUTXO[]>();
 
@@ -658,10 +627,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     // These have negative value since money is leaving our wallet
     const allTransactions = [...regularTransactions, ...spIncomingTransactions, ...this._sp_spending_txs];
 
-    console.log(
-      `[SP] getTransactions total: ${allTransactions.length} (regular: ${regularTransactions.length}, incoming SP: ${spIncomingTransactions.length}, spending: ${this._sp_spending_txs.length})`,
-    );
-
     allTransactions.sort((a, b) => {
       const timeA = a.timestamp || a.blocktime || 0;
       const timeB = b.timestamp || b.blocktime || 0;
@@ -698,8 +663,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       }
     }
 
-    console.log(`[SP] Transaction: ${spUtxos.length} SP UTXOs, ${regularUtxos.length} regular UTXOs`);
-
     // Case 1: Only SP UTXOs - use SP builder exclusively
     if (spUtxos.length > 0 && regularUtxos.length === 0) {
       return this.createSPTransaction(spUtxos, targets, feeRate, changeAddress, sequence, skipSigning);
@@ -722,8 +685,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     sequence: number,
     skipSigning: boolean,
   ): CreateTransactionResult {
-    console.log('[SP] Creating pure SP transaction');
-
     if (targets.length === 0) throw new Error('No destination provided');
 
     const { inputs, outputs, fee } = this.coinselect(spUtxos as CreateTransactionUtxo[], targets, feeRate);
@@ -799,8 +760,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
         psbt.finalizeAllInputs();
         tx = psbt.extractTransaction();
-        console.log(`[SP] Transaction created: ${tx.getId()}`);
-        console.log(`[SP] Reserved ${inputs.length} UTXOs (will mark spent after broadcast)`);
       }
 
       return {
@@ -846,7 +805,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
         if (this._sp_pending_inputs.has(inputKey) || isSpUtxo) {
           spInputs.push({ txid, vout });
-          console.log(`[SP] Found SP input: ${txid}:${vout}`);
         }
       }
 
@@ -855,8 +813,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
       // only after successful broadcast, mark SP UTXOs as spent
       if (txid && spInputs.length > 0) {
-        console.log(`[SP] Broadcast successful, marking ${spInputs.length} UTXOs as spent`);
-
         const broadcastedTxid = tx.getId();
 
         // start with 0, subtract our inputs, add our outputs (change)
@@ -938,9 +894,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
           }),
         };
 
-        console.log(`[SP] Adding spending tx to list: ${spendingTx.txid}, value: ${spendingTx.value}`);
         this._sp_spending_txs.push(spendingTx);
-        console.log(`[SP] Total spending txs: ${this._sp_spending_txs.length}`);
 
         for (const { txid: inputTxid, vout } of spInputs) {
           const inputKey = `${inputTxid}:${vout}`;
@@ -956,7 +910,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       return txid;
     } catch (error) {
       this.releaseUTXOsFromTx(hex);
-      console.log('[SP] Broadcast failed, released reserved UTXOs');
       throw error;
     }
   }
@@ -967,7 +920,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
   async refreshUTXOSpentStatus(): Promise<number> {
     if (this.cancelScanCallbackScan) {
-      console.log('[SP] Skipping UTXO refresh - wallet scan cancelled');
       return 0;
     }
 

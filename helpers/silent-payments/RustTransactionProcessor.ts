@@ -55,10 +55,7 @@ export class RustTransactionProcessor {
         tx
       );
 
-      return matchedUtxos.map(utxo => {
-        console.log(`✓ Found matching output: ${utxo.txid}:${utxo.vout} (${utxo.value} sats)`);
-        return this.convertToSilentPaymentUTXO(utxo, silentPaymentAddress);
-      });
+      return matchedUtxos.map(utxo => this.convertToSilentPaymentUTXO(utxo, silentPaymentAddress));
     } catch (error) {
       console.error(`Error processing transaction ${tx.id}:`, error);
       return [];
@@ -76,9 +73,7 @@ export class RustTransactionProcessor {
       return [];
     }
 
-    // Check for early cancellation
     if (cancelScanCallback?.()) {
-      console.log('[RustTransactionProcessor] Processing cancelled before start');
       return [];
     }
 
@@ -94,10 +89,7 @@ export class RustTransactionProcessor {
         `${result.outputsScanned} outputs, found ${result.matchedUtxos.length} matches`
       );
 
-      return result.matchedUtxos.map(utxo => {
-        console.log(`✓ Found matching output: ${utxo.txid}:${utxo.vout} (${utxo.value} sats)`);
-        return this.convertToSilentPaymentUTXO(utxo, silentPaymentAddress);
-      });
+      return result.matchedUtxos.map(utxo => this.convertToSilentPaymentUTXO(utxo, silentPaymentAddress));
     } catch (error) {
       console.error('[RustTransactionProcessor] Batch processing error:', error);
       throw error;

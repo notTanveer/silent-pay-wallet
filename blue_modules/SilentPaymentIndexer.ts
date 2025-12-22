@@ -63,9 +63,7 @@ export class SilentPaymentIndexer {
     processTransactions: (transactions: IndexerTransaction[]) => Promise<number>,
     onProgress?: ScanProgressCallback,
   ): Promise<void> {
-    console.log(`[Indexer] Scanning forward from block ${startHeight} to ${endHeight} (${endHeight - startHeight + 1} blocks)...`);
     await this.scanBlocks(startHeight, endHeight, processTransactions, onProgress);
-    console.log('[Indexer] Forward scan with callback complete.');
   }
 
   private async scanBlocks(
@@ -87,21 +85,12 @@ export class SilentPaymentIndexer {
       try {
         const response = await this.getTransactionsByRange(rangeStart, rangeEnd);
 
-        console.log(
-          `[Indexer] ✓ Fetched range ${rangeStart}-${rangeEnd}: ` +
-          `${response.transactions.length} transactions in ${fetchDuration}ms`
-        );
-
         totalTransactions += response.transactions.length;
 
         if (response.transactions.length > 0 && onRangeProcessed) {
           const foundInRange = await onRangeProcessed(response.transactions);
           
           utxosFound += foundInRange;
-          console.log(
-            `[Indexer] ✓ Processed ${response.transactions.length} txns in ${processDuration}ms, ` +
-            `found ${foundInRange} UTXOs`
-          );
         }
 
         blocksScanned += rangeSize;
@@ -119,13 +108,6 @@ export class SilentPaymentIndexer {
         console.error(`[Indexer] ✗ Failed to fetch range ${rangeStart}-${rangeEnd}:`, error);
       }
     }
-
-    const totalDuration = Date.now() - scanStart;
-    console.log(
-      `[Indexer] ✓ Scan complete: ${blocksScanned} blocks, ${totalTransactions} transactions ` +
-      `in ${totalDuration}ms (${(totalTransactions / (totalDuration / 1000)).toFixed(2)} txns/sec), ` +
-      `${utxosFound} UTXOs found`,
-    );
   }
 }
 
