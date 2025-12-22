@@ -33,8 +33,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
   public readonly typeReadable = HDSilentPaymentsWallet.typeReadable;
 
   private readonly POLLING_INTERVAL_MS = 30000;
-  private readonly DEFAULT_MAX_BLOCKS = 100;
-
   private cachedSeed: Buffer | null = null;
   private transactionProcessor: RustTransactionProcessor | null = null;
   private lastScannedBlock: number = 0;
@@ -313,7 +311,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
     this.pollingIntervalId = setInterval(async () => {
       try {
-        await this.scanForPayments(this.DEFAULT_MAX_BLOCKS);
+        await this.scanForPayments();
       } catch (error) {
         console.error('[SP] Error during polling:', error);
       }
@@ -341,13 +339,11 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
    * Thread-safe: If a scan is already in progress, returns the existing promise to avoid redundant work.
    * Can be cancelled using cancelScan() method.
    *
-   * @param {number} maxBlocks - Maximum number of blocks to scan per call (default: DEFAULT_MAX_BLOCKS)
    * @param {ScanProgressCallback} onProgress - Optional callback for progress updates
    * @param {boolean} forceFullScan - Force a full scan ignoring lastScannedBlock (default: false)
    * @returns {Promise<number>} - Number of new UTXOs found
    */
   async scanForPayments(
-    maxBlocks: number = this.DEFAULT_MAX_BLOCKS,
     onProgress?: ScanProgressCallback,
     forceFullScan: boolean = false,
   ): Promise<number> {
@@ -356,7 +352,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     }
 
     this.cancelScanCallbackScan = false;
-    this.activeScanPromise = this.performScan(maxBlocks, onProgress, forceFullScan);
+    this.activeScanPromise = this.performScan(onProgress, forceFullScan);
 
     try {
       const result = await this.activeScanPromise;
@@ -367,7 +363,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     }
   }
 
-  private async performScan(maxBlocks: number, onProgress?: ScanProgressCallback, forceFullScan: boolean = false): Promise<number> {
+  private async performScan(onProgress?: ScanProgressCallback, forceFullScan: boolean = false): Promise<number> {
     try {
       const indexer = getDefaultIndexer();
       const latestHeightResponse = await indexer.getLatestBlockHeight();
@@ -379,7 +375,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       }
 
       let startHeight: number;
-      let endHeight: number = latestHeight;
+      const endHeight: number = latestHeight;
 
       if (!forceFullScan && this.lastScannedBlock > 0) {
         startHeight = this.lastScannedBlock + 1;
@@ -387,21 +383,8 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
         if (startHeight > latestHeight) {
           return 0;
         }
-
-        const blocksSinceLastScan = latestHeight - this.lastScannedBlock;
-
-        if (blocksSinceLastScan > maxBlocks) {
-          endHeight = this.lastScannedBlock + maxBlocks;
-        }
       } else {
         startHeight = effectiveBirthHeight;
-        const totalAvailableBlocks = latestHeight - effectiveBirthHeight + 1;
-
-        if (totalAvailableBlocks > maxBlocks) {
-          endHeight = startHeight + maxBlocks - 1;
-        }
-
-        console.log(`[SP] Full scan: ${startHeight} to ${endHeight} (${endHeight - startHeight + 1} blocks)`);
       }
 
       if (startHeight > endHeight) {
