@@ -1,4 +1,4 @@
-import { fetch } from '../../util/fetch';
+import { fetchWithRetries } from '../../util/fetch';
 
 export class IndexerHttpClient {
   constructor(
@@ -8,7 +8,7 @@ export class IndexerHttpClient {
 
   private async executeGet<T>(endpoint: string, errorContext: string): Promise<T> {
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      const response = await fetchWithRetries(`${this.baseUrl}${endpoint}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

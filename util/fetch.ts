@@ -12,3 +12,18 @@ export function fetch(input: RequestInfo | URL, init: RequestInit & { timeout?: 
   const timer = setTimeout(() => controller.abort(), timeout);
   return nativeFetch(input, { ...rest, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
+
+export async function fetchWithRetries(
+  input: RequestInfo | URL,
+  init: RequestInit & { timeout?: number } = {},
+  retries: number = 3,
+): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch (error) {
+    if (retries === 0) {
+      throw error;
+    }
+    return fetchWithRetries(input, init, retries - 1);
+  }
+}
