@@ -30,4 +30,4 @@ const BlueAppComponent = () => {
   return <App />;
 };
 
-AppRegistry.registerComponent('Shroud', () => BlueAppComponent);
+AppRegistry.registerComponent('BlueWallet', () => BlueAppComponent);
