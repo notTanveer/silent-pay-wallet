@@ -152,6 +152,7 @@ describe('BlueElectrum', () => {
 
   it('BlueElectrum can do getTransactionsFullByAddress()', async function () {
     const txs = await BlueElectrum.getTransactionsFullByAddress('bc1qt4t9xl2gmjvxgmp5gev6m8e6s9c85979ta7jeh');
+    assert.ok(txs.length >= 1);
     const tx = txs[0];
     assert.ok(tx.address === 'bc1qt4t9xl2gmjvxgmp5gev6m8e6s9c85979ta7jeh');
     assert.ok(tx.txid);
