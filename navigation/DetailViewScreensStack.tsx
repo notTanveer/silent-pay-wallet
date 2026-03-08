@@ -43,6 +43,7 @@ import EncryptStorage from '../screen/settings/EncryptStorage';
 import Language from '../screen/settings/Language';
 import LightningSettings from '../screen/settings/LightningSettings';
 import NotificationSettings from '../screen/settings/NotificationSettings';
+import TorSettings from '../screen/settings/TorSettings';
 import SelfTest from '../screen/settings/SelfTest';
 import ReleaseNotes from '../screen/settings/ReleaseNotes';
 import ToolsScreen from '../screen/settings/tools';
@@ -248,6 +249,11 @@ const DetailViewStackScreensStack = () => {
         name="NetworkSettings"
         component={NetworkSettings}
         options={navigationStyle({ title: loc.settings.network })(theme)}
+      />
+      <DetailViewStack.Screen
+        name="TorSettings"
+        component={TorSettings}
+        options={navigationStyle({ title: 'Tor (Orbot)' })(theme)}
       />
       <DetailViewStack.Screen
         name="SettingsBlockExplorer"

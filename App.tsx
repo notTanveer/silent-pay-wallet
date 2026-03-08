@@ -9,10 +9,14 @@ import { navigationRef } from './NavigationService';
 import { useLogger } from '@react-navigation/devtools';
 import { StorageProvider } from './components/Context/StorageProvider';
 import { initializeIndexer } from './blue_modules/SilentPaymentIndexer';
+import TorManager from './blue_modules/torManager';
+
+TorManager.getInstance().loadSettings();
 
 const App = () => {
   initializeIndexer({
     baseUrl: 'https://cushionlike-isabel-retrievable.ngrok-free.dev/',
+    onionUrl: '',
     timeout: 100000, // 100 seconds for blockchain scanning operations (increased for slower connections)
   });
 
