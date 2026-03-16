@@ -5,7 +5,7 @@ set -euo pipefail
 
 PROJECT_NAME="rust_jsi_bridge"
 LIB_NAME="librust_jsi_bridge.a"
-IOS_DEST="../ios/lib"
+IOS_DEST="../ios"
 ANDROID_DEST_BASE="../android/app/src/main/jniLibs"
 API_LEVEL=21 # Minimum API level for Android builds (Android 5.0+, Lollipop)
 
@@ -65,9 +65,8 @@ ANDROID_TARGETS=(
 )
 
 IOS_TARGETS=(
-    "aarch64-apple-ios|iOS Device (ARM64)|librust_jsi_bridge_device.a"
-    "aarch64-apple-ios-sim|iOS Simulator (ARM64)|librust_jsi_bridge_sim_arm.a"
-    "x86_64-apple-ios|iOS Simulator (Intel)|librust_jsi_bridge_sim_x86.a"
+    "aarch64-apple-ios|iOS Device (ARM64)"
+    "aarch64-apple-ios-sim|iOS Simulator (ARM64)"
 )
 
 
@@ -76,18 +75,29 @@ success() { echo -e "\033[1;32m  ✅ $1\033[0m"; }
 warn() { echo -e "\033[1;33m  ⚠️  $1\033[0m"; }
 error() { echo -e "\033[1;31m❌ $1\033[0m"; exit 1; }
 
+is_macos() {
+    [[ "$(uname -s)" == "Darwin" ]]
+}
+
 ensure_rust_targets() {
+    local platform="$1"
     log "Checking Rust targets..."
-    
-    local targets=(
-        "aarch64-apple-ios"
-        "aarch64-apple-ios-sim"
-        "x86_64-apple-ios"
-        "aarch64-linux-android"
-        "armv7-linux-androideabi"
-        "x86_64-linux-android"
-        "i686-linux-android"
-    )
+
+    local targets=()
+    if [ "$platform" = "ios" ]; then
+        targets=(
+            "aarch64-apple-ios"
+            "aarch64-apple-ios-sim"
+            "x86_64-apple-ios"
+        )
+    else
+        targets=(
+            "aarch64-linux-android"
+            "armv7-linux-androideabi"
+            "x86_64-linux-android"
+            "i686-linux-android"
+        )
+    fi
     
     local installed_targets
     installed_targets=$(rustup target list --installed)
@@ -123,16 +133,59 @@ build_and_copy_android() {
     fi
 }
 
-build_and_copy_ios() {
-    IFS='|' read -r target name filename <<< "$1"
+build_ios_target() {
+    IFS='|' read -r target name <<< "$1"
     log "Building $name ($target)..."
     
     if cargo build --release --target "$target"; then
-        mkdir -p "$IOS_DEST"
-        cp "target/$target/release/$LIB_NAME" "$IOS_DEST/$filename"
-        success "$name built and deployed"
+        success "$name built successfully"
+        return 0
     else
         warn "$name build failed. Try: rustup target add $target"
+        return 1
+    fi
+}
+
+create_ios_fat_binaries() {
+    log "Creating iOS fat binaries and XCFramework..."
+    
+    mkdir -p "$IOS_DEST"
+    
+    # fat binary for simulator (arm64 + x86_64)
+    if [ -f "target/aarch64-apple-ios-sim/release/$LIB_NAME" ] && [ -f "target/x86_64-apple-ios/release/$LIB_NAME" ]; then
+        log "Creating universal simulator library..."
+        lipo -create \
+            "target/aarch64-apple-ios-sim/release/$LIB_NAME" \
+            "target/x86_64-apple-ios/release/$LIB_NAME" \
+            -output "$IOS_DEST/librust_jsi_bridge_sim.a"
+        success "Universal simulator library created"
+    else
+        warn "Simulator libraries not found, skipping fat binary creation"
+    fi
+    
+    if [ -f "target/aarch64-apple-ios/release/$LIB_NAME" ]; then
+        cp "target/aarch64-apple-ios/release/$LIB_NAME" "$IOS_DEST/librust_jsi_bridge_device.a"
+        success "Device library copied"
+    else
+        warn "Device library not found"
+    fi
+    
+    # create XCFramework (if both device and sim libraries exist)
+    if [ -f "$IOS_DEST/librust_jsi_bridge_device.a" ] && [ -f "$IOS_DEST/librust_jsi_bridge_sim.a" ]; then
+        log "Creating XCFramework..."
+        rm -rf "$IOS_DEST/RustJsiBridge.xcframework"
+        xcodebuild -create-xcframework \
+            -library "$IOS_DEST/librust_jsi_bridge_device.a" \
+            -library "$IOS_DEST/librust_jsi_bridge_sim.a" \
+            -output "$IOS_DEST/RustJsiBridge.xcframework" 2>/dev/null
+        
+        if [ $? -eq 0 ]; then
+            success "XCFramework created successfully"
+        else
+            warn "XCFramework creation failed (xcodebuild not available or failed)"
+        fi
+    else
+        warn "Missing required libraries for XCFramework creation"
     fi
 }
 
@@ -149,25 +202,50 @@ main() {
     echo "🦀 Starting Rust JSI Bridge Build System"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-    configure_android_toolchain
-    ensure_rust_targets
-    
-    echo -e "\n🤖 Android Targets:"
-    for item in "${ANDROID_TARGETS[@]}"; do
-        build_and_copy_android "$item"
-    done
+    if is_macos; then
+        log "Detected macOS host. Building iOS targets only."
+        ensure_rust_targets "ios"
 
-    # TODO: yet to test iOS build process
-    # echo -e "\n📱 iOS Targets:"
-    # for item in "${IOS_TARGETS[@]}"; do
-    #     build_and_copy_ios "$item"
-    # done
+        echo -e "\n📱 iOS Targets:"
+        for item in "${IOS_TARGETS[@]}"; do
+            build_ios_target "$item"
+        done
+
+        # WIP: iOS packaging
+        # create_ios_fat_binaries
+    else
+        log "Non-macOS host detected. Building Android targets only."
+        configure_android_toolchain
+        ensure_rust_targets "android"
+
+        echo -e "\n🤖 Android Targets:"
+        for item in "${ANDROID_TARGETS[@]}"; do
+            build_and_copy_android "$item"
+        done
+    fi
 
     echo -e "\n✅ Build and Distribution Complete!"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
     log "Final Assets Statistics:"
-    find "$ANDROID_DEST_BASE" "$IOS_DEST" -name "*.a" -exec ls -lh {} + 2>/dev/null | awk '{print "  " $5 "\t" $9}' || echo "  No artifacts found."
+    if is_macos; then
+        echo "📱 iOS libraries:"
+        find "target" -path "*/release/$LIB_NAME" -name "$LIB_NAME" 2>/dev/null | while read -r file; do
+            ls -lh "$file" | awk '{print "  " $5 "\t" $9}'
+        done || echo "  No iOS artifacts found."
+    else
+        echo "📦 Android libraries:"
+        find "$ANDROID_DEST_BASE" -name "*.a" -exec ls -lh {} + 2>/dev/null | awk '{print "  " $5 "\t" $9}' || echo "  No Android artifacts found."
+    fi
+    
+    # echo "\n📱 iOS libraries:"
+    # find "$IOS_DEST" -name "*.a" -o -name "*.xcframework" 2>/dev/null | while read -r file; do
+    #     if [ -f "$file" ]; then
+    #         ls -lh "$file" | awk '{print "  " $5 "\t" $9}'
+    #     elif [ -d "$file" ]; then
+    #         echo "  [XCFramework] $file"
+    #     fi
+    # done || echo "  No iOS artifacts found."
 }
 
 main "$@"

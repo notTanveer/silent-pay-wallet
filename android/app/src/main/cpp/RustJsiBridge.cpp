@@ -4,13 +4,13 @@
 // External Rust function declarations
 extern "C" {
     void free_rust_string(char* ptr);
-    
+
     const char* sp_scan_transactions(
         const char* scan_privkey_hex,
         const char* spend_pubkey_hex,
         const char* transactions_json
     );
-    
+
     const char* sp_scan_single_transaction(
         const char* scan_privkey_hex,
         const char* spend_pubkey_hex,
