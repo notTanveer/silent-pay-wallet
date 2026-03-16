@@ -237,19 +237,14 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     return this.cachedSeed;
   }
 
-  private async processTransactions(
-    transactions: IndexerTransaction[],
-  ): Promise<{ utxos: SilentPaymentUTXO[]; lastScannedBlock: number }> {
+  private async processTransactions(transactions: IndexerTransaction[]): Promise<{ utxos: SilentPaymentUTXO[]; lastScannedBlock: number }> {
     this.ensureTransactionProcessor();
 
     const silentPaymentAddress = this.getSilentPaymentAddress()!;
     const validTransactions = transactions.filter(tx => tx.scanTweak && tx.outputs && tx.outputs.length > 0);
 
     // Derive the highest block height from transactions
-    const maxBlockHeight = validTransactions.reduce(
-      (max, tx) => Math.max(max, tx.blockHeight),
-      this.lastScannedBlock
-    );
+    const maxBlockHeight = validTransactions.reduce((max, tx) => Math.max(max, tx.blockHeight), this.lastScannedBlock);
 
     const newUTXOs = await this.transactionProcessor!.processBatch(
       validTransactions,
@@ -343,10 +338,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
    * @param {boolean} forceFullScan - Force a full scan ignoring lastScannedBlock (default: false)
    * @returns {Promise<number>} - Number of new UTXOs found
    */
-  async scanForPayments(
-    onProgress?: ScanProgressCallback,
-    forceFullScan: boolean = false,
-  ): Promise<number> {
+  async scanForPayments(onProgress?: ScanProgressCallback, forceFullScan: boolean = false): Promise<number> {
     if (this.activeScanPromise !== null) {
       return this.activeScanPromise;
     }
@@ -396,7 +388,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       await indexer.scanForwardWithCallback(
         startHeight,
         endHeight,
-        async (transactions) => {
+        async transactions => {
           if (this.cancelScanCallbackScan) {
             throw new Error('SCAN_CANCELLED');
           }

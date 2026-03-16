@@ -5,8 +5,8 @@ const LINKING_ERROR =
   `Please ensure you've rebuilt the app after adding the native module.\n\n` +
   Platform.select({
     ios: "- Run 'cd ios && pod install && cd ..'\n",
-    android: "- Ensure CMakeLists.txt is properly configured\n",
-    default: ''
+    android: '- Ensure CMakeLists.txt is properly configured\n',
+    default: '',
   }) +
   `- Rebuild the app (npx react-native run-ios or run-android)`;
 
@@ -18,7 +18,7 @@ const RustJsiBridgeModule = NativeModules.RustJsiBridge
         get() {
           throw new Error(LINKING_ERROR);
         },
-      }
+      },
     );
 
 export interface RustMatchedUTXO {
@@ -54,7 +54,7 @@ export function initializeRustJsiBridge(): boolean {
   if (isInstalled) {
     return true;
   }
-  
+
   try {
     const result = RustJsiBridgeModule.install();
     if (result) {
@@ -73,11 +73,16 @@ const getGlobal = (): RustJsiBridgeGlobal => {
   return global as any as RustJsiBridgeGlobal;
 };
 
-export function spScanTransactions<T extends { id: string; blockHeight: number; blockHash: string; blockTime: number; scanTweak: string; outputs: Array<{ transactionId: string; vout: number; pubKey: string; value: number; isSpent: boolean | number }> }>(
-  scanPrivkeyHex: string,
-  spendPubkeyHex: string,
-  transactions: T[]
-): RustBatchScanResult {
+export function spScanTransactions<
+  T extends {
+    id: string;
+    blockHeight: number;
+    blockHash: string;
+    blockTime: number;
+    scanTweak: string;
+    outputs: Array<{ transactionId: string; vout: number; pubKey: string; value: number; isSpent: boolean | number }>;
+  },
+>(scanPrivkeyHex: string, spendPubkeyHex: string, transactions: T[]): RustBatchScanResult {
   if (!isInstalled) {
     throw new Error('RustJsiBridge not installed. Call initializeRustJsiBridge() first.');
   }
@@ -93,11 +98,16 @@ export function spScanTransactions<T extends { id: string; blockHeight: number; 
   return result;
 }
 
-export function spScanSingleTransaction<T extends { id: string; blockHeight: number; blockHash: string; blockTime: number; scanTweak: string; outputs: Array<{ transactionId: string; vout: number; pubKey: string; value: number; isSpent: boolean | number }> }>(
-  scanPrivkeyHex: string,
-  spendPubkeyHex: string,
-  transaction: T
-): RustMatchedUTXO[] {
+export function spScanSingleTransaction<
+  T extends {
+    id: string;
+    blockHeight: number;
+    blockHash: string;
+    blockTime: number;
+    scanTweak: string;
+    outputs: Array<{ transactionId: string; vout: number; pubKey: string; value: number; isSpent: boolean | number }>;
+  },
+>(scanPrivkeyHex: string, spendPubkeyHex: string, transaction: T): RustMatchedUTXO[] {
   if (!isInstalled) {
     throw new Error('RustJsiBridge not installed. Call initializeRustJsiBridge() first.');
   }

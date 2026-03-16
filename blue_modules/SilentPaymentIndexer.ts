@@ -34,7 +34,10 @@ export class SilentPaymentIndexer {
   }
 
   async getTransactionsByRange(startHeight: number, endHeight: number): Promise<TransactionResponse> {
-    return this.httpClient.get<TransactionResponse>(`/transactions/range?startHeight=${startHeight}&endHeight=${endHeight}&filterSpent=true`, `Error fetching transactions by range ${startHeight}-${endHeight}`);
+    return this.httpClient.get<TransactionResponse>(
+      `/transactions/range?startHeight=${startHeight}&endHeight=${endHeight}&filterSpent=true`,
+      `Error fetching transactions by range ${startHeight}-${endHeight}`,
+    );
   }
 
   async getLatestBlockHeight(): Promise<LatestBlockHeightResponse> {
@@ -76,7 +79,6 @@ export class SilentPaymentIndexer {
     const totalBlocks = endHeight - startHeight + 1;
     let blocksScanned = 0;
     let utxosFound = 0;
-    let totalTransactions = 0;
 
     for (let rangeStart = startHeight; rangeStart <= endHeight; rangeStart += RANGE_BATCH_SIZE) {
       const rangeEnd = Math.min(rangeStart + RANGE_BATCH_SIZE - 1, endHeight);
@@ -85,11 +87,9 @@ export class SilentPaymentIndexer {
       try {
         const response = await this.getTransactionsByRange(rangeStart, rangeEnd);
 
-        totalTransactions += response.transactions.length;
-
         if (response.transactions.length > 0 && onRangeProcessed) {
           const foundInRange = await onRangeProcessed(response.transactions);
-          
+
           utxosFound += foundInRange;
         }
 
