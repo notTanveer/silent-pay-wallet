@@ -42,6 +42,9 @@ import getWalletTransactionsOptions from './helpers/getWalletTransactionsOptions
 import { useSizeClass, SizeClass } from '../modules/sizeClass';
 import { isDesktop } from '../modules/environment';
 import ReceiveDetails from '../screen/receive/ReceiveDetails';
+import TrackPayment from '../screen/wallets/TrackPayment';
+import PaymentFound from '../screen/wallets/PaymentFound';
+import NoPaymentFound from '../screen/wallets/NoPaymentFound';
 import OnboardingStack from './OnboardingStack';
 
 const DetailViewStackScreensStack = () => {
@@ -223,6 +226,30 @@ const DetailViewStackScreensStack = () => {
         name="SettingsPrivacy"
         component={SettingsPrivacy}
         options={navigationStyle({ title: loc.settings.privacy })(theme)}
+      />
+      <DetailViewStack.Screen
+        name="TrackPayment"
+        component={TrackPayment}
+        options={navigationStyle({
+          title: loc.track_payment.title,
+          statusBarStyle: 'auto',
+        })(theme)}
+      />
+      <DetailViewStack.Screen
+        name="PaymentFound"
+        component={PaymentFound}
+        options={navigationStyle({
+          title: loc.payment_found.title,
+          statusBarStyle: 'auto',
+        })(theme)}
+      />
+      <DetailViewStack.Screen
+        name="NoPaymentFound"
+        component={NoPaymentFound}
+        options={navigationStyle({
+          title: loc.no_payment_found.title,
+          statusBarStyle: 'auto',
+        })(theme)}
       />
       <DetailViewStack.Screen
         name="ReceiveDetails"

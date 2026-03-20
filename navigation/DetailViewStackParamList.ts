@@ -74,4 +74,7 @@ export type DetailViewStackParamList = {
   ScanQRCode: ScanQRCodeParamList;
   Onboarding: undefined;
   DeleteWallet: undefined;
+  TrackPayment: undefined;
+  PaymentFound: { txid: string; blockHeight: number };
+  NoPaymentFound: undefined;
 };
