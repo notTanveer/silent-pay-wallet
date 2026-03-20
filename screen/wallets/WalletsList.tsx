@@ -232,9 +232,23 @@ const WalletsList: React.FC = () => {
         >
           {`${loc.transactions.list_title}${'  '}`}
         </Text>
+        <TouchableOpacity
+          style={[styles.trackPaymentBanner, { borderColor: colors.formBorder, backgroundColor: colors.background }]}
+          onPress={() => navigation.navigate('TrackPayment')}
+          activeOpacity={0.7}
+          testID="TrackPaymentBanner"
+        >
+          <View style={styles.trackPaymentBannerContent}>
+            <Text style={[styles.trackPaymentBannerTitle, { color: colors.foregroundColor }]}>{loc.track_payment.banner_title}</Text>
+            <Text style={[styles.trackPaymentBannerSubtitle, { color: colors.alternativeTextColor }]}>
+              {loc.track_payment.banner_subtitle}
+            </Text>
+          </View>
+          <Text style={[styles.trackPaymentChevron, { color: colors.alternativeTextColor2 }]}>›</Text>
+        </TouchableOpacity>
       </View>
     );
-  }, [stylesHook.listHeaderBack, stylesHook.listHeaderText]);
+  }, [stylesHook.listHeaderBack, stylesHook.listHeaderText, colors, navigation]);
 
   const renderTransactionListsRow = useCallback(
     (item: ExtendedTransaction) => (
@@ -370,7 +384,7 @@ const WalletsList: React.FC = () => {
   }, [wallets.length]);
 
   const sectionListKeyExtractor = useCallback((item: any, index: any) => {
-    return `${item}${index}}`;
+    return `${item}${index}`;
   }, []);
 
   const onScanButtonPressed = useCallback(() => {
@@ -528,8 +542,7 @@ export default WalletsList;
 
 const styles = StyleSheet.create({
   listHeaderBack: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: 'column',
     alignItems: 'center',
     paddingHorizontal: 16,
     minHeight: 56,
@@ -579,5 +592,29 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  trackPaymentBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 8,
+    marginBottom: 8,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  trackPaymentBannerContent: {
+    flex: 1,
+  },
+  trackPaymentBannerTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  trackPaymentBannerSubtitle: {
+    fontSize: 13,
+  },
+  trackPaymentChevron: {
+    fontSize: 22,
   },
 });
