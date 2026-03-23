@@ -53,10 +53,7 @@ export class SilentPaymentIndexer {
   }
 
   async getTransactionByTxid(txid: string): Promise<TransactionByTxidResponse> {
-    return this.httpClient.get<TransactionByTxidResponse>(
-      `/transactions/txid/${txid}`,
-      `Error fetching transaction by txid ${txid}`,
-    );
+    return this.httpClient.get<TransactionByTxidResponse>(`/transactions/txid/${txid}`, `Error fetching transaction by txid ${txid}`);
   }
 
   /**

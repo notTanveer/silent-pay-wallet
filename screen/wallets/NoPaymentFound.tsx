@@ -11,7 +11,12 @@ import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/haptic
 import { Spacing20 } from '../../components/Spacing';
 import Button from '../../components/Button';
 
-const REASON_KEYS = ['reason_not_broadcast', 'reason_different_address', 'reason_incorrect_txid', 'reason_not_silent_payment'] as const;
+const REASONS = [
+  loc.no_payment_found.reason_not_broadcast,
+  loc.no_payment_found.reason_different_address,
+  loc.no_payment_found.reason_incorrect_txid,
+  loc.no_payment_found.reason_not_silent_payment,
+];
 
 const NoPaymentFound: React.FC = () => {
   const { wallets } = useStorage();
@@ -55,10 +60,10 @@ const NoPaymentFound: React.FC = () => {
               <Icon name="help-outline" type="material" size={20} color={warningColor} />
               <Text style={[styles.reasonsTitle, stylesHook.reasonsTitle]}>{loc.no_payment_found.could_mean}</Text>
             </View>
-            {REASON_KEYS.map(key => (
-              <View key={key} style={styles.reasonRow}>
+            {REASONS.map(reason => (
+              <View key={reason} style={styles.reasonRow}>
                 <View style={[styles.bullet, { backgroundColor: warningColor }]} />
-                <Text style={[styles.reasonText, stylesHook.reasonText]}>{loc.no_payment_found[key]}</Text>
+                <Text style={[styles.reasonText, stylesHook.reasonText]}>{reason}</Text>
               </View>
             ))}
           </View>

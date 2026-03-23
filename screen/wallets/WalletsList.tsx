@@ -222,6 +222,7 @@ const WalletsList: React.FC = () => {
   );
 
   const renderListHeaderComponent = useCallback(() => {
+    const wallet = wallets.length > 0 ? wallets[0] : null;
     return (
       <View style={[styles.listHeaderBack, stylesHook.listHeaderBack]}>
         <Text
@@ -232,23 +233,25 @@ const WalletsList: React.FC = () => {
         >
           {`${loc.transactions.list_title}${'  '}`}
         </Text>
-        <TouchableOpacity
-          style={[styles.trackPaymentBanner, { borderColor: colors.formBorder, backgroundColor: colors.background }]}
-          onPress={() => navigation.navigate('TrackPayment')}
-          activeOpacity={0.7}
-          testID="TrackPaymentBanner"
-        >
-          <View style={styles.trackPaymentBannerContent}>
-            <Text style={[styles.trackPaymentBannerTitle, { color: colors.foregroundColor }]}>{loc.track_payment.banner_title}</Text>
-            <Text style={[styles.trackPaymentBannerSubtitle, { color: colors.alternativeTextColor }]}>
-              {loc.track_payment.banner_subtitle}
-            </Text>
-          </View>
-          <Text style={[styles.trackPaymentChevron, { color: colors.alternativeTextColor2 }]}>›</Text>
-        </TouchableOpacity>
+        {wallet && (
+          <TouchableOpacity
+            style={[styles.trackPaymentBanner, { borderColor: colors.formBorder, backgroundColor: colors.background }]}
+            onPress={() => navigation.navigate('TrackPayment')}
+            activeOpacity={0.7}
+            testID="TrackPaymentBanner"
+          >
+            <View style={styles.trackPaymentBannerContent}>
+              <Text style={[styles.trackPaymentBannerTitle, { color: colors.foregroundColor }]}>{loc.track_payment.banner_title}</Text>
+              <Text style={[styles.trackPaymentBannerSubtitle, { color: colors.alternativeTextColor }]}>
+                {loc.track_payment.banner_subtitle}
+              </Text>
+            </View>
+            <Text style={[styles.trackPaymentChevron, { color: colors.alternativeTextColor2 }]}>›</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
-  }, [stylesHook.listHeaderBack, stylesHook.listHeaderText, colors, navigation]);
+  }, [stylesHook.listHeaderBack, stylesHook.listHeaderText, colors, navigation, wallets]);
 
   const renderTransactionListsRow = useCallback(
     (item: ExtendedTransaction) => (

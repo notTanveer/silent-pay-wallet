@@ -11,8 +11,8 @@ import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import loc from '../../loc';
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
-import { Spacing20 } from '../../components/BlueSpacing';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
+import { Spacing20 } from '../../components/Spacing';
 
 type TrackPaymentProps = NativeStackScreenProps<DetailViewStackParamList, 'TrackPayment'>;
 
@@ -135,9 +135,9 @@ const TrackPayment: React.FC<TrackPaymentProps> = () => {
             <ActivityIndicator size="large" color={colors.mainColor} />
           ) : (
             <Pressable
-              style={[styles.outlineButton, stylesHook.outlineButton, !isValidTxid && styles.disabled]}
+              style={[styles.outlineButton, stylesHook.outlineButton, (!isValidTxid || !wallet) && styles.disabled]}
               onPress={handleCheckTransaction}
-              disabled={!isValidTxid || isLoading}
+              disabled={!isValidTxid || isLoading || !wallet}
               testID="CheckTransactionButton"
             >
               <Text style={[styles.outlineButtonText, stylesHook.outlineButtonText]}>{loc.track_payment.check_transaction}</Text>
