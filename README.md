@@ -83,6 +83,12 @@ npm start
 
 Open ios/BlueWallet.xcworkspace. Once the project loads, select the scheme/target BlueWallet. Click Run.
 
+* To generate the debug APK:
+
+```bash
+bash scripts/build-debug-apk.sh
+```
+
 ## TESTS
 
 ```bash
