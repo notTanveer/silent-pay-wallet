@@ -1,8 +1,7 @@
 import { AztecoVoucher } from '../class/azteco';
 import { LightningTransaction, Transaction, TWallet } from '../class/wallets/types';
-import { Chain } from '../models/bitcoinUnits';
 import { ElectrumServerItem } from '../screen/settings/ElectrumSettings';
-import { SendDetailsParams, TNavigationWrapper } from './SendDetailsStackParamList';
+import { SendDetailsParams } from './SendDetailsStackParamList';
 import { AddWalletStackParamList } from './AddWalletStack';
 
 export type ScanQRCodeParamList = {
@@ -33,14 +32,6 @@ export type DetailViewStackParamList = {
   };
   RBFBumpFee: { txid: string; wallet: TWallet | null };
   RBFCancel: { txid: string; wallet: TWallet | null };
-  SelectWallet: {
-    chainType?: Chain;
-    onWalletSelect?: (wallet: TWallet, navigationWrapper: TNavigationWrapper) => void;
-    availableWallets?: TWallet[];
-    noWalletExplanationText?: string;
-    onChainRequireSend?: boolean;
-    selectedWalletID?: string; // Add this parameter to scroll to a specific wallet
-  };
   LNDViewInvoice: { invoice: LightningTransaction; walletID: string };
   LNDViewAdditionalInvoiceInformation: { invoiceId: string };
   LNDViewAdditionalInvoicePreImage: { invoiceId: string };
@@ -118,7 +109,6 @@ export type DetailViewStackParamList = {
     paymentCode: string;
     walletID: string;
   };
-  ManageWallets: undefined;
   Onboarding: undefined;
   DeleteWallet: undefined;
 };

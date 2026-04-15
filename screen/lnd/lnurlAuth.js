@@ -1,16 +1,13 @@
-import { useLocale, useNavigation, useRoute } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
 import React, { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Icon } from '@rneui/themed';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import URL from 'url';
 import { BlueCard, BlueText } from '../../BlueComponents';
 import Lnurl from '../../class/lnurl';
 import Button from '../../components/Button';
 import SafeArea from '../../components/SafeArea';
 import { useTheme } from '../../components/themes';
-import selectWallet from '../../helpers/select-wallet';
 import loc from '../../loc';
-import { Chain } from '../../models/bitcoinUnits';
 import { SuccessView } from '../send/success';
 import { useStorage } from '../../hooks/context/useStorage';
 import { BlueSpacing20, BlueSpacing40 } from '../../components/BlueSpacing';
@@ -25,8 +22,6 @@ const AuthState = {
 
 const LnurlAuth = () => {
   const { wallets } = useStorage();
-  const { name } = useRoute();
-  const { direction } = useLocale();
   const { walletID, lnurl } = useRoute().params;
   const wallet = useMemo(() => wallets.find(w => w.getID() === walletID), [wallets, walletID]);
   const LN = useMemo(() => new Lnurl(lnurl), [lnurl]);
@@ -36,20 +31,12 @@ const LnurlAuth = () => {
   );
   const [authState, setAuthState] = useState(AuthState.USER_PROMPT);
   const [errMsg, setErrMsg] = useState('');
-  const { setParams, navigate } = useNavigation();
   const { colors } = useTheme();
   const stylesHook = StyleSheet.create({
     root: {
       backgroundColor: colors.background,
     },
-    walletWrapLabel: {
-      color: colors.buttonAlternativeTextColor,
-    },
   });
-
-  const showSelectWalletScreen = useCallback(() => {
-    selectWallet(navigate, name, Chain.OFFCHAIN).then(w => setParams({ walletID: w.getID() }));
-  }, [navigate, name, setParams]);
 
   const authenticate = useCallback(() => {
     wallet
@@ -71,38 +58,19 @@ const LnurlAuth = () => {
       </View>
     );
 
-  const renderWalletSelectionButton = authState === AuthState.USER_PROMPT && (
-    <View style={styles.walletSelectRoot}>
-      {authState !== AuthState.IN_PROGRESS && (
-        <TouchableOpacity accessibilityRole="button" style={styles.walletSelectTouch} onPress={showSelectWalletScreen}>
-          <Text style={styles.walletSelectText}>{loc.wallets.select_wallet.toLowerCase()}</Text>
-          <Icon name={direction === 'rlt' ? 'angle-left' : 'angle-right'} size={18} type="font-awesome" color="#9aa0aa" />
-        </TouchableOpacity>
-      )}
-      <View style={styles.walletWrap}>
-        <TouchableOpacity accessibilityRole="button" style={styles.walletWrapTouch} onPress={showSelectWalletScreen}>
-          <Text style={[styles.walletWrapLabel, stylesHook.walletWrapLabel]}>{wallet.getLabel()}</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
   return (
     <SafeArea style={styles.root}>
       {authState === AuthState.USER_PROMPT && (
-        <>
-          <ScrollView>
-            <BlueCard>
-              <BlueText style={styles.alignSelfCenter}>{loc.lnurl_auth[`${parsedLnurl.query.action || 'auth'}_question_part_1`]}</BlueText>
-              <BlueText style={styles.domainName}>{parsedLnurl.hostname}</BlueText>
-              <BlueText style={styles.alignSelfCenter}>{loc.lnurl_auth[`${parsedLnurl.query.action || 'auth'}_question_part_2`]}</BlueText>
-              <BlueSpacing40 />
-              <Button title={loc.lnurl_auth.authenticate} onPress={authenticate} />
-              <BlueSpacing40 />
-            </BlueCard>
-          </ScrollView>
-          {renderWalletSelectionButton}
-        </>
+        <ScrollView>
+          <BlueCard>
+            <BlueText style={styles.alignSelfCenter}>{loc.lnurl_auth[`${parsedLnurl.query.action || 'auth'}_question_part_1`]}</BlueText>
+            <BlueText style={styles.domainName}>{parsedLnurl.hostname}</BlueText>
+            <BlueText style={styles.alignSelfCenter}>{loc.lnurl_auth[`${parsedLnurl.query.action || 'auth'}_question_part_2`]}</BlueText>
+            <BlueSpacing40 />
+            <Button title={loc.lnurl_auth.authenticate} onPress={authenticate} />
+            <BlueSpacing40 />
+          </BlueCard>
+        </ScrollView>
       )}
 
       {authState === AuthState.SUCCESS && (
@@ -145,30 +113,5 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     justifyContent: 'center',
-  },
-  walletSelectRoot: {
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  walletSelectTouch: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  walletSelectText: {
-    color: '#9aa0aa',
-    fontSize: 14,
-    marginRight: 8,
-  },
-  walletWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 4,
-  },
-  walletWrapTouch: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  walletWrapLabel: {
-    fontSize: 14,
   },
 });

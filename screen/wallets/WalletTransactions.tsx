@@ -37,7 +37,6 @@ import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamL
 import { Transaction, TWallet } from '../../class/wallets/types';
 import getWalletTransactionsOptions, { WalletTransactionsRouteProps } from '../../navigation/helpers/getWalletTransactionsOptions';
 import { presentWalletExportReminder } from '../../helpers/presentWalletExportReminder';
-import selectWallet from '../../helpers/select-wallet';
 import assert from 'assert';
 import useMenuElements from '../../hooks/useMenuElements';
 import { useSettings } from '../../hooks/context/useSettings';
@@ -63,7 +62,7 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { rout
   const { isBiometricUseCapableAndEnabled } = useBiometrics();
   const { direction } = useLocale();
   const [isLoading, setIsLoading] = useState(false);
-  const { params, name } = useRoute<RouteProps>();
+  const { params } = useRoute<RouteProps>();
   const { walletID } = params;
   const wallet = useWalletSubscribe(walletID);
   const [limit, setLimit] = useState(15);
@@ -289,13 +288,13 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { rout
         if (availableWallets.length === 0) {
           presentAlert({ message: loc.lnd.refill_create });
         } else {
-          selectWallet(navigate, name, Chain.ONCHAIN).then(onWalletSelect);
+          onWalletSelect(availableWallets[0]);
         }
       } else if (id === actionKeys.RefillWithExternalWallet) {
         navigate('ReceiveDetails', { walletID });
       }
     },
-    [name, navigate, onWalletSelect, walletID, wallets],
+    [navigate, onWalletSelect, walletID, wallets],
   );
 
   const getItemLayout = (_: any, index: number) => ({

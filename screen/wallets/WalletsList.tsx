@@ -20,7 +20,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useStorage } from '../../hooks/context/useStorage';
-import TotalWalletsBalance from '../../components/TotalWalletsBalance';
 import { useSettings } from '../../hooks/context/useSettings';
 import useMenuElements from '../../hooks/useMenuElements';
 import SafeAreaSectionList from '../../components/SafeAreaSectionList';
@@ -101,7 +100,7 @@ const WalletsList: React.FC = () => {
   const { sizeClass, isLarge } = useSizeClass();
   const { registerTransactionsHandler, unregisterTransactionsHandler } = useMenuElements();
   const { wallets, getTransactions, getBalance, refreshAllWalletTransactions, saveToDisk } = useStorage();
-  const { isTotalBalanceEnabled, isElectrumDisabled } = useSettings();
+  const { isElectrumDisabled } = useSettings();
   const { colors } = useTheme();
   const navigation = useExtendedNavigation<NavigationProps>();
   const route = useRoute<RouteProps>();
@@ -110,9 +109,6 @@ const WalletsList: React.FC = () => {
   const walletActionButtonsRef = useRef<any>();
 
   const stylesHook = StyleSheet.create({
-    walletsListWrapper: {
-      backgroundColor: colors.brandingColor,
-    },
     listHeaderBack: {
       backgroundColor: colors.background,
       paddingTop: sizeClass === SizeClass.Large ? 8 : 0,
@@ -348,18 +344,11 @@ const WalletsList: React.FC = () => {
       switch (section.section.key) {
         case WalletsListSections.TRANSACTIONS:
           return renderListHeaderComponent();
-        case WalletsListSections.WALLET: {
-          return isTotalBalanceEnabled ? (
-            <View style={stylesHook.walletsListWrapper}>
-              <TotalWalletsBalance />
-            </View>
-          ) : null;
-        }
         default:
           return null;
       }
     },
-    [sizeClass, isTotalBalanceEnabled, renderListHeaderComponent, stylesHook.walletsListWrapper],
+    [sizeClass, renderListHeaderComponent],
   );
 
   const renderSectionFooter = useCallback(

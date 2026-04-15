@@ -33,103 +33,6 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-interface NewWalletPanelProps {
-  onPress: () => void;
-}
-
-const nStyles = StyleSheet.create({
-  container: {
-    borderRadius: 10,
-    minHeight: Platform.OS === 'ios' ? 164 : 181,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  addAWAllet: {
-    fontWeight: '600',
-    fontSize: 24,
-    marginBottom: 4,
-  },
-  addLine: {
-    fontSize: 13,
-  },
-  button: {
-    marginTop: 12,
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  buttonText: {
-    fontWeight: '500',
-  },
-});
-
-const NewWalletPanel: React.FC<NewWalletPanelProps> = ({ onPress }) => {
-  const { colors } = useTheme();
-  const { width } = useWindowDimensions();
-  const itemWidth = width * 0.82 > 375 ? 375 : width * 0.82;
-  const { isLarge } = useSizeClass();
-  const nStylesHooks = StyleSheet.create({
-    container: isLarge
-      ? {
-          paddingHorizontal: 24,
-          marginVertical: 16,
-        }
-      : { paddingVertical: 16, paddingHorizontal: 24 },
-  });
-
-  const scale = useRef(new Animated.Value(1)).current;
-
-  const handlePressIn = useCallback(() => {
-    Animated.spring(scale, {
-      toValue: 0.97,
-      useNativeDriver: true,
-      friction: 4,
-    }).start();
-  }, [scale]);
-
-  const handlePressOut = useCallback(() => {
-    Animated.spring(scale, {
-      toValue: 1,
-      useNativeDriver: true,
-      friction: 4,
-    }).start();
-  }, [scale]);
-
-  return (
-    <Pressable
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      onPress={onPress}
-      testID="CreateAWallet"
-      style={({ pressed }) => [
-        isLarge ? {} : { width: itemWidth * 1.2 },
-        {
-          opacity: pressed ? 0.9 : 1.0,
-        },
-      ]}
-      accessibilityRole="button"
-      accessibilityLabel={loc.wallets.list_create_a_wallet}
-    >
-      <Animated.View
-        style={[
-          nStyles.container,
-          nStylesHooks.container,
-          { backgroundColor: WalletGradient.createWallet() },
-          isLarge ? {} : { width: itemWidth },
-          { transform: [{ scale }] },
-        ]}
-      >
-        <Text style={[nStyles.addAWAllet, { color: colors.foregroundColor }]}>{loc.wallets.list_create_a_wallet}</Text>
-        <Text style={[nStyles.addLine, { color: colors.alternativeTextColor }]}>{loc.wallets.list_create_a_wallet_text}</Text>
-        <View style={nStyles.button}>
-          <Text style={[nStyles.buttonText, { color: colors.brandingColor }]}>{loc.wallets.list_create_a_button}</Text>
-        </View>
-      </Animated.View>
-    </Pressable>
-  );
-};
-
 interface WalletCarouselItemProps {
   item: TWallet;
   onPress: (item: TWallet) => void;
@@ -411,7 +314,6 @@ interface WalletsCarouselProps extends Partial<FlatListProps<any>> {
   isFlatList?: boolean;
   selectedWallet?: string;
   onPress: (item: TWallet) => void;
-  onNewWalletPress?: () => void;
   handleLongPress?: () => void;
   data: TWallet[];
   scrollEnabled?: boolean;
@@ -447,7 +349,6 @@ const WalletsCarousel = forwardRef<FlatListRefType, WalletsCarouselProps>((props
     onPress,
     selectedWallet,
     scrollEnabled = true,
-    onNewWalletPress,
     searchQuery,
     renderHighlightedText,
     isFlatList = true,
@@ -749,14 +650,10 @@ const WalletsCarousel = forwardRef<FlatListRefType, WalletsCarouselProps>((props
       automaticallyAdjustsScrollIndicatorInsets
       style={{ minHeight: sliderHeight + 12 }}
       onScrollToIndexFailed={onScrollToIndexFailed}
-      ListFooterComponent={onNewWalletPress ? <NewWalletPanel onPress={onNewWalletPress} /> : null}
       {...props}
     />
   ) : (
-    <View style={cStyles.contentLargeScreen}>
-      {renderNonFlatListWallets()}
-      {onNewWalletPress && <NewWalletPanel onPress={onNewWalletPress} />}
-    </View>
+    <View style={cStyles.contentLargeScreen}>{renderNonFlatListWallets()}</View>
   );
 });
 

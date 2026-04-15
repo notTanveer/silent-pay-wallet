@@ -21,12 +21,10 @@ import TransactionStatus from '../screen/transactions/TransactionStatus';
 import WalletAddresses from '../screen/wallets/WalletAddresses';
 import WalletDetails from '../screen/wallets/WalletDetails';
 import GenerateWord from '../screen/wallets/generateWord';
-import SelectWallet from '../screen/wallets/SelectWallet';
 import WalletsList from '../screen/wallets/WalletsList';
 import { DetailViewStack } from './index';
 import PaymentCodesListComponent from './LazyLoadPaymentCodeStack';
 import SettingsButton from '../components/icons/SettingsButton';
-import { useSettings } from '../hooks/context/useSettings';
 import { useStorage } from '../hooks/context/useStorage';
 import WalletTransactions from '../screen/wallets/WalletTransactions';
 import Settings from '../screen/settings/Settings';
@@ -50,32 +48,29 @@ import SettingsPrivacy from '../screen/settings/SettingsPrivacy';
 import { useSizeClass, SizeClass } from '../blue_modules/sizeClass';
 import getWalletTransactionsOptions from './helpers/getWalletTransactionsOptions';
 import { isDesktop } from '../blue_modules/environment';
-import ManageWallets from '../screen/wallets/ManageWallets';
 import ReceiveDetails from '../screen/receive/ReceiveDetails';
 import OnboardingStack from './OnboardingStack';
 
 const DetailViewStackScreensStack = () => {
   const theme = useTheme();
   const { wallets } = useStorage();
-  const { isTotalBalanceEnabled } = useSettings();
   const { sizeClass } = useSizeClass();
 
   const DetailButton = useMemo(() => <HeaderRightButton testID="DetailButton" disabled={true} title={loc.send.create_details} />, []);
   const RightBarButtons = useMemo(() => <SettingsButton />, []);
 
   const useWalletListScreenOptions = useMemo<NativeStackNavigationOptions>(() => {
-    const displayTitle = !isTotalBalanceEnabled || wallets.length <= 1;
     return {
       title: '',
       navigationBarColor: theme.colors.navigationBarColor,
-      headerLargeTitle: displayTitle && sizeClass === SizeClass.Compact,
+      headerLargeTitle: sizeClass === SizeClass.Compact,
       headerShadowVisible: false,
       headerStyle: {
         backgroundColor: theme.colors.customHeader,
       },
       headerRight: () => (isDesktop ? undefined : RightBarButtons),
     };
-  }, [RightBarButtons, sizeClass, isTotalBalanceEnabled, theme.colors.customHeader, theme.colors.navigationBarColor, wallets]);
+  }, [RightBarButtons, sizeClass, theme.colors.customHeader, theme.colors.navigationBarColor]);
 
   const walletListScreenOptions = useWalletListScreenOptions;
   const initialRoute = wallets.length === 0 ? 'Onboarding' : 'WalletsList';
@@ -138,11 +133,6 @@ const DetailViewStackScreensStack = () => {
         name="RBFCancel"
         component={RBFCancel}
         options={navigationStyle({ title: loc.transactions.cancel_title })(theme)}
-      />
-      <DetailViewStack.Screen
-        name="SelectWallet"
-        component={SelectWallet}
-        options={navigationStyle({ title: loc.wallets.select_wallet })(theme)}
       />
       <DetailViewStack.Screen
         name="LNDViewInvoice"
@@ -294,16 +284,6 @@ const DetailViewStackScreensStack = () => {
         name="SettingsPrivacy"
         component={SettingsPrivacy}
         options={navigationStyle({ title: loc.settings.privacy })(theme)}
-      />
-      <DetailViewStack.Screen
-        name="ManageWallets"
-        component={ManageWallets}
-        options={{
-          presentation: 'fullScreenModal',
-          title: loc.wallets.manage_title,
-          statusBarStyle: 'auto',
-          headerShown: true,
-        }}
       />
       <DetailViewStack.Screen
         name="ReceiveDetails"

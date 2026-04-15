@@ -185,6 +185,11 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
 
   const addWallet = useCallback(
     (wallet: TWallet) => {
+      if (BlueApp.wallets.length > 0) {
+        console.warn('[StorageProvider] Single-wallet mode: refusing to add a second wallet');
+        return;
+      }
+
       if ('setOnBalanceChangeCallback' in wallet && typeof wallet.setOnBalanceChangeCallback === 'function') {
         wallet.setOnBalanceChangeCallback(forceWalletsUpdate);
       }
@@ -328,13 +333,9 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
     setWallets(BlueApp.getWallets());
   }, []);
 
-  const setWalletsWithNewOrder = useCallback(
-    (wlts: TWallet[]) => {
-      BlueApp.wallets = wlts;
-      saveToDisk();
-    },
-    [saveToDisk],
-  );
+  const setWalletsWithNewOrder = useCallback((_wlts: TWallet[]) => {
+    // No-op: single-wallet mode, reordering not supported
+  }, []);
 
   // Initialize wallets
   useEffect(() => {
@@ -478,9 +479,9 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
 
   const addAndSaveWallet = useCallback(
     async (w: TWallet) => {
-      if (wallets.some(i => i.getID() === w.getID())) {
+      if (wallets.length > 0) {
         triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
-        presentAlert({ message: 'This wallet has been previously imported.' });
+        presentAlert({ message: loc.wallets.single_wallet_limit });
         return;
       }
       const emptyWalletLabel = new LegacyWallet().getLabel();
