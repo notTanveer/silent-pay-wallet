@@ -674,9 +674,9 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     try {
       const spendPrivKey = this.getSpendPrivateKey();
       const spendPubKey = this.getSpendPublicKey();
-      const xOnlyPub = spendPubKey.subarray(1, 33);
 
       const psbt = new bitcoin.Psbt();
+      const xOnlySpendPub = spendPubKey.subarray(1, 33);
 
       // add taproot inputs with tweaked public keys
       inputs.forEach(input => {
@@ -685,14 +685,22 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
           throw new Error(`UTXO not found: ${input.txid}:${input.vout}`);
         }
 
-        const result = ecc.xOnlyPointAddTweak(xOnlyPub, spUtxo.tweak);
-        if (!result) {
+        const outputKey = Buffer.from(spUtxo.pubKey, 'hex');
+        if (outputKey.length !== 32) {
+          throw new Error(`UTXO ${input.txid}:${input.vout}: pubKey must be 32-byte x-only, got ${outputKey.length}`);
+        }
+
+        const tweakedPub = ecc.pointAddScalar(spendPubKey, spUtxo.tweak, true);
+        if (!tweakedPub) {
           throw new Error('Failed to compute tweaked public key');
+        }
+        if (!outputKey.equals(Buffer.from(tweakedPub.subarray(1, 33)))) {
+          throw new Error(`UTXO ${input.txid}:${input.vout}: derived output key does not match indexer pubKey`);
         }
 
         const witnessScript = Buffer.concat([
           Buffer.from([0x51, 0x20]), // OP_1 + PUSH32 (Taproot script)
-          result.xOnlyPubkey,
+          outputKey,
         ]);
 
         psbt.addInput({
@@ -703,7 +711,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
             script: witnessScript,
             value: BigInt(input.value),
           },
-          tapInternalKey: Buffer.from(xOnlyPub),
+          tapInternalKey: Buffer.from(xOnlySpendPub),
         });
       });
 
