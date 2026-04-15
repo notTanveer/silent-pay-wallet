@@ -1,5 +1,9 @@
 import { AztecoVoucher } from '../class/azteco';
+<<<<<<< HEAD
 import { Transaction, TWallet } from '../class/wallets/types';
+=======
+import { LightningTransaction, Transaction, TWallet } from '../class/wallets/types';
+>>>>>>> 559601d99 (REF: remove multi wallet support)
 import { ElectrumServerItem } from '../screen/settings/ElectrumSettings';
 import { SendDetailsParams } from './SendDetailsStackParamList';
 import { AddWalletStackParamList } from './AddWalletStack';
@@ -32,6 +36,12 @@ export type DetailViewStackParamList = {
   };
   RBFBumpFee: { txid: string; wallet: TWallet | null };
   RBFCancel: { txid: string; wallet: TWallet | null };
+<<<<<<< HEAD
+=======
+  LNDViewInvoice: { invoice: LightningTransaction; walletID: string };
+  LNDViewAdditionalInvoiceInformation: { invoiceId: string };
+  LNDViewAdditionalInvoicePreImage: { invoiceId: string };
+>>>>>>> 559601d99 (REF: remove multi wallet support)
   Broadcast: object;
   IsItMyAddress: object;
   GenerateWord: undefined;

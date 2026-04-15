@@ -19,7 +19,6 @@ import WalletsList from '../screen/wallets/WalletsList';
 import { DetailViewStack } from './index';
 import PaymentCodesListComponent from './LazyLoadPaymentCodeStack';
 import SettingsButton from '../components/icons/SettingsButton';
-
 import { useStorage } from '../hooks/context/useStorage';
 import WalletTransactions from '../screen/wallets/WalletTransactions';
 import Settings from '../screen/settings/Settings';
@@ -43,7 +42,6 @@ import SettingsPrivacy from '../screen/settings/SettingsPrivacy';
 import getWalletTransactionsOptions from './helpers/getWalletTransactionsOptions';
 import { useSizeClass, SizeClass } from '../blue_modules/sizeClass';
 import { isDesktop } from '../blue_modules/environment';
-
 import ReceiveDetails from '../screen/receive/ReceiveDetails';
 import OnboardingStack from './OnboardingStack';
 
