@@ -1,15 +1,8 @@
 import React, { useMemo } from 'react';
-import { NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import HeaderRightButton from '../components/HeaderRightButton';
 import navigationStyle, { CloseButtonPosition } from '../components/navigationStyle';
 import { useTheme } from '../components/themes';
 import loc from '../loc';
-import LNDViewAdditionalInvoiceInformation from '../screen/lnd/LNDViewAdditionalInvoiceInformation';
-import LNDViewAdditionalInvoicePreImage from '../screen/lnd/lndViewAdditionalInvoicePreImage';
-import LNDViewInvoice from '../screen/lnd/lndViewInvoice';
-import LnurlAuth from '../screen/lnd/lnurlAuth';
-import LnurlPay from '../screen/lnd/lnurlPay';
-import LnurlPaySuccess from '../screen/lnd/lnurlPaySuccess';
 import Broadcast from '../screen/send/Broadcast';
 import IsItMyAddress from '../screen/settings/IsItMyAddress';
 import Success from '../screen/send/success';
@@ -21,10 +14,9 @@ import TransactionStatus from '../screen/transactions/TransactionStatus';
 import WalletAddresses from '../screen/wallets/WalletAddresses';
 import WalletDetails from '../screen/wallets/WalletDetails';
 import GenerateWord from '../screen/wallets/generateWord';
-import WalletsList from '../screen/wallets/WalletsList';
 import { DetailViewStack } from './index';
 import PaymentCodesListComponent from './LazyLoadPaymentCodeStack';
-import SettingsButton from '../components/icons/SettingsButton';
+
 import { useStorage } from '../hooks/context/useStorage';
 import WalletTransactions from '../screen/wallets/WalletTransactions';
 import Settings from '../screen/settings/Settings';
@@ -39,41 +31,23 @@ import DefaultView from '../screen/settings/DefaultView';
 import ElectrumSettings from '../screen/settings/ElectrumSettings';
 import EncryptStorage from '../screen/settings/EncryptStorage';
 import Language from '../screen/settings/Language';
-import LightningSettings from '../screen/settings/LightningSettings';
 import NotificationSettings from '../screen/settings/NotificationSettings';
 import SelfTest from '../screen/settings/SelfTest';
 import ReleaseNotes from '../screen/settings/ReleaseNotes';
 import ToolsScreen from '../screen/settings/tools';
 import SettingsPrivacy from '../screen/settings/SettingsPrivacy';
-import { useSizeClass, SizeClass } from '../blue_modules/sizeClass';
+
 import getWalletTransactionsOptions from './helpers/getWalletTransactionsOptions';
-import { isDesktop } from '../blue_modules/environment';
+
 import ReceiveDetails from '../screen/receive/ReceiveDetails';
 import OnboardingStack from './OnboardingStack';
 
 const DetailViewStackScreensStack = () => {
   const theme = useTheme();
   const { wallets } = useStorage();
-  const { sizeClass } = useSizeClass();
-
   const DetailButton = useMemo(() => <HeaderRightButton testID="DetailButton" disabled={true} title={loc.send.create_details} />, []);
-  const RightBarButtons = useMemo(() => <SettingsButton />, []);
 
-  const useWalletListScreenOptions = useMemo<NativeStackNavigationOptions>(() => {
-    return {
-      title: '',
-      navigationBarColor: theme.colors.navigationBarColor,
-      headerLargeTitle: sizeClass === SizeClass.Compact,
-      headerShadowVisible: false,
-      headerStyle: {
-        backgroundColor: theme.colors.customHeader,
-      },
-      headerRight: () => (isDesktop ? undefined : RightBarButtons),
-    };
-  }, [RightBarButtons, sizeClass, theme.colors.customHeader, theme.colors.navigationBarColor]);
-
-  const walletListScreenOptions = useWalletListScreenOptions;
-  const initialRoute = wallets.length === 0 ? 'Onboarding' : 'WalletsList';
+  const initialRoute = wallets.length === 0 ? 'Onboarding' : 'WalletTransactions';
 
   return (
     <DetailViewStack.Navigator
@@ -85,7 +59,6 @@ const DetailViewStackScreensStack = () => {
         component={OnboardingStack}
         options={{ headerShown: false, gestureEnabled: false, headerBackVisible: false }}
       />
-      <DetailViewStack.Screen name="WalletsList" component={WalletsList} options={navigationStyle(walletListScreenOptions)(theme)} />
       <DetailViewStack.Screen name="WalletTransactions" component={WalletTransactions} options={getWalletTransactionsOptions} />
       <DetailViewStack.Screen
         name="WalletDetails"
@@ -135,28 +108,6 @@ const DetailViewStackScreensStack = () => {
         options={navigationStyle({ title: loc.transactions.cancel_title })(theme)}
       />
       <DetailViewStack.Screen
-        name="LNDViewInvoice"
-        component={LNDViewInvoice}
-        options={navigationStyle({
-          statusBarStyle: 'auto',
-          headerTitle: loc.lndViewInvoice.lightning_invoice,
-          headerStyle: {
-            backgroundColor: theme.colors.customHeader,
-          },
-        })(theme)}
-      />
-      <DetailViewStack.Screen
-        name="LNDViewAdditionalInvoiceInformation"
-        component={LNDViewAdditionalInvoiceInformation}
-        options={navigationStyle({ title: loc.lndViewInvoice.additional_info })(theme)}
-      />
-      <DetailViewStack.Screen
-        name="LNDViewAdditionalInvoicePreImage"
-        component={LNDViewAdditionalInvoicePreImage}
-        options={navigationStyle({ title: loc.lndViewInvoice.additional_info })(theme)}
-      />
-
-      <DetailViewStack.Screen
         name="Broadcast"
         component={Broadcast}
         options={navigationStyle({ title: loc.send.create_broadcast })(theme)}
@@ -173,30 +124,11 @@ const DetailViewStackScreensStack = () => {
         options={navigationStyle({ title: loc.autofill_word.title })(theme)}
       />
       <DetailViewStack.Screen
-        name="LnurlPay"
-        component={LnurlPay}
-        options={navigationStyle({
-          title: '',
-          closeButtonPosition: CloseButtonPosition.Right,
-        })(theme)}
-      />
-      <DetailViewStack.Screen
         name="PaymentCodeList"
         component={PaymentCodesListComponent}
         options={navigationStyle({ title: loc.bip47.contacts })(theme)}
       />
 
-      <DetailViewStack.Screen
-        name="LnurlPaySuccess"
-        component={LnurlPaySuccess}
-        options={navigationStyle({
-          title: '',
-          closeButtonPosition: CloseButtonPosition.Right,
-          headerBackVisible: false,
-          gestureEnabled: false,
-        })(theme)}
-      />
-      <DetailViewStack.Screen name="LnurlAuth" component={LnurlAuth} options={navigationStyle({ title: '' })(theme)} />
       <DetailViewStack.Screen
         name="Success"
         component={Success}
@@ -263,11 +195,6 @@ const DetailViewStackScreensStack = () => {
         options={navigationStyle({ title: loc.settings.encrypt_title })(theme)}
       />
       <DetailViewStack.Screen name="Language" component={Language} options={navigationStyle({ title: loc.settings.language })(theme)} />
-      <DetailViewStack.Screen
-        name="LightningSettings"
-        component={LightningSettings}
-        options={navigationStyle({ title: loc.settings.lightning_settings })(theme)}
-      />
       <DetailViewStack.Screen
         name="NotificationSettings"
         component={NotificationSettings}

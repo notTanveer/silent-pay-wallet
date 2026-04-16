@@ -1,6 +1,6 @@
 import { Psbt } from 'bitcoinjs-lib';
-import { CreateTransactionTarget, CreateTransactionUtxo, TWallet } from '../class/wallets/types';
-import { BitcoinUnit, Chain } from '../models/bitcoinUnits';
+import { CreateTransactionTarget, CreateTransactionUtxo } from '../class/wallets/types';
+import { BitcoinUnit } from '../models/bitcoinUnits';
 import { ScanQRCodeParamList } from './DetailViewStackParamList';
 import { IFee } from '../screen/send/SendDetails';
 import { NetworkTransactionFeeType } from '../models/networkTransactionFees';
@@ -31,15 +31,6 @@ export type SendDetailsParams = {
     amount?: number;
     memo?: string;
   };
-};
-
-export type TNavigation = {
-  pop: () => void;
-  navigate: () => void;
-};
-
-export type TNavigationWrapper = {
-  navigation: TNavigation;
 };
 
 export type SendDetailsStackParamList = {
@@ -105,14 +96,6 @@ export type SendDetailsStackParamList = {
     amountUnit?: BitcoinUnit;
     txid?: string;
     invoiceDescription?: string;
-  };
-  SelectWallet: {
-    chainType?: Chain;
-    onWalletSelect?: (wallet: TWallet, navigationWrapper: TNavigationWrapper) => void;
-    availableWallets?: TWallet[];
-    noWalletExplanationText?: string;
-    onChainRequireSend?: boolean;
-    selectedWalletID?: string; // Add this parameter to scroll to a specific wallet
   };
   CoinControl: {
     walletID: string;

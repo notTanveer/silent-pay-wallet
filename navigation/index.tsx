@@ -12,8 +12,6 @@ import { useTheme } from '../components/themes';
 const DrawerRoot = lazy(() => import('./DrawerRoot'));
 const AddWalletStack = lazy(() => import('./AddWalletStack'));
 const SendDetailsStack = lazy(() => import('./SendDetailsStack'));
-const LNDCreateInvoiceRoot = lazy(() => import('./LNDCreateInvoiceStack'));
-const ScanLNDInvoiceRoot = lazy(() => import('./ScanLNDInvoiceStack'));
 const AztecoRedeemStackRoot = lazy(() => import('./AztecoRedeemStack'));
 const WalletExportStack = lazy(() => import('./WalletExportStack'));
 const ExportMultisigCoordinationSetupStack = lazy(() => import('./ExportMultisigCoordinationSetupStack'));
@@ -58,18 +56,6 @@ const LazyAddWalletStack = () => (
 const LazySendDetailsStack = () => (
   <Suspense fallback={<LazyLoadingIndicator />}>
     <SendDetailsStack />
-  </Suspense>
-);
-
-const LazyLNDCreateInvoiceRoot = () => (
-  <Suspense fallback={<LazyLoadingIndicator />}>
-    <LNDCreateInvoiceRoot />
-  </Suspense>
-);
-
-const LazyScanLNDInvoiceRoot = () => (
-  <Suspense fallback={<LazyLoadingIndicator />}>
-    <ScanLNDInvoiceRoot />
   </Suspense>
 );
 
@@ -139,8 +125,6 @@ const MainRoot = () => {
             }}
           />
           <DetailViewStack.Screen name="SendDetailsRoot" component={LazySendDetailsStack} options={NavigationFormNoSwipeDefaultOptions} />
-          <DetailViewStack.Screen name="LNDCreateInvoiceRoot" component={LazyLNDCreateInvoiceRoot} options={NavigationDefaultOptions} />
-          <DetailViewStack.Screen name="ScanLNDInvoiceRoot" component={LazyScanLNDInvoiceRoot} options={NavigationDefaultOptions} />
           <DetailViewStack.Screen name="AztecoRedeemRoot" component={LazyAztecoRedeemStackRoot} options={NavigationDefaultOptions} />
           <DetailViewStack.Screen
             name="WalletExportRoot"

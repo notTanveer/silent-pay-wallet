@@ -1,5 +1,5 @@
 import { AztecoVoucher } from '../class/azteco';
-import { LightningTransaction, Transaction, TWallet } from '../class/wallets/types';
+import { Transaction, TWallet } from '../class/wallets/types';
 import { ElectrumServerItem } from '../screen/settings/ElectrumSettings';
 import { SendDetailsParams } from './SendDetailsStackParamList';
 import { AddWalletStackParamList } from './AddWalletStack';
@@ -21,7 +21,6 @@ export type ScanQRCodeParamList = {
 export type DetailViewStackParamList = {
   DrawerRoot: undefined;
   UnlockWithScreen: undefined;
-  WalletsList: { onBarScanned?: string };
   WalletTransactions: { isLoading?: boolean; walletID: string; walletType: string; onBarScanned?: string };
   WalletDetails: { walletID: string };
   TransactionDetails: { tx: Transaction; hash: string; walletID: string };
@@ -32,19 +31,9 @@ export type DetailViewStackParamList = {
   };
   RBFBumpFee: { txid: string; wallet: TWallet | null };
   RBFCancel: { txid: string; wallet: TWallet | null };
-  LNDViewInvoice: { invoice: LightningTransaction; walletID: string };
-  LNDViewAdditionalInvoiceInformation: { invoiceId: string };
-  LNDViewAdditionalInvoicePreImage: { invoiceId: string };
   Broadcast: object;
   IsItMyAddress: object;
   GenerateWord: undefined;
-  LnurlPay: undefined;
-  LnurlPaySuccess: {
-    paymentHash: string;
-    justPaid: boolean;
-    fromWalletID: string;
-  };
-  LnurlAuth: undefined;
   Success: undefined;
   WalletAddresses: { walletID: string };
   AddWalletRoot?: {
@@ -52,15 +41,6 @@ export type DetailViewStackParamList = {
     params?: AddWalletStackParamList[keyof AddWalletStackParamList];
   };
   SendDetailsRoot: SendDetailsParams;
-  LNDCreateInvoiceRoot: undefined;
-  ScanLNDInvoiceRoot: {
-    screen: string;
-    params: {
-      paymentHash: string;
-      fromWalletID: string;
-      justPaid: boolean;
-    };
-  };
   AztecoRedeemRoot: {
     screen: string;
     params: {
@@ -82,10 +62,6 @@ export type DetailViewStackParamList = {
   SettingsBlockExplorer: undefined;
   EncryptStorage: undefined;
   Language: undefined;
-  LightningSettings: {
-    url?: string;
-    onBarScanned?: string;
-  };
   NotificationSettings: undefined;
   SelfTest: undefined;
   ReleaseNotes: undefined;
