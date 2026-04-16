@@ -248,7 +248,7 @@ const WalletsList: React.FC = () => {
           navigation.navigate(...completionValue);
         });
       } catch (e: any) {
-        Alert.alert(loc.send.details_scan_error, e.message);
+        Alert.alert(loc.errors.error, e.message);
       }
     },
     [navigation],
@@ -305,7 +305,6 @@ const WalletsList: React.FC = () => {
       return (
         <View style={[styles.walletContainer, stylesHook.walletContainer]}>
           <Text style={[styles.noWalletText, stylesHook.noWalletText]}>{loc.wallets.list_empty_txs1}</Text>
-          <Text style={[styles.noWalletSubText, stylesHook.noWalletSubText]}>{loc.wallets.list_create_a_wallet}</Text>
         </View>
       );
     }
@@ -359,7 +358,7 @@ const WalletsList: React.FC = () => {
             return (
               <View style={styles.footerRoot} testID="NoTransactionsMessage">
                 <Text style={styles.footerEmpty}>{loc.wallets.list_empty_txs1}</Text>
-                <Text style={styles.footerStart}>{loc.wallets.list_empty_txs2}</Text>
+                <Text style={styles.footerStart}>{loc.wallets.list_empty_txs1}</Text>
               </View>
             );
           } else {
