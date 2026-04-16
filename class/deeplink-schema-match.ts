@@ -5,7 +5,6 @@ import { readFileOutsideSandbox } from '../blue_modules/fs';
 import { Chain } from '../models/bitcoinUnits';
 import { WatchOnlyWallet } from './';
 import Azteco from './azteco';
-import Lnurl from './lnurl';
 import type { TWallet } from './wallets/types';
 
 type TCompletionHandlerParams = [string, object];
@@ -83,20 +82,6 @@ class DeeplinkSchemaMatch {
               },
             ]);
           }
-        } else if (wallet.chain === Chain.OFFCHAIN) {
-          if (action === 'openSend') {
-            completionHandler([
-              'ScanLNDInvoiceRoot',
-              {
-                screen: 'ScanLNDInvoice',
-                params: {
-                  walletID: wallet.getID(),
-                },
-              },
-            ]);
-          } else if (action === 'openReceive') {
-            completionHandler(['LNDCreateInvoiceRoot', { screen: 'LNDCreateInvoice', params: { walletID: wallet.getID() } }]);
-          }
         }
       }
     } else if (DeeplinkSchemaMatch.isPossiblySignedPSBTFile(event.url)) {
@@ -135,15 +120,11 @@ class DeeplinkSchemaMatch {
       console.log(e);
     }
     if (isBothBitcoinAndLightning) {
-      completionHandler([
-        'SelectWallet',
-        {
-          onWalletSelect: (wallet: TWallet, { navigation }: any) => {
-            navigation.pop(); // close select wallet screen
-            navigation.navigate(...DeeplinkSchemaMatch.isBothBitcoinAndLightningOnWalletSelect(wallet, isBothBitcoinAndLightning));
-          },
-        },
-      ]);
+      // Single-wallet mode: use the first wallet directly
+      const wallet = context.wallets[0];
+      if (wallet) {
+        completionHandler(DeeplinkSchemaMatch.isBothBitcoinAndLightningOnWalletSelect(wallet, isBothBitcoinAndLightning));
+      }
     } else if (DeeplinkSchemaMatch.isBitcoinAddress(event.url)) {
       completionHandler([
         'SendDetailsRoot',
@@ -151,41 +132,6 @@ class DeeplinkSchemaMatch {
           screen: 'SendDetails',
           params: {
             uri: event.url.replace('://', ':'),
-          },
-        },
-      ]);
-    } else if (DeeplinkSchemaMatch.isLightningInvoice(event.url)) {
-      completionHandler([
-        'ScanLNDInvoiceRoot',
-        {
-          screen: 'ScanLNDInvoice',
-          params: {
-            uri: event.url.replace('://', ':'),
-          },
-        },
-      ]);
-    } else if (DeeplinkSchemaMatch.isLnUrl(event.url)) {
-      // at this point we can not tell if it is lnurl-pay or lnurl-withdraw since it needs additional async call
-      // to the server, which is undesirable here, so LNDCreateInvoice screen will handle it for us and will
-      // redirect user to LnurlPay screen if necessary
-      completionHandler([
-        'LNDCreateInvoiceRoot',
-        {
-          screen: 'LNDCreateInvoice',
-          params: {
-            uri: event.url.replace('lightning:', '').replace('LIGHTNING:', ''),
-          },
-        },
-      ]);
-    } else if (Lnurl.isLightningAddress(event.url)) {
-      // this might be not just an email but a lightning address
-      // @see https://lightningaddress.com
-      completionHandler([
-        'ScanLNDInvoiceRoot',
-        {
-          screen: 'ScanLNDInvoice',
-          params: {
-            uri: event.url,
           },
         },
       ]);
@@ -339,10 +285,6 @@ class DeeplinkSchemaMatch {
       isValidLightningInvoice = true;
     }
     return isValidLightningInvoice;
-  }
-
-  static isLnUrl(text: string): boolean {
-    return Lnurl.isLnurl(text);
   }
 
   static isWidgetAction(text: string): boolean {
