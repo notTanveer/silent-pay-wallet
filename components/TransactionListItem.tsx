@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, memo } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { Linking, View, ViewStyle, StyleSheet, Text } from 'react-native';
-import Lnurl from '../class/lnurl';
-import { LightningTransaction, Transaction } from '../class/wallets/types';
+import { Transaction } from '../class/wallets/types';
 import loc, { formatBalanceWithoutSuffix, transactionTimeToReadable } from '../loc';
 import { BitcoinUnit } from '../models/bitcoinUnits';
 import { useSettings } from '../hooks/context/useSettings';
@@ -41,7 +39,7 @@ const styles = StyleSheet.create({
 interface TransactionListItemProps {
   itemPriceUnit?: BitcoinUnit;
   walletID: string;
-  item: Transaction & LightningTransaction; // using type intersection to have less issues with ts
+  item: Transaction;
   searchQuery?: string;
   style?: ViewStyle;
   renderHighlightedText?: (text: string, query: string) => JSX.Element;
@@ -64,7 +62,7 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
     const { colors } = useTheme();
     const { navigate } = useExtendedNavigation<NavigationProps>();
     const menuRef = useRef<ToolTipMenuProps>();
-    const { txMetadata, counterpartyMetadata, wallets } = useStorage();
+    const { txMetadata, counterpartyMetadata } = useStorage();
     const { language, selectedBlockExplorer } = useSettings();
     const insets = useSafeAreaInsets();
     const containerStyle = useMemo(
@@ -72,7 +70,6 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
         backgroundColor: colors.background,
         borderBottomColor: colors.lightBorder,
         paddingLeft: 16,
-
         paddingRight: 16,
       }),
       [colors.background, colors.lightBorder],
@@ -128,49 +125,29 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
     }
     const txMemo = (counterparty ? `[${shortenContactName(counterparty)}] ` : '') + (txMetadata[item.hash]?.memo ?? '');
     const subtitle = useMemo(() => {
-      let sub = Number(item.confirmations) < 7 ? loc.formatString(loc.transactions.list_conf, { number: item.confirmations }) : timeText;
+      let sub =
+        Number(item.confirmations) < 7
+          ? loc.formatString(loc.transactions.list_conf, {
+              number: item.confirmations,
+            })
+          : timeText;
       if (sub !== '') sub += ' ';
       sub += txMemo;
-      if (item.memo) sub += item.memo;
       return sub || undefined;
-    }, [timeText, txMemo, item.confirmations, item.memo]);
+    }, [timeText, txMemo, item.confirmations]);
 
     const formattedAmount = useMemo(() => {
       return formatBalanceWithoutSuffix(item.value && item.value, itemPriceUnit, true).toString();
     }, [item.value, itemPriceUnit]);
 
     const rowTitle = useMemo(() => {
-      if (item.type === 'user_invoice' || item.type === 'payment_request') {
-        const currentDate = new Date();
-        const now = Math.floor(currentDate.getTime() / 1000);
-        const invoiceExpiration = item.timestamp! + item.expire_time!;
-        if (invoiceExpiration > now || item.ispaid) {
-          return formattedAmount;
-        } else {
-          return loc.lnd.expired;
-        }
-      }
       return formattedAmount;
-    }, [item, formattedAmount]);
+    }, [formattedAmount]);
 
     const rowTitleStyle = useMemo(() => {
       let color = colors.successColor;
 
-      if (item.type === 'user_invoice' || item.type === 'payment_request') {
-        const currentDate = new Date();
-        const now = (currentDate.getTime() / 1000) | 0; // eslint-disable-line no-bitwise
-        const invoiceExpiration = item.timestamp! + item.expire_time!;
-
-        if (invoiceExpiration > now) {
-          color = colors.successColor;
-        } else if (invoiceExpiration < now) {
-          if (item.ispaid) {
-            color = colors.successColor;
-          } else {
-            color = '#9AA0AA';
-          }
-        }
-      } else if (item.value! / 100000000 < 0) {
+      if (item.value! / 100000000 < 0) {
         color = colors.foregroundColor;
       }
 
@@ -178,21 +155,11 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
         color,
         fontSize: 14,
         fontWeight: '600',
-        textAlign: 'right',
+        textAlign: 'right' as const,
         paddingRight: insets.right,
         paddingLeft: insets.left,
       };
-    }, [
-      colors.successColor,
-      colors.foregroundColor,
-      item.type,
-      item.value,
-      item.timestamp,
-      item.expire_time,
-      item.ispaid,
-      insets.right,
-      insets.left,
-    ]);
+    }, [colors.successColor, colors.foregroundColor, item.value, insets.right, insets.left]);
 
     useEffect(() => {
       setSubtitleNumberOfLines(1);
@@ -211,39 +178,8 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
           pop();
         }
         navigate('TransactionStatus', { hash: item.hash, walletID });
-      } else if (item.type === 'user_invoice' || item.type === 'payment_request' || item.type === 'paid_invoice') {
-        const lightningWallet = wallets.filter(wallet => wallet?.getID() === item.walletID);
-        if (lightningWallet.length === 1) {
-          try {
-            // is it a successful lnurl-pay?
-            const LN = new Lnurl(false, AsyncStorage);
-            let paymentHash = item.payment_hash!;
-            if (typeof paymentHash === 'object') {
-              paymentHash = Buffer.from(paymentHash.data).toString('hex');
-            }
-            const loaded = await LN.loadSuccessfulPayment(paymentHash);
-            if (loaded) {
-              navigate('ScanLNDInvoiceRoot', {
-                screen: 'LnurlPaySuccess',
-                params: {
-                  paymentHash,
-                  justPaid: false,
-                  fromWalletID: lightningWallet[0].getID(),
-                },
-              });
-              return;
-            }
-          } catch (e) {
-            console.debug(e);
-          }
-
-          navigate('LNDViewInvoice', {
-            invoice: item,
-            walletID: lightningWallet[0].getID(),
-          });
-        }
       }
-    }, [item, renderHighlightedText, navigate, walletID, wallets, customOnPress]);
+    }, [item, renderHighlightedText, navigate, walletID, customOnPress]);
 
     const handleOnExpandNote = useCallback(() => {
       setSubtitleNumberOfLines(0);
@@ -252,16 +188,8 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
     const handleOnDetailsPress = useCallback(() => {
       if (walletID && item && item.hash) {
         navigate('TransactionDetails', { tx: item, hash: item.hash, walletID });
-      } else {
-        const lightningWallet = wallets.find(wallet => wallet?.getID() === item.walletID);
-        if (lightningWallet) {
-          navigate('LNDViewInvoice', {
-            invoice: item,
-            walletID: lightningWallet.getID(),
-          });
-        }
       }
-    }, [item, navigate, walletID, wallets]);
+    }, [item, navigate, walletID]);
 
     const handleOnCopyAmountTap = useCallback(() => Clipboard.setString(rowTitle.replace(/[\s\\-]/g, '')), [rowTitle]);
     const handleOnCopyTransactionID = useCallback(() => Clipboard.setString(item.hash), [item.hash]);
@@ -310,7 +238,6 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
       const actions: (Action | Action[])[] = [
         {
           ...CommonToolTipActions.CopyAmount,
-          hidden: rowTitle === loc.lnd.expired,
         },
         {
           ...CommonToolTipActions.CopyNote,
@@ -334,7 +261,7 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
       ];
 
       return actions as Action[];
-    }, [rowTitle, subtitle, item.hash, subtitleNumberOfLines]);
+    }, [subtitle, item.hash, subtitleNumberOfLines]);
 
     const accessibilityState = useMemo(() => {
       return {

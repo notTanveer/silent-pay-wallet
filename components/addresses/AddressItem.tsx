@@ -25,7 +25,7 @@ interface AddressItemProps {
   balanceUnit: BitcoinUnit;
   walletID: string;
   allowSignVerifyMessage: boolean;
-  onPress?: () => void; // example: ManageWallets uses this
+  onPress?: () => void;
   searchQuery?: string;
   renderHighlightedText?: (text: string, query: string) => JSX.Element;
 }

@@ -11,16 +11,16 @@ import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/h
 import { getDefaultIndexer } from '../../blue_modules/SilentPaymentIndexer';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'WalletsList'>;
+type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'Onboarding'>;
 
 const OnboardingScreen: React.FC = () => {
   const { colors } = useTheme();
-  const { navigate, navigateToWalletsList } = useExtendedNavigation<NavigationProps>();
+  const { navigate, navigateToWallet } = useExtendedNavigation<NavigationProps>();
   const { addWallet, saveToDisk, wallets } = useStorage();
 
   const handleContinue = useCallback(async () => {
     if (wallets.length > 0) {
-      navigateToWalletsList();
+      navigateToWallet();
       return;
     }
 
@@ -47,15 +47,15 @@ const OnboardingScreen: React.FC = () => {
         walletID: w.getID(),
       },
     });
-  }, [wallets, navigateToWalletsList, addWallet, saveToDisk, navigate]);
+  }, [wallets, navigateToWallet, addWallet, saveToDisk, navigate]);
 
   const importWallet = useCallback(() => {
     if (wallets.length > 0) {
-      navigateToWalletsList();
+      navigateToWallet();
       return;
     }
     navigate('AddWalletRoot', { screen: 'ImportWallet' });
-  }, [wallets, navigateToWalletsList, navigate]);
+  }, [wallets, navigateToWallet, navigate]);
 
   const renderCoverScreen = useCallback(() => {
     return (

@@ -14,7 +14,7 @@ import { initializeRustJsiBridge } from './blue_modules/RustJsiBridge';
 const App = () => {
   initializeRustJsiBridge();
   initializeIndexer({
-    baseUrl: 'https://cushionlike-isabel-retrievable.ngrok-free.dev/',
+    baseUrl: 'https://superparamount-kendal-halting.ngrok-free.dev/',
     timeout: 100000, // 100 seconds for blockchain scanning operations (increased for slower connections)
   });
 

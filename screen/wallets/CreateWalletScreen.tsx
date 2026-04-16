@@ -9,7 +9,7 @@ import loc from '../../loc';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { useStorage } from '../../hooks/context/useStorage';
 
-type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'WalletsList'>;
+type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'WalletTransactions'>;
 
 const CreateWalletScreen = () => {
   const { navigate, dispatch } = useExtendedNavigation<NavigationProps>();

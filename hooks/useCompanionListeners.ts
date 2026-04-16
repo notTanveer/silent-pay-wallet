@@ -13,10 +13,8 @@ import {
   removeAllDeliveredNotifications,
   setApplicationIconBadgeNumber,
 } from '../blue_modules/notifications';
-import { LightningCustodianWallet } from '../class';
 import DeeplinkSchemaMatch from '../class/deeplink-schema-match';
 import loc from '../loc';
-import { Chain } from '../models/bitcoinUnits';
 import { navigationRef } from '../NavigationService';
 import ActionSheet from '../screen/ActionSheet';
 import { useStorage } from './context/useStorage';
@@ -31,7 +29,6 @@ import { useExtendedNavigation } from './useExtendedNavigation';
 
 const ClipboardContentType = Object.freeze({
   BITCOIN: 'BITCOIN',
-  LIGHTNING: 'LIGHTNING',
 });
 
 /**
@@ -102,7 +99,7 @@ const useCompanionListeners = (skipIfNotInitialized = true) => {
           const walletID = wallet.getID();
           fetchAndSaveWalletTransactions(walletID);
           if (wasTapped) {
-            if (payload.type !== 3 || wallet.chain === Chain.OFFCHAIN) {
+              if (payload.type !== 3) {
               navigation.navigate('WalletTransactions', {
                 walletID,
                 walletType: wallet.type,
@@ -142,7 +139,7 @@ const useCompanionListeners = (skipIfNotInitialized = true) => {
             const walletID = wallet.getID();
             fetchAndSaveWalletTransactions(walletID);
             if (wasTapped) {
-              if (payload.type !== 3 || wallet.chain === Chain.OFFCHAIN) {
+              if (payload.type !== 3) {
                 navigationRef.dispatch(
                   CommonActions.navigate({
                     name: 'WalletTransactions',
@@ -259,7 +256,7 @@ const useCompanionListeners = (skipIfNotInitialized = true) => {
         ActionSheet.showActionSheetWithOptions(
           {
             title: loc._.clipboard,
-            message: contentType === ClipboardContentType.BITCOIN ? loc.wallets.clipboard_bitcoin : loc.wallets.clipboard_lightning,
+            message: loc.wallets.clipboard_bitcoin,
             options: [loc._.cancel, loc._.continue],
             cancelButtonIndex: 0,
           },
@@ -290,30 +287,15 @@ const useCompanionListeners = (skipIfNotInitialized = true) => {
         const clipboard = await getClipboardContent();
         if (!clipboard) return;
         const isAddressFromStoredWallet = wallets.some(wallet => {
-          if (wallet.chain === Chain.ONCHAIN) {
-            return wallet.isAddressValid && wallet.isAddressValid(clipboard) && wallet.weOwnAddress(clipboard);
-          } else {
-            return (wallet as LightningCustodianWallet).isInvoiceGeneratedByWallet(clipboard) || wallet.weOwnAddress(clipboard);
-          }
+          return wallet.isAddressValid && wallet.isAddressValid(clipboard) && wallet.weOwnAddress(clipboard);
         });
         const isBitcoinAddress = DeeplinkSchemaMatch.isBitcoinAddress(clipboard);
-        const isLightningInvoice = DeeplinkSchemaMatch.isLightningInvoice(clipboard);
-        const isLNURL = DeeplinkSchemaMatch.isLnUrl(clipboard);
-        const isBothBitcoinAndLightning = DeeplinkSchemaMatch.isBothBitcoinAndLightning(clipboard);
         if (
           !isAddressFromStoredWallet &&
           clipboardContent.current !== clipboard &&
-          (isBitcoinAddress || isLightningInvoice || isLNURL || isBothBitcoinAndLightning)
+          isBitcoinAddress
         ) {
-          let contentType;
-          if (isBitcoinAddress) {
-            contentType = ClipboardContentType.BITCOIN;
-          } else if (isLightningInvoice || isLNURL) {
-            contentType = ClipboardContentType.LIGHTNING;
-          } else if (isBothBitcoinAndLightning) {
-            contentType = ClipboardContentType.BITCOIN;
-          }
-          showClipboardAlert({ contentType });
+          showClipboardAlert({ contentType: ClipboardContentType.BITCOIN });
         }
         clipboardContent.current = clipboard;
       }

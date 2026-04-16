@@ -7,7 +7,7 @@ import { useScreenProtect } from '../../hooks/useScreenProtect';
 import { validateMnemonic } from '../../blue_modules/bip39';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { BlueText } from '../../BlueComponents';
-import { LightningCustodianWallet, WatchOnlyWallet } from '../../class';
+import { WatchOnlyWallet } from '../../class';
 import HandOffComponent from '../../components/HandOffComponent';
 import QRCodeComponent from '../../components/QRCodeComponent';
 import SeedWords from '../../components/SeedWords';
@@ -199,9 +199,7 @@ const WalletExport: React.FC = () => {
         </>
       ) : (
         <>
-          <BlueText style={styles.writeText}>
-            {wallet.type === LightningCustodianWallet.type ? loc.wallets.copy_ln_url : loc.wallets.copy_ln_public}
-          </BlueText>
+          <BlueText style={styles.writeText}>{loc.wallets.copy_ln_public}</BlueText>
           <CopyBox text={secret} onPress={handleCopy} />
         </>
       )}

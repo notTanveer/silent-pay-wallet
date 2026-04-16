@@ -8,13 +8,11 @@ import {
   watchEvents,
 } from 'react-native-watch-connectivity';
 import { MultisigHDWallet } from '../class';
-import loc from '../loc';
 import { Chain } from '../models/bitcoinUnits';
 import { FiatUnit } from '../models/fiatUnit';
 import { useSettings } from '../hooks/context/useSettings';
 import { useStorage } from '../hooks/context/useStorage';
-import { isNotificationsEnabled, majorTomToGroundControl } from '../blue_modules/notifications';
-import { LightningTransaction, Transaction } from '../class/wallets/types';
+import { Transaction } from '../class/wallets/types';
 
 interface Message {
   request?: string;
@@ -27,12 +25,6 @@ interface Message {
 
 interface Reply {
   (response: Record<string, any>): void;
-}
-
-interface LightningInvoiceCreateRequest {
-  walletIndex: number;
-  amount: number;
-  description?: string;
 }
 
 export function useWatchConnectivity() {
@@ -78,29 +70,6 @@ export function useWatchConnectivity() {
     }
   }, [preferredFiatCurrency, walletsInitialized, isReachable, isInstalled, isPaired]);
 
-  const handleLightningInvoiceCreateRequest = useCallback(
-    async ({ walletIndex, amount, description = loc.lnd.placeholder }: LightningInvoiceCreateRequest): Promise<string | undefined> => {
-      const wallet = wallets[walletIndex];
-      if (wallet.allowReceive() && amount > 0) {
-        try {
-          if ('addInvoice' in wallet) {
-            const invoiceRequest = await wallet.addInvoice(amount, description);
-            if (await isNotificationsEnabled()) {
-              const decoded = await wallet.decodeInvoice(invoiceRequest);
-              majorTomToGroundControl([], [decoded.payment_hash], []);
-              return invoiceRequest;
-            }
-            console.debug('Created Lightning invoice:', { invoiceRequest });
-            return invoiceRequest;
-          }
-        } catch (invoiceError) {
-          console.error('Error creating invoice:', invoiceError);
-        }
-      }
-    },
-    [wallets],
-  );
-
   const constructWalletsToSendToWatch = useCallback(async () => {
     if (!Array.isArray(wallets) || !walletsInitialized) return;
 
@@ -111,13 +80,10 @@ export function useWatchConnectivity() {
           const transactions: Partial<Transaction>[] = wallet
             .getTransactions()
             .slice(0, 10)
-            .map((transaction: Transaction & LightningTransaction) => ({
+            .map((transaction: Transaction) => ({
               type: determineTransactionType(transaction),
               amount: transaction.value ?? 0,
-              memo:
-                'hash' in (transaction as Transaction)
-                  ? txMetadata[(transaction as Transaction).hash]?.memo || transaction.memo || ''
-                  : transaction.memo || '',
+              memo: txMetadata[transaction.hash]?.memo || '',
               time: transaction.timestamp ?? transaction.time,
             }));
 
@@ -164,31 +130,10 @@ export function useWatchConnectivity() {
     return { wallets: processedWallets, randomID: `${Date.now()}${Math.floor(Math.random() * 1000)}` };
   }, [wallets, walletsInitialized, txMetadata]);
 
-  const determineTransactionType = (transaction: Transaction & LightningTransaction): string => {
-    const confirmations = (transaction as Transaction).confirmations ?? 0;
+  const determineTransactionType = (transaction: Transaction): string => {
+    const confirmations = transaction.confirmations ?? 0;
     if (confirmations < 3) {
       return 'pending_transaction';
-    }
-
-    if (transaction.type === 'bitcoind_tx') {
-      return 'onchain';
-    }
-
-    if (transaction.type === 'paid_invoice') {
-      return 'offchain';
-    }
-
-    if (transaction.type === 'user_invoice' || transaction.type === 'payment_request') {
-      const currentDate = new Date();
-      const now = Math.floor(currentDate.getTime() / 1000);
-      const timestamp = transaction.timestamp ?? 0;
-      const expireTime = transaction.expire_time ?? 0;
-      const invoiceExpiration = timestamp + expireTime;
-      if (!transaction.ispaid && invoiceExpiration < now) {
-        return 'expired_transaction';
-      } else {
-        return 'incoming_transaction';
-      }
     }
 
     if ((transaction.value ?? 0) < 0) {
@@ -202,14 +147,7 @@ export function useWatchConnectivity() {
     async (message: Message, reply: Reply) => {
       console.debug('Received message from Apple Watch:', message);
       try {
-        if (message.request === 'createInvoice' && typeof message.walletIndex === 'number' && typeof message.amount === 'number') {
-          const createInvoiceRequest = await handleLightningInvoiceCreateRequest({
-            walletIndex: message.walletIndex,
-            amount: message.amount,
-            description: message.description,
-          });
-          reply({ invoicePaymentRequest: createInvoiceRequest });
-        } else if (message.message === 'sendApplicationContext') {
+        if (message.message === 'sendApplicationContext') {
           const walletsToProcess = await constructWalletsToSendToWatch();
           if (walletsToProcess) {
             updateApplicationContext(walletsToProcess);
@@ -235,7 +173,7 @@ export function useWatchConnectivity() {
         reply({});
       }
     },
-    [fetchWalletTransactions, saveToDisk, wallets, constructWalletsToSendToWatch, handleLightningInvoiceCreateRequest],
+    [fetchWalletTransactions, saveToDisk, wallets, constructWalletsToSendToWatch],
   );
 
   useEffect(() => {
