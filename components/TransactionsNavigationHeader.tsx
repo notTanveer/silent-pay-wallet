@@ -2,7 +2,6 @@ import React, { useCallback, useMemo } from 'react';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { MultisigHDWallet } from '../class';
 import WalletGradient from '../class/wallet-gradient';
 import { TWallet } from '../class/wallets/types';
 import loc, { formatBalance, formatBalanceWithoutSuffix } from '../loc';
@@ -118,8 +117,6 @@ const TransactionsNavigationHeader: React.FC<TransactionsNavigationHeaderProps> 
 
   const imageSource = useMemo(() => {
     switch (wallet.type) {
-      case MultisigHDWallet.type:
-        return direction === 'rtl' ? require('../img/vault-shape-rtl.png') : require('../img/vault-shape.png');
       default:
         return direction === 'rtl' ? require('../img/btc-shape-rtl.png') : require('../img/btc-shape.png');
     }
@@ -175,11 +172,6 @@ const TransactionsNavigationHeader: React.FC<TransactionsNavigationHeaderProps> 
           </Text>
         </TouchableOpacity>
       </View>
-      {wallet.type === MultisigHDWallet.type && (
-        <TouchableOpacity style={styles.manageFundsButton} accessibilityRole="button" onPress={() => handleManageFundsPressed()}>
-          <Text style={styles.manageFundsButtonText}>{loc.multisig.manage_keys}</Text>
-        </TouchableOpacity>
-      )}
     </LinearGradient>
   );
 };
