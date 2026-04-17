@@ -13,8 +13,10 @@ const DefaultView: React.FC = () => {
   useEffect(() => {
     // Single-wallet mode: auto-select the only wallet
     if (wallets.length === 1) {
-      setViewAllWalletsEnabled(false);
-      setSelectedDefaultWallet(wallets[0].getID());
+      (async () => {
+        await setViewAllWalletsEnabled(false);
+        await setSelectedDefaultWallet(wallets[0].getID());
+      })().catch(e => console.error('DefaultView: failed to set default wallet', e));
     }
   }, [wallets, setViewAllWalletsEnabled, setSelectedDefaultWallet]);
 

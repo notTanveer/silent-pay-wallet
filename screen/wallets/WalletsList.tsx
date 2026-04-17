@@ -353,7 +353,6 @@ const WalletsList: React.FC = () => {
             return (
               <View style={styles.footerRoot} testID="NoTransactionsMessage">
                 <Text style={styles.footerEmpty}>{loc.wallets.list_empty_txs1}</Text>
-                <Text style={styles.footerStart}>{loc.wallets.list_empty_txs1}</Text>
               </View>
             );
           } else {
@@ -579,12 +578,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#9aa0aa',
     textAlign: 'center',
-  },
-  footerStart: {
-    fontSize: 18,
-    color: '#9aa0aa',
-    textAlign: 'center',
-    fontWeight: '600',
   },
   walletContainer: {
     paddingHorizontal: 16,

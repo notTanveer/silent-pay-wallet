@@ -57,10 +57,10 @@ class DeeplinkSchemaMatch {
     }
 
     if (DeeplinkSchemaMatch.isWidgetAction(event.url)) {
-      if (context.wallets.length >= 0) {
+      if (context.wallets.length > 0) {
         const wallet = context.wallets[0];
         const action = event.url.split('widget?action=')[1];
-        if (wallet.chain === Chain.ONCHAIN) {
+        if (wallet && wallet.chain === Chain.ONCHAIN) {
           if (action === 'openSend') {
             completionHandler([
               'SendDetailsRoot',
@@ -168,12 +168,7 @@ class DeeplinkSchemaMatch {
               ]);
               break;
             case 'setlndhuburl':
-              completionHandler([
-                'LightningSettings',
-                {
-                  url: DeeplinkSchemaMatch.getUrlFromSetLndhubUrlAction(event.url),
-                },
-              ]);
+              console.warn('Ignoring unsupported deeplink action: setlndhuburl');
               break;
           }
         }
@@ -238,29 +233,17 @@ class DeeplinkSchemaMatch {
   }
 
   static isBothBitcoinAndLightningOnWalletSelect(wallet: TWallet, uri: any): TCompletionHandlerParams {
-    if (wallet.chain === Chain.ONCHAIN) {
-      return [
-        'SendDetailsRoot',
-        {
-          screen: 'SendDetails',
-          params: {
-            uri: uri.bitcoin,
-            walletID: wallet.getID(),
-          },
+    // Lightning removed: always route to on-chain SendDetails
+    return [
+      'SendDetailsRoot',
+      {
+        screen: 'SendDetails',
+        params: {
+          uri: uri.bitcoin,
+          walletID: wallet.getID(),
         },
-      ];
-    } else {
-      return [
-        'ScanLNDInvoiceRoot',
-        {
-          screen: 'ScanLNDInvoice',
-          params: {
-            uri: uri.lndInvoice,
-            walletID: wallet.getID(),
-          },
-        },
-      ];
-    }
+      },
+    ];
   }
 
   static isBitcoinAddress(address: string): boolean {
