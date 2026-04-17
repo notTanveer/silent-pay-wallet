@@ -8,8 +8,6 @@ import {
   ConfirmComponent,
   CreateTransactionComponent,
   PaymentCodesListComponent,
-  PsbtMultisigComponent,
-  PsbtMultisigQRCodeComponent,
   PsbtWithHardwareWalletComponent,
   SendDetailsComponent,
   SuccessComponent,
@@ -66,16 +64,6 @@ const SendDetailsStack = () => {
         name="CreateTransaction"
         component={CreateTransactionComponent}
         options={navigationStyle({ title: loc.send.create_details })(theme)}
-      />
-      <Stack.Screen
-        name="PsbtMultisig"
-        component={PsbtMultisigComponent}
-        options={navigationStyle({ title: loc.multisig.header })(theme)}
-      />
-      <Stack.Screen
-        name="PsbtMultisigQRCode"
-        component={PsbtMultisigQRCodeComponent}
-        options={navigationStyle({ title: loc.multisig.header })(theme)}
       />
       <Stack.Screen
         name="Success"
