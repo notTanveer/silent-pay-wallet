@@ -25,8 +25,6 @@ import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet.ts'
 enum ButtonSelected {
   // @ts-ignore: Return later to update
   ONCHAIN = Chain.ONCHAIN,
-  // @ts-ignore: Return later to update
-  OFFCHAIN = Chain.OFFCHAIN,
 }
 
 interface State {
@@ -324,25 +322,6 @@ const WalletsAdd: React.FC = () => {
           onPress={handleOnBitcoinButtonPressed}
           size={styles.button}
         />
-        {selectedWalletType === ButtonSelected.OFFCHAIN && LightningButtonMemo}
-      </View>
-      <View style={styles.advanced}>
-        <BlueSpacing20 />
-        {!isLoading ? (
-          <>
-            <Button testID="Create" title={loc.wallets.add_create} disabled={!selectedWalletType} onPress={createWallet} />
-
-            <BlueButtonLink
-              testID="ImportWallet"
-              style={styles.import}
-              title={loc.wallets.add_import_wallet}
-              onPress={navigateToImportWallet}
-            />
-            <BlueSpacing40 />
-          </>
-        ) : (
-          <ActivityIndicator />
-        )}
       </View>
     </SafeAreaScrollView>
   );
