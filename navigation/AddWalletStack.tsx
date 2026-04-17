@@ -11,10 +11,6 @@ import {
   ImportWalletComponent,
   PleaseBackupComponent,
   ProvideEntropyComponent,
-  WalletsAddMultisigComponent,
-  MultisigAdvancedComponent,
-  WalletsAddMultisigHelpComponent,
-  WalletsAddMultisigStep2Component,
 } from './LazyLoadAddWalletStack';
 import { ScanQRCodeComponent } from './LazyLoadScanQRCodeStack';
 import { ScanQRCodeParamList } from './DetailViewStackParamList';
@@ -41,23 +37,6 @@ export type AddWalletStackParamList = {
     words: number;
     entropy?: string;
   };
-  WalletsAddMultisig: {
-    walletLabel: string;
-  };
-  MultisigAdvanced: {
-    m: number;
-    n: number;
-    format: string;
-    onSave: (m: number, n: number, format: string) => void;
-  };
-  WalletsAddMultisigStep2: {
-    m: number;
-    n: number;
-    walletLabel: string;
-    format: string;
-    onBarScanned?: string;
-  };
-  WalletsAddMultisigHelp: undefined;
   ScanQRCode: ScanQRCodeParamList;
 };
 
@@ -103,45 +82,6 @@ const AddWalletStack = () => {
         name="ProvideEntropy"
         component={ProvideEntropyComponent}
         options={navigationStyle({ title: loc.entropy.title })(theme)}
-      />
-      <Stack.Screen
-        name="WalletsAddMultisig"
-        component={WalletsAddMultisigComponent}
-        options={navigationStyle({ title: '' })(theme)}
-        initialParams={{ walletLabel: loc.multisig.default_label }}
-      />
-      <Stack.Screen
-        name="MultisigAdvanced"
-        component={MultisigAdvancedComponent}
-        options={navigationStyle({
-          title: loc.multisig.vault_advanced_customize,
-          presentation: 'formSheet',
-          sheetAllowedDetents: 'fitToContents',
-          sheetGrabberVisible: true,
-          contentStyle: { flex: 1 },
-          headerShown: true,
-          headerTitle: loc.multisig.vault_advanced_customize,
-        })(theme)}
-      />
-      <Stack.Screen
-        name="WalletsAddMultisigStep2"
-        component={WalletsAddMultisigStep2Component}
-        options={navigationStyle({ title: '', gestureEnabled: false })(theme)}
-      />
-      <Stack.Screen
-        name="WalletsAddMultisigHelp"
-        component={WalletsAddMultisigHelpComponent}
-        options={navigationStyle({
-          title: '',
-          gestureEnabled: false,
-          headerStyle: {
-            backgroundColor: '#0070FF',
-          },
-          headerTintColor: '#FFFFFF',
-          headerBackTitle: undefined,
-          statusBarStyle: 'light',
-          headerShadowVisible: false,
-        })(theme)}
       />
       <Stack.Screen
         name="ScanQRCode"

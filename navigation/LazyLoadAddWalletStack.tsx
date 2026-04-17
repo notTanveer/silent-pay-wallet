@@ -9,10 +9,6 @@ const ImportSpeed = lazy(() => import('../screen/wallets/ImportSpeed'));
 const ImportWallet = lazy(() => import('../screen/wallets/ImportWallet'));
 const PleaseBackup = lazy(() => import('../screen/wallets/PleaseBackup'));
 const ProvideEntropy = lazy(() => import('../screen/wallets/ProvideEntropy'));
-const WalletsAddMultisig = lazy(() => import('../screen/wallets/WalletsAddMultisig'));
-const MultisigAdvanced = lazy(() => import('../screen/wallets/MultisigAdvanced'));
-const WalletsAddMultisigStep2 = lazy(() => import('../screen/wallets/addMultisigStep2'));
-const WalletsAddMultisigHelp = lazy(() => import('../screen/wallets/addMultisigHelp'));
 
 export const AddComponent: React.FC = () => (
   <Suspense fallback={<LazyLoadingIndicator />}>
@@ -47,29 +43,5 @@ export const PleaseBackupComponent = () => (
 export const ProvideEntropyComponent = () => (
   <Suspense fallback={<LazyLoadingIndicator />}>
     <ProvideEntropy />
-  </Suspense>
-);
-
-export const WalletsAddMultisigComponent = () => (
-  <Suspense fallback={<LazyLoadingIndicator />}>
-    <WalletsAddMultisig />
-  </Suspense>
-);
-
-export const MultisigAdvancedComponent = () => (
-  <Suspense fallback={<LazyLoadingIndicator />}>
-    <MultisigAdvanced />
-  </Suspense>
-);
-
-export const WalletsAddMultisigStep2Component = () => (
-  <Suspense fallback={<LazyLoadingIndicator />}>
-    <WalletsAddMultisigStep2 />
-  </Suspense>
-);
-
-export const WalletsAddMultisigHelpComponent = () => (
-  <Suspense fallback={<LazyLoadingIndicator />}>
-    <WalletsAddMultisigHelp />
   </Suspense>
 );
