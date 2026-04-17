@@ -30,7 +30,13 @@ detect_ndk_home() {
 configure_android_toolchain() {
     detect_ndk_home
 
-    local toolchain="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+    local host_tag
+    case "$(uname -s)" in
+        Darwin) host_tag="darwin-x86_64" ;;
+        Linux)  host_tag="linux-x86_64" ;;
+        *) error "Unsupported host OS for NDK toolchain: $(uname -s)" ;;
+    esac
+    local toolchain="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/${host_tag}/bin"
 
     if [ ! -d "$toolchain" ]; then
         error "NDK toolchain not found at $toolchain"
@@ -203,12 +209,19 @@ main() {
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
     if is_macos; then
-        log "Detected macOS host. Building iOS targets only."
+        log "Detected macOS host. Building iOS + Android targets."
         ensure_rust_targets "ios"
+        configure_android_toolchain
+        ensure_rust_targets "android"
 
         echo -e "\n📱 iOS Targets:"
         for item in "${IOS_TARGETS[@]}"; do
             build_ios_target "$item"
+        done
+
+        echo -e "\n🤖 Android Targets:"
+        for item in "${ANDROID_TARGETS[@]}"; do
+            build_and_copy_android "$item"
         done
 
         # WIP: iOS packaging
@@ -233,6 +246,8 @@ main() {
         find "target" -path "*/release/$LIB_NAME" -name "$LIB_NAME" 2>/dev/null | while read -r file; do
             ls -lh "$file" | awk '{print "  " $5 "\t" $9}'
         done || echo "  No iOS artifacts found."
+        echo "📦 Android libraries:"
+        find "$ANDROID_DEST_BASE" -name "*.a" -exec ls -lh {} + 2>/dev/null | awk '{print "  " $5 "\t" $9}' || echo "  No Android artifacts found."
     else
         echo "📦 Android libraries:"
         find "$ANDROID_DEST_BASE" -name "*.a" -exec ls -lh {} + 2>/dev/null | awk '{print "  " $5 "\t" $9}' || echo "  No Android artifacts found."
