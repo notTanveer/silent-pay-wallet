@@ -10,7 +10,6 @@ import { HDSegwitBech32Wallet } from './hd-segwit-bech32-wallet';
 import { HDSegwitElectrumSeedP2WPKHWallet } from './hd-segwit-electrum-seed-p2wpkh-wallet';
 import { HDSegwitP2SHWallet } from './hd-segwit-p2sh-wallet';
 import { LegacyWallet } from './legacy-wallet';
-import { MultisigHDWallet } from './multisig-hd-wallet';
 import { SegwitBech32Wallet } from './segwit-bech32-wallet';
 import { SegwitP2SHWallet } from './segwit-p2sh-wallet';
 import { SLIP39LegacyP2PKHWallet, SLIP39SegwitBech32Wallet, SLIP39SegwitP2SHWallet } from './slip39-wallets';
@@ -123,7 +122,6 @@ export type TWallet =
   | HDSegwitP2SHWallet
   | HDTaprootWallet
   | LegacyWallet
-  | MultisigHDWallet
   | SLIP39LegacyP2PKHWallet
   | SLIP39SegwitBech32Wallet
   | SLIP39SegwitP2SHWallet
