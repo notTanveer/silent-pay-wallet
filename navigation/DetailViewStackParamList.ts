@@ -50,7 +50,6 @@ export type DetailViewStackParamList = {
   };
   AztecoRedeem: { aztecoVoucher: AztecoVoucher };
   WalletExportRoot: undefined;
-  ExportMultisigCoordinationSetupRoot: undefined;
   Settings: undefined;
   Currency: undefined;
   GeneralSettings: undefined;
@@ -68,7 +67,6 @@ export type DetailViewStackParamList = {
   ReleaseNotes: undefined;
   ToolsScreen: undefined;
   SettingsPrivacy: undefined;
-  ViewEditMultisigCosigners: { walletID: string; cosigners: string[]; onBarScanned?: string };
   WalletXpubRoot: undefined;
   SignVerifyRoot: {
     screen: 'SignVerify';
