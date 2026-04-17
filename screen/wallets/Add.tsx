@@ -25,7 +25,8 @@ import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet.ts'
 enum ButtonSelected {
   // @ts-ignore: Return later to update
   ONCHAIN = Chain.ONCHAIN,
-  VAULT = 'VAULT',
+  // @ts-ignore: Return later to update
+  OFFCHAIN = Chain.OFFCHAIN,
 }
 
 interface State {
@@ -278,19 +279,11 @@ const WalletsAdd: React.FC = () => {
       } else {
         goBack();
       }
-    } else if (selectedWalletType === ButtonSelected.VAULT) {
-      setIsLoading(false);
-      navigate('WalletsAddMultisig', { walletLabel: label.trim().length > 0 ? label : loc.multisig.default_label });
     }
   };
 
   const navigateToImportWallet = () => {
     navigate('ImportWallet');
-  };
-
-  const handleOnVaultButtonPressed = () => {
-    Keyboard.dismiss();
-    confirmResetEntropy(ButtonSelected.VAULT);
   };
 
   const handleOnBitcoinButtonPressed = () => {
@@ -331,13 +324,7 @@ const WalletsAdd: React.FC = () => {
           onPress={handleOnBitcoinButtonPressed}
           size={styles.button}
         />
-        <WalletButton
-          buttonType="Vault"
-          testID="ActivateVaultButton"
-          active={selectedWalletType === ButtonSelected.VAULT}
-          onPress={handleOnVaultButtonPressed}
-          size={styles.button}
-        />
+        {selectedWalletType === ButtonSelected.OFFCHAIN && LightningButtonMemo}
       </View>
       <View style={styles.advanced}>
         <BlueSpacing20 />
