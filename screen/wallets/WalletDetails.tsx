@@ -66,9 +66,9 @@ const WalletDetails: React.FC = () => {
   const walletTransactionsLength = useMemo<number>(() => wallet.getTransactions().length, [wallet]);
   const derivationPath = useMemo<string | null>(() => {
     try {
-      // @ts-ignore: getDerivationPath exists on HD wallet types
+      // @ts-expect-error: Need to fix later
       if (wallet.getDerivationPath) {
-        // @ts-ignore: getDerivationPath exists on HD wallet types
+        // @ts-expect-error: Need to fix later
         const path = wallet.getDerivationPath();
         return path.length > 0 ? path : null;
       }
@@ -225,9 +225,9 @@ const WalletDetails: React.FC = () => {
     useCallback(() => {
       const task = InteractionManager.runAfterInteractions(() => {
         if (isMasterFingerPrintVisible && wallet.allowMasterFingerprint && wallet.allowMasterFingerprint()) {
-          // @ts-ignore: getMasterFingerprintHex exists on HD wallet types
+          // @ts-expect-error: Need to fix later
           if (wallet.getMasterFingerprintHex) {
-            // @ts-ignore: getMasterFingerprintHex exists on HD wallet types
+            // @ts-expect-error: Need to fix later
             setMasterFingerprint(wallet.getMasterFingerprintHex());
           }
         } else {
