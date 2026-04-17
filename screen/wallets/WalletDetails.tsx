@@ -13,15 +13,7 @@ import {
 import { writeFileAndExport } from '../../blue_modules/fs';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { BlueCard, BlueText } from '../../BlueComponents';
-import {
-  HDAezeedWallet,
-  HDSegwitBech32Wallet,
-  LegacyWallet,
-  MultisigHDWallet,
-  SegwitBech32Wallet,
-  SegwitP2SHWallet,
-  WatchOnlyWallet,
-} from '../../class';
+import { HDAezeedWallet, HDSegwitBech32Wallet, LegacyWallet, SegwitBech32Wallet, SegwitP2SHWallet, WatchOnlyWallet } from '../../class';
 import { AbstractHDElectrumWallet } from '../../class/wallets/abstract-hd-electrum-wallet';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
@@ -74,9 +66,9 @@ const WalletDetails: React.FC = () => {
   const walletTransactionsLength = useMemo<number>(() => wallet.getTransactions().length, [wallet]);
   const derivationPath = useMemo<string | null>(() => {
     try {
-      // @ts-expect-error: Need to fix later
+      // @ts-ignore: getDerivationPath exists on HD wallet types
       if (wallet.getDerivationPath) {
-        // @ts-expect-error: Need to fix later
+        // @ts-ignore: getDerivationPath exists on HD wallet types
         const path = wallet.getDerivationPath();
         return path.length > 0 ? path : null;
       }
@@ -233,9 +225,9 @@ const WalletDetails: React.FC = () => {
     useCallback(() => {
       const task = InteractionManager.runAfterInteractions(() => {
         if (isMasterFingerPrintVisible && wallet.allowMasterFingerprint && wallet.allowMasterFingerprint()) {
-          // @ts-expect-error: Need to fix later
+          // @ts-ignore: getMasterFingerprintHex exists on HD wallet types
           if (wallet.getMasterFingerprintHex) {
-            // @ts-expect-error: Need to fix later
+            // @ts-ignore: getMasterFingerprintHex exists on HD wallet types
             setMasterFingerprint(wallet.getMasterFingerprintHex());
           }
         } else {
@@ -272,19 +264,6 @@ const WalletDetails: React.FC = () => {
       params: {
         walletID,
       },
-    });
-  };
-  const navigateToMultisigCoordinationSetup = () => {
-    navigate('ExportMultisigCoordinationSetupRoot', {
-      screen: 'ExportMultisigCoordinationSetup',
-      params: {
-        walletID,
-      },
-    });
-  };
-  const navigateToViewEditCosigners = () => {
-    navigate('ViewEditMultisigCosigners', {
-      walletID,
     });
   };
   const navigateToXPub = () =>
@@ -456,23 +435,6 @@ const WalletDetails: React.FC = () => {
                 {wallet.typeReadable}
               </Text>
 
-              {wallet.type === MultisigHDWallet.type && (
-                <>
-                  <Text style={[styles.textLabel2, stylesHook.textLabel2]}>{loc.wallets.details_multisig_type}</Text>
-                  <BlueText>
-                    {`${wallet.getM()} / ${wallet.getN()} (${
-                      wallet.isNativeSegwit() ? 'native segwit' : wallet.isWrappedSegwit() ? 'wrapped segwit' : 'legacy'
-                    })`}
-                  </BlueText>
-                </>
-              )}
-              {wallet.type === MultisigHDWallet.type && (
-                <>
-                  <Text style={[styles.textLabel2, stylesHook.textLabel2]}>{loc.multisig.how_many_signatures_can_bluewallet_make}</Text>
-                  <BlueText>{wallet.howManySignaturesCanWeMake()}</BlueText>
-                </>
-              )}
-
               {wallet.type === HDAezeedWallet.type && (
                 <>
                   <Text style={[styles.textLabel1, stylesHook.textLabel1]}>{loc.wallets.identity_pubkey.toLowerCase()}</Text>
@@ -596,27 +558,6 @@ const WalletDetails: React.FC = () => {
               <View>
                 <BlueSpacing20 />
                 <Button onPress={navigateToWalletExport} testID="WalletExport" title={loc.wallets.details_export_backup} />
-                {wallet.type === MultisigHDWallet.type && (
-                  <>
-                    <BlueSpacing20 />
-                    <SecondButton
-                      onPress={navigateToMultisigCoordinationSetup}
-                      testID="MultisigCoordinationSetup"
-                      title={loc.multisig.export_coordination_setup.replace(/^\w/, (c: string) => c.toUpperCase())}
-                    />
-                  </>
-                )}
-
-                {wallet.type === MultisigHDWallet.type && (
-                  <>
-                    <BlueSpacing20 />
-                    <SecondButton
-                      onPress={navigateToViewEditCosigners}
-                      testID="ViewEditCosigners"
-                      title={loc.multisig.view_edit_cosigners}
-                    />
-                  </>
-                )}
 
                 {wallet.allowXpub && wallet.allowXpub() && (
                   <>

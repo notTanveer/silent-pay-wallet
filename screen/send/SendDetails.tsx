@@ -26,10 +26,9 @@ import {
 } from 'react-native';
 import RNFS from 'react-native-fs';
 import { btcToSatoshi, fiatToBTC } from '../../blue_modules/currency';
-import * as fs from '../../blue_modules/fs';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { BlueText } from '../../BlueComponents';
-import { HDSegwitBech32Wallet, MultisigHDWallet, WatchOnlyWallet } from '../../class';
+import { HDSegwitBech32Wallet, WatchOnlyWallet } from '../../class';
 import { ContactList } from '../../class/contact-list';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import { AbstractHDElectrumWallet } from '../../class/wallets/abstract-hd-electrum-wallet';
@@ -625,17 +624,6 @@ const SendDetails = () => {
       return;
     }
 
-    if (wallet?.type === MultisigHDWallet.type) {
-      navigation.navigate('PsbtMultisig', {
-        memo: transactionMemo,
-        psbtBase64: psbt.toBase64(),
-        walletID: wallet.getID(),
-        launchedBy: routeParams.launchedBy,
-      });
-      setIsLoading(false);
-      return;
-    }
-
     assert(tx, 'createTRansaction failed');
 
     txMetadata[tx.getId()] = {
@@ -775,118 +763,6 @@ const SendDetails = () => {
     }
   }, [navigation, setIsLoading, transactionMemo, wallet]);
 
-  const askCosignThisTransaction = async () => {
-    return new Promise(resolve => {
-      Alert.alert(
-        '',
-        loc.multisig.cosign_this_transaction,
-        [
-          {
-            text: loc._.no,
-            style: 'cancel',
-            onPress: () => resolve(false),
-          },
-          {
-            text: loc._.yes,
-            onPress: () => resolve(true),
-          },
-        ],
-        { cancelable: false },
-      );
-    });
-  };
-
-  const _importTransactionMultisig = useCallback(
-    async (base64arg: string | false) => {
-      try {
-        const base64 = base64arg || (await fs.openSignedTransaction());
-        if (!base64) return;
-        const psbt = bitcoin.Psbt.fromBase64(base64); // if it doesnt throw - all good, its valid
-
-        if ((wallet as MultisigHDWallet)?.howManySignaturesCanWeMake() > 0 && (await askCosignThisTransaction())) {
-          setIsLoading(true);
-          await sleep(100);
-          (wallet as MultisigHDWallet).cosignPsbt(psbt);
-          setIsLoading(false);
-          await sleep(100);
-        }
-
-        if (wallet) {
-          navigation.navigate('PsbtMultisig', {
-            memo: transactionMemo,
-            psbtBase64: psbt.toBase64(),
-            walletID: wallet.getID(),
-          });
-        }
-      } catch (error: any) {
-        triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
-        presentAlert({ title: loc.send.problem_with_psbt, message: error.message });
-      }
-      setIsLoading(false);
-    },
-    [navigation, sleep, transactionMemo, wallet],
-  );
-
-  const importTransactionMultisig = useCallback(() => {
-    return _importTransactionMultisig(false);
-  }, [_importTransactionMultisig]);
-
-  const onBarScanned = useCallback(
-    (ret: any) => {
-      if (!ret.data) ret = { data: ret };
-      if (ret.data.toUpperCase().startsWith('UR')) {
-        presentAlert({ title: loc.errors.error, message: 'BC-UR not decoded. This should never happen' });
-      } else if (ret.data.indexOf('+') === -1 && ret.data.indexOf('=') === -1 && ret.data.indexOf('=') === -1) {
-        // this looks like NOT base64, so maybe its transaction's hex
-        // we dont support it in this flow
-      } else {
-        // psbt base64?
-        return _importTransactionMultisig(ret.data);
-      }
-    },
-    [_importTransactionMultisig],
-  );
-
-  const handlePsbtSign = useCallback(
-    async (psbtBase64: string) => {
-      let tx;
-      let psbt;
-      try {
-        psbt = bitcoin.Psbt.fromBase64(psbtBase64);
-        tx = (wallet as MultisigHDWallet).cosignPsbt(psbt).tx;
-      } catch (e: any) {
-        presentAlert({ title: loc.errors.error, message: e.message });
-        return;
-      } finally {
-        setIsLoading(false);
-      }
-
-      if (!tx || !wallet) return setIsLoading(false);
-
-      // we need to remove change address from recipients, so that Confirm screen show more accurate info
-      const changeAddresses: string[] = [];
-      // @ts-ignore hacky
-      for (let c = 0; c < wallet.next_free_change_address_index + wallet.gap_limit; c++) {
-        // @ts-ignore hacky
-        changeAddresses.push(wallet._getInternalAddressByIndex(c));
-      }
-      const recipients = psbt.txOutputs
-        .filter(({ address }) => !changeAddresses.includes(String(address)))
-        .map(recipient => ({ ...recipient, value: Number(recipient.value) }));
-
-      navigation.navigate('CreateTransaction', {
-        fee: Number(new BigNumber(psbt.getFee()).dividedBy(100000000).toNumber()),
-        feeSatoshi: Number(psbt.getFee()),
-        tx: tx.toHex(),
-        recipients,
-        satoshiPerByte: psbt.getFeeRate(),
-        showAnimatedQr: true,
-        psbt,
-      });
-    },
-    [navigation, wallet],
-  );
-
   useEffect(() => {
     const data = routeParams.onBarScanned;
     if (data) {
@@ -895,13 +771,6 @@ const SendDetails = () => {
         switch (selectedDataProcessor.current) {
           case CommonToolTipActions.ImportTransactionQR:
             importQrTransactionOnBarScanned(data);
-            break;
-          case CommonToolTipActions.SignPSBT:
-            handlePsbtSign(data);
-            break;
-          case CommonToolTipActions.CoSignTransaction:
-          case CommonToolTipActions.ImportTransactionMultsig:
-            _importTransactionMultisig(data);
             break;
           case CommonToolTipActions.ImportTransaction:
             processAddressData(data);
@@ -915,15 +784,7 @@ const SendDetails = () => {
     }
     selectedDataProcessor.current = undefined;
     setParams({ onBarScanned: undefined });
-  }, [
-    importQrTransactionOnBarScanned,
-    onBarScanned,
-    routeParams.onBarScanned,
-    setParams,
-    processAddressData,
-    _importTransactionMultisig,
-    handlePsbtSign,
-  ]);
+  }, [importQrTransactionOnBarScanned, routeParams.onBarScanned, setParams, processAddressData]);
 
   const handleAddRecipient = useCallback(() => {
     // Check if any recipient is incomplete (missing address or amount)
@@ -1059,9 +920,6 @@ const SendDetails = () => {
       } else if (id === CommonToolTipActions.ImportTransactionQR.id) {
         selectedDataProcessor.current = CommonToolTipActions.ImportTransactionQR;
         importQrTransaction();
-      } else if (id === CommonToolTipActions.ImportTransactionMultsig.id) {
-        selectedDataProcessor.current = CommonToolTipActions.ImportTransactionMultsig;
-        importTransactionMultisig();
       } else if (id === CommonToolTipActions.CoSignTransaction.id) {
         selectedDataProcessor.current = CommonToolTipActions.CoSignTransaction;
         navigateToQRCodeScanner();
@@ -1082,7 +940,6 @@ const SendDetails = () => {
       isTransactionReplaceable,
       importTransaction,
       importQrTransaction,
-      importTransactionMultisig,
       handleCoinControl,
       handleInsertContact,
       handleRemoveAllRecipients,

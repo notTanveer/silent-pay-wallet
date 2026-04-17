@@ -19,7 +19,6 @@ import * as BlueElectrum from '../../blue_modules/BlueElectrum';
 import { isDesktop } from '../../blue_modules/environment';
 import * as fs from '../../blue_modules/fs';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
-import { MultisigHDWallet, WatchOnlyWallet } from '../../class';
 import presentAlert, { AlertType } from '../../components/Alert';
 import { FButton, FContainer } from '../../components/FloatButtons';
 import { useTheme } from '../../components/themes';
@@ -43,6 +42,7 @@ import { getClipboardContent } from '../../blue_modules/clipboard';
 import HandOffComponent from '../../components/HandOffComponent';
 import { HandOffActivityType } from '../../components/types';
 import WalletGradient from '../../class/wallet-gradient';
+import { WatchOnlyWallet } from '../../class';
 
 const buttonFontSize =
   PixelRatio.roundToNearestPixel(Dimensions.get('window').width / 26) > 22
@@ -239,12 +239,6 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { rout
     });
   };
 
-  const navigateToViewEditCosigners = useCallback(() => {
-    navigate('ViewEditMultisigCosigners', {
-      walletID,
-    });
-  }, [navigate, walletID]);
-
   const getItemLayout = (_: any, index: number) => ({
     length: 64,
     offset: 64 * index,
@@ -438,11 +432,6 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { rout
             wallet.hideBalance = isShouldBeVisible;
             await saveToDisk();
           }}
-          onManageFundsPressed={id => {
-            if (wallet.type === MultisigHDWallet.type) {
-              navigateToViewEditCosigners();
-            }
-          }}
         />
         <>
           <View style={[styles.flex, stylesHook.backgroundContainer]}>
@@ -471,7 +460,6 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { rout
       stylesHook.listHeaderText,
       saveToDisk,
       isBiometricUseCapableAndEnabled,
-      navigateToViewEditCosigners,
     ],
   );
 
@@ -559,7 +547,7 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { rout
           />
         )}
       </FContainer>
-      {wallet.chain === Chain.ONCHAIN && wallet.type !== MultisigHDWallet.type && wallet.getXpub && wallet.getXpub() ? (
+      {wallet.chain === Chain.ONCHAIN && wallet.getXpub && wallet.getXpub() ? (
         <HandOffComponent
           title={wallet.getLabel()}
           type={HandOffActivityType.Xpub}
