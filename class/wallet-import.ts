@@ -12,7 +12,6 @@ import {
   HDSegwitP2SHWallet,
   HDTaprootWallet,
   LegacyWallet,
-  MultisigHDWallet,
   SegwitBech32Wallet,
   SegwitP2SHWallet,
   SLIP39LegacyP2PKHWallet,
@@ -182,6 +181,7 @@ const startImport = (
       }
     }
 
+<<<<<<< HEAD
     // is it multisig?
     yield { progress: 'multisignature' };
     const ms = new MultisigHDWallet();
@@ -189,6 +189,26 @@ const startImport = (
     if (ms.getN() > 0 && ms.getM() > 0) {
       await fetch(ms, true, false);
       yield { wallet: ms };
+=======
+    // is it lightning custodian?
+    yield { progress: 'lightning custodian' };
+    if (text.startsWith('blitzhub://') || text.startsWith('lndhub://')) {
+      const lnd = new LightningCustodianWallet();
+      if (text.includes('@')) {
+        const split = text.split('@');
+        lnd.setBaseURI(split[1]);
+        lnd.setSecret(split[0]);
+      }
+      await lnd.init();
+      if (!offline) {
+        await lnd.authorize();
+        await lnd.fetchTransactions();
+        await lnd.fetchUserInvoices();
+        await lnd.fetchPendingTransactions();
+        await lnd.fetchBalance();
+      }
+      yield { wallet: lnd };
+>>>>>>> 246f562d1 (REF: Remove multisig import from wallet-import.ts)
     }
 
     // check bip39 wallets
