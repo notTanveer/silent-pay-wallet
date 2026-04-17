@@ -7,7 +7,6 @@ import { HDSegwitBech32Wallet } from './wallets/hd-segwit-bech32-wallet';
 import { HDSegwitElectrumSeedP2WPKHWallet } from './wallets/hd-segwit-electrum-seed-p2wpkh-wallet';
 import { HDSegwitP2SHWallet } from './wallets/hd-segwit-p2sh-wallet';
 import { LegacyWallet } from './wallets/legacy-wallet';
-import { MultisigHDWallet } from './wallets/multisig-hd-wallet';
 import { SegwitBech32Wallet } from './wallets/segwit-bech32-wallet';
 import { SLIP39LegacyP2PKHWallet, SLIP39SegwitBech32Wallet, SLIP39SegwitP2SHWallet } from './wallets/slip39-wallets';
 import { WatchOnlyWallet } from './wallets/watch-only-wallet';
@@ -22,7 +21,6 @@ export default class WalletGradient {
   static taprootWallet: string[] = ['#4DA337', '#326D28'];
   static hdLegacyP2PKHWallet: string[] = ['#FD7478', '#E73B40'];
   static hdLegacyBreadWallet: string[] = ['#fe6381', '#f99c42'];
-  static multisigHdWallet: string[] = ['#1ce6eb', '#296fc5', '#3500A2'];
   static defaultGradients: string[] = ['#B770F6', '#9013FE'];
   static aezeedWallet: string[] = ['#8584FF', '#5351FB'];
 
@@ -63,9 +61,6 @@ export default class WalletGradient {
       case SegwitBech32Wallet.type:
         gradient = WalletGradient.segwitBech32Wallet;
         break;
-      case MultisigHDWallet.type:
-        gradient = WalletGradient.multisigHdWallet;
-        break;
       case HDAezeedWallet.type:
         gradient = WalletGradient.aezeedWallet;
         break;
@@ -79,12 +74,6 @@ export default class WalletGradient {
   static linearGradientProps(type: string) {
     let props: any;
     switch (type) {
-      case MultisigHDWallet.type:
-        /* Example
-        props = { start: { x: 0, y: 0 } };
-        https://github.com/react-native-linear-gradient/react-native-linear-gradient
-        */
-        break;
       default:
         break;
     }
@@ -122,9 +111,6 @@ export default class WalletGradient {
         break;
       case SegwitBech32Wallet.type:
         gradient = WalletGradient.segwitBech32Wallet;
-        break;
-      case MultisigHDWallet.type:
-        gradient = WalletGradient.multisigHdWallet;
         break;
       case HDAezeedWallet.type:
         gradient = WalletGradient.aezeedWallet;
