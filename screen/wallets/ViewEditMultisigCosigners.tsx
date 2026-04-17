@@ -54,7 +54,7 @@ type NavigationProp = NativeStackNavigationProp<DetailViewStackParamList, 'ViewE
 const ViewEditMultisigCosigners: React.FC = () => {
   const hasLoaded = useRef(false);
   const { colors } = useTheme();
-  const { wallets, setWalletsWithNewOrder } = useStorage();
+  const { wallets } = useStorage();
   const { isBiometricUseCapableAndEnabled } = useBiometrics();
   const { isElectrumDisabled, isPrivacyBlurEnabled } = useSettings();
   const { enableScreenProtect, disableScreenProtect } = useScreenProtect();
@@ -170,7 +170,6 @@ const ViewEditMultisigCosigners: React.FC = () => {
       }
       newWallets.push(wallet);
       setIsSaveButtonDisabled(true);
-      setWalletsWithNewOrder(newWallets);
       setTimeout(() => {
         const popTo = StackActions.popTo('WalletTransactions', {
           walletID,

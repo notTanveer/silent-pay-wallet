@@ -19,7 +19,6 @@ const _lastTimeTriedToRefetchWallet: { [walletID: string]: number } = {};
 
 interface StorageContextType {
   wallets: TWallet[];
-  setWalletsWithNewOrder: (wallets: TWallet[]) => void;
   txMetadata: TTXMetadata;
   counterpartyMetadata: TCounterpartyMetadata;
   saveToDisk: (force?: boolean) => Promise<void>;
@@ -333,10 +332,6 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
     setWallets(BlueApp.getWallets());
   }, []);
 
-  const setWalletsWithNewOrder = useCallback((_wlts: TWallet[]) => {
-    // No-op: single-wallet mode, reordering not supported
-  }, []);
-
   // Initialize wallets
   useEffect(() => {
     if (walletsInitialized) {
@@ -540,7 +535,6 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
   const value: StorageContextType = useMemo(
     () => ({
       wallets,
-      setWalletsWithNewOrder,
       txMetadata: txMetadata.current,
       counterpartyMetadata: counterpartyMetadata.current,
       saveToDisk,
@@ -576,7 +570,6 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
     }),
     [
       wallets,
-      setWalletsWithNewOrder,
       saveToDisk,
       selectedWalletID,
       addWallet,
