@@ -66,7 +66,7 @@ const WalletDetails: React.FC = () => {
   const [hideTransactionsInWalletsList, setHideTransactionsInWalletsList] = useState<boolean>(
     wallet.getHideTransactionsInWalletsList ? !wallet.getHideTransactionsInWalletsList() : true,
   );
-  const { setOptions, navigate, navigateToWallet } = useExtendedNavigation();
+  const { setOptions, navigate, navigateToWalletsList } = useExtendedNavigation();
   const { colors } = useTheme();
   const [walletName, setWalletName] = useState<string>(wallet.getLabel());
 
@@ -91,7 +91,7 @@ const WalletDetails: React.FC = () => {
     setIsLoading(true);
     const deletionSucceeded = await handleWalletDeletion(wallet.getID());
     if (deletionSucceeded) {
-      navigateToWallet();
+      navigateToWalletsList();
     } else {
       setIsLoading(false);
     }

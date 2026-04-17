@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import HeaderRightButton from '../components/HeaderRightButton';
 import navigationStyle, { CloseButtonPosition } from '../components/navigationStyle';
 import { useTheme } from '../components/themes';
@@ -14,8 +15,10 @@ import TransactionStatus from '../screen/transactions/TransactionStatus';
 import WalletAddresses from '../screen/wallets/WalletAddresses';
 import WalletDetails from '../screen/wallets/WalletDetails';
 import GenerateWord from '../screen/wallets/generateWord';
+import WalletsList from '../screen/wallets/WalletsList';
 import { DetailViewStack } from './index';
 import PaymentCodesListComponent from './LazyLoadPaymentCodeStack';
+import SettingsButton from '../components/icons/SettingsButton';
 
 import { useStorage } from '../hooks/context/useStorage';
 import WalletTransactions from '../screen/wallets/WalletTransactions';
@@ -38,6 +41,8 @@ import ToolsScreen from '../screen/settings/tools';
 import SettingsPrivacy from '../screen/settings/SettingsPrivacy';
 
 import getWalletTransactionsOptions from './helpers/getWalletTransactionsOptions';
+import { useSizeClass, SizeClass } from '../blue_modules/sizeClass';
+import { isDesktop } from '../blue_modules/environment';
 
 import ReceiveDetails from '../screen/receive/ReceiveDetails';
 import OnboardingStack from './OnboardingStack';
@@ -45,9 +50,24 @@ import OnboardingStack from './OnboardingStack';
 const DetailViewStackScreensStack = () => {
   const theme = useTheme();
   const { wallets } = useStorage();
+  const { sizeClass } = useSizeClass();
   const DetailButton = useMemo(() => <HeaderRightButton testID="DetailButton" disabled={true} title={loc.send.create_details} />, []);
+  const RightBarButtons = useMemo(() => <SettingsButton />, []);
 
-  const initialRoute = wallets.length === 0 ? 'Onboarding' : 'WalletTransactions';
+  const walletListScreenOptions = useMemo<NativeStackNavigationOptions>(() => {
+    return {
+      title: '',
+      navigationBarColor: theme.colors.navigationBarColor,
+      headerLargeTitle: sizeClass === SizeClass.Compact,
+      headerShadowVisible: false,
+      headerStyle: {
+        backgroundColor: theme.colors.customHeader,
+      },
+      headerRight: () => (isDesktop ? undefined : RightBarButtons),
+    };
+  }, [RightBarButtons, sizeClass, theme.colors.customHeader, theme.colors.navigationBarColor]);
+
+  const initialRoute = wallets.length === 0 ? 'Onboarding' : 'WalletsList';
 
   return (
     <DetailViewStack.Navigator
@@ -59,6 +79,7 @@ const DetailViewStackScreensStack = () => {
         component={OnboardingStack}
         options={{ headerShown: false, gestureEnabled: false, headerBackVisible: false }}
       />
+      <DetailViewStack.Screen name="WalletsList" component={WalletsList} options={navigationStyle(walletListScreenOptions)(theme)} />
       <DetailViewStack.Screen name="WalletTransactions" component={WalletTransactions} options={getWalletTransactionsOptions} />
       <DetailViewStack.Screen
         name="WalletDetails"

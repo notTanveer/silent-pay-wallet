@@ -163,7 +163,7 @@ const ImportWallet = () => {
         wallet.updateBirthHeight(birthHeightResult.height, true);
 
         await addAndSaveWallet(wallet);
-        navigation.navigateToWallet();
+        navigation.navigateToWalletsList();
       } catch (error: any) {
         console.error('Import error:', error);
         presentAlert({

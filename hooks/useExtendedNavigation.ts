@@ -13,7 +13,7 @@ const requiresBiometrics = ['WalletExportRoot', 'WalletXpubRoot', 'ViewEditMulti
 const requiresWalletExportIsSaved = ['ReceiveDetails', 'WalletAddresses'];
 
 export const useExtendedNavigation = <T extends NavigationProp<ParamListBase>>(): T & {
-  navigateToWallet: () => void;
+  navigateToWalletsList: () => void;
 } => {
   const originalNavigation = useNavigation<T>();
   const { wallets, saveToDisk } = useStorage();
@@ -140,9 +140,8 @@ export const useExtendedNavigation = <T extends NavigationProp<ParamListBase>>()
     [originalNavigation, isBiometricUseEnabled, wallets, saveToDisk],
   );
 
-  const navigateToWallet = useCallback(() => {
-  if (navigationRef.isReady() && wallets.length > 0) {
-    const wallet = wallets[0];
+  const navigateToWalletsList = useCallback(() => {
+  if (navigationRef.isReady()) {
     navigationRef.dispatch(
       CommonActions.reset({
         index: 0,
@@ -156,8 +155,7 @@ export const useExtendedNavigation = <T extends NavigationProp<ParamListBase>>()
                   state: {
                     routes: [
                       {
-                        name: 'WalletTransactions',
-                        params: { walletID: wallet.getID(), walletType: wallet.type },
+                        name: 'WalletsList',
                       },
                     ],
                   },
@@ -169,14 +167,14 @@ export const useExtendedNavigation = <T extends NavigationProp<ParamListBase>>()
       })
     );
   }
-}, [wallets]);
+}, []);
 
   return useMemo(
     () => ({
       ...originalNavigation,
       navigate: enhancedNavigate,
-      navigateToWallet,
+      navigateToWalletsList,
     }),
-    [originalNavigation, enhancedNavigate, navigateToWallet],
-  ) as T & { navigateToWallet: () => void };
+    [originalNavigation, enhancedNavigate, navigateToWalletsList],
+  ) as T & { navigateToWalletsList: () => void };
 };

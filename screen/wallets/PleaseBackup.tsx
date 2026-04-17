@@ -29,7 +29,7 @@ const PleaseBackup: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<BackupStep>(BackupStep.SHOW_SEED);
   const handleVerifyComplete = useCallback(() => {
     InteractionManager.runAfterInteractions(() => {
-      navigation.navigateToWallet();
+      navigation.navigateToWalletsList();
     });
     return true;
   }, [navigation]);

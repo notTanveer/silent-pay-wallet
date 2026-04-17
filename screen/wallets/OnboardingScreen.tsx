@@ -15,12 +15,12 @@ type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'Onbo
 
 const OnboardingScreen: React.FC = () => {
   const { colors } = useTheme();
-  const { navigate, navigateToWallet } = useExtendedNavigation<NavigationProps>();
+  const { navigate, navigateToWalletsList } = useExtendedNavigation<NavigationProps>();
   const { addWallet, saveToDisk, wallets } = useStorage();
 
   const handleContinue = useCallback(async () => {
     if (wallets.length > 0) {
-      navigateToWallet();
+      navigateToWalletsList();
       return;
     }
 
@@ -47,15 +47,15 @@ const OnboardingScreen: React.FC = () => {
         walletID: w.getID(),
       },
     });
-  }, [wallets, navigateToWallet, addWallet, saveToDisk, navigate]);
+  }, [wallets, navigateToWalletsList, addWallet, saveToDisk, navigate]);
 
   const importWallet = useCallback(() => {
     if (wallets.length > 0) {
-      navigateToWallet();
+      navigateToWalletsList();
       return;
     }
     navigate('AddWalletRoot', { screen: 'ImportWallet' });
-  }, [wallets, navigateToWallet, navigate]);
+  }, [wallets, navigateToWalletsList, navigate]);
 
   const renderCoverScreen = useCallback(() => {
     return (

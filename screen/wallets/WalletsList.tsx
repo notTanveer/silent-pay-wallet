@@ -128,11 +128,6 @@ const WalletsList: React.FC = () => {
       textAlign: 'center',
       marginVertical: 20,
     },
-    noWalletSubText: {
-      color: colors.alternativeTextColor,
-      fontSize: 16,
-      textAlign: 'center',
-    },
     balanceAmountText: {
       color: colors.foregroundColor,
       fontSize: 36,
@@ -600,11 +595,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: 20,
     fontWeight: '500',
-  },
-  noWalletSubText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
   },
   balanceHeader: {
     paddingHorizontal: 16,

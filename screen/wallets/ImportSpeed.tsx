@@ -75,7 +75,7 @@ const ImportSpeed = () => {
       }
       await wallet.fetchBalance();
       addAndSaveWallet(wallet);
-      navigation.navigateToWallet();
+      navigation.navigateToWalletsList();
     } catch (e: any) {
       presentAlert({ message: e.message });
     } finally {
