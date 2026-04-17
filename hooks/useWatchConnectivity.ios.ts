@@ -7,7 +7,6 @@ import {
   useReachability,
   watchEvents,
 } from 'react-native-watch-connectivity';
-import { MultisigHDWallet } from '../class';
 import { Chain } from '../models/bitcoinUnits';
 import { FiatUnit } from '../models/fiatUnit';
 import { useSettings } from '../hooks/context/useSettings';
@@ -96,10 +95,9 @@ export function useWatchConnectivity() {
             transactions,
             chain: wallet.chain,
             hideBalance: wallet.hideBalance ? 1 : 0,
-            ...(wallet.chain === Chain.ONCHAIN &&
-              wallet.type !== MultisigHDWallet.type && {
-                xpub: wallet.getXpub() || wallet.getSecret(),
-              }),
+            ...(wallet.chain === Chain.ONCHAIN && {
+              xpub: wallet.getXpub() || wallet.getSecret(),
+            }),
             ...(wallet.allowBIP47() &&
               wallet.isBIP47Enabled() &&
               'getBIP47PaymentCode' in wallet && { paymentCode: wallet.getBIP47PaymentCode() }),
