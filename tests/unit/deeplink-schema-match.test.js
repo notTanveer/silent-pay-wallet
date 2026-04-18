@@ -73,34 +73,6 @@ describe.each(['', '//'])('unit - DeepLinkSchemaMatch', function (suffix) {
       },
       {
         argument: {
-          url: 'https://azte.co/?c1=3062&c2=2586&c3=5053&c4=5261',
-        },
-        expected: [
-          'AztecoRedeemRoot',
-          {
-            screen: 'AztecoRedeem',
-            params: {
-              aztecoVoucher: { c1: '3062', c2: '2586', c3: '5053', c4: '5261' },
-            },
-          },
-        ],
-      },
-      {
-        argument: {
-          url: 'https://azte.co/redeem?code=1111222233334444',
-        },
-        expected: [
-          'AztecoRedeemRoot',
-          {
-            screen: 'AztecoRedeem',
-            params: {
-              aztecoVoucher: { c1: '1111', c2: '2222', c3: '3333', c4: '4444' },
-            },
-          },
-        ],
-      },
-      {
-        argument: {
           url: 'bluewallet:setelectrumserver?server=electrum1.bluewallet.io%3A443%3As',
         },
         expected: [

@@ -26,16 +26,6 @@
         "ssl_port": "SSL Port",
         "suggested": "Suggested"
     },
-    "azteco": {
-        "codeIs": "Your voucher code is",
-        "errorBeforeRefeem": "Before redeeming, you must first add a Bitcoin wallet.",
-        "errorSomething": "Something went wrong. Is this voucher still valid?",
-        "redeem": "Redeem to wallet",
-        "redeemButton": "Redeem",
-        "success": "Success",
-        "successMessage": "Voucher redeemed successfully! Your funds should arrive in your Bitcoin wallet shortly.",
-        "title": "Redeem Azte.co voucher"
-    },
     "entropy": {
         "save": "Save",
         "title": "Entropy",

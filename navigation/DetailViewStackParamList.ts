@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-import { AztecoVoucher } from '../class/azteco';
 import { Transaction, TWallet } from '../class/wallets/types';
-=======
-import { LightningTransaction, Transaction, TWallet } from '../class/wallets/types';
-import { Chain } from '../models/bitcoinUnits';
->>>>>>> d7264e84f (REF: clean up nav after azteco removal)
 import { ElectrumServerItem } from '../screen/settings/ElectrumSettings';
 import { SendDetailsParams } from './SendDetailsStackParamList';
 import { AddWalletStackParamList } from './AddWalletStack';
@@ -47,25 +41,6 @@ export type DetailViewStackParamList = {
     params?: AddWalletStackParamList[keyof AddWalletStackParamList];
   };
   SendDetailsRoot: SendDetailsParams;
-<<<<<<< HEAD
-  AztecoRedeemRoot: {
-    screen: string;
-    params: {
-      aztecoVoucher: AztecoVoucher;
-    };
-  };
-  AztecoRedeem: { aztecoVoucher: AztecoVoucher };
-=======
-  LNDCreateInvoiceRoot: undefined;
-  ScanLNDInvoiceRoot: {
-    screen: string;
-    params: {
-      paymentHash: string;
-      fromWalletID: string;
-      justPaid: boolean;
-    };
-  };
->>>>>>> d7264e84f (REF: clean up nav after azteco removal)
   WalletExportRoot: undefined;
   Settings: undefined;
   Currency: undefined;
