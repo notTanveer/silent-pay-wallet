@@ -131,7 +131,7 @@ const Broadcast: React.FC = () => {
             </View>
             <BlueSpacing20 />
 
-            <Button title={loc.multisig.scan_or_open_file} onPress={handleQRScan} />
+            <Button title={loc.wallets.import_scan_qr} onPress={handleQRScan} />
             <BlueSpacing20 />
 
             <Button

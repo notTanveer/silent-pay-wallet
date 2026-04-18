@@ -76,20 +76,6 @@ export type SendDetailsStackParamList = {
     satoshiPerByte: number;
     feeSatoshi?: number;
   };
-  PsbtMultisig: {
-    memo?: string;
-    psbtBase64: string;
-    walletID: string;
-    launchedBy?: string;
-  };
-  PsbtMultisigQRCode: {
-    memo?: string;
-    psbtBase64: string;
-    fromWallet: string;
-    launchedBy?: string;
-    isShowOpenScanner?: boolean;
-    onBarScanned?: string;
-  };
   Success: {
     fee?: number;
     amount: number;

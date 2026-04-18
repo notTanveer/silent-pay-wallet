@@ -41,7 +41,6 @@ const useCompanionListeners = (skipIfNotInitialized = true) => {
     saveToDisk,
     fetchAndSaveWalletTransactions,
     refreshAllWalletTransactions,
-    setSharedCosigner,
     walletsInitialized,
   } = useStorage();
   const appState = useRef<AppStateStatus>(AppState.currentState);
@@ -223,7 +222,6 @@ const useCompanionListeners = (skipIfNotInitialized = true) => {
                 wallets,
                 addWallet,
                 saveToDisk,
-                setSharedCosigner,
               },
             );
           } else {
@@ -234,7 +232,6 @@ const useCompanionListeners = (skipIfNotInitialized = true) => {
             wallets,
             addWallet,
             saveToDisk,
-            setSharedCosigner,
           });
         }
       } catch (err: any) {
@@ -243,7 +240,7 @@ const useCompanionListeners = (skipIfNotInitialized = true) => {
         presentAlert({ message: err.message || loc.send.qr_error_no_qrcode });
       }
     },
-    [wallets, addWallet, saveToDisk, setSharedCosigner, shouldActivateListeners],
+    [wallets, addWallet, saveToDisk, shouldActivateListeners],
   );
 
   const showClipboardAlert = useCallback(

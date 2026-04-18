@@ -31,7 +31,7 @@ export async function getEnabled(): Promise<boolean> {
 }
 
 const useDeviceQuickActions = () => {
-  const { wallets, walletsInitialized, isStorageEncrypted, addWallet, saveToDisk, setSharedCosigner } = useStorage();
+  const { wallets, walletsInitialized, isStorageEncrypted, addWallet, saveToDisk } = useStorage();
   const { preferredFiatCurrency, isQuickActionsEnabled } = useSettings();
   const { isViewAllWalletsEnabled, getSelectedDefaultWallet } = useOnAppLaunch();
 
@@ -120,7 +120,6 @@ const useDeviceQuickActions = () => {
       wallets,
       addWallet,
       saveToDisk,
-      setSharedCosigner,
     });
   };
 

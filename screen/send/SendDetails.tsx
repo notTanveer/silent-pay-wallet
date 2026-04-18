@@ -920,9 +920,6 @@ const SendDetails = () => {
       } else if (id === CommonToolTipActions.ImportTransactionQR.id) {
         selectedDataProcessor.current = CommonToolTipActions.ImportTransactionQR;
         importQrTransaction();
-      } else if (id === CommonToolTipActions.CoSignTransaction.id) {
-        selectedDataProcessor.current = CommonToolTipActions.CoSignTransaction;
-        navigateToQRCodeScanner();
       } else if (id === CommonToolTipActions.CoinControl.id) {
         handleCoinControl();
       } else if (id === CommonToolTipActions.InsertContact.id) {

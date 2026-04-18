@@ -25,8 +25,6 @@ interface StorageContextType {
   selectedWalletID: () => string | undefined; // Change from string|undefined to a function
   addWallet: (wallet: TWallet) => void;
   deleteWallet: (wallet: TWallet) => void;
-  currentSharedCosigner: string;
-  setSharedCosigner: (cosigner: string) => void;
   addAndSaveWallet: (wallet: TWallet) => Promise<void>;
   fetchAndSaveWalletTransactions: (walletID: string) => Promise<void>;
   walletsInitialized: boolean;
@@ -70,7 +68,6 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
     WalletTransactionsStatus.NONE,
   );
   const [walletsInitialized, setWalletsInitialized] = useState<boolean>(false);
-  const [currentSharedCosigner, setCurrentSharedCosigner] = useState<string>('');
 
   const selectedWalletID = useCallback((): string | undefined => {
     if (!navigationRef.current || !navigationRef.current.isReady()) return undefined;
@@ -542,8 +539,6 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       selectedWalletID,
       addWallet,
       deleteWallet,
-      currentSharedCosigner,
-      setSharedCosigner: setCurrentSharedCosigner,
       addAndSaveWallet,
       setItem: BlueApp.setItem,
       getItem: BlueApp.getItem,
@@ -574,7 +569,6 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       selectedWalletID,
       addWallet,
       deleteWallet,
-      currentSharedCosigner,
       addAndSaveWallet,
       fetchAndSaveWalletTransactions,
       walletsInitialized,

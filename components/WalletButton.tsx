@@ -29,13 +29,7 @@ const buttonDetails: Record<string, ButtonDetails> = {
     title: loc.wallets.add_bitcoin,
     explain: loc.wallets.add_bitcoin_explain,
     borderColorActive: 'newBlue',
-  },
-  Vault: {
-    image: require('../img/addWallet/vault.png'),
-    title: loc.multisig.multisig_vault,
-    explain: loc.multisig.multisig_vault_explain,
-    borderColorActive: 'foregroundColor',
-  },
+  }
 };
 
 const WalletButton: React.FC<WalletButtonProps> = ({ buttonType, testID, onPress, size, active }) => {

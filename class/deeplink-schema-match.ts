@@ -12,7 +12,6 @@ type TContext = {
   wallets: TWallet[];
   saveToDisk: () => void;
   addWallet: (wallet: TWallet) => void;
-  setSharedCosigner: (cosigner: string) => void;
 };
 
 type TBothBitcoinAndLightning = { bitcoin: string; lndInvoice: string } | undefined;
@@ -41,7 +40,7 @@ class DeeplinkSchemaMatch {
   static navigationRouteFor(
     event: { url: string },
     completionHandler: (args: TCompletionHandlerParams) => void,
-    context: TContext = { wallets: [], saveToDisk: () => {}, addWallet: () => {}, setSharedCosigner: () => {} },
+    context: TContext = { wallets: [], saveToDisk: () => {}, addWallet: () => {} },
   ) {
     if (event.url === null) {
       return;
@@ -101,17 +100,6 @@ class DeeplinkSchemaMatch {
         })
         .catch(e => console.warn(e));
       return;
-    } else if (DeeplinkSchemaMatch.isPossiblyCosignerFile(event.url)) {
-      readFileOutsideSandbox(decodeURI(event.url))
-        .then(file => {
-          // checks whether the necessary json keys are present in order to set a cosigner,
-          // doesn't validate the values this happens later
-          if (!file || !this.hasNeededJsonKeysForMultiSigSharing(file)) {
-            return;
-          }
-          context.setSharedCosigner(file);
-        })
-        .catch(e => console.warn(e));
     }
     let isBothBitcoinAndLightning: TBothBitcoinAndLightning;
     try {
@@ -225,13 +213,6 @@ class DeeplinkSchemaMatch {
     );
   }
 
-  static isPossiblyCosignerFile(filePath: string): boolean {
-    return (
-      (filePath.toLowerCase().startsWith('file:') || filePath.toLowerCase().startsWith('content:')) &&
-      filePath.toLowerCase().endsWith('.bwcosigner')
-    );
-  }
-
   static isBothBitcoinAndLightningOnWalletSelect(wallet: TWallet, uri: any): TCompletionHandlerParams {
     // Lightning removed: always route to on-chain SendDetails
     return [
@@ -272,20 +253,6 @@ class DeeplinkSchemaMatch {
 
   static isWidgetAction(text: string): boolean {
     return text.startsWith('widget?action=');
-  }
-
-  static hasNeededJsonKeysForMultiSigSharing(str: string): boolean {
-    let obj;
-
-    // Check if it's a valid JSON
-    try {
-      obj = JSON.parse(str);
-    } catch (e) {
-      return false;
-    }
-
-    // Check for the existence and type of the keys
-    return typeof obj.xfp === 'string' && typeof obj.xpub === 'string' && typeof obj.path === 'string';
   }
 
   static isBothBitcoinAndLightning(url: string): TBothBitcoinAndLightning {
