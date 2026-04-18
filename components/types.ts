@@ -41,16 +41,3 @@ export interface ToolTipMenuProps {
   onMenuWillShow?: () => void;
   onMenuWillHide?: () => void;
 }
-
-export enum HandOffActivityType {
-  ReceiveOnchain = 'org.bitshala.shroud.receiveonchain',
-  Xpub = 'org.bitshala.shroud.xpub',
-  ViewInBlockExplorer = 'org.bitshala.shroud.blockexplorer',
-}
-
-export interface HandOffComponentProps {
-  url?: string;
-  title?: string;
-  type: HandOffActivityType;
-  userInfo?: object;
-}
