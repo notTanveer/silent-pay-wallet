@@ -10,7 +10,6 @@ import { useStorage } from '../../hooks/context/useStorage';
 import { useSettings } from '../../hooks/context/useSettings';
 import { isDesktop } from '../../blue_modules/environment';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import { BlueSpacing20 } from '../../components/BlueSpacing';
 
 enum SettingsPrivacySection {
   None,
@@ -30,8 +29,6 @@ const SettingsPrivacy: React.FC = () => {
     setDoNotTrackStorage,
     isPrivacyBlurEnabled,
     setIsPrivacyBlurEnabled,
-    isWidgetBalanceDisplayAllowed,
-    setIsWidgetBalanceDisplayAllowedStorage,
     isClipboardGetContentEnabled,
     setIsClipboardGetContentEnabledStorage,
     isQuickActionsEnabled,
@@ -76,16 +73,6 @@ const SettingsPrivacy: React.FC = () => {
       setIsQuickActionsEnabledStorage(value);
     } catch (e) {
       console.debug('onQuickActionsValueChange catch', e);
-    }
-    setIsLoading(SettingsPrivacySection.None);
-  };
-
-  const onWidgetsTotalBalanceValueChange = async (value: boolean) => {
-    setIsLoading(SettingsPrivacySection.Widget);
-    try {
-      setIsWidgetBalanceDisplayAllowedStorage(value);
-    } catch (e) {
-      console.debug('onWidgetsTotalBalanceValueChange catch', e);
     }
     setIsLoading(SettingsPrivacySection.None);
   };
@@ -182,28 +169,6 @@ const SettingsPrivacy: React.FC = () => {
         }}
         subtitle={<Text style={styles.subtitleText}>{loc.settings.privacy_do_not_track_explanation}</Text>}
       />
-
-      {Platform.OS === 'ios' && (
-        <>
-          <BlueSpacing20 />
-          <Header leftText={loc.settings.widgets} />
-          <ListItem
-            title={loc.settings.total_balance}
-            Component={TouchableWithoutFeedback}
-            switch={{
-              onValueChange: onWidgetsTotalBalanceValueChange,
-              value: storageIsEncrypted ? false : isWidgetBalanceDisplayAllowed,
-              disabled: isLoading === SettingsPrivacySection.All || storageIsEncrypted,
-            }}
-            subtitle={
-              <>
-                <Text style={styles.subtitleText}>{loc.settings.total_balance_explanation}</Text>
-                {storageIsEncrypted && <Text style={styles.subtitleText}>{loc.settings.encrypted_feature_disabled}</Text>}
-              </>
-            }
-          />
-        </>
-      )}
 
       <ListItem title={loc.settings.privacy_system_settings} chevron onPress={openApplicationSettings} testID="PrivacySystemSettings" />
     </SafeAreaScrollView>
