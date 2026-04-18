@@ -9,7 +9,6 @@ import { useStorage } from '../hooks/context/useStorage';
 const DrawerRoot = lazy(() => import('./DrawerRoot'));
 const AddWalletStack = lazy(() => import('./AddWalletStack'));
 const SendDetailsStack = lazy(() => import('./SendDetailsStack'));
-const AztecoRedeemStackRoot = lazy(() => import('./AztecoRedeemStack'));
 const WalletExportStack = lazy(() => import('./WalletExportStack'));
 const WalletXpubStackRoot = lazy(() => import('./WalletXpubStack'));
 const SignVerifyStackRoot = lazy(() => import('./SignVerifyStack'));
@@ -51,12 +50,6 @@ const LazyAddWalletStack = () => (
 const LazySendDetailsStack = () => (
   <Suspense fallback={<LazyLoadingIndicator />}>
     <SendDetailsStack />
-  </Suspense>
-);
-
-const LazyAztecoRedeemStackRoot = () => (
-  <Suspense fallback={<LazyLoadingIndicator />}>
-    <AztecoRedeemStackRoot />
   </Suspense>
 );
 
@@ -107,7 +100,6 @@ const MainRoot = () => {
             }}
           />
           <DetailViewStack.Screen name="SendDetailsRoot" component={LazySendDetailsStack} options={NavigationFormNoSwipeDefaultOptions} />
-          <DetailViewStack.Screen name="AztecoRedeemRoot" component={LazyAztecoRedeemStackRoot} options={NavigationDefaultOptions} />
           <DetailViewStack.Screen
             name="WalletExportRoot"
             component={LazyWalletExportStack}
