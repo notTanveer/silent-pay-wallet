@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BLOCK_EXPLORERS, getBlockExplorerUrl, saveBlockExplorer, BlockExplorer, normalizeUrl } from '../../models/blockExplorer';
 import * as BlueElectrum from '../../blue_modules/BlueElectrum';
-import { isBalanceDisplayAllowed, setBalanceDisplayAllowed } from '../../hooks/useWidgetCommunication';
 import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import DefaultPreference from 'react-native-default-preference';
 import { isReadClipboardAllowed, setReadClipboardAllowed } from '../../blue_modules/clipboard';
@@ -14,9 +13,9 @@ import {
   getEnabled as getIsDeviceQuickActionsEnabled,
   setEnabled as setIsDeviceQuickActionsEnabled,
 } from '../../hooks/useDeviceQuickActions';
-import { getIsHandOffUseEnabled, setIsHandOffUseEnabled } from '../HandOffComponent';
 import { useStorage } from '../../hooks/context/useStorage';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
+
 const TotalWalletsBalanceKey = 'TotalWalletsBalance';
 const TotalWalletsBalancePreferredUnit = 'TotalWalletsBalancePreferredUnit';
 
@@ -78,14 +77,10 @@ interface SettingsContextType {
   setPreferredFiatCurrencyStorage: (currency: TFiatUnit) => Promise<void>;
   language: string;
   setLanguageStorage: (language: string) => Promise<void>;
-  isHandOffUseEnabled: boolean;
-  setIsHandOffUseEnabledAsyncStorage: (value: boolean) => Promise<void>;
   isPrivacyBlurEnabled: boolean;
   setIsPrivacyBlurEnabled: (value: boolean) => void;
   isDoNotTrackEnabled: boolean;
   setDoNotTrackStorage: (value: boolean) => Promise<void>;
-  isWidgetBalanceDisplayAllowed: boolean;
-  setIsWidgetBalanceDisplayAllowedStorage: (value: boolean) => Promise<void>;
   isLegacyURv1Enabled: boolean;
   setIsLegacyURv1EnabledStorage: (value: boolean) => Promise<void>;
   isClipboardGetContentEnabled: boolean;
@@ -107,14 +102,10 @@ const defaultSettingsContext: SettingsContextType = {
   setPreferredFiatCurrencyStorage: async () => {},
   language: 'en',
   setLanguageStorage: async () => {},
-  isHandOffUseEnabled: false,
-  setIsHandOffUseEnabledAsyncStorage: async () => {},
   isPrivacyBlurEnabled: true,
   setIsPrivacyBlurEnabled: () => {},
   isDoNotTrackEnabled: false,
   setDoNotTrackStorage: async () => {},
-  isWidgetBalanceDisplayAllowed: true,
-  setIsWidgetBalanceDisplayAllowedStorage: async () => {},
   isLegacyURv1Enabled: false,
   setIsLegacyURv1EnabledStorage: async () => {},
   isClipboardGetContentEnabled: true,
@@ -136,10 +127,8 @@ export const SettingsContext = createContext<SettingsContextType>(defaultSetting
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.memo(({ children }: { children: React.ReactNode }) => {
   const [preferredFiatCurrency, setPreferredFiatCurrencyState] = useState<TFiatUnit>(FiatUnit.USD);
   const [language, setLanguage] = useState<string>('en');
-  const [isHandOffUseEnabled, setIsHandOffUseEnabledState] = useState<boolean>(false);
   const [isPrivacyBlurEnabled, setIsPrivacyBlurEnabled] = useState<boolean>(true);
   const [isDoNotTrackEnabled, setIsDoNotTrackEnabled] = useState<boolean>(false);
-  const [isWidgetBalanceDisplayAllowed, setIsWidgetBalanceDisplayAllowed] = useState<boolean>(true);
   const [isLegacyURv1Enabled, setIsLegacyURv1Enabled] = useState<boolean>(false);
   const [isClipboardGetContentEnabled, setIsClipboardGetContentEnabled] = useState<boolean>(true);
   const [isQuickActionsEnabled, setIsQuickActionsEnabled] = useState<boolean>(true);
@@ -162,14 +151,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
         BlueElectrum.isDisabled().then(disabled => {
           setIsElectrumDisabled(disabled);
         }),
-        getIsHandOffUseEnabled().then(handOff => {
-          setIsHandOffUseEnabledState(handOff);
-        }),
         AsyncStorage.getItem(STORAGE_KEY).then(lang => {
           setLanguage(lang ?? 'en');
-        }),
-        isBalanceDisplayAllowed().then(balanceDisplayAllowed => {
-          setIsWidgetBalanceDisplayAllowed(balanceDisplayAllowed);
         }),
         isURv1Enabled().then(urv1Enabled => {
           setIsLegacyURv1Enabled(urv1Enabled);
@@ -257,25 +240,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
     }
   }, []);
 
-  const setIsHandOffUseEnabledAsyncStorage = useCallback(async (value: boolean): Promise<void> => {
-    try {
-      console.debug('setIsHandOffUseEnabledAsyncStorage', value);
-      await setIsHandOffUseEnabled(value);
-      setIsHandOffUseEnabledState(value);
-    } catch (e) {
-      console.error('Error setting isHandOffUseEnabled:', e);
-    }
-  }, []);
-
-  const setIsWidgetBalanceDisplayAllowedStorage = useCallback(async (value: boolean): Promise<void> => {
-    try {
-      await setBalanceDisplayAllowed(value);
-      setIsWidgetBalanceDisplayAllowed(value);
-    } catch (e) {
-      console.error('Error setting isWidgetBalanceDisplayAllowed:', e);
-    }
-  }, []);
-
   const setIsLegacyURv1EnabledStorage = useCallback(async (value: boolean): Promise<void> => {
     try {
       if (value) {
@@ -343,14 +307,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
       setPreferredFiatCurrencyStorage,
       language,
       setLanguageStorage,
-      isHandOffUseEnabled,
-      setIsHandOffUseEnabledAsyncStorage,
       isPrivacyBlurEnabled,
       setIsPrivacyBlurEnabled,
       isDoNotTrackEnabled,
       setDoNotTrackStorage,
-      isWidgetBalanceDisplayAllowed,
-      setIsWidgetBalanceDisplayAllowedStorage,
       isLegacyURv1Enabled,
       setIsLegacyURv1EnabledStorage,
       isClipboardGetContentEnabled,
@@ -371,14 +331,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
       setPreferredFiatCurrencyStorage,
       language,
       setLanguageStorage,
-      isHandOffUseEnabled,
-      setIsHandOffUseEnabledAsyncStorage,
       isPrivacyBlurEnabled,
       setIsPrivacyBlurEnabled,
       isDoNotTrackEnabled,
       setDoNotTrackStorage,
-      isWidgetBalanceDisplayAllowed,
-      setIsWidgetBalanceDisplayAllowedStorage,
       isLegacyURv1Enabled,
       setIsLegacyURv1EnabledStorage,
       isClipboardGetContentEnabled,
