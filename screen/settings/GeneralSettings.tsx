@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import React from 'react';
-import { Platform, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import ListItem, { PressableWrapper } from '../../components/ListItem';
 import { useTheme } from '../../components/themes';
 import loc from '../../loc';
@@ -21,16 +21,12 @@ const styles = StyleSheet.create({
 
 const GeneralSettings: React.FC = () => {
   const { wallets } = useStorage();
-  const { isHandOffUseEnabled, setIsHandOffUseEnabledAsyncStorage, isLegacyURv1Enabled, setIsLegacyURv1EnabledStorage } = useSettings();
+  const { isLegacyURv1Enabled, setIsLegacyURv1EnabledStorage } = useSettings();
   const { navigate } = useNavigation<NavigationProp>();
   const { colors } = useTheme();
 
   const navigateToPrivacy = () => {
     navigate('SettingsPrivacy');
-  };
-
-  const onHandOffUseEnabledChange = async (value: boolean) => {
-    await setIsHandOffUseEnabledAsyncStorage(value);
   };
 
   const stylesWithThemeHook = {
@@ -51,16 +47,6 @@ const GeneralSettings: React.FC = () => {
         </>
       )}
       <ListItem title={loc.settings.privacy} onPress={navigateToPrivacy} testID="SettingsPrivacy" chevron />
-      {Platform.OS === 'ios' ? (
-        <>
-          <ListItem
-            title={loc.settings.general_continuity}
-            Component={PressableWrapper}
-            switch={{ onValueChange: onHandOffUseEnabledChange, value: isHandOffUseEnabled }}
-            subtitle={loc.settings.general_continuity_e}
-          />
-        </>
-      ) : null}
       <ListItem
         Component={PressableWrapper}
         title="Legacy URv1 QR"
