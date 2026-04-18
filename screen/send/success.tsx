@@ -10,9 +10,6 @@ import SafeArea from '../../components/SafeArea';
 import { useTheme } from '../../components/themes';
 import loc from '../../loc';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
-import HandOffComponent from '../../components/HandOffComponent';
-import { HandOffActivityType } from '../../components/types';
-import { useSettings } from '../../hooks/context/useSettings';
 import { SendDetailsStackParamList } from '../../navigation/SendDetailsStackParamList.ts';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation.ts';
 
@@ -21,9 +18,8 @@ type RouteProps = RouteProp<SendDetailsStackParamList, 'Success'>;
 const Success = () => {
   const navigation = useExtendedNavigation();
   const { colors } = useTheme();
-  const { selectedBlockExplorer } = useSettings();
   const route = useRoute<RouteProps>();
-  const { amount, fee, amountUnit = BitcoinUnit.BTC, invoiceDescription = '', txid } = route.params || {};
+  const { amount, fee, amountUnit = BitcoinUnit.BTC, invoiceDescription = '' } = route.params || {};
   const stylesHook = StyleSheet.create({
     root: {
       backgroundColor: colors.elevated,
@@ -51,13 +47,6 @@ const Success = () => {
       <View style={styles.buttonContainer}>
         <Button onPress={onDonePressed} title={loc.send.success_done} />
       </View>
-      {txid && (
-        <HandOffComponent
-          title={loc.transactions.details_title}
-          type={HandOffActivityType.ViewInBlockExplorer}
-          url={`${selectedBlockExplorer.url}/tx/${txid}`}
-        />
-      )}
     </SafeArea>
   );
 };

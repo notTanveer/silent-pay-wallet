@@ -5,14 +5,12 @@ import Share from 'react-native-share';
 import { BlueText } from '../../BlueComponents';
 import Button from '../../components/Button';
 import CopyTextToClipboard from '../../components/CopyTextToClipboard';
-import HandOffComponent from '../../components/HandOffComponent';
 import QRCodeComponent from '../../components/QRCodeComponent';
 import SafeArea from '../../components/SafeArea';
 import { useScreenProtect } from '../../hooks/useScreenProtect';
 import loc from '../../loc';
 import { styles, useDynamicStyles } from './xpub.styles';
 import { useStorage } from '../../hooks/context/useStorage';
-import { HandOffActivityType } from '../../components/types';
 import { useSettings } from '../../hooks/context/useSettings';
 import { BlueSpacing20 } from '../../components/BlueSpacing';
 
@@ -109,7 +107,6 @@ const WalletXpub: React.FC = () => {
 
             {xPubText && <CopyTextToClipboard text={xPubText} />}
           </View>
-          <HandOffComponent title={loc.wallets.xpub_title} type={HandOffActivityType.Xpub} userInfo={{ xpub: xPubText }} />
           <View style={styles.share}>
             <Button onPress={handleShareButtonPressed} title={loc.receive.details_share} />
           </View>

@@ -11,13 +11,11 @@ import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
 import CopyTextToClipboard from '../../components/CopyTextToClipboard';
-import HandOffComponent from '../../components/HandOffComponent';
 import QRCodeComponent from '../../components/QRCodeComponent';
 import SegmentedControl from '../../components/SegmentControl';
 import { useTheme } from '../../components/themes';
 import TipBox from '../../components/TipBox';
 import { TransactionPendingIconBig } from '../../components/TransactionPendingIconBig';
-import { HandOffActivityType } from '../../components/types';
 import { useSettings } from '../../hooks/context/useSettings';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
@@ -400,9 +398,6 @@ const ReceiveDetails = () => {
           />
         )}
         {showAddress && renderTabContent()}
-        {showAddress && address !== undefined && (
-          <HandOffComponent title={loc.send.details_address} type={HandOffActivityType.ReceiveOnchain} userInfo={{ address }} />
-        )}
         {showConfirmedBalance && renderConfirmedBalance()}
         {showPendingBalance && renderPendingBalance()}
 

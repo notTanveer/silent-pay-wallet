@@ -8,11 +8,9 @@ import { validateMnemonic } from '../../blue_modules/bip39';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { BlueText } from '../../BlueComponents';
 import { WatchOnlyWallet } from '../../class';
-import HandOffComponent from '../../components/HandOffComponent';
 import QRCodeComponent from '../../components/QRCodeComponent';
 import SeedWords from '../../components/SeedWords';
 import { useTheme } from '../../components/themes';
-import { HandOffActivityType } from '../../components/types';
 import { useSettings } from '../../hooks/context/useSettings';
 import { useStorage } from '../../hooks/context/useStorage';
 import useAppState from '../../hooks/useAppState';
@@ -202,10 +200,6 @@ const WalletExport: React.FC = () => {
           <BlueText style={styles.writeText}>{loc.wallets.copy_ln_public}</BlueText>
           <CopyBox text={secret} onPress={handleCopy} />
         </>
-      )}
-
-      {wallet.type === WatchOnlyWallet.type && (
-        <HandOffComponent title={loc.wallets.xpub_title} type={HandOffActivityType.Xpub} userInfo={{ xpub: secret }} />
       )}
 
       <BlueText style={styles.typeText}>
