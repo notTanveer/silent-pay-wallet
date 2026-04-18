@@ -220,8 +220,6 @@
         "encrypt_use_expl": "{type} will be used to confirm your identity before making a transaction, unlocking, exporting, or deleting a wallet. {type} will not be used to unlock encrypted storage.",
         "biometrics_fail": "If {type} is not enabled, or fails to unlock, you can use your device passcode as an alternative.",
         "general": "General",
-        "general_continuity": "Continuity",
-        "general_continuity_e": "When enabled, you will be able to view selected wallets, and transactions, using your other Apple iCloud connected devices.",
         "groundcontrol_explanation": "GroundControl is a free, open-source push notifications server for Bitcoin wallets. You can install your own GroundControl server and put its URL here to not rely on Shroud’s infrastructure. Leave blank to use GroundControl’s default server.",
         "header": "Settings",
         "language": "Language",
@@ -252,9 +250,6 @@
         "save": "Save",
         "saved": "Saved",
         "success_transaction_broadcasted": "Your transaction has been successfully broadcasted!",
-        "total_balance": "Total Balance",
-        "total_balance_explanation": "Display the total balance of all your wallets on your home screen widgets.",
-        "widgets": "Widgets",
         "warning": "⚠️ Work in Progress - This wallet is currently under active development.",
         "tools": "Tools"
     },
