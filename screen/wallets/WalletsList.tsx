@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useReducer, useRef, useMemo } from 'react';
-import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Alert, findNodeHandle, InteractionManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import A from '../../blue_modules/analytics';
 import { getClipboardContent } from '../../blue_modules/clipboard';
@@ -21,7 +21,6 @@ import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamL
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useSettings } from '../../hooks/context/useSettings';
-import useMenuElements from '../../hooks/useMenuElements';
 import SafeAreaSectionList from '../../components/SafeAreaSectionList';
 import { scanQrHelper } from '../../helpers/scan-qr.ts';
 import ScanIcon from '../../components/ScanIcon';
@@ -92,18 +91,15 @@ function reducer(state: WalletListState, action: WalletListAction) {
 }
 
 type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'WalletsList'>;
-type RouteProps = RouteProp<DetailViewStackParamList, 'WalletsList'>;
 
 const WalletsList: React.FC = () => {
   const [state, dispatch] = useReducer<React.Reducer<WalletListState, WalletListAction>>(reducer, initialState);
   const { isLoading } = state;
   const { sizeClass, isLarge } = useSizeClass();
-  const { registerTransactionsHandler, unregisterTransactionsHandler } = useMenuElements();
   const { wallets, getTransactions, getBalance, refreshAllWalletTransactions, saveToDisk } = useStorage();
   const { isElectrumDisabled } = useSettings();
   const { colors } = useTheme();
   const navigation = useExtendedNavigation<NavigationProps>();
-  const route = useRoute<RouteProps>();
   const dataSource = getTransactions(undefined, Infinity);
   const walletsCount = useRef<number>(wallets.length);
   const walletActionButtonsRef = useRef<any>();
@@ -188,30 +184,6 @@ const WalletsList: React.FC = () => {
       A(A.ENUM.GOT_ZERO_BALANCE);
     }
   }, [getBalance]);
-
-  useEffect(() => {
-    const screenKey = route.name;
-    console.log(`[WalletsList] Registering handler with key: ${screenKey}`);
-    registerTransactionsHandler(onRefresh, screenKey);
-
-    return () => {
-      console.log(`[WalletsList] Unmounting - cleaning up handler for: ${screenKey}`);
-      unregisterTransactionsHandler(screenKey);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onRefresh, registerTransactionsHandler, unregisterTransactionsHandler]);
-
-  useFocusEffect(
-    useCallback(() => {
-      const screenKey = route.name;
-
-      return () => {
-        console.log(`[WalletsList] Blurred - cleaning up handler for: ${screenKey}`);
-        unregisterTransactionsHandler(screenKey);
-      };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [unregisterTransactionsHandler]),
-  );
 
   useFocusEffect(
     useCallback(() => {

@@ -35,12 +35,9 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { Transaction } from '../../class/wallets/types';
 import getWalletTransactionsOptions, { WalletTransactionsRouteProps } from '../../navigation/helpers/getWalletTransactionsOptions';
-import useMenuElements from '../../hooks/useMenuElements';
 import { useSettings } from '../../hooks/context/useSettings';
 import useWalletSubscribe from '../../hooks/useWalletSubscribe';
 import { getClipboardContent } from '../../blue_modules/clipboard';
-import HandOffComponent from '../../components/HandOffComponent';
-import { HandOffActivityType } from '../../components/types';
 import WalletGradient from '../../class/wallet-gradient';
 import { WatchOnlyWallet } from '../../class';
 
@@ -56,7 +53,6 @@ type WalletTransactionsProps = NativeStackScreenProps<DetailViewStackParamList, 
 type TransactionListItem = Transaction & { type: 'transaction' | 'header' };
 const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { route: WalletTransactionsRouteProps }) => {
   const { saveToDisk } = useStorage();
-  const { registerTransactionsHandler, unregisterTransactionsHandler } = useMenuElements();
   const { isBiometricUseCapableAndEnabled } = useBiometrics();
   const { direction } = useLocale();
   const [isLoading, setIsLoading] = useState(false);
@@ -338,25 +334,6 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { rout
   };
 
   useEffect(() => {
-    const screenKey = `WalletTransactions-${walletID}`;
-    registerTransactionsHandler(() => refreshTransactions(true), screenKey);
-
-    return () => {
-      unregisterTransactionsHandler(screenKey);
-    };
-  }, [walletID, refreshTransactions, registerTransactionsHandler, unregisterTransactionsHandler]);
-
-  useFocusEffect(
-    useCallback(() => {
-      const screenKey = `WalletTransactions-${walletID}`;
-
-      return () => {
-        unregisterTransactionsHandler(screenKey);
-      };
-    }, [walletID, unregisterTransactionsHandler]),
-  );
-
-  useEffect(() => {
     const interval = setInterval(() => setBalance(wallet.getBalance()), 1000);
     return () => clearInterval(interval);
   }, [wallet]);
@@ -540,13 +517,6 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { rout
           />
         )}
       </FContainer>
-      {wallet.chain === Chain.ONCHAIN && wallet.getXpub && wallet.getXpub() ? (
-        <HandOffComponent
-          title={wallet.getLabel()}
-          type={HandOffActivityType.Xpub}
-          url={`https://www.blockonomics.co/#/search?q=${wallet.getXpub()}`}
-        />
-      ) : null}
     </View>
   );
 };
