@@ -83,7 +83,10 @@ const DevMenu: React.FC = () => {
         await wallet.generate();
         const label = getRandomLabelFromSecret(wallet.getSecret());
         wallet.setLabel(label);
-        addWallet(wallet);
+        if (!addWallet(wallet)) {
+          Alert.alert('Cannot add wallet', 'Single-wallet mode: a wallet already exists.');
+          return;
+        }
 
         Clipboard.setString(wallet.getSecret());
         Alert.alert('New Wallet created!', `Wallet secret copied to clipboard.\nLabel: ${label}`);

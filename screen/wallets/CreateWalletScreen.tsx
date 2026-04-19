@@ -6,6 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CommonActions } from '@react-navigation/native';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import loc from '../../loc';
+import presentAlert from '../../components/Alert';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { useStorage } from '../../hooks/context/useStorage';
 
@@ -13,10 +14,15 @@ type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'Wall
 
 const CreateWalletScreen = () => {
   const { navigate, dispatch } = useExtendedNavigation<NavigationProps>();
-  const { addWallet, saveToDisk } = useStorage();
+  const { addWallet, saveToDisk, wallets } = useStorage();
 
   const createWallet = async () => {
     try {
+      if (wallets.length > 0) {
+        presentAlert({ message: loc.wallets.single_wallet_limit });
+        return;
+      }
+
       // Create a new HDSilentPaymentsWallet (native segwit) directly
       const w = new HDSilentPaymentsWallet();
       w.setLabel(loc.wallets.details_title);
@@ -25,7 +31,10 @@ const CreateWalletScreen = () => {
       await w.generate();
 
       // Add to storage immediately so it can be found by ID
-      addWallet(w);
+      if (!addWallet(w)) {
+        presentAlert({ message: loc.wallets.single_wallet_limit });
+        return;
+      }
       await saveToDisk();
 
       // haptic feedback
