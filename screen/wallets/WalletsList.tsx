@@ -20,7 +20,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useStorage } from '../../hooks/context/useStorage';
-import TotalWalletsBalance from '../../components/TotalWalletsBalance';
 import { useSettings } from '../../hooks/context/useSettings';
 import useMenuElements from '../../hooks/useMenuElements';
 import SafeAreaSectionList from '../../components/SafeAreaSectionList';
@@ -101,7 +100,7 @@ const WalletsList: React.FC = () => {
   const { sizeClass, isLarge } = useSizeClass();
   const { registerTransactionsHandler, unregisterTransactionsHandler } = useMenuElements();
   const { wallets, getTransactions, getBalance, refreshAllWalletTransactions, saveToDisk } = useStorage();
-  const { isTotalBalanceEnabled, isElectrumDisabled } = useSettings();
+  const { isElectrumDisabled } = useSettings();
   const { colors } = useTheme();
   const navigation = useExtendedNavigation<NavigationProps>();
   const route = useRoute<RouteProps>();
@@ -110,9 +109,6 @@ const WalletsList: React.FC = () => {
   const walletActionButtonsRef = useRef<any>();
 
   const stylesHook = StyleSheet.create({
-    walletsListWrapper: {
-      backgroundColor: colors.brandingColor,
-    },
     listHeaderBack: {
       backgroundColor: colors.background,
       paddingTop: sizeClass === SizeClass.Large ? 8 : 0,
@@ -131,11 +127,6 @@ const WalletsList: React.FC = () => {
       fontSize: 18,
       textAlign: 'center',
       marginVertical: 20,
-    },
-    noWalletSubText: {
-      color: colors.alternativeTextColor,
-      fontSize: 16,
-      textAlign: 'center',
     },
     balanceAmountText: {
       color: colors.foregroundColor,
@@ -252,7 +243,7 @@ const WalletsList: React.FC = () => {
           navigation.navigate(...completionValue);
         });
       } catch (e: any) {
-        Alert.alert(loc.send.details_scan_error, e.message);
+        Alert.alert(loc.errors.error, e.message);
       }
     },
     [navigation],
@@ -309,7 +300,6 @@ const WalletsList: React.FC = () => {
       return (
         <View style={[styles.walletContainer, stylesHook.walletContainer]}>
           <Text style={[styles.noWalletText, stylesHook.noWalletText]}>{loc.wallets.list_empty_txs1}</Text>
-          <Text style={[styles.noWalletSubText, stylesHook.noWalletSubText]}>{loc.wallets.list_create_a_wallet}</Text>
         </View>
       );
     }
@@ -348,18 +338,11 @@ const WalletsList: React.FC = () => {
       switch (section.section.key) {
         case WalletsListSections.TRANSACTIONS:
           return renderListHeaderComponent();
-        case WalletsListSections.WALLET: {
-          return isTotalBalanceEnabled ? (
-            <View style={stylesHook.walletsListWrapper}>
-              <TotalWalletsBalance />
-            </View>
-          ) : null;
-        }
         default:
           return null;
       }
     },
-    [sizeClass, isTotalBalanceEnabled, renderListHeaderComponent, stylesHook.walletsListWrapper],
+    [sizeClass, renderListHeaderComponent],
   );
 
   const renderSectionFooter = useCallback(
@@ -370,7 +353,6 @@ const WalletsList: React.FC = () => {
             return (
               <View style={styles.footerRoot} testID="NoTransactionsMessage">
                 <Text style={styles.footerEmpty}>{loc.wallets.list_empty_txs1}</Text>
-                <Text style={styles.footerStart}>{loc.wallets.list_empty_txs2}</Text>
               </View>
             );
           } else {
@@ -597,12 +579,6 @@ const styles = StyleSheet.create({
     color: '#9aa0aa',
     textAlign: 'center',
   },
-  footerStart: {
-    fontSize: 18,
-    color: '#9aa0aa',
-    textAlign: 'center',
-    fontWeight: '600',
-  },
   walletContainer: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -612,11 +588,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: 20,
     fontWeight: '500',
-  },
-  noWalletSubText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
   },
   balanceHeader: {
     paddingHorizontal: 16,

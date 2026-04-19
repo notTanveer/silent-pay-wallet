@@ -36,12 +36,6 @@ const buttonDetails: Record<string, ButtonDetails> = {
     explain: loc.multisig.multisig_vault_explain,
     borderColorActive: 'foregroundColor',
   },
-  Lightning: {
-    image: require('../img/addWallet/lightning.png'),
-    title: loc.wallets.add_lightning,
-    explain: loc.wallets.add_lightning_explain,
-    borderColorActive: 'lnborderColor',
-  },
 };
 
 const WalletButton: React.FC<WalletButtonProps> = ({ buttonType, testID, onPress, size, active }) => {

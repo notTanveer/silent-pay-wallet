@@ -120,7 +120,6 @@
     "bip39": "3.1.0",
     "bitcoinjs-lib": "^7.0.0-rc.0",
     "bitcoinjs-message": "2.2.0",
-    "bolt11": "1.4.1",
     "buffer": "6.0.3",
     "coinselect": "github:BlueWallet/coinselect#35f8038",
     "crypto-browserify": "3.12.1",

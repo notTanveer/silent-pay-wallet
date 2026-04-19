@@ -10,7 +10,6 @@ import { HDSegwitBech32Wallet } from './hd-segwit-bech32-wallet';
 import { HDSegwitElectrumSeedP2WPKHWallet } from './hd-segwit-electrum-seed-p2wpkh-wallet';
 import { HDSegwitP2SHWallet } from './hd-segwit-p2sh-wallet';
 import { LegacyWallet } from './legacy-wallet';
-import { LightningCustodianWallet } from './lightning-custodian-wallet';
 import { MultisigHDWallet } from './multisig-hd-wallet';
 import { SegwitBech32Wallet } from './segwit-bech32-wallet';
 import { SegwitP2SHWallet } from './segwit-p2sh-wallet';
@@ -82,37 +81,6 @@ export type TransactionOutput = {
   };
 };
 
-export interface DecodedInvoice {
-  destination: string;
-  payment_hash: string;
-  num_satoshis: number;
-  timestamp: number;
-  expiry: number;
-  description: string;
-  description_hash: string;
-  fallback_addr: string;
-  cltv_expiry: string;
-  route_hints: any[];
-  [key: string]: any;
-}
-
-export type LightningTransaction = {
-  memo?: string;
-  type?: 'user_invoice' | 'payment_request' | 'bitcoind_tx' | 'paid_invoice';
-  payment_hash?: string | { data: string };
-  category?: 'receive';
-  timestamp: number; // seconds, not milliseconds
-  expire_time?: number;
-  ispaid?: boolean;
-  walletID?: string;
-  value?: number;
-  amt?: number;
-  fee?: number;
-  payment_preimage?: string;
-  payment_request?: string;
-  description?: string;
-};
-
 export type Transaction = {
   txid: string;
   hash: string;
@@ -155,7 +123,6 @@ export type TWallet =
   | HDSegwitP2SHWallet
   | HDTaprootWallet
   | LegacyWallet
-  | LightningCustodianWallet
   | MultisigHDWallet
   | SLIP39LegacyP2PKHWallet
   | SLIP39SegwitBech32Wallet

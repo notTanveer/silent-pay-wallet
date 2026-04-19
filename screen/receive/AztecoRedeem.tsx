@@ -1,7 +1,6 @@
 import { RouteProp, useRoute } from '@react-navigation/native';
-import { Icon } from '@rneui/themed';
 import React, { useEffect, useState } from 'react';
-import { I18nManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { BlueText } from '../../BlueComponents';
 import Azteco from '../../class/azteco';
@@ -66,18 +65,6 @@ const AztecoRedeem = () => {
     }
   };
 
-  const handleSelectWallet = (): void => {
-    const onWalletSelect = (toWallet: TWallet): void => {
-      setWallet(toWallet);
-      navigation.goBack();
-    };
-
-    navigation.navigate('SelectWallet', {
-      onWalletSelect,
-      availableWallets: wallets,
-    });
-  };
-
   const stylesHook = StyleSheet.create({
     root: {
       backgroundColor: colors.elevated,
@@ -104,14 +91,13 @@ const AztecoRedeem = () => {
         </BlueText>
 
         <View style={styles.selectWallet1}>
-          <TouchableOpacity accessibilityRole="button" style={styles.selectTouch} onPress={handleSelectWallet}>
+          <View style={styles.selectTouch}>
             <Text style={[styles.selectText, stylesHook.text]}>{loc.azteco.redeem}</Text>
-            <Icon name={I18nManager.isRTL ? 'angle-left' : 'angle-right'} size={18} type="font-awesome" color="#9aa0aa" />
-          </TouchableOpacity>
+          </View>
           <View style={styles.selectWallet2}>
-            <TouchableOpacity accessibilityRole="button" style={styles.selectTouch} onPress={handleSelectWallet}>
+            <View style={styles.selectTouch}>
               <Text style={[styles.selectWalletLabel, stylesHook.text]}>{wallet.getLabel()}</Text>
-            </TouchableOpacity>
+            </View>
           </View>
         </View>
 

@@ -500,11 +500,7 @@ const SendDetails = () => {
         error = frozenBalance > 0 ? loc.send.details_total_exceeds_balance_frozen : loc.send.details_total_exceeds_balance;
         console.log('validation error');
       } else if (transaction.address) {
-        const address = transaction.address.trim().toLowerCase();
-        if (address.startsWith('lnb') || address.startsWith('lightning:lnb')) {
-          error = loc.send.provided_address_is_invoice;
-          console.log('validation error');
-        }
+        // address validation handled below
       }
 
       if (!error) {

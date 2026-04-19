@@ -54,7 +54,6 @@ const isReactNative = typeof navigator !== 'undefined' && navigator?.product ===
 
 export class BlueApp {
   static FLAG_ENCRYPTED = 'data_encrypted';
-  static LNDHUB = 'lndhub';
   static DO_NOT_TRACK = 'donottrack';
   static HANDOFF_STORAGE_KEY = 'HandOff';
 
@@ -672,8 +671,7 @@ export class BlueApp {
           await wallet.fetchTransactions();
 
           if ('fetchPendingTransactions' in wallet) {
-            await wallet.fetchPendingTransactions();
-            await wallet.fetchUserInvoices();
+            await (wallet as any).fetchPendingTransactions();
           }
         }
       }
@@ -681,8 +679,7 @@ export class BlueApp {
       for (const wallet of this.wallets) {
         await wallet.fetchTransactions();
         if ('fetchPendingTransactions' in wallet) {
-          await wallet.fetchPendingTransactions();
-          await wallet.fetchUserInvoices();
+          await (wallet as any).fetchPendingTransactions();
         }
       }
     }

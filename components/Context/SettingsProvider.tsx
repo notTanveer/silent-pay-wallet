@@ -1,3 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BLOCK_EXPLORERS, getBlockExplorerUrl, saveBlockExplorer, BlockExplorer, normalizeUrl } from '../../models/blockExplorer';
+import * as BlueElectrum from '../../blue_modules/BlueElectrum';
+import { isBalanceDisplayAllowed, setBalanceDisplayAllowed } from '../../hooks/useWidgetCommunication';
 import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import DefaultPreference from 'react-native-default-preference';
 import { isReadClipboardAllowed, setReadClipboardAllowed } from '../../blue_modules/clipboard';
@@ -13,11 +17,8 @@ import {
 import { getIsHandOffUseEnabled, setIsHandOffUseEnabled } from '../HandOffComponent';
 import { useStorage } from '../../hooks/context/useStorage';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
-import { TotalWalletsBalanceKey, TotalWalletsBalancePreferredUnit } from '../TotalWalletsBalance';
-import { BLOCK_EXPLORERS, getBlockExplorerUrl, saveBlockExplorer, BlockExplorer, normalizeUrl } from '../../models/blockExplorer';
-import * as BlueElectrum from '../../blue_modules/BlueElectrum';
-import { isBalanceDisplayAllowed, setBalanceDisplayAllowed } from '../../hooks/useWidgetCommunication';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+const TotalWalletsBalanceKey = 'TotalWalletsBalance';
+const TotalWalletsBalancePreferredUnit = 'TotalWalletsBalancePreferredUnit';
 
 const getDoNotTrackStorage = async (): Promise<boolean> => {
   try {

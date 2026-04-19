@@ -19,7 +19,6 @@ const _lastTimeTriedToRefetchWallet: { [walletID: string]: number } = {};
 
 interface StorageContextType {
   wallets: TWallet[];
-  setWalletsWithNewOrder: (wallets: TWallet[]) => void;
   txMetadata: TTXMetadata;
   counterpartyMetadata: TCounterpartyMetadata;
   saveToDisk: (force?: boolean) => Promise<void>;
@@ -185,6 +184,11 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
 
   const addWallet = useCallback(
     (wallet: TWallet) => {
+      if (BlueApp.wallets.length > 0) {
+        console.warn('[StorageProvider] Single-wallet mode: refusing to add a second wallet');
+        return;
+      }
+
       if ('setOnBalanceChangeCallback' in wallet && typeof wallet.setOnBalanceChangeCallback === 'function') {
         wallet.setOnBalanceChangeCallback(forceWalletsUpdate);
       }
@@ -328,14 +332,6 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
     setWallets(BlueApp.getWallets());
   }, []);
 
-  const setWalletsWithNewOrder = useCallback(
-    (wlts: TWallet[]) => {
-      BlueApp.wallets = wlts;
-      saveToDisk();
-    },
-    [saveToDisk],
-  );
-
   // Initialize wallets
   useEffect(() => {
     if (walletsInitialized) {
@@ -478,9 +474,9 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
 
   const addAndSaveWallet = useCallback(
     async (w: TWallet) => {
-      if (wallets.some(i => i.getID() === w.getID())) {
+      if (wallets.length > 0) {
         triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
-        presentAlert({ message: 'This wallet has been previously imported.' });
+        presentAlert({ message: loc.wallets.single_wallet_limit });
         return;
       }
       const emptyWalletLabel = new LegacyWallet().getLabel();
@@ -539,7 +535,6 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
   const value: StorageContextType = useMemo(
     () => ({
       wallets,
-      setWalletsWithNewOrder,
       txMetadata: txMetadata.current,
       counterpartyMetadata: counterpartyMetadata.current,
       saveToDisk,
@@ -575,7 +570,6 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
     }),
     [
       wallets,
-      setWalletsWithNewOrder,
       saveToDisk,
       selectedWalletID,
       addWallet,

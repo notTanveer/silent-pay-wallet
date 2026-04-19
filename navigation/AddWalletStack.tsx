@@ -10,7 +10,6 @@ import {
   ImportSpeedComponent,
   ImportWalletComponent,
   PleaseBackupComponent,
-  PleaseBackupLNDHubComponent,
   ProvideEntropyComponent,
   WalletsAddMultisigComponent,
   MultisigAdvancedComponent,
@@ -36,9 +35,6 @@ export type AddWalletStackParamList = {
     password: string | undefined;
   };
   PleaseBackup: {
-    walletID: string;
-  };
-  PleaseBackupLNDHub: {
     walletID: string;
   };
   ProvideEntropy: {
@@ -102,11 +98,6 @@ const AddWalletStack = () => {
           headerBackVisible: false,
           title: loc.pleasebackup.null,
         })(theme)}
-      />
-      <Stack.Screen
-        name="PleaseBackupLNDHub"
-        component={PleaseBackupLNDHubComponent}
-        options={navigationStyle({ gestureEnabled: false, headerBackVisible: false, title: loc.pleasebackup.title })(theme)}
       />
       <Stack.Screen
         name="ProvideEntropy"

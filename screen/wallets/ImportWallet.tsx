@@ -75,7 +75,7 @@ const ImportWallet = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { isPrivacyBlurEnabled } = useSettings();
   const { enableScreenProtect, disableScreenProtect } = useScreenProtect();
-  const { addAndSaveWallet } = useStorage();
+  const { addAndSaveWallet, wallets } = useStorage();
   const stylesHook = StyleSheet.create({
     root: {
       backgroundColor: colors.elevated,
@@ -102,6 +102,11 @@ const ImportWallet = () => {
 
   const importMnemonic = useCallback(
     async (text: string) => {
+      if (wallets.length > 0) {
+        presentAlert({ title: loc.errors.error, message: loc.wallets.single_wallet_limit });
+        return;
+      }
+
       try {
         if (await Clipboard.hasString()) {
           Clipboard.setString('');
@@ -169,7 +174,7 @@ const ImportWallet = () => {
         setIsLoading(false);
       }
     },
-    [birthDate, addAndSaveWallet, navigation],
+    [birthDate, addAndSaveWallet, navigation, wallets],
   );
 
   const handleImport = useCallback(() => {

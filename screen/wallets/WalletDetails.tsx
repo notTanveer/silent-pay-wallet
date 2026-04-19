@@ -23,7 +23,6 @@ import {
   WatchOnlyWallet,
 } from '../../class';
 import { AbstractHDElectrumWallet } from '../../class/wallets/abstract-hd-electrum-wallet';
-import { LightningCustodianWallet } from '../../class/wallets/lightning-custodian-wallet';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
 import ListItem from '../../components/ListItem';
@@ -33,10 +32,10 @@ import prompt from '../../helpers/prompt';
 import { unlockWithBiometrics, useBiometrics } from '../../hooks/useBiometrics';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import loc, { formatBalanceWithoutSuffix } from '../../loc';
-import { BitcoinUnit, Chain } from '../../models/bitcoinUnits';
+import { BitcoinUnit } from '../../models/bitcoinUnits';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useFocusEffect, useRoute, RouteProp, usePreventRemove, useLocale } from '@react-navigation/native';
-import { LightningTransaction, Transaction, TWallet } from '../../class/wallets/types';
+import { Transaction, TWallet } from '../../class/wallets/types';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import HeaderMenuButton from '../../components/HeaderMenuButton';
 import { Action } from '../../components/types';
@@ -164,34 +163,17 @@ const WalletDetails: React.FC = () => {
 
   const exportHistoryContent = useCallback(() => {
     const headers = [loc.transactions.date, loc.transactions.txid, `${loc.send.create_amount} (${BitcoinUnit.BTC})`, loc.send.create_memo];
-    if (wallet.chain === Chain.OFFCHAIN) {
-      headers.push(loc.lnd.payment);
-    }
 
     const rows = [headers.join(',')];
     const transactions = wallet.getTransactions();
 
-    transactions.forEach((transaction: Transaction & LightningTransaction) => {
+    transactions.forEach((transaction: Transaction) => {
       const value = formatBalanceWithoutSuffix(transaction.value || 0, BitcoinUnit.BTC, true);
-      let hash: string = transaction.hash || '';
-      let memo = (transaction.hash && txMetadata[transaction.hash]?.memo?.trim()) || '';
-      let status = '';
-
-      if (wallet.chain === Chain.OFFCHAIN) {
-        hash = transaction.payment_hash ? transaction.payment_hash.toString() : '';
-        memo = transaction.memo || '';
-        status = transaction.ispaid ? loc._.success : loc.lnd.expired;
-        if (typeof hash !== 'string' && (hash as any)?.type === 'Buffer' && (hash as any)?.data) {
-          hash = Buffer.from((hash as any).data).toString('hex');
-        }
-      }
+      const hash: string = transaction.hash || '';
+      const memo = (transaction.hash && txMetadata[transaction.hash]?.memo?.trim()) || '';
 
       const date = transaction.timestamp ? new Date(transaction.timestamp * 1000).toString() : '';
       const data = [date, hash, value, memo];
-
-      if (wallet.chain === Chain.OFFCHAIN) {
-        data.push(status);
-      }
 
       rows.push(data.join(','));
     });
@@ -488,13 +470,6 @@ const WalletDetails: React.FC = () => {
                 <>
                   <Text style={[styles.textLabel2, stylesHook.textLabel2]}>{loc.multisig.how_many_signatures_can_bluewallet_make}</Text>
                   <BlueText>{wallet.howManySignaturesCanWeMake()}</BlueText>
-                </>
-              )}
-
-              {wallet.type === LightningCustodianWallet.type && (
-                <>
-                  <Text style={[styles.textLabel1, stylesHook.textLabel1]}>{loc.wallets.details_connected_to.toLowerCase()}</Text>
-                  <BlueText>{wallet.getBaseURI()}</BlueText>
                 </>
               )}
 

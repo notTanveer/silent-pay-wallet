@@ -11,7 +11,7 @@ import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/h
 import { getDefaultIndexer } from '../../blue_modules/SilentPaymentIndexer';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'WalletsList'>;
+type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'Onboarding'>;
 
 const OnboardingScreen: React.FC = () => {
   const { colors } = useTheme();

@@ -9,7 +9,6 @@ const CreateTransaction = lazy(() => import('../screen/send/create'));
 const PsbtMultisig = lazy(() => import('../screen/send/psbtMultisig'));
 const PsbtMultisigQRCode = lazy(() => import('../screen/send/PsbtMultisigQRCode'));
 const Success = lazy(() => import('../screen/send/success'));
-const SelectWallet = lazy(() => import('../screen/wallets/SelectWallet'));
 const CoinControl = lazy(() => import('../screen/send/CoinControl'));
 const PaymentCodesList = lazy(() => import('../screen/wallets/PaymentCodesList'));
 
@@ -47,11 +46,6 @@ export const PsbtMultisigQRCodeComponent = () => (
 export const SuccessComponent = () => (
   <Suspense fallback={<LazyLoadingIndicator />}>
     <Success />
-  </Suspense>
-);
-export const SelectWalletComponent = () => (
-  <Suspense fallback={<LazyLoadingIndicator />}>
-    <SelectWallet />
   </Suspense>
 );
 export const CoinControlComponent = () => (

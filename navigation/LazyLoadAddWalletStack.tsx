@@ -8,7 +8,6 @@ const ImportCustomDerivationPath = lazy(() => import('../screen/wallets/ImportCu
 const ImportSpeed = lazy(() => import('../screen/wallets/ImportSpeed'));
 const ImportWallet = lazy(() => import('../screen/wallets/ImportWallet'));
 const PleaseBackup = lazy(() => import('../screen/wallets/PleaseBackup'));
-const PleaseBackupLNDHub = lazy(() => import('../screen/wallets/pleaseBackupLNDHub'));
 const ProvideEntropy = lazy(() => import('../screen/wallets/ProvideEntropy'));
 const WalletsAddMultisig = lazy(() => import('../screen/wallets/WalletsAddMultisig'));
 const MultisigAdvanced = lazy(() => import('../screen/wallets/MultisigAdvanced'));
@@ -42,12 +41,6 @@ export const ImportSpeedComponent = () => (
 export const PleaseBackupComponent = () => (
   <Suspense fallback={<LazyLoadingIndicator />}>
     <PleaseBackup />
-  </Suspense>
-);
-
-export const PleaseBackupLNDHubComponent = () => (
-  <Suspense fallback={<LazyLoadingIndicator />}>
-    <PleaseBackupLNDHub />
   </Suspense>
 );
 

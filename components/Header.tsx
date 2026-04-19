@@ -1,15 +1,13 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from './themes';
-import AddWalletButton from './AddWalletButton';
 
 interface HeaderProps {
   leftText: string;
   isDrawerList?: boolean;
-  onNewWalletPress?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ leftText, isDrawerList, onNewWalletPress }) => {
+export const Header: React.FC<HeaderProps> = ({ leftText, isDrawerList }) => {
   const { colors } = useTheme();
   const styleWithProps = StyleSheet.create({
     root: {
@@ -25,7 +23,6 @@ export const Header: React.FC<HeaderProps> = ({ leftText, isDrawerList, onNewWal
   return (
     <View style={[styles.root, styleWithProps.root]}>
       <Text style={[styles.text, styleWithProps.text]}>{leftText}</Text>
-      {onNewWalletPress && <AddWalletButton onPress={onNewWalletPress} />}
     </View>
   );
 };
