@@ -3,7 +3,6 @@ import * as bitcoin from 'bitcoinjs-lib';
 import URL from 'url';
 import { readFileOutsideSandbox } from '../blue_modules/fs';
 import { Chain } from '../models/bitcoinUnits';
-import { WatchOnlyWallet } from './';
 import type { TWallet } from './wallets/types';
 
 type TCompletionHandlerParams = [string, object];
@@ -119,17 +118,6 @@ class DeeplinkSchemaMatch {
           screen: 'SendDetails',
           params: {
             uri: event.url.replace('://', ':'),
-          },
-        },
-      ]);
-    } else if (new WatchOnlyWallet().setSecret(event.url).init().valid()) {
-      completionHandler([
-        'AddWalletRoot',
-        {
-          screen: 'ImportWallet',
-          params: {
-            triggerImport: true,
-            label: event.url,
           },
         },
       ]);

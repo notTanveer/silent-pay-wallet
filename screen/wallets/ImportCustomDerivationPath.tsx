@@ -2,11 +2,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { FlatList, StyleSheet, TextInput, View } from 'react-native';
+
 import debounce from '../../blue_modules/debounce';
 import { BlueFormLabel, BlueTextCentered } from '../../BlueComponents';
-import { HDLegacyP2PKHWallet, HDSegwitBech32Wallet, HDSegwitP2SHWallet } from '../../class';
 import { validateBip32 } from '../../class/wallet-import';
-import { TWallet } from '../../class/wallets/types';
+import type { TWallet } from '../../class/wallets/types';
 import Button from '../../components/Button';
 import SafeArea from '../../components/SafeArea';
 import { useTheme } from '../../components/themes';
@@ -16,6 +16,7 @@ import loc from '../../loc';
 import { AddWalletStackParamList } from '../../navigation/AddWalletStack';
 import { useSettings } from '../../hooks/context/useSettings';
 import { BlueSpacing20 } from '../../components/BlueSpacing';
+import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 
 type RouteProps = RouteProp<AddWalletStackParamList, 'ImportCustomDerivationPath'>;
 type NavigationProp = NativeStackNavigationProp<AddWalletStackParamList, 'ImportCustomDerivationPath'>;
@@ -23,72 +24,53 @@ type NavigationProp = NativeStackNavigationProp<AddWalletStackParamList, 'Import
 const ListEmptyComponent: React.FC = () => <BlueTextCentered>{loc.wallets.import_wrong_path}</BlueTextCentered>;
 
 const WRONG_PATH = 'WRONG_PATH';
-enum STATUS {
-  WALLET_FOUND = 'WALLET_FOUND',
-  WALLET_NOTFOUND = 'WALLET_NOTFOUND',
-  WALLET_UNKNOWN = 'WALLET_UNKNOWN',
+enum Status {
+  WalletFound = 'WALLET_FOUND',
+  WalletNotFound = 'WALLET_NOTFOUND',
+  WalletUnknown = 'WALLET_UNKNOWN',
 }
-type TWalletsByType = { [type: string]: TWallet };
-type TWalletsByPath = { [path: string]: TWalletsByType | 'WRONG_PATH' };
 
-type TUsedByType = { [type: string]: STATUS };
-type TUsedByPath = { [path: string]: TUsedByType };
-
-type TItem = [type: string, typeReadable: string, STATUS | undefined];
+type WalletByPath = Record<string, TWallet | typeof WRONG_PATH>;
+type UsedByPath = Record<string, Status>;
+type Item = [type: string, typeReadable: string, Status | undefined];
 
 const ImportCustomDerivationPath: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { colors } = useTheme();
   const { importText, password } = useRoute<RouteProps>().params;
   const { addAndSaveWallet } = useStorage();
-  const [path, setPath] = useState<string>("m/84'/0'/0'");
-  const [wallets, setWallets] = useState<TWalletsByPath>({});
-  const [used, setUsed] = useState<TUsedByPath>({});
-  const [selected, setSelected] = useState<string>('');
-  const importing = useRef(false);
   const { isElectrumDisabled } = useSettings();
 
+  const [path, setPath] = useState<string>(HDSilentPaymentsWallet.derivationPath);
+  const [wallets, setWallets] = useState<WalletByPath>({});
+  const [used, setUsed] = useState<UsedByPath>({});
+  const importing = useRef(false);
+
   const debouncedSavePath = useRef(
-    debounce(async newPath => {
+    debounce(async (newPath: string) => {
       if (!validateBip32(newPath)) {
-        setWallets(ws => ({ ...ws, [newPath]: WRONG_PATH }));
+        setWallets(currentWallets => ({ ...currentWallets, [newPath]: WRONG_PATH }));
         return;
       }
 
-      // create wallets
-      const newWallets: { [type: string]: TWallet } = {};
-      for (const Wallet of [HDLegacyP2PKHWallet, HDSegwitP2SHWallet, HDSegwitBech32Wallet]) {
-        const wallet = new Wallet();
-        wallet.setSecret(importText);
-        if (password) {
-          wallet.setPassphrase(password);
-        }
-        wallet.setDerivationPath(newPath);
-        newWallets[Wallet.type] = wallet;
+      const wallet = new HDSilentPaymentsWallet();
+      wallet.setSecret(importText);
+      if (password) {
+        wallet.setPassphrase(password);
       }
-      setWallets(ws => ({ ...ws, [newPath]: newWallets }));
+      wallet.setDerivationPath(newPath);
+      setWallets(currentWallets => ({ ...currentWallets, [newPath]: wallet }));
 
       if (isElectrumDisabled) {
-        // do not check if electrum is disabled
-        Object.values(newWallets).forEach(w => {
-          setUsed(u => ({ ...u, [newPath]: { ...u[newPath], [w.type]: STATUS.WALLET_UNKNOWN } }));
-        });
+        setUsed(currentUsed => ({ ...currentUsed, [newPath]: Status.WalletUnknown }));
         return;
       }
 
-      // discover was they ever used
-      const promises = Object.values(newWallets).map(w => {
-        return w.wasEverUsed().then(v => {
-          const status = v ? STATUS.WALLET_FOUND : STATUS.WALLET_NOTFOUND;
-          setUsed(u => ({ ...u, [newPath]: { ...u[newPath], [w.type]: status } }));
-        });
-      });
       try {
-        await Promise.all(promises);
-      } catch (e) {
-        Object.values(newWallets).forEach(w => {
-          setUsed(u => ({ ...u, [newPath]: { ...u[newPath], [w.type]: STATUS.WALLET_UNKNOWN } }));
-        });
+        const wasUsed = await wallet.wasEverUsed();
+        setUsed(currentUsed => ({ ...currentUsed, [newPath]: wasUsed ? Status.WalletFound : Status.WalletNotFound }));
+      } catch (_error) {
+        setUsed(currentUsed => ({ ...currentUsed, [newPath]: Status.WalletUnknown }));
       }
     }, 500),
   );
@@ -98,13 +80,9 @@ const ImportCustomDerivationPath: React.FC = () => {
     debouncedSavePath.current(path);
   }, [path, wallets]);
 
-  const items: TItem[] = useMemo(() => {
+  const items: Item[] = useMemo(() => {
     if (wallets[path] === WRONG_PATH) return [];
-    return [
-      [HDLegacyP2PKHWallet.type, HDLegacyP2PKHWallet.typeReadable, used[path]?.[HDLegacyP2PKHWallet.type]],
-      [HDSegwitP2SHWallet.type, HDSegwitP2SHWallet.typeReadable, used[path]?.[HDSegwitP2SHWallet.type]],
-      [HDSegwitBech32Wallet.type, HDSegwitBech32Wallet.typeReadable, used[path]?.[HDSegwitBech32Wallet.type]],
-    ];
+    return [[HDSilentPaymentsWallet.type, HDSilentPaymentsWallet.typeReadable, used[path]]];
   }, [path, used, wallets]);
 
   const stylesHook = StyleSheet.create({
@@ -121,35 +99,36 @@ const ImportCustomDerivationPath: React.FC = () => {
     },
   });
 
-  const saveWallet = (type: string) => {
-    if (importing.current) return;
+  const saveWallet = () => {
+    if (importing.current || wallets[path] === WRONG_PATH) return;
+    const candidateWallet = wallets[path];
+    if (candidateWallet == null) return;
     importing.current = true;
-    if (wallets[path] === WRONG_PATH) return;
-    addAndSaveWallet(wallets[path][type]);
+    addAndSaveWallet(candidateWallet);
     navigation.getParent()?.goBack();
   };
 
-  const renderItem = ({ item }: { item: TItem }) => {
+  const renderItem = ({ item }: { item: Item }) => {
     const [type, title, found] = item;
     let subtitle;
     switch (found) {
-      case STATUS.WALLET_FOUND:
+      case Status.WalletFound:
         subtitle = loc.wallets.import_derivation_found;
         break;
-      case STATUS.WALLET_NOTFOUND:
+      case Status.WalletNotFound:
         subtitle = loc.wallets.import_derivation_found_not;
         break;
-      case STATUS.WALLET_UNKNOWN:
+      case Status.WalletUnknown:
         subtitle = loc.wallets.import_derivation_unknown;
         break;
       default:
         subtitle = loc.wallets.import_derivation_loading;
     }
 
-    return <WalletToImport key={type} title={title} subtitle={subtitle} active={selected === type} onPress={() => setSelected(type)} />;
+    return <WalletToImport key={type} title={title} subtitle={subtitle} active onPress={() => undefined} />;
   };
 
-  const disabled = wallets[path] === WRONG_PATH || wallets[path]?.[selected] === undefined;
+  const disabled = wallets[path] === WRONG_PATH || !(path in wallets) || wallets[path] === undefined;
 
   return (
     <SafeArea style={[styles.root, stylesHook.root]}>
@@ -166,7 +145,7 @@ const ImportCustomDerivationPath: React.FC = () => {
       />
       <FlatList
         data={items}
-        keyExtractor={w => path + w[0]}
+        keyExtractor={item => path + item[0]}
         renderItem={renderItem}
         contentContainerStyle={styles.flatListContainer}
         ListEmptyComponent={ListEmptyComponent}
@@ -174,7 +153,7 @@ const ImportCustomDerivationPath: React.FC = () => {
 
       <View style={[styles.center, stylesHook.center]}>
         <View style={styles.buttonContainer}>
-          <Button disabled={disabled} title={loc.wallets.import_do_import} testID="ImportButton" onPress={() => saveWallet(selected)} />
+          <Button disabled={disabled} title={loc.wallets.import_do_import} testID="ImportButton" onPress={saveWallet} />
         </View>
       </View>
     </SafeArea>
