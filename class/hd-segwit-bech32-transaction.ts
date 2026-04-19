@@ -5,10 +5,26 @@ import assert from 'assert';
 import * as BlueElectrum from '../blue_modules/BlueElectrum';
 import { HDSegwitBech32Wallet } from './wallets/hd-segwit-bech32-wallet';
 import { HDSilentPaymentsWallet } from './wallets/hd-bip352-wallet';
-import { SegwitBech32Wallet } from './wallets/segwit-bech32-wallet';
 import { CreateTransactionUtxo } from './wallets/types.ts';
 import { CoinSelectOutput, CoinSelectReturnInput } from 'coinselect';
 import { isUint8Array, uint8ArrayToHex } from '../blue_modules/uint8array-extras';
+
+const witnessToBech32Address = (witness: string): string => {
+  const payment = bitcoin.payments.p2wpkh({
+    pubkey: Buffer.from(witness, 'hex'),
+    network: bitcoin.networks.bitcoin,
+  });
+
+  if (!payment.address) {
+    throw new Error('Could not derive address from witness data');
+  }
+
+  return payment.address;
+};
+
+const scriptPubKeyToAddress = (script: string): string => {
+  return bitcoin.address.fromOutputScript(Buffer.from(script, 'hex'), bitcoin.networks.bitcoin);
+};
 
 /**
  * Represents transaction of a BIP84 wallet.
@@ -17,7 +33,7 @@ import { isUint8Array, uint8ArrayToHex } from '../blue_modules/uint8array-extras
 export class HDSegwitBech32Transaction {
   private _txhex: string | null;
   private _txid: string | null;
-  private _wallet: HDSegwitBech32Wallet | undefined;
+  private _wallet: HDSegwitBech32Wallet | HDSilentPaymentsWallet | undefined;
   private _txDecoded: bitcoin.Transaction | undefined;
   private _remoteTx: any;
 
@@ -26,7 +42,7 @@ export class HDSegwitBech32Transaction {
    * @param txid {string|null} If txhex not present - txid whould be present
    * @param wallet {HDSegwitBech32Wallet|null} If set - a wallet object to which transacton belongs
    */
-  constructor(txhex: string | null, txid: string | null, wallet: HDSegwitBech32Wallet | null) {
+  constructor(txhex: string | null, txid: string | null, wallet: HDSegwitBech32Wallet | HDSilentPaymentsWallet | null) {
     if (!txhex && !txid) throw new Error('Bad arguments');
     this._txhex = txhex;
     this._txid = txid;
@@ -179,7 +195,7 @@ export class HDSegwitBech32Transaction {
         value = new BigNumber(value).multipliedBy(100000000).toNumber();
         wentIn += value;
         const witness = inp.witness[inp.witness.length - 1];
-        const address = String(SegwitBech32Wallet.witnessToAddress(isUint8Array(witness) ? uint8ArrayToHex(witness) : witness));
+        const address = witnessToBech32Address(isUint8Array(witness) ? uint8ArrayToHex(witness) : witness);
         utxos.push({ vout: inp.index, value, txid: reversedHash, address });
       }
     }
@@ -270,12 +286,9 @@ export class HDSegwitBech32Transaction {
     // if theres at least one output we dont own - we can cancel this transaction!
     for (const outp of this._txDecoded.outs) {
       const outpScript = outp.script;
-      if (
-        !this._wallet.weOwnAddress(
-          String(SegwitBech32Wallet.scriptPubKeyToAddress(isUint8Array(outpScript) ? uint8ArrayToHex(outpScript) : outpScript)),
-        )
-      )
+      if (!this._wallet.weOwnAddress(scriptPubKeyToAddress(isUint8Array(outpScript) ? uint8ArrayToHex(outpScript) : outpScript))) {
         return true;
+      }
     }
 
     return false;
@@ -313,6 +326,8 @@ export class HDSegwitBech32Transaction {
       newFeerate,
       /* meaningless in this context */ myAddress,
       (await this.getMaxUsedSequence()) + 1,
+      false,
+      0,
     );
   }
 
@@ -343,7 +358,7 @@ export class HDSegwitBech32Transaction {
       // not checking emptiness on purpose: it could unpredictably generate too far address because of unconfirmed tx.
     }
 
-    return this._wallet.createTransaction(utxos, targets, newFeerate, myAddress, (await this.getMaxUsedSequence()) + 1);
+    return this._wallet.createTransaction(utxos, targets, newFeerate, myAddress, (await this.getMaxUsedSequence()) + 1, false, 0);
   }
 
   /**
@@ -375,6 +390,8 @@ export class HDSegwitBech32Transaction {
         targetFeeRate + add,
         myAddress,
         HDSegwitBech32Wallet.defaultRBFSequence,
+        false,
+        0,
       );
       tx = createdTx.tx;
       inputs = createdTx.inputs;

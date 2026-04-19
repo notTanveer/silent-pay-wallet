@@ -13,15 +13,7 @@ import * as encryption from '../../blue_modules/encryption';
 import * as fs from '../../blue_modules/fs';
 import ecc from '../../blue_modules/noble_ecc';
 import { BlueText } from '../../BlueComponents';
-import {
-  HDAezeedWallet,
-  HDSegwitBech32Wallet,
-  HDSegwitP2SHWallet,
-  LegacyWallet,
-  SegwitP2SHWallet,
-  SLIP39LegacyP2PKHWallet,
-  TaprootWallet,
-} from '../../class';
+import { HDSegwitBech32Wallet, HDSegwitP2SHWallet, LegacyWallet } from '../../class';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
 import SaveFileButton from '../../components/SaveFileButton';
@@ -82,7 +74,7 @@ export default class SelfTest extends Component {
     try {
       if (typeof navigator !== 'undefined' && navigator.product === 'ReactNative') {
         const uniqs: Record<string, 1> = {};
-        const w = new SegwitP2SHWallet();
+        const w = new LegacyWallet();
         for (let c = 0; c < 1000; c++) {
           await w.generate();
           if (uniqs[w.getSecret()]) {
@@ -110,21 +102,10 @@ export default class SelfTest extends Component {
         // skipping RN-specific test'
       }
 
-      if (typeof navigator !== 'undefined' && navigator.product === 'ReactNative') {
-        const aezeed = new HDAezeedWallet();
-        aezeed.setSecret(
-          'abstract rhythm weird food attract treat mosquito sight royal actor surround ride strike remove guilt catch filter summer mushroom protect poverty cruel chaos pattern',
-        );
-        assertStrictEqual(await aezeed.validateMnemonicAsync(), true, 'Aezeed failed');
-        assertStrictEqual(aezeed._getExternalAddressByIndex(0), 'bc1qdjj7lhj9lnjye7xq3dzv3r4z0cta294xy78txn', 'Aezeed failed');
-      } else {
-        // skipping RN-specific test
-      }
-
-      let l: LegacyWallet | SegwitP2SHWallet | TaprootWallet = new LegacyWallet();
+      const l = new LegacyWallet();
       l.setSecret('L4ccWrPMmFDZw4kzAKFqJNxgHANjdy6b7YKNXMwB4xac4FLF3Tov');
       assertStrictEqual(l.getAddress(), '14YZ6iymQtBVQJk6gKnLCk49UScJK7SH4M');
-      let utxos: CreateTransactionUtxo[] = [
+      const utxos: CreateTransactionUtxo[] = [
         {
           txid: 'cc44e933a094296d9fe424ad7306f16916253a3d154d52e4f1a757c18242cec4',
           vout: 0,
@@ -134,7 +115,7 @@ export default class SelfTest extends Component {
         },
       ];
 
-      let txNew = l.createTransaction(
+      const txNew = l.createTransaction(
         utxos,
         [{ value: 90000, address: '1GX36PGBUrF8XahZEGQqHqnJGW2vCZteoB' }],
         1,
@@ -152,77 +133,6 @@ export default class SelfTest extends Component {
       assertStrictEqual(txBitcoin.outs.length, 2);
       assertStrictEqual('1GX36PGBUrF8XahZEGQqHqnJGW2vCZteoB', bitcoin.address.fromOutputScript(txBitcoin.outs[0].script)); // to address
       assertStrictEqual(l.getAddress(), bitcoin.address.fromOutputScript(txBitcoin.outs[1].script)); // change address
-
-      //
-
-      l = new SegwitP2SHWallet();
-      l.setSecret('Kxr9tQED9H44gCmp6HAdmemAzU3n84H3dGkuWTKvE23JgHMW8gct');
-      if (l.getAddress() !== '34AgLJhwXrvmkZS1o5TrcdeevMt22Nar53') {
-        throw new Error('failed to generate segwit P2SH address from WIF');
-      }
-
-      //
-
-      const wallet = new SegwitP2SHWallet();
-      wallet.setSecret('Ky1vhqYGCiCbPd8nmbUeGfwLdXB1h5aGwxHwpXrzYRfY5cTZPDo4');
-      assertStrictEqual(wallet.getAddress(), '3CKN8HTCews4rYJYsyub5hjAVm5g5VFdQJ');
-
-      utxos = [
-        {
-          txid: 'a56b44080cb606c0bd90e77fcd4fb34c863e68e5562e75b4386e611390eb860c',
-          vout: 0,
-          value: 300000,
-        },
-      ];
-
-      txNew = wallet.createTransaction(
-        utxos,
-        [{ value: 90000, address: '1GX36PGBUrF8XahZEGQqHqnJGW2vCZteoB' }],
-        1,
-        String(wallet.getAddress()),
-        0xffffffff,
-        false,
-        0,
-      );
-      const tx = bitcoin.Transaction.fromHex(txNew.tx!.toHex());
-      assertStrictEqual(
-        txNew.tx!.toHex(),
-        '020000000001010c86eb9013616e38b4752e56e5683e864cb34fcd7fe790bdc006b60c08446ba50000000017160014139dc70d73097f9d775f8a3280ba3e3435515641ffffffff02905f0100000000001976a914aa381cd428a4e91327fd4434aa0a08ff131f1a5a88aca73303000000000017a914749118baa93fb4b88c28909c8bf0a8202a0484f4870248304502210080545d30e3d30dff272ab11c91fd6150170b603239b48c3d56a3fa66bf240085022003762404e1b45975adc89f61ec1569fa19d6d4a8d405e060897754c489ebeade012103a5de146762f84055db3202c1316cd9008f16047f4f408c1482fdb108217eda0800000000',
-      );
-      assertStrictEqual(tx.ins.length, 1);
-      assertStrictEqual(tx.outs.length, 2);
-      assertStrictEqual('1GX36PGBUrF8XahZEGQqHqnJGW2vCZteoB', bitcoin.address.fromOutputScript(tx.outs[0].script)); // to address
-      assertStrictEqual(bitcoin.address.fromOutputScript(tx.outs[1].script), wallet.getAddress()); // change address
-
-      //
-
-      l = new TaprootWallet();
-      l.setSecret('L4PKRVk1Peaar5WuH5LiKfkTygWtFfGrFeH2g2t3YVVqiwpJjMoF');
-      if (l.getAddress() !== 'bc1pm6lqlel3qxefsx0v39nshtghasvvp6ghn3e5hd5q280j5m9h7csqrkzssu') {
-        throw new Error('failed to generate Taproot address from WIF');
-      }
-
-      //
-
-      const txNewTaproot = l.createTransaction(
-        [
-          {
-            value: 10000,
-            address: 'bc1pm6lqlel3qxefsx0v39nshtghasvvp6ghn3e5hd5q280j5m9h7csqrkzssu',
-            txid: '4dc4c9a03dd7005310a313c5ef1754e5e53888d587073f01a5a662501c12ac3b',
-            vout: 0,
-          },
-        ],
-        [{ address: '13HaCAB4jf7FYSZexJxoczyDDnutzZigjS' }],
-        1,
-        String(l.getAddress()),
-        0xffffffff,
-        false,
-        0,
-      );
-      if (!txNewTaproot.tx) {
-        throw new Error('failed to create Taproot tx');
-      }
 
       //
 
@@ -310,16 +220,6 @@ export default class SelfTest extends Component {
         );
         // bip38 with BlueCrypto doesn't support progress callback
         assertStrictEqual(callbackWasCalled, false, "bip38 doesn't use BlueCrypto");
-      }
-
-      // slip39 test
-      if (typeof navigator !== 'undefined' && navigator.product === 'ReactNative') {
-        const w = new SLIP39LegacyP2PKHWallet();
-        w.setSecret(
-          'shadow pistol academic always adequate wildlife fancy gross oasis cylinder mustang wrist rescue view short owner flip making coding armed\n' +
-            'shadow pistol academic acid actress prayer class unknown daughter sweater depict flip twice unkind craft early superior advocate guest smoking',
-        );
-        assertStrictEqual(w._getExternalAddressByIndex(0), '18pvMjy7AJbCDtv4TLYbGPbR7SzGzjqUpj', 'SLIP39 failed');
       }
 
       //

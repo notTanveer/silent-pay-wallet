@@ -13,7 +13,7 @@ import {
 import { writeFileAndExport } from '../../blue_modules/fs';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { BlueCard, BlueText } from '../../BlueComponents';
-import { HDAezeedWallet, HDSegwitBech32Wallet, LegacyWallet, SegwitBech32Wallet, SegwitP2SHWallet, WatchOnlyWallet } from '../../class';
+import { LegacyWallet, WatchOnlyWallet } from '../../class';
 import { AbstractHDElectrumWallet } from '../../class/wallets/abstract-hd-electrum-wallet';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
@@ -292,7 +292,7 @@ const WalletDetails: React.FC = () => {
   const exportInternals = async () => {
     if (backdoorPressed < 10) return setBackdoorPressed(backdoorPressed + 1);
     setBackdoorPressed(0);
-    if (wallet.type !== HDSegwitBech32Wallet.type) return;
+    if (!(wallet instanceof AbstractHDElectrumWallet)) return;
     const fileNameExternals = 'wallet-externals.json';
     const contents = JSON.stringify(
       {
@@ -323,7 +323,7 @@ const WalletDetails: React.FC = () => {
     setBackdoorPressed(0);
     const msg = 'Transactions & balances purged. Pls go to main screen and back to rerender screen';
 
-    if (wallet.type === HDSegwitBech32Wallet.type) {
+    if (wallet instanceof AbstractHDElectrumWallet) {
       wallet._txs_by_external_index = {};
       wallet._txs_by_internal_index = {};
       presentAlert({ message: msg });
@@ -388,10 +388,7 @@ const WalletDetails: React.FC = () => {
           <>
             <BlueCard style={styles.address}>
               {(() => {
-                if (
-                  [LegacyWallet.type, SegwitBech32Wallet.type, SegwitP2SHWallet.type].includes(wallet.type) ||
-                  (wallet.type === WatchOnlyWallet.type && !wallet.isHd())
-                ) {
+                if (wallet.type === LegacyWallet.type || (wallet.type === WatchOnlyWallet.type && !wallet.isHd())) {
                   return (
                     <>
                       <Text style={[styles.textLabel1, stylesHook.textLabel1]}>{loc.wallets.details_address.toLowerCase()}</Text>
@@ -435,12 +432,6 @@ const WalletDetails: React.FC = () => {
                 {wallet.typeReadable}
               </Text>
 
-              {wallet.type === HDAezeedWallet.type && (
-                <>
-                  <Text style={[styles.textLabel1, stylesHook.textLabel1]}>{loc.wallets.identity_pubkey.toLowerCase()}</Text>
-                  <BlueText>{wallet.getIdentityPubkey()}</BlueText>
-                </>
-              )}
               <BlueSpacing20 />
               <>
                 <Text onPress={exportInternals} style={[styles.textLabel2, stylesHook.textLabel2]}>

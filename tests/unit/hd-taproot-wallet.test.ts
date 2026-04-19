@@ -1,6 +1,6 @@
 import assert from 'assert';
 
-import { HDTaprootWallet, TaprootWallet } from '../../class';
+import { HDTaprootWallet } from '../../class';
 
 const utxos = [
   {
@@ -33,11 +33,6 @@ describe('Taproot HD (BIP86)', () => {
 
     assert.strictEqual(hd._getExternalWIFByIndex(0), 'KyRv5iFPHG7iB5E4CqvMzH3WFJVhbfYK4VY7XAedd9Ys69mEsPLQ');
     assert.ok(hd._getInternalWIFByIndex(0) !== hd._getInternalWIFByIndex(1));
-
-    const w = new TaprootWallet();
-    w.setSecret(hd._getExternalWIFByIndex(0) as string);
-
-    assert.strictEqual(w.getAddress(), hd._getExternalAddressByIndex(0));
 
     assert.ok(hd.getAllExternalAddresses().includes('bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr'));
 

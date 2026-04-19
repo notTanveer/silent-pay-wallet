@@ -6,9 +6,6 @@ import Realm from 'realm';
 import { sha256 as _sha256 } from '@noble/hashes/sha256';
 
 import { LegacyWallet } from '../class/wallets/legacy-wallet';
-import { SegwitBech32Wallet } from '../class/wallets/segwit-bech32-wallet';
-import { SegwitP2SHWallet } from '../class/wallets/segwit-p2sh-wallet';
-import { TaprootWallet } from '../class/wallets/taproot-wallet';
 import presentAlert from '../components/Alert';
 import loc from '../loc';
 import { GROUP_IO_BLUEWALLET } from './currency';
@@ -66,6 +63,14 @@ type ElectrumTransaction = {
 
 type ElectrumTransactionWithHex = ElectrumTransaction & {
   hex: string;
+};
+
+const decodeOutputAddress = (scriptHex: string): string | false => {
+  try {
+    return bitcoin.address.fromOutputScript(Buffer.from(scriptHex, 'hex'), bitcoin.networks.bitcoin);
+  } catch (_) {
+    return false;
+  }
 };
 
 type MempoolTransaction = {
@@ -600,20 +605,21 @@ export function txhexToElectrumTransaction(txhex: string): ElectrumTransactionWi
   for (const out of tx.outs) {
     const value = new BigNumber(out.value).dividedBy(100000000).toNumber();
     let address: false | string = false;
-    let type: false | string = false;
+    let type = 'nonstandard';
 
-    if (SegwitBech32Wallet.scriptPubKeyToAddress(uint8ArrayToHex(out.script))) {
-      address = SegwitBech32Wallet.scriptPubKeyToAddress(uint8ArrayToHex(out.script));
-      type = 'witness_v0_keyhash';
-    } else if (SegwitP2SHWallet.scriptPubKeyToAddress(uint8ArrayToHex(out.script))) {
-      address = SegwitP2SHWallet.scriptPubKeyToAddress(uint8ArrayToHex(out.script));
-      type = '???'; // TODO
-    } else if (LegacyWallet.scriptPubKeyToAddress(uint8ArrayToHex(out.script))) {
-      address = LegacyWallet.scriptPubKeyToAddress(uint8ArrayToHex(out.script));
-      type = '???'; // TODO
-    } else {
-      address = TaprootWallet.scriptPubKeyToAddress(uint8ArrayToHex(out.script));
+    const scriptHex = uint8ArrayToHex(out.script);
+    address = decodeOutputAddress(scriptHex);
+    const legacyAddress = LegacyWallet.scriptPubKeyToAddress(scriptHex);
+
+    if (typeof address === 'string' && address.startsWith('bc1p')) {
       type = 'witness_v1_taproot';
+    } else if (typeof address === 'string' && address.startsWith('bc1')) {
+      type = 'witness_v0_keyhash';
+    } else if (typeof address === 'string' && address.startsWith('3')) {
+      type = 'scripthash';
+    } else if (legacyAddress) {
+      address = legacyAddress;
+      type = 'pubkeyhash';
     }
 
     if (!address) {

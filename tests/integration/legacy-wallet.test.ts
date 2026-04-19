@@ -1,7 +1,7 @@
 import assert from 'assert';
 
 import * as BlueElectrum from '../../blue_modules/BlueElectrum';
-import { LegacyWallet, SegwitBech32Wallet, SegwitP2SHWallet } from '../../class';
+import { LegacyWallet } from '../../class';
 
 jest.setTimeout(30 * 1000);
 
@@ -107,92 +107,5 @@ describe('LegacyWallet', function () {
     assert.ok(w.getUtxo()[0].txid);
     assert.ok(w.getUtxo()[0].confirmations);
     assert.ok(w.getUtxo()[0].txhex);
-  });
-});
-
-describe('SegwitP2SHWallet', function () {
-  it('can generate segwit P2SH address from WIF', async () => {
-    const l = new SegwitP2SHWallet();
-    l.setSecret('Kxr9tQED9H44gCmp6HAdmemAzU3n84H3dGkuWTKvE23JgHMW8gct');
-    assert.ok(l.getAddress() === '34AgLJhwXrvmkZS1o5TrcdeevMt22Nar53', 'expected ' + l.getAddress());
-    assert.ok(l.getAddress() === (await l.getAddressAsync()));
-    assert.ok(l.weOwnAddress('34AgLJhwXrvmkZS1o5TrcdeevMt22Nar53'));
-    assert.ok(!l.weOwnAddress('garbage'));
-    // @ts-ignore wrong type on purpose
-    assert.ok(!l.weOwnAddress(false));
-  });
-});
-
-describe('SegwitBech32Wallet', function () {
-  it('can fetch balance', async () => {
-    const w = new SegwitBech32Wallet();
-    w._address = 'bc1q063ctu6jhe5k4v8ka99qac8rcm2tzjjnuktyrl';
-    assert.ok(w.weOwnAddress('bc1q063ctu6jhe5k4v8ka99qac8rcm2tzjjnuktyrl'));
-    assert.ok(w.weOwnAddress('BC1Q063CTU6JHE5K4V8KA99QAC8RCM2TZJJNUKTYRL'));
-    assert.ok(!w.weOwnAddress('garbage'));
-    // @ts-ignore wrong type on purpose
-    assert.ok(!w.weOwnAddress(false));
-    await w.fetchBalance();
-    assert.strictEqual(w.getBalance(), 69909);
-  });
-
-  it('can fetch UTXO', async () => {
-    const w = new SegwitBech32Wallet();
-    w._address = 'bc1q063ctu6jhe5k4v8ka99qac8rcm2tzjjnuktyrl';
-    await w.fetchUtxo();
-    const l1 = w.getUtxo().length;
-    assert.ok(w.getUtxo().length > 0, 'unexpected empty UTXO');
-
-    assert.ok(w.getUtxo()[0].value);
-    assert.ok(w.getUtxo()[0].vout === 0);
-    assert.ok(w.getUtxo()[0].txid);
-    assert.ok(w.getUtxo()[0].confirmations, JSON.stringify(w.getUtxo()[0], null, 2));
-    // double fetch shouldnt duplicate UTXOs:
-    await w.fetchUtxo();
-    const l2 = w.getUtxo().length;
-    assert.strictEqual(l1, l2);
-  });
-
-  it('can fetch TXs LegacyWallet', async () => {
-    const w = new LegacyWallet();
-    w._address = 'bc1quhnve8q4tk3unhmjts7ymxv8cd6w9xv8wy29uv';
-    await w.fetchTransactions();
-    assert.strictEqual(w.getTransactions().length, 2);
-
-    for (const tx of w.getTransactions()) {
-      assert.ok(tx.hash);
-      assert.ok(tx.value);
-      assert.ok(tx.timestamp);
-      assert.ok(tx.confirmations! > 1);
-    }
-
-    assert.strictEqual(w.getTransactions()[0].value, -892111);
-    assert.strictEqual(w.getTransactions()[1].value, 892111);
-  });
-
-  it('can fetch TXs SegwitBech32Wallet', async () => {
-    const w = new SegwitBech32Wallet();
-    w._address = 'bc1qn887fmetaytw4vj68vsh529ft408q8j9x3dndc';
-    assert.ok(w.weOwnAddress('bc1qn887fmetaytw4vj68vsh529ft408q8j9x3dndc'));
-    assert.ok(w.weOwnAddress('BC1QN887FMETAYTW4VJ68VSH529FT408Q8J9X3DNDC'));
-    assert.ok(!w.weOwnAddress('garbage'));
-    // @ts-ignore wrong type on purpose
-    assert.ok(!w.weOwnAddress(false));
-    await w.fetchTransactions();
-    assert.strictEqual(w.getTransactions().length, 2);
-    const tx = w.getTransactions()[1];
-    assert.ok(tx.hash);
-    assert.strictEqual(tx.value, 100000);
-    assert.ok(tx.timestamp);
-    assert.ok(tx.confirmations! > 1);
-
-    const tx0 = w.getTransactions()[0];
-    assert.ok(tx0.inputs);
-    assert.ok(tx0.inputs.length === 1);
-    assert.ok(tx0.outputs);
-    assert.ok(tx0.outputs.length === 2);
-
-    assert.ok(w.weOwnTransaction('49944e90fe917952e36b1967cdbc1139e60c89b4800b91258bf2345a77a8b888'));
-    assert.ok(!w.weOwnTransaction('825c12f277d1f84911ac15ad1f41a3de28e9d906868a930b0a7bca61b17c8881'));
   });
 });

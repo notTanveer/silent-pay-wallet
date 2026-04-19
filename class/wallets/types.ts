@@ -2,19 +2,11 @@ import * as bitcoin from 'bitcoinjs-lib';
 import { CoinSelectOutput, CoinSelectReturnInput, CoinSelectUtxo } from 'coinselect';
 
 import { BitcoinUnit } from '../../models/bitcoinUnits';
-import { HDAezeedWallet } from './hd-aezeed-wallet';
-import { HDLegacyBreadwalletWallet } from './hd-legacy-breadwallet-wallet';
-import { HDLegacyElectrumSeedP2PKHWallet } from './hd-legacy-electrum-seed-p2pkh-wallet';
 import { HDLegacyP2PKHWallet } from './hd-legacy-p2pkh-wallet';
 import { HDSegwitBech32Wallet } from './hd-segwit-bech32-wallet';
-import { HDSegwitElectrumSeedP2WPKHWallet } from './hd-segwit-electrum-seed-p2wpkh-wallet';
 import { HDSegwitP2SHWallet } from './hd-segwit-p2sh-wallet';
 import { LegacyWallet } from './legacy-wallet';
-import { SegwitBech32Wallet } from './segwit-bech32-wallet';
-import { SegwitP2SHWallet } from './segwit-p2sh-wallet';
-import { SLIP39LegacyP2PKHWallet, SLIP39SegwitBech32Wallet, SLIP39SegwitP2SHWallet } from './slip39-wallets';
 import { WatchOnlyWallet } from './watch-only-wallet';
-import { TaprootWallet } from './taproot-wallet.ts';
 import { HDTaprootWallet } from './hd-taproot-wallet.ts';
 import { HDSilentPaymentsWallet } from './hd-bip352-wallet.ts';
 
@@ -113,21 +105,11 @@ export type ExtendedTransaction = Transaction & {
 };
 
 export type TWallet =
-  | HDAezeedWallet
-  | HDLegacyBreadwalletWallet
-  | HDLegacyElectrumSeedP2PKHWallet
   | HDLegacyP2PKHWallet
   | HDSegwitBech32Wallet
-  | HDSegwitElectrumSeedP2WPKHWallet
   | HDSegwitP2SHWallet
   | HDTaprootWallet
   | LegacyWallet
-  | SLIP39LegacyP2PKHWallet
-  | SLIP39SegwitBech32Wallet
-  | SLIP39SegwitP2SHWallet
-  | SegwitBech32Wallet
-  | SegwitP2SHWallet
-  | TaprootWallet
   | WatchOnlyWallet
   | HDSilentPaymentsWallet;
 
