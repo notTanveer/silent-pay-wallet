@@ -28,10 +28,11 @@ import RNFS from 'react-native-fs';
 import { btcToSatoshi, fiatToBTC } from '../../blue_modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { BlueText } from '../../BlueComponents';
-import { HDSegwitBech32Wallet, WatchOnlyWallet } from '../../class';
+import { WatchOnlyWallet } from '../../class';
 import { ContactList } from '../../class/contact-list';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import { AbstractHDElectrumWallet } from '../../class/wallets/abstract-hd-electrum-wallet';
+import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import { CreateTransactionTarget, CreateTransactionUtxo, TWallet } from '../../class/wallets/types';
 import AddressInput from '../../components/AddressInput';
 import presentAlert from '../../components/Alert';
@@ -271,7 +272,7 @@ const SendDetails = () => {
     setChangeAddress(null);
     setParams({
       utxos: null,
-      isTransactionReplaceable: wallet.type === HDSegwitBech32Wallet.type && !routeParams.isTransactionReplaceable ? true : undefined,
+      isTransactionReplaceable: wallet.type === HDSilentPaymentsWallet.type && !routeParams.isTransactionReplaceable ? true : undefined,
     });
     // update wallet UTXO
     wallet
@@ -592,12 +593,12 @@ const SendDetails = () => {
     // preserving original since it will be mutated
 
     // without forcing `HDSegwitBech32Wallet` i had a weird ts error, complaining about last argument (fp)
-    const { tx, outputs, psbt, fee } = (wallet as HDSegwitBech32Wallet)?.createTransaction(
+    const { tx, outputs, psbt, fee } = (wallet as HDSilentPaymentsWallet)?.createTransaction(
       lutxo,
       targets,
       requestedSatPerByte,
       change,
-      isTransactionReplaceable ? HDSegwitBech32Wallet.defaultRBFSequence : HDSegwitBech32Wallet.finalRBFSequence,
+      isTransactionReplaceable ? HDSilentPaymentsWallet.defaultRBFSequence : HDSilentPaymentsWallet.finalRBFSequence,
       false,
       0,
     );

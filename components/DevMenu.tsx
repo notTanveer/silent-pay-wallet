@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { DevSettings, Alert, Platform, AlertButton } from 'react-native';
 import { useStorage } from '../hooks/context/useStorage';
-import { HDSegwitBech32Wallet, WatchOnlyWallet } from '../class';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { TWallet } from '../class/wallets/types';
+import { HDSilentPaymentsWallet } from '../class/wallets/hd-bip352-wallet';
 
 const getRandomLabelFromSecret = (secret: string): string => {
   const words = secret.split(' ');
@@ -79,7 +79,7 @@ const DevMenu: React.FC = () => {
       });
 
       DevSettings.addMenuItem('Add New Wallet', async () => {
-        const wallet = new HDSegwitBech32Wallet();
+        const wallet = new HDSilentPaymentsWallet();
         await wallet.generate();
         const label = getRandomLabelFromSecret(wallet.getSecret());
         wallet.setLabel(label);
@@ -145,12 +145,12 @@ const DevMenu: React.FC = () => {
         showAlertWithWalletOptions(wallets, 'Purge Wallet Transactions', 'Select the wallet to purge transactions', wallet => {
           const msg = 'Transactions purged successfully!';
 
-          if (wallet.type === HDSegwitBech32Wallet.type) {
+          if ('_txs_by_external_index' in wallet) {
             wallet._txs_by_external_index = {};
             wallet._txs_by_internal_index = {};
           }
 
-          if (wallet.type === WatchOnlyWallet.type && wallet._hdWalletInstance) {
+          if ('_hdWalletInstance' in wallet && wallet._hdWalletInstance) {
             wallet._hdWalletInstance._txs_by_external_index = {};
             wallet._hdWalletInstance._txs_by_internal_index = {};
           }

@@ -361,8 +361,23 @@ export class BlueApp {
       }
       const data: TBucketStorage = JSON.parse(dataRaw);
       if (!data.wallets) return false;
+      this.tx_metadata = data.tx_metadata;
+      this.counterparty_metadata = data.counterparty_metadata;
       const wallets = data.wallets;
       for (const key of wallets) {
+        let parsedWallet: { type?: string } | undefined;
+        try {
+          parsedWallet = JSON.parse(key);
+        } catch (error) {
+          console.warn('[BlueApp] Failed to parse stored wallet payload:', error);
+          continue;
+        }
+
+        if (parsedWallet?.type !== HDSilentPaymentsWallet.type) {
+          console.warn('[BlueApp] Skipping unsupported wallet type during load:', parsedWallet?.type);
+          continue;
+        }
+
         const deserializedWallet = HDSilentPaymentsWallet.fromJson(key) as unknown as HDSilentPaymentsWallet;
 
         try {
@@ -375,8 +390,6 @@ export class BlueApp {
         const ID = deserializedWallet.getID();
         if (!this.wallets.some(wallet => wallet.getID() === ID)) {
           this.wallets.push(deserializedWallet);
-          this.tx_metadata = data.tx_metadata;
-          this.counterparty_metadata = data.counterparty_metadata;
         }
       }
       if (realm) realm.close();
