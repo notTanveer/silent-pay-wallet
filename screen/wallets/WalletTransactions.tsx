@@ -453,14 +453,7 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { rout
         </>
       </View>
     ),
-    [
-      wallet,
-      measureHeaderHeight,
-      stylesHook.backgroundContainer,
-      stylesHook.listHeaderText,
-      saveToDisk,
-      isBiometricUseCapableAndEnabled,
-    ],
+    [wallet, measureHeaderHeight, stylesHook.backgroundContainer, stylesHook.listHeaderText, saveToDisk, isBiometricUseCapableAndEnabled],
   );
 
   useEffect(() => {

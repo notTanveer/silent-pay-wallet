@@ -19,7 +19,6 @@ enum WalletType: Codable, Equatable {
     case legacyWallet
     case hdLegacyP2PKHWallet
     case hdLegacyBreadWallet
-    case multisigHdWallet
     case lightningCustodianWallet
     case aezeedWallet
     case defaultGradients
@@ -49,8 +48,6 @@ enum WalletType: Codable, Equatable {
             self = .hdLegacyP2PKHWallet
         case "HDLegacyBreadwallet":
             self = .hdLegacyBreadWallet
-        case "HDmultisig":
-            self = .multisigHdWallet
         case "LightningCustodianWallet":
             self = .lightningCustodianWallet
         case "HDAezeedWallet":
@@ -79,8 +76,6 @@ enum WalletType: Codable, Equatable {
             try container.encode("HDLegacyP2PKH", forKey: .rawValue)
         case .hdLegacyBreadWallet:
             try container.encode("HDLegacyBreadwallet", forKey: .rawValue)
-        case .multisigHdWallet:
-            try container.encode("HDmultisig", forKey: .rawValue)
         case .lightningCustodianWallet:
             try container.encode("LightningCustodianWallet", forKey: .rawValue)
         case .aezeedWallet:
@@ -113,8 +108,6 @@ enum WalletType: Codable, Equatable {
             return .hdLegacyP2PKHWallet
         case "HDLegacyBreadwallet":
             return .hdLegacyBreadWallet
-        case "HDmultisig":
-            return .multisigHdWallet
         case "LightningCustodianWallet":
             return .lightningCustodianWallet
         case "HDAezeedWallet":
@@ -144,8 +137,6 @@ enum WalletType: Codable, Equatable {
             return "HDLegacyP2PKH"
         case .hdLegacyBreadWallet:
             return "HDLegacyBreadwallet"
-        case .multisigHdWallet:
-            return "HDmultisig"
         case .lightningCustodianWallet:
             return "LightningCustodianWallet"
         case .aezeedWallet:
@@ -175,8 +166,6 @@ extension WalletType: CustomStringConvertible {
             return "HD Legacy P2PKH Wallet"
         case .hdLegacyBreadWallet:
             return "HD Legacy Bread Wallet"
-        case .multisigHdWallet:
-            return "Multisig HD Wallet"
         case .lightningCustodianWallet:
             return "Lightning Custodian Wallet"
         case .aezeedWallet:

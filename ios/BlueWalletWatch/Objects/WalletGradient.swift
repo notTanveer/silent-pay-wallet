@@ -54,12 +54,6 @@ struct WalletGradient {
     UIColor(hex: "#F99C42")
   ]
   
-  static let multisigHdWallet: [UIColor] = [
-    UIColor(hex: "#1CE6EB"),
-    UIColor(hex: "#296FC5"),
-    UIColor(hex: "#3500A2")
-  ]
-  
   static let defaultGradients: [UIColor] = [
     UIColor(hex: "#B770F6"),
     UIColor(hex: "#9013FE")
@@ -110,8 +104,6 @@ struct WalletGradient {
       return WalletGradient.hdSegwitBech32Wallet
     case .segwitBech32Wallet:
       return WalletGradient.segwitBech32Wallet
-    case .multisigHdWallet:
-      return WalletGradient.multisigHdWallet
     case .aezeedWallet:
       return WalletGradient.aezeedWallet
     case .lightningCustodianWallet:
@@ -144,8 +136,6 @@ struct WalletGradient {
       return "walletWatchOnly"
     case .lightningCustodianWallet:
       return "walletLightningCustodial"
-    case .multisigHdWallet:
-      return "watchMultisig"
     case .legacyWallet:
       return "walletLegacy"
     case .hdLegacyP2PKHWallet:

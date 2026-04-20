@@ -125,7 +125,7 @@ export const WalletCarouselItem: React.FC<WalletCarouselItemProps> = React.memo(
       onPress(item);
     }, [item, onPress]);
 
-    let image = direction === 'rtl' ? require('../img/btc-shape-rtl.png') : require('../img/btc-shape.png');
+    const image = direction === 'rtl' ? require('../img/btc-shape-rtl.png') : require('../img/btc-shape.png');
 
     let latestTransactionText;
 

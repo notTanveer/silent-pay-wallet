@@ -7,7 +7,7 @@ import { requestCameraAuthorization } from '../helpers/scan-qr';
 import { useCallback, useMemo } from 'react';
 
 // List of screens that require biometrics
-const requiresBiometrics = ['WalletExportRoot', 'WalletXpubRoot', 'ViewEditMultisigCosigners', 'ExportMultisigCoordinationSetupRoot'];
+const requiresBiometrics = ['WalletExportRoot', 'WalletXpubRoot'];
 
 // List of screens that require wallet export to be saved
 const requiresWalletExportIsSaved = ['ReceiveDetails', 'WalletAddresses'];

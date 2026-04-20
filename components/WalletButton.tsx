@@ -29,7 +29,7 @@ const buttonDetails: Record<string, ButtonDetails> = {
     title: loc.wallets.add_bitcoin,
     explain: loc.wallets.add_bitcoin_explain,
     borderColorActive: 'newBlue',
-  }
+  },
 };
 
 const WalletButton: React.FC<WalletButtonProps> = ({ buttonType, testID, onPress, size, active }) => {

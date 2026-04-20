@@ -1,16 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
-import { ActivityIndicator, Alert, Keyboard, LayoutAnimation, Platform, StyleSheet, TextInput, useColorScheme, View } from 'react-native';
+import { Alert, Keyboard, LayoutAnimation, Platform, StyleSheet, TextInput, useColorScheme, View } from 'react-native';
 
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
-import { BlueButtonLink, BlueFormLabel } from '../../BlueComponents';
+import { BlueFormLabel } from '../../BlueComponents';
 import { HDSegwitBech32Wallet, HDSegwitP2SHWallet, SegwitP2SHWallet } from '../../class';
-import presentAlert from '../../components/Alert';
-import Button from '../../components/Button';
 import { useTheme } from '../../components/themes';
 import WalletButton from '../../components/WalletButton';
 import loc from '../../loc';
 import { Chain } from '../../models/bitcoinUnits';
-import { useStorage } from '../../hooks/context/useStorage';
 import { CommonToolTipActions } from '../../typings/CommonToolTipActions';
 import { Action } from '../../components/types';
 import HeaderMenuButton from '../../components/HeaderMenuButton';
@@ -19,8 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AddWalletStackParamList } from '../../navigation/AddWalletStack';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import { BlueSpacing20, BlueSpacing40 } from '../../components/BlueSpacing';
-import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet.ts';
+import { BlueSpacing20 } from '../../components/BlueSpacing';
 
 enum ButtonSelected {
   // @ts-ignore: Return later to update
@@ -83,11 +78,9 @@ const WalletsAdd: React.FC = () => {
   const label = state.label;
   const selectedWalletType = state.selectedWalletType;
   const colorScheme = useColorScheme();
-  //
-  const { addWallet, saveToDisk } = useStorage();
   const { entropy: entropyHex, words } = useRoute<RouteProps>().params || {};
   const entropy = entropyHex ? Buffer.from(entropyHex, 'hex') : undefined;
-  const { navigate, goBack, setOptions, setParams } = useExtendedNavigation<NavigationProps>();
+  const { navigate, setOptions, setParams } = useExtendedNavigation<NavigationProps>();
   const stylesHook = {
     advancedText: {
       color: colors.feeText,
@@ -250,40 +243,6 @@ const WalletsAdd: React.FC = () => {
     dispatch({ type: 'SET_SELECTED_WALLET_TYPE', payload: value });
   };
 
-  const createWallet = async () => {
-    setIsLoading(true);
-
-    if (selectedWalletType === ButtonSelected.ONCHAIN) {
-      const w = new HDSilentPaymentsWallet();
-      w.setLabel(label || loc.wallets.details_title);
-      if (entropy) {
-        try {
-          await w.generateFromEntropy(entropy);
-        } catch (e: any) {
-          console.log(e.toString());
-          presentAlert({ message: e.toString() });
-          return;
-        }
-      } else {
-        await w.generate();
-      }
-      addWallet(w);
-      await saveToDisk();
-      triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
-      if (w.type === HDSilentPaymentsWallet.type) {
-        navigate('PleaseBackup', {
-          walletID: w.getID(),
-        });
-      } else {
-        goBack();
-      }
-    }
-  };
-
-  const navigateToImportWallet = () => {
-    navigate('ImportWallet');
-  };
-
   const handleOnBitcoinButtonPressed = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     Keyboard.dismiss();
@@ -354,12 +313,6 @@ const styles = StyleSheet.create({
   button: {
     width: '100%',
     height: 'auto',
-  },
-  advanced: {
-    marginHorizontal: 20,
-  },
-  import: {
-    marginVertical: 24,
   },
 });
 

@@ -17,14 +17,12 @@ interface TransactionsNavigationHeaderProps {
   wallet: TWallet;
   unit: BitcoinUnit;
   onWalletUnitChange: (unit: BitcoinUnit) => void;
-  onManageFundsPressed?: (id?: string) => void;
   onWalletBalanceVisibilityChange?: (isShouldBeVisible: boolean) => void;
 }
 
 const TransactionsNavigationHeader: React.FC<TransactionsNavigationHeaderProps> = ({
   wallet,
   onWalletUnitChange,
-  onManageFundsPressed,
   onWalletBalanceVisibilityChange,
   unit = BitcoinUnit.BTC,
 }) => {
@@ -56,15 +54,6 @@ const TransactionsNavigationHeader: React.FC<TransactionsNavigationHeaderProps> 
 
     onWalletUnitChange(newWalletPreferredUnit);
   };
-
-  const handleManageFundsPressed = useCallback(
-    (actionKeyID?: string) => {
-      if (onManageFundsPressed) {
-        onManageFundsPressed(actionKeyID);
-      }
-    },
-    [onManageFundsPressed],
-  );
 
   const onPressMenuItem = useCallback(
     (id: string) => {
@@ -198,22 +187,6 @@ const styles = StyleSheet.create({
   walletBalance: {
     flexShrink: 1,
     marginRight: 6,
-  },
-  manageFundsButton: {
-    marginTop: 14,
-    marginBottom: 10,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 9,
-    minHeight: 39,
-    alignSelf: 'flex-start',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  manageFundsButtonText: {
-    fontWeight: '500',
-    fontSize: 14,
-    color: '#FFFFFF',
-    padding: 12,
   },
   walletBalanceAndUnitContainer: {
     flexDirection: 'row',

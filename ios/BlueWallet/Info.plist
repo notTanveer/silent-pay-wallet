@@ -71,20 +71,6 @@
 				<string>io.bluewallet.backup</string>
 			</array>
 		</dict>
-		<dict>
-			<key>CFBundleTypeIconFiles</key>
-			<array/>
-			<key>CFBundleTypeName</key>
-			<string>BW COSIGNER</string>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>LSHandlerRank</key>
-			<string>Owner</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>io.bluewallet.bwcosigner</string>
-			</array>
-		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
@@ -257,19 +243,6 @@
 				<key>public.filename-extension</key>
 				<array>
 					<string>psbt</string>
-				</array>
-			</dict>
-		</dict>
-		<dict>
-			<key>UTTypeDescription</key>
-			<string>BW COSIGNER</string>
-			<key>UTTypeIdentifier</key>
-			<string>io.bluewallet.bwcosigner</string>
-			<key>UTTypeTagSpecification</key>
-			<dict>
-				<key>public.filename-extension</key>
-				<array>
-					<string>bwcosigner</string>
 				</array>
 			</dict>
 		</dict>
