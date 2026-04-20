@@ -7,7 +7,7 @@ import { sha256 } from '@noble/hashes/sha256';
 import { SectionList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as BlueElectrum from '../../blue_modules/BlueElectrum';
 import { satoshiToLocalCurrency } from '../../blue_modules/currency';
-import { HDSegwitBech32Wallet } from '../../class';
+import { HDSilentPaymentsWallet } from '../../class';
 import { ContactList } from '../../class/contact-list';
 import { AbstractHDElectrumWallet } from '../../class/wallets/abstract-hd-electrum-wallet';
 import presentAlert from '../../components/Alert';
@@ -149,7 +149,7 @@ export default function PaymentCodesList() {
           return;
         }
         // check if notif tx is in place and has confirmations
-        const foundWallet = wallets.find(w => w.getID() === walletID) as unknown as HDSegwitBech32Wallet;
+        const foundWallet = wallets.find(w => w.getID() === walletID) as unknown as HDSilentPaymentsWallet;
         assert(foundWallet, 'Internal error: cant find walletID ' + walletID);
         const notifTx = foundWallet.getBIP47NotificationTransaction(pc);
         if (!notifTx) {
@@ -255,7 +255,7 @@ export default function PaymentCodesList() {
   };
 
   const _addContact = async (newPc: string) => {
-    const foundWallet = wallets.find(w => w.getID() === walletID) as unknown as HDSegwitBech32Wallet;
+    const foundWallet = wallets.find(w => w.getID() === walletID) as unknown as HDSilentPaymentsWallet;
     assert(foundWallet, 'Internal error: cant find walletID ' + walletID);
 
     if (counterpartyMetadata[newPc]?.hidden) {
@@ -323,7 +323,7 @@ export default function PaymentCodesList() {
       presentAlert({ message: loc.send.details_total_exceeds_balance });
       return;
     }
-    const { tx, fee } = foundWallet.createBip47NotificationTransaction(foundWallet.getUtxo(), newPc, fees.fast, changeAddress);
+    const { tx, fee } = foundWallet.createBip47NotificationTransaction(foundWallet.getUtxo() as Parameters<typeof foundWallet.createBip47NotificationTransaction>[0], newPc, fees.fast, changeAddress);
 
     if (!tx) {
       presentAlert({ message: loc.bip47.failed_create_notif_tx });

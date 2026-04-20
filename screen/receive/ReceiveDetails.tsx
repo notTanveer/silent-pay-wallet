@@ -122,11 +122,7 @@ const ReceiveDetails = () => {
         console.warn('Error fetching wallet address (ONCHAIN):', error);
       }
       if (newAddress === undefined) {
-        if ('_getExternalAddressByIndex' in wallet) {
-          newAddress = wallet._getExternalAddressByIndex(wallet.getNextFreeAddressIndex());
-        } else {
-          newAddress = wallet.getAddress();
-        }
+        newAddress = wallet._getExternalAddressByIndex(wallet.getNextFreeAddressIndex());
       } else {
         saveToDisk(); // caching whatever getAddressAsync() generated internally
       }

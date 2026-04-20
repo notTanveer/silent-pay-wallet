@@ -23,7 +23,7 @@ import { SendDetailsStackParamList } from '../../navigation/SendDetailsStackPara
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { ContactList } from '../../class/contact-list';
 import { useStorage } from '../../hooks/context/useStorage';
-import { HDSegwitBech32Wallet } from '../../class';
+import { HDSilentPaymentsWallet } from '../../class';
 import { useSettings } from '../../hooks/context/useSettings';
 import { majorTomToGroundControl } from '../../blue_modules/notifications';
 import { uint8ArrayToHex } from '../../blue_modules/uint8array-extras';
@@ -195,7 +195,7 @@ const Confirm: React.FC = () => {
           return;
         }
       } else {
-        const payJoinWallet = new PayjoinTransaction(psbt, (txHex: string) => broadcastTransaction(txHex), wallet as HDSegwitBech32Wallet);
+        const payJoinWallet = new PayjoinTransaction(psbt, (txHex: string) => broadcastTransaction(txHex), wallet as HDSilentPaymentsWallet);
         const paymentScript = getPaymentScript();
         if (!paymentScript) {
           throw new Error('Invalid payment script');

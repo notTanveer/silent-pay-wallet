@@ -30,7 +30,6 @@ import loc, { formatBalance } from '../../loc';
 import { Chain } from '../../models/bitcoinUnits';
 import ActionSheet from '../ActionSheet';
 import { useStorage } from '../../hooks/context/useStorage';
-import WatchOnlyWarning from '../../components/WatchOnlyWarning';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { Transaction } from '../../class/wallets/types';
@@ -39,7 +38,6 @@ import { useSettings } from '../../hooks/context/useSettings';
 import useWalletSubscribe from '../../hooks/useWalletSubscribe';
 import { getClipboardContent } from '../../blue_modules/clipboard';
 import WalletGradient from '../../class/wallet-gradient';
-import { WatchOnlyWallet } from '../../class';
 
 const buttonFontSize =
   PixelRatio.roundToNearestPixel(Dimensions.get('window').width / 26) > 22
@@ -270,26 +268,6 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { rout
   };
 
   const sendButtonPress = () => {
-    if (wallet.type === WatchOnlyWallet.type && wallet.isHd() && !wallet.useWithHardwareWalletEnabled()) {
-      return Alert.alert(
-        loc.wallets.details_title,
-        loc.transactions.enable_offline_signing,
-        [
-          {
-            text: loc._.ok,
-            onPress: async () => {
-              wallet.setUseWithHardwareWalletEnabled(true);
-              await saveToDisk();
-              navigateToSendScreen();
-            },
-            style: 'default',
-          },
-          { text: loc._.cancel, onPress: () => {}, style: 'cancel' },
-        ],
-        { cancelable: false },
-      );
-    }
-
     navigateToSendScreen();
   };
 
@@ -417,15 +395,6 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { rout
             </View>
           </View>
           <View style={stylesHook.backgroundContainer}>
-            {wallet.type === WatchOnlyWallet.type && wallet.isWatchOnlyWarningVisible && (
-              <WatchOnlyWarning
-                handleDismiss={() => {
-                  wallet.isWatchOnlyWarningVisible = false;
-                  LayoutAnimation.configureNext(LayoutAnimation.Presets.linear);
-                  saveToDisk();
-                }}
-              />
-            )}
           </View>
         </>
       </View>
@@ -497,7 +466,7 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { rout
             }
           />
         )}
-        {(wallet.allowSend() || (wallet.type === WatchOnlyWallet.type && wallet.isHd())) && (
+        {wallet.allowSend() && (
           <FButton
             onLongPress={sendButtonLongPress}
             onPress={sendButtonPress}

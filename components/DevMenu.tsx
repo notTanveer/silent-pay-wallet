@@ -145,15 +145,8 @@ const DevMenu: React.FC = () => {
         showAlertWithWalletOptions(wallets, 'Purge Wallet Transactions', 'Select the wallet to purge transactions', wallet => {
           const msg = 'Transactions purged successfully!';
 
-          if ('_txs_by_external_index' in wallet) {
-            wallet._txs_by_external_index = {};
-            wallet._txs_by_internal_index = {};
-          }
-
-          if ('_hdWalletInstance' in wallet && wallet._hdWalletInstance) {
-            wallet._hdWalletInstance._txs_by_external_index = {};
-            wallet._hdWalletInstance._txs_by_internal_index = {};
-          }
+          wallet._txs_by_external_index = {};
+          wallet._txs_by_internal_index = {};
 
           Alert.alert(msg);
         });

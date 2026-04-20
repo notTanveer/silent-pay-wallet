@@ -24,11 +24,9 @@ import {
   View,
   TouchableOpacity,
 } from 'react-native';
-import RNFS from 'react-native-fs';
 import { btcToSatoshi, fiatToBTC } from '../../blue_modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { BlueText } from '../../BlueComponents';
-import { WatchOnlyWallet } from '../../class';
 import { ContactList } from '../../class/contact-list';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import { AbstractHDElectrumWallet } from '../../class/wallets/abstract-hd-electrum-wallet';
@@ -53,7 +51,6 @@ import NetworkTransactionFees, { NetworkTransactionFee, NetworkTransactionFeeTyp
 import { SendDetailsStackParamList } from '../../navigation/SendDetailsStackParamList';
 import { CommonToolTipActions, ToolTipAction } from '../../typings/CommonToolTipActions';
 import ActionSheet from '../ActionSheet';
-import { isCancel, pickTransaction } from '../../blue_modules/fs';
 
 interface IPaymentDestinations {
   address: string; // btc address or payment code
@@ -289,7 +286,7 @@ const SendDetails = () => {
     if (!wallet) return; // wait for it
     const fees = networkTransactionFees;
     const requestedSatPerByte = Number(feeRate);
-    const lutxo = utxos || wallet.getUtxo();
+    const lutxo = (utxos || wallet.getUtxo()) as CreateTransactionUtxo[];
     let frozen = 0;
     if (!utxos) {
       // if utxo is not limited search for frozen outputs and calc it's balance
@@ -381,24 +378,14 @@ const SendDetails = () => {
     if (changeAddress) return changeAddress; // cache
 
     let change;
-    if (WatchOnlyWallet.type === wallet?.type && !wallet.isHd()) {
-      // plain watchonly - just get the address
-      change = wallet.getAddress();
-    } else {
-      // otherwise, lets call widely-used getChangeAddressAsync()
-      try {
-        change = await Promise.race([sleep(2000), wallet?.getChangeAddressAsync()]);
-      } catch (_) {}
+    // call widely-used getChangeAddressAsync()
+    try {
+      change = await Promise.race([sleep(2000), wallet?.getChangeAddressAsync()]);
+    } catch (_) {}
 
-      if (!change) {
-        // either sleep expired or getChangeAddressAsync threw an exception
-        if (wallet instanceof AbstractHDElectrumWallet) {
-          change = wallet._getInternalAddressByIndex(wallet.getNextFreeChangeAddressIndex());
-        } else {
-          // legacy wallets
-          change = wallet?.getAddress();
-        }
-      }
+    if (!change) {
+      // either sleep expired or getChangeAddressAsync threw an exception
+      change = wallet!._getInternalAddressByIndex(wallet!.getNextFreeChangeAddressIndex());
     }
 
     if (change) setChangeAddress(change); // cache
@@ -569,7 +556,7 @@ const SendDetails = () => {
     const change = await getChangeAddressAsync();
     assert(change, 'Could not get change address');
     const requestedSatPerByte = Number(feeRate);
-    const lutxo: CreateTransactionUtxo[] = utxos || (wallet?.getUtxo() ?? []);
+    const lutxo: CreateTransactionUtxo[] = (utxos || (wallet?.getUtxo() ?? [])) as CreateTransactionUtxo[];
     console.log({ requestedSatPerByte, lutxo: lutxo.length });
 
     const targets: CreateTransactionTarget[] = [];
@@ -609,20 +596,6 @@ const SendDetails = () => {
       // @ts-ignore idk how to fix FIXME?
 
       navigation.navigate(routeParams.launchedBy, { psbt });
-    }
-
-    if (wallet?.type === WatchOnlyWallet.type) {
-      // watch-only wallets with enabled HW wallet support have different flow. we have to show PSBT to user as QR code
-      // so he can scan it and sign it. then we have to scan it back from user (via camera and QR code), and ask
-      // user whether he wants to broadcast it
-      navigation.navigate('PsbtWithHardwareWallet', {
-        memo: transactionMemo,
-        walletID: wallet.getID(),
-        psbt,
-        launchedBy: routeParams.launchedBy,
-      });
-      setIsLoading(false);
-      return;
     }
 
     assert(tx, 'createTRansaction failed');
@@ -665,127 +638,14 @@ const SendDetails = () => {
     setParams({ transactionMemo: memo });
   };
 
-  /**
-   * same as `importTransaction`, but opens camera instead.
-   *
-   * @returns {Promise<void>}
-   */
-  const importQrTransaction = useCallback(async () => {
-    if (wallet?.type !== WatchOnlyWallet.type) {
-      return presentAlert({ title: loc.errors.error, message: 'Importing transaction in non-watchonly wallet (this should never happen)' });
-    }
-
-    navigateToQRCodeScanner();
-  }, [navigateToQRCodeScanner, wallet?.type]);
-
-  const importQrTransactionOnBarScanned = useCallback(
-    (ret: any) => {
-      if (!wallet) return;
-      if (!ret.data) ret = { data: ret };
-      if (ret.data.toUpperCase().startsWith('UR')) {
-        presentAlert({ title: loc.errors.error, message: 'BC-UR not decoded. This should never happen' });
-      } else if (ret.data.indexOf('+') === -1 && ret.data.indexOf('=') === -1 && ret.data.indexOf('=') === -1) {
-        // this looks like NOT base64, so maybe its transaction's hex
-        // we dont support it in this flow
-      } else {
-        // psbt base64?
-
-        // we construct PSBT object and pass to next screen
-        // so user can do smth with it:
-        const psbt = bitcoin.Psbt.fromBase64(ret.data);
-
-        navigation.navigate('PsbtWithHardwareWallet', {
-          memo: transactionMemo,
-          walletID: wallet.getID(),
-          psbt,
-        });
-
-        setIsLoading(false);
-      }
-    },
-    [navigation, transactionMemo, wallet],
-  );
-
-  /**
-   * watch-only wallets with enabled HW wallet support have different flow. we have to show PSBT to user as QR code
-   * so he can scan it and sign it. then we have to scan it back from user (via camera and QR code), and ask
-   * user whether he wants to broadcast it.
-   * alternatively, user can export psbt file, sign it externally and then import it
-   *
-   * @returns {Promise<void>}
-   */
-  const importTransaction = useCallback(async () => {
-    if (wallet?.type !== WatchOnlyWallet.type) {
-      return presentAlert({ title: loc.errors.error, message: 'Importing transaction in non-watchonly wallet (this should never happen)' });
-    }
-
-    try {
-      const res = await pickTransaction();
-
-      if (DeeplinkSchemaMatch.isPossiblySignedPSBTFile(res.uri)) {
-        // we assume that transaction is already signed, so all we have to do is get txhex and pass it to next screen
-        // so user can broadcast:
-        const file = await RNFS.readFile(res.uri, 'ascii');
-        const psbt = bitcoin.Psbt.fromBase64(file);
-        const txhex = psbt.extractTransaction().toHex();
-        navigation.navigate('PsbtWithHardwareWallet', { memo: transactionMemo, walletID: wallet.getID(), txhex });
-        setIsLoading(false);
-
-        return;
-      }
-
-      if (DeeplinkSchemaMatch.isPossiblyPSBTFile(res.uri)) {
-        // looks like transaction is UNsigned, so we construct PSBT object and pass to next screen
-        // so user can do smth with it:
-        const file = await RNFS.readFile(res.uri, 'ascii');
-        const psbt = bitcoin.Psbt.fromBase64(file);
-        navigation.navigate('PsbtWithHardwareWallet', { memo: transactionMemo, walletID: wallet.getID(), psbt });
-        setIsLoading(false);
-
-        return;
-      }
-
-      if (DeeplinkSchemaMatch.isTXNFile(res.uri)) {
-        // plain text file with txhex ready to broadcast
-        const file = (await RNFS.readFile(res.uri, 'ascii')).replace('\n', '').replace('\r', '');
-        navigation.navigate('PsbtWithHardwareWallet', { memo: transactionMemo, walletID: wallet.getID(), txhex: file });
-        setIsLoading(false);
-
-        return;
-      }
-
-      triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
-      presentAlert({ title: loc.errors.error, message: loc.send.details_unrecognized_file_format });
-    } catch (err) {
-      if (!isCancel(err)) {
-        triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
-        presentAlert({ title: loc.errors.error, message: loc.send.details_no_signed_tx });
-      }
-    }
-  }, [navigation, setIsLoading, transactionMemo, wallet]);
-
   useEffect(() => {
     const data = routeParams.onBarScanned;
     if (data) {
-      if (selectedDataProcessor.current) {
-        console.debug('SendDetails - selectedDataProcessor:', selectedDataProcessor.current);
-        switch (selectedDataProcessor.current) {
-          case CommonToolTipActions.ImportTransactionQR:
-            importQrTransactionOnBarScanned(data);
-            break;
-          case CommonToolTipActions.ImportTransaction:
-            processAddressData(data);
-            break;
-          default:
-            console.debug('Unknown selectedDataProcessor:', selectedDataProcessor.current);
-        }
-      } else {
-        processAddressData(data);
-      }
+      processAddressData(data);
     }
     selectedDataProcessor.current = undefined;
     setParams({ onBarScanned: undefined });
-  }, [importQrTransactionOnBarScanned, routeParams.onBarScanned, setParams, processAddressData]);
+  }, [routeParams.onBarScanned, setParams, processAddressData]);
 
   const handleAddRecipient = useCallback(() => {
     // Check if any recipient is incomplete (missing address or amount)
@@ -915,12 +775,6 @@ const SendDetails = () => {
         onUseAllPressed();
       } else if (id === CommonToolTipActions.AllowRBF.id) {
         onReplaceableFeeSwitchValueChanged(!isTransactionReplaceable);
-      } else if (id === CommonToolTipActions.ImportTransaction.id) {
-        selectedDataProcessor.current = CommonToolTipActions.ImportTransaction;
-        importTransaction();
-      } else if (id === CommonToolTipActions.ImportTransactionQR.id) {
-        selectedDataProcessor.current = CommonToolTipActions.ImportTransactionQR;
-        importQrTransaction();
       } else if (id === CommonToolTipActions.CoinControl.id) {
         handleCoinControl();
       } else if (id === CommonToolTipActions.InsertContact.id) {
@@ -936,8 +790,6 @@ const SendDetails = () => {
       onUseAllPressed,
       onReplaceableFeeSwitchValueChanged,
       isTransactionReplaceable,
-      importTransaction,
-      importQrTransaction,
       handleCoinControl,
       handleInsertContact,
       handleRemoveAllRecipients,

@@ -7,7 +7,6 @@ import { useScreenProtect } from '../../hooks/useScreenProtect';
 import { validateMnemonic } from '../../blue_modules/bip39';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { BlueText } from '../../BlueComponents';
-import { WatchOnlyWallet } from '../../class';
 import QRCodeComponent from '../../components/QRCodeComponent';
 import SeedWords from '../../components/SeedWords';
 import { useTheme } from '../../components/themes';
@@ -178,7 +177,7 @@ const WalletExport: React.FC = () => {
       onLayout={onLayout}
       testID="WalletExportScroll"
     >
-      {wallet.type !== WatchOnlyWallet.type && <DoNotDisclose />}
+      <DoNotDisclose />
 
       <BlueText style={styles.scanText}>{loc.wallets.scan_import}</BlueText>
 

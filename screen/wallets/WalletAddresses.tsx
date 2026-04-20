@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useReducer, useMemo } from 'react';
 import { useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { ActivityIndicator, FlatList, StyleSheet, View, Platform, UIManager } from 'react-native';
-import { WatchOnlyWallet } from '../../class';
 import { AddressItem } from '../../components/addresses/AddressItem';
 import { useTheme } from '../../components/themes';
 import { useStorage } from '../../hooks/context/useStorage';
@@ -126,8 +125,7 @@ const WalletAddresses: React.FC = () => {
   const wallet = wallets.find((w: any) => w.getID() === walletID);
 
   const balanceUnit = wallet?.getPreferredBalanceUnit() ?? BitcoinUnit.BTC;
-  const isWatchOnly = wallet?.type === WatchOnlyWallet.type;
-  const walletInstance = isWatchOnly ? wallet._hdWalletInstance : wallet;
+  const walletInstance = wallet;
   const allowSignVerifyMessage = (wallet && 'allowSignVerifyMessage' in wallet && wallet.allowSignVerifyMessage()) ?? false;
 
   const { colors } = useTheme();

@@ -323,6 +323,7 @@
         "add_entropy_provide": "Provide entropy via dice rolls",
         "add_entropy_remain": "{gen} bytes of generated entropy. Remaining {rem} bytes will be obtained from the System random number generator.",
         "add_import_wallet": "Import wallet",
+        "add_create": "Create",
         "add_placeholder": "my first wallet",
         "add_title": "Add Wallet",
         "add_wallet_name": "Name",
