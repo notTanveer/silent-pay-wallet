@@ -5,7 +5,6 @@ import RNFS from 'react-native-fs';
 import Realm from 'realm';
 import { sha256 as _sha256 } from '@noble/hashes/sha256';
 
-import { LegacyWallet } from '../class/wallets/legacy-wallet';
 import presentAlert from '../components/Alert';
 import loc from '../loc';
 import { GROUP_IO_BLUEWALLET } from './currency';
@@ -609,7 +608,10 @@ export function txhexToElectrumTransaction(txhex: string): ElectrumTransactionWi
 
     const scriptHex = uint8ArrayToHex(out.script);
     address = decodeOutputAddress(scriptHex);
-    const legacyAddress = LegacyWallet.scriptPubKeyToAddress(scriptHex);
+    let legacyAddress: string | false = false;
+    try {
+      legacyAddress = bitcoin.payments.p2pkh({ output: Buffer.from(scriptHex, 'hex'), network: bitcoin.networks.bitcoin }).address ?? false;
+    } catch (_) {}
 
     if (typeof address === 'string' && address.startsWith('bc1p')) {
       type = 'witness_v1_taproot';

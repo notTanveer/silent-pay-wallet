@@ -3,7 +3,6 @@ import * as bitcoin from 'bitcoinjs-lib';
 import assert from 'assert';
 
 import * as BlueElectrum from '../blue_modules/BlueElectrum';
-import { HDSegwitBech32Wallet } from './wallets/hd-segwit-bech32-wallet';
 import { HDSilentPaymentsWallet } from './wallets/hd-bip352-wallet';
 import { CreateTransactionUtxo } from './wallets/types.ts';
 import { CoinSelectOutput, CoinSelectReturnInput } from 'coinselect';
@@ -33,23 +32,23 @@ const scriptPubKeyToAddress = (script: string): string => {
 export class HDSegwitBech32Transaction {
   private _txhex: string | null;
   private _txid: string | null;
-  private _wallet: HDSegwitBech32Wallet | HDSilentPaymentsWallet | undefined;
+  private _wallet: HDSilentPaymentsWallet | undefined;
   private _txDecoded: bitcoin.Transaction | undefined;
   private _remoteTx: any;
 
   /**
    * @param txhex {string|null} Object is initialized with txhex
    * @param txid {string|null} If txhex not present - txid whould be present
-   * @param wallet {HDSegwitBech32Wallet|null} If set - a wallet object to which transacton belongs
+   * @param wallet {HDSilentPaymentsWallet|null} If set - a wallet object to which transacton belongs
    */
-  constructor(txhex: string | null, txid: string | null, wallet: HDSegwitBech32Wallet | HDSilentPaymentsWallet | null) {
+  constructor(txhex: string | null, txid: string | null, wallet: HDSilentPaymentsWallet | null) {
     if (!txhex && !txid) throw new Error('Bad arguments');
     this._txhex = txhex;
     this._txid = txid;
 
     if (wallet) {
-      if (wallet.type === HDSegwitBech32Wallet.type || wallet.type === HDSilentPaymentsWallet.type) {
-        /** @type {HDSegwitBech32Wallet} */
+      if (wallet.type === HDSilentPaymentsWallet.type) {
+        /** @type {HDSilentPaymentsWallet} */
         this._wallet = wallet;
       } else {
         throw new Error('Only HD Bech32 and HD Silent Payments wallets supported');
@@ -389,7 +388,7 @@ export class HDSegwitBech32Transaction {
         [{ address: myAddress }],
         targetFeeRate + add,
         myAddress,
-        HDSegwitBech32Wallet.defaultRBFSequence,
+        HDSilentPaymentsWallet.defaultRBFSequence,
         false,
         0,
       );

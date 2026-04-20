@@ -10,7 +10,6 @@ import * as encryption from '../blue_modules/encryption';
 import presentAlert from '../components/Alert';
 import { randomBytes } from './rng';
 import { ExtendedTransaction, Transaction, TWallet } from './wallets/types';
-import { WatchOnlyWallet } from './wallets/watch-only-wallet';
 import { HDSilentPaymentsWallet } from './wallets/hd-bip352-wallet.ts';
 
 let usedBucketNum: boolean | number = false;
@@ -426,39 +425,20 @@ export class BlueApp {
     const transactionsForWallet = transactions.filtered(`walletid = "${walletToInflate.getID()}"`) as unknown as TRealmTransaction[];
     for (const tx of transactionsForWallet) {
       if (tx.internal === false) {
-        if ('_hdWalletInstance' in walletToInflate && walletToInflate._hdWalletInstance) {
-          const hd = walletToInflate._hdWalletInstance;
-          hd._txs_by_external_index[tx.index] = hd._txs_by_external_index[tx.index] || [];
-          const transaction = JSON.parse(tx.tx);
-          hd._txs_by_external_index[tx.index].push(transaction);
-        } else {
-          walletToInflate._txs_by_external_index[tx.index] = walletToInflate._txs_by_external_index[tx.index] || [];
-          const transaction = JSON.parse(tx.tx);
-          (walletToInflate._txs_by_external_index[tx.index] as Transaction[]).push(transaction);
-        }
-      } else if (tx.internal === true) {
-        if ('_hdWalletInstance' in walletToInflate && walletToInflate._hdWalletInstance) {
-          const hd = walletToInflate._hdWalletInstance;
-          hd._txs_by_internal_index[tx.index] = hd._txs_by_internal_index[tx.index] || [];
-          const transaction = JSON.parse(tx.tx);
-          hd._txs_by_internal_index[tx.index].push(transaction);
-        } else {
-          walletToInflate._txs_by_internal_index[tx.index] = walletToInflate._txs_by_internal_index[tx.index] || [];
-          const transaction = JSON.parse(tx.tx);
-          (walletToInflate._txs_by_internal_index[tx.index] as Transaction[]).push(transaction);
-        }
-      } else {
-        if (!Array.isArray(walletToInflate._txs_by_external_index)) walletToInflate._txs_by_external_index = [];
-        walletToInflate._txs_by_external_index = walletToInflate._txs_by_external_index || [];
+        walletToInflate._txs_by_external_index[tx.index] = walletToInflate._txs_by_external_index[tx.index] || [];
         const transaction = JSON.parse(tx.tx);
-        (walletToInflate._txs_by_external_index as Transaction[]).push(transaction);
+        walletToInflate._txs_by_external_index[tx.index].push(transaction);
+      } else if (tx.internal === true) {
+        walletToInflate._txs_by_internal_index[tx.index] = walletToInflate._txs_by_internal_index[tx.index] || [];
+        const transaction = JSON.parse(tx.tx);
+        walletToInflate._txs_by_internal_index[tx.index].push(transaction);
       }
     }
   }
 
   offloadWalletToRealm(realm: Realm, wallet: TWallet): void {
     const id = wallet.getID();
-    const walletToSave = ('_hdWalletInstance' in wallet && wallet._hdWalletInstance) || wallet;
+    const walletToSave = wallet;
 
     if (Array.isArray(walletToSave._txs_by_external_index)) {
       // if this var is an array that means its a single-address wallet class, and this var is a flat array
@@ -561,7 +541,7 @@ export class BlueApp {
         delete key.current;
         const keyCloned = Object.assign({}, key); // stripped-down version of a wallet to save to secure keystore
         if ('_hdWalletInstance' in key) {
-          const k = keyCloned as any & WatchOnlyWallet;
+          const k = keyCloned as any;
           k._hdWalletInstance = Object.assign({}, key._hdWalletInstance);
           k._hdWalletInstance._txs_by_external_index = {};
           k._hdWalletInstance._txs_by_internal_index = {};
