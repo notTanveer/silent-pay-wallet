@@ -3,7 +3,7 @@ import * as bip39 from 'bip39';
 
 import * as bip39custom from '../../blue_modules/bip39';
 import * as BlueElectrum from '../../blue_modules/BlueElectrum';
-import { LegacyWallet } from './legacy-wallet';
+import { AbstractWallet } from './abstract-wallet';
 import { Transaction } from './types';
 
 type AbstractHDWalletStatics = {
@@ -13,7 +13,7 @@ type AbstractHDWalletStatics = {
 /**
  * @deprecated
  */
-export class AbstractHDWallet extends LegacyWallet {
+export class AbstractHDWallet extends AbstractWallet {
   static readonly type = 'abstract';
   static readonly typeReadable = 'abstract';
   // @ts-ignore: override

@@ -622,7 +622,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     changeAddress: string,
     sequence: number = AbstractHDElectrumWallet.finalRBFSequence,
     skipSigning = false,
-    masterFingerprint: number,
+    masterFingerprint: number = 0,
   ): CreateTransactionResult {
     if (targets.length === 0) throw new Error('No destination provided');
     if (utxos.length === 0) throw new Error('No UTXOs provided');

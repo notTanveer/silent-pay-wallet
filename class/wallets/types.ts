@@ -2,12 +2,6 @@ import * as bitcoin from 'bitcoinjs-lib';
 import { CoinSelectOutput, CoinSelectReturnInput, CoinSelectUtxo } from 'coinselect';
 
 import { BitcoinUnit } from '../../models/bitcoinUnits';
-import { HDLegacyP2PKHWallet } from './hd-legacy-p2pkh-wallet';
-import { HDSegwitBech32Wallet } from './hd-segwit-bech32-wallet';
-import { HDSegwitP2SHWallet } from './hd-segwit-p2sh-wallet';
-import { LegacyWallet } from './legacy-wallet';
-import { WatchOnlyWallet } from './watch-only-wallet';
-import { HDTaprootWallet } from './hd-taproot-wallet.ts';
 import { HDSilentPaymentsWallet } from './hd-bip352-wallet.ts';
 
 export type Utxo = {
@@ -104,13 +98,4 @@ export type ExtendedTransaction = Transaction & {
   walletPreferredBalanceUnit: BitcoinUnit;
 };
 
-export type TWallet =
-  | HDLegacyP2PKHWallet
-  | HDSegwitBech32Wallet
-  | HDSegwitP2SHWallet
-  | HDTaprootWallet
-  | LegacyWallet
-  | WatchOnlyWallet
-  | HDSilentPaymentsWallet;
-
-export type THDWalletForWatchOnly = HDSegwitBech32Wallet | HDSegwitP2SHWallet | HDLegacyP2PKHWallet | HDTaprootWallet;
+export type TWallet = HDSilentPaymentsWallet;
