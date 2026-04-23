@@ -2,7 +2,7 @@ import * as bitcoin from 'bitcoinjs-lib';
 import { CoinSelectOutput, CoinSelectReturnInput, CoinSelectUtxo } from 'coinselect';
 
 import { BitcoinUnit } from '../../models/bitcoinUnits';
-import { HDSilentPaymentsWallet } from './hd-bip352-wallet.ts';
+import type { HDSilentPaymentsWallet } from './hd-bip352-wallet.ts';
 
 export type Utxo = {
   // Returned by BlueElectrum

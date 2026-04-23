@@ -32,7 +32,7 @@ import HeaderMenuButton from '../../components/HeaderMenuButton';
 import { Action } from '../../components/types';
 import { CommonToolTipActions } from '../../typings/CommonToolTipActions';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import { BlueSpacing10, BlueSpacing20 } from '../../components/BlueSpacing';
+import { BlueSpacing20 } from '../../components/BlueSpacing';
 import { BlueLoading } from '../../components/BlueLoading';
 
 type RouteProps = RouteProp<DetailViewStackParamList, 'WalletDetails'>;
@@ -45,9 +45,6 @@ const WalletDetails: React.FC = () => {
   const [backdoorPressed, setBackdoorPressed] = useState<number>(0);
   const walletRef = useRef<TWallet | undefined>(wallets.find(w => w.getID() === walletID));
   const wallet = walletRef.current as TWallet;
-  const [walletUseWithHardwareWallet, setWalletUseWithHardwareWallet] = useState<boolean>(
-    wallet.useWithHardwareWalletEnabled ? wallet.useWithHardwareWalletEnabled() : false,
-  );
   const [isBIP47Enabled, setIsBIP47Enabled] = useState<boolean>(wallet.isBIP47Enabled ? wallet.isBIP47Enabled() : false);
 
   const [isContactsVisible, setIsContactsVisible] = useState<boolean>(
@@ -472,7 +469,7 @@ const WalletDetails: React.FC = () => {
                         <BlueText selectable>{masterFingerprint ?? <ActivityIndicator />}</BlueText>
                       ) : (
                         <TouchableOpacity onPress={onViewMasterFingerPrintPress}>
-                          <BlueText>{loc.multisig.view}</BlueText>
+                          <BlueText>{loc.wallets.details_master_fingerprint_view}</BlueText>
                         </TouchableOpacity>
                       )}
                     </View>
@@ -489,7 +486,7 @@ const WalletDetails: React.FC = () => {
                 </View>
               </View>
             </BlueCard>
-            {(wallet instanceof AbstractHDElectrumWallet) && (
+            {wallet instanceof AbstractHDElectrumWallet && (
               <ListItem onPress={navigateToAddresses} title={loc.wallets.details_show_addresses} chevron />
             )}
             {isContactsVisible ? <ListItem onPress={navigateToContacts} title={loc.bip47.contacts} chevron /> : null}

@@ -195,7 +195,11 @@ const Confirm: React.FC = () => {
           return;
         }
       } else {
-        const payJoinWallet = new PayjoinTransaction(psbt, (txHex: string) => broadcastTransaction(txHex), wallet as HDSilentPaymentsWallet);
+        const payJoinWallet = new PayjoinTransaction(
+          psbt,
+          (txHex: string) => broadcastTransaction(txHex),
+          wallet as HDSilentPaymentsWallet,
+        );
         const paymentScript = getPaymentScript();
         if (!paymentScript) {
           throw new Error('Invalid payment script');

@@ -51,7 +51,7 @@ export class HDSegwitBech32Transaction {
         /** @type {HDSilentPaymentsWallet} */
         this._wallet = wallet;
       } else {
-        throw new Error('Only HD Bech32 and HD Silent Payments wallets supported');
+        throw new Error('Only HD Silent Payments wallets supported');
       }
     }
 

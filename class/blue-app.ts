@@ -373,7 +373,9 @@ export class BlueApp {
         }
 
         if (parsedWallet?.type !== HDSilentPaymentsWallet.type) {
-          console.warn('[BlueApp] Skipping unsupported wallet type during load:', parsedWallet?.type);
+          presentAlert({
+            message: `A wallet of type "${parsedWallet?.type ?? 'unknown'}" was found in storage but is no longer supported. Please restore it using its seed phrase before continuing. It will not be loaded.`,
+          });
           continue;
         }
 

@@ -293,7 +293,9 @@ describe('Bech32 Segwit HD (BIP84) with BIP47', () => {
     );
     assert(tx);
 
-    const legacyAddressDestination = tx.outs.find((o: any) => bitcoin.address.fromOutputScript(o.script) === '13HaCAB4jf7FYSZexJxoczyDDnutzZigjS');
+    const legacyAddressDestination = tx.outs.find(
+      (o: any) => bitcoin.address.fromOutputScript(o.script) === '13HaCAB4jf7FYSZexJxoczyDDnutzZigjS',
+    );
     assert.strictEqual(legacyAddressDestination?.value, 22000n);
 
     const spDestinatiob = tx.outs.find((o: any) => Number(o.value) === 10234);

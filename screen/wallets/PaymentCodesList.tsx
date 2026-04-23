@@ -323,7 +323,12 @@ export default function PaymentCodesList() {
       presentAlert({ message: loc.send.details_total_exceeds_balance });
       return;
     }
-    const { tx, fee } = foundWallet.createBip47NotificationTransaction(foundWallet.getUtxo() as Parameters<typeof foundWallet.createBip47NotificationTransaction>[0], newPc, fees.fast, changeAddress);
+    const { tx, fee } = foundWallet.createBip47NotificationTransaction(
+      foundWallet.getUtxo() as Parameters<typeof foundWallet.createBip47NotificationTransaction>[0],
+      newPc,
+      fees.fast,
+      changeAddress,
+    );
 
     if (!tx) {
       presentAlert({ message: loc.bip47.failed_create_notif_tx });

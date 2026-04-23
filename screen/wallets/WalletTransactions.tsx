@@ -2,11 +2,9 @@ import { RouteProp, useFocusEffect, useRoute, useLocale } from '@react-navigatio
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   findNodeHandle,
   FlatList,
-  LayoutAnimation,
   PixelRatio,
   ScrollView,
   StyleSheet,
@@ -394,8 +392,7 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { rout
               <Text style={[styles.listHeaderText, stylesHook.listHeaderText]}>{loc.transactions.list_title}</Text>
             </View>
           </View>
-          <View style={stylesHook.backgroundContainer}>
-          </View>
+          <View style={stylesHook.backgroundContainer} />
         </>
       </View>
     ),
