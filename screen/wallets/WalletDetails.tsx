@@ -10,9 +10,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { writeFileAndExport } from '../../blue_modules/fs';
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
-import { BlueCard, BlueText } from '../../BlueComponents';
+import { writeFileAndExport } from '../../modules/fs';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
+import { BlueCard, BlueText } from '../../ShroudComponents';
 import { AbstractHDElectrumWallet } from '../../class/wallets/abstract-hd-electrum-wallet';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';

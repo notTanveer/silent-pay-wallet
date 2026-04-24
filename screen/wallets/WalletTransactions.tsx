@@ -13,10 +13,10 @@ import {
   RefreshControl,
 } from 'react-native';
 import { Icon } from '@rneui/themed';
-import * as BlueElectrum from '../../blue_modules/BlueElectrum';
-import { isDesktop } from '../../blue_modules/environment';
-import * as fs from '../../blue_modules/fs';
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
+import * as BlueElectrum from '../../modules/BlueElectrum';
+import { isDesktop } from '../../modules/environment';
+import * as fs from '../../modules/fs';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import presentAlert, { AlertType } from '../../components/Alert';
 import { FButton, FContainer } from '../../components/FloatButtons';
 import { useTheme } from '../../components/themes';
@@ -34,7 +34,7 @@ import { Transaction } from '../../class/wallets/types';
 import getWalletTransactionsOptions, { WalletTransactionsRouteProps } from '../../navigation/helpers/getWalletTransactionsOptions';
 import { useSettings } from '../../hooks/context/useSettings';
 import useWalletSubscribe from '../../hooks/useWalletSubscribe';
-import { getClipboardContent } from '../../blue_modules/clipboard';
+import { getClipboardContent } from '../../modules/clipboard';
 import WalletGradient from '../../class/wallet-gradient';
 
 const buttonFontSize =

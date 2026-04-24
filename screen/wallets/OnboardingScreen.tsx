@@ -8,8 +8,8 @@ import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import loc from '../../loc';
 import presentAlert from '../../components/Alert';
 import { useStorage } from '../../hooks/context/useStorage';
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
-import { getDefaultIndexer } from '../../blue_modules/SilentPaymentIndexer';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
+import { getDefaultIndexer } from '../../modules/SilentPaymentIndexer';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'Onboarding'>;

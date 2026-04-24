@@ -2,8 +2,8 @@ import * as bip39 from 'bip39';
 import { Buffer } from 'buffer';
 import { ECPairFactory } from 'ecpair';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet.ts';
-import { disconnectIndexer, getDefaultIndexer } from '../../blue_modules/SilentPaymentIndexer';
-import ecc from '../../blue_modules/noble_ecc';
+import { disconnectIndexer, getDefaultIndexer } from '../../modules/SilentPaymentIndexer';
+import ecc from '../../modules/noble_ecc';
 import {
   getSilentPaymentAddress,
   getScanPrivateKey,
@@ -17,7 +17,7 @@ import {
   type SilentPaymentUTXOSerializable,
   type ScanProgressCallback,
 } from '../../helpers/silent-payments';
-import { BIP352_ACTIVATION_HEIGHT } from '../../blue_modules/constants';
+import { BIP352_ACTIVATION_HEIGHT } from '../../modules/constants';
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types.ts';
 import * as bitcoin from 'bitcoinjs-lib';
 import { HDTaprootWallet } from './hd-taproot-wallet.ts';

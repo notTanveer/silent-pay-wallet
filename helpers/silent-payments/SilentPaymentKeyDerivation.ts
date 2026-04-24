@@ -1,7 +1,7 @@
 import { BIP32Factory, BIP32Interface } from 'bip32';
 import { encodeSilentPaymentAddress } from '@silent-pay/core';
 import { Buffer } from 'buffer';
-import ecc from '../../blue_modules/noble_ecc';
+import ecc from '../../modules/noble_ecc';
 
 const bip32 = BIP32Factory(ecc);
 

@@ -6,7 +6,7 @@ import Keychain from 'react-native-keychain';
 import RNSecureKeyStore, { ACCESSIBLE } from 'react-native-secure-key-store';
 import Realm from 'realm';
 
-import * as encryption from '../blue_modules/encryption';
+import * as encryption from '../modules/encryption';
 import presentAlert from '../components/Alert';
 import { randomBytes } from './rng';
 import { ExtendedTransaction, Transaction, TWallet } from './wallets/types';
@@ -34,13 +34,13 @@ type TBucketStorage = {
 
 const isReactNative = typeof navigator !== 'undefined' && navigator?.product === 'ReactNative';
 
-export class BlueApp {
+export class Shroud {
   static FLAG_ENCRYPTED = 'data_encrypted';
   static DO_NOT_TRACK = 'donottrack';
 
-  private static _instance: BlueApp | null = null;
+  private static _instance: Shroud | null = null;
 
-  static keys2migrate = [BlueApp.DO_NOT_TRACK];
+  static keys2migrate = [Shroud.DO_NOT_TRACK];
 
   public cachedPassword?: false | string;
   public tx_metadata: TTXMetadata;
@@ -52,12 +52,12 @@ export class BlueApp {
     this.cachedPassword = false;
   }
 
-  static getInstance(): BlueApp {
-    if (!BlueApp._instance) {
-      BlueApp._instance = new BlueApp();
+  static getInstance(): Shroud {
+    if (!Shroud._instance) {
+      Shroud._instance = new Shroud();
     }
 
-    return BlueApp._instance;
+    return Shroud._instance;
   }
 
   async migrateKeys() {
@@ -66,7 +66,7 @@ export class BlueApp {
       return;
     }
 
-    for (const key of BlueApp.keys2migrate) {
+    for (const key of Shroud.keys2migrate) {
       try {
         const value = await RNSecureKeyStore.get(key);
         if (value) {
@@ -124,9 +124,9 @@ export class BlueApp {
   storageIsEncrypted = async (): Promise<boolean> => {
     let data;
     try {
-      data = await this.getItemWithFallbackToRealm(BlueApp.FLAG_ENCRYPTED);
+      data = await this.getItemWithFallbackToRealm(Shroud.FLAG_ENCRYPTED);
     } catch (error: any) {
-      console.warn('error reading `' + BlueApp.FLAG_ENCRYPTED + '` key:', error.message);
+      console.warn('error reading `' + Shroud.FLAG_ENCRYPTED + '` key:', error.message);
       return false;
     }
 
@@ -188,7 +188,7 @@ export class BlueApp {
     data = JSON.stringify(data);
     this.cachedPassword = password;
     await this.setItem('data', data);
-    await this.setItem(BlueApp.FLAG_ENCRYPTED, '1');
+    await this.setItem(Shroud.FLAG_ENCRYPTED, '1');
   };
 
   /**
@@ -576,12 +576,12 @@ export class BlueApp {
       }
 
       await this.setItem('data', JSON.stringify(data));
-      await this.setItem(BlueApp.FLAG_ENCRYPTED, this.cachedPassword ? '1' : '');
+      await this.setItem(Shroud.FLAG_ENCRYPTED, this.cachedPassword ? '1' : '');
 
       // now, backing up same data in realm:
       const realmkeyValue = await this.openRealmKeyValue();
       this.saveToRealmKeyValue(realmkeyValue, 'data', JSON.stringify(data));
-      this.saveToRealmKeyValue(realmkeyValue, BlueApp.FLAG_ENCRYPTED, this.cachedPassword ? '1' : '');
+      this.saveToRealmKeyValue(realmkeyValue, Shroud.FLAG_ENCRYPTED, this.cachedPassword ? '1' : '');
       realmkeyValue.close();
     } catch (error: any) {
       console.error('save to disk exception:', error.message);
@@ -724,26 +724,26 @@ export class BlueApp {
 
   isDoNotTrackEnabled = async (): Promise<boolean> => {
     try {
-      const keyExists = await AsyncStorage.getItem(BlueApp.DO_NOT_TRACK);
+      const keyExists = await AsyncStorage.getItem(Shroud.DO_NOT_TRACK);
       if (keyExists !== null) {
         const doNotTrackValue = !!keyExists;
         if (doNotTrackValue) {
-          await DefaultPreference.set(BlueApp.DO_NOT_TRACK, '1');
-          AsyncStorage.removeItem(BlueApp.DO_NOT_TRACK);
+          await DefaultPreference.set(Shroud.DO_NOT_TRACK, '1');
+          AsyncStorage.removeItem(Shroud.DO_NOT_TRACK);
         } else {
-          return Boolean(await DefaultPreference.get(BlueApp.DO_NOT_TRACK));
+          return Boolean(await DefaultPreference.get(Shroud.DO_NOT_TRACK));
         }
       }
     } catch (_) {}
-    const doNotTrackValue = await DefaultPreference.get(BlueApp.DO_NOT_TRACK);
+    const doNotTrackValue = await DefaultPreference.get(Shroud.DO_NOT_TRACK);
     return doNotTrackValue === '1' || false;
   };
 
   setDoNotTrack = async (value: boolean) => {
     if (value) {
-      await DefaultPreference.set(BlueApp.DO_NOT_TRACK, '1');
+      await DefaultPreference.set(Shroud.DO_NOT_TRACK, '1');
     } else {
-      await DefaultPreference.clear(BlueApp.DO_NOT_TRACK);
+      await DefaultPreference.clear(Shroud.DO_NOT_TRACK);
     }
   };
 
@@ -795,3 +795,6 @@ export class BlueApp {
     }
   }
 }
+
+export const ShroudApp = Shroud;
+export const BlueApp = Shroud;

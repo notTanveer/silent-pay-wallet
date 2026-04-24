@@ -39,8 +39,8 @@ import ToolsScreen from '../screen/settings/tools';
 import SettingsPrivacy from '../screen/settings/SettingsPrivacy';
 
 import getWalletTransactionsOptions from './helpers/getWalletTransactionsOptions';
-import { useSizeClass, SizeClass } from '../blue_modules/sizeClass';
-import { isDesktop } from '../blue_modules/environment';
+import { useSizeClass, SizeClass } from '../modules/sizeClass';
+import { isDesktop } from '../modules/environment';
 import ReceiveDetails from '../screen/receive/ReceiveDetails';
 import OnboardingStack from './OnboardingStack';
 

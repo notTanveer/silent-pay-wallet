@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { ActivityIndicator, Keyboard, Platform, StyleSheet, TouchableWithoutFeedback, View, TouchableOpacity, Image } from 'react-native';
-import { BlueFormLabel, BlueFormMultiInput } from '../../BlueComponents';
+import { BlueFormLabel, BlueFormMultiInput } from '../../ShroudComponents';
 import Button from '../../components/Button';
 import {
   DoneAndDismissKeyboardInputAccessory,
@@ -23,8 +23,8 @@ import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet.ts'
 import { useStorage } from '../../hooks/context/useStorage';
 import presentAlert from '../../components/Alert';
 import { WalletBirthSection } from '../../components/WalletBirthSection';
-import { BIP352_ACTIVATION_HEIGHT } from '../../blue_modules/constants';
-import { getDefaultIndexer } from '../../blue_modules/SilentPaymentIndexer';
+import { BIP352_ACTIVATION_HEIGHT } from '../../modules/constants';
+import { getDefaultIndexer } from '../../modules/SilentPaymentIndexer';
 
 type RouteProps = RouteProp<AddWalletStackParamList, 'ImportWallet'>;
 type NavigationProps = NativeStackNavigationProp<AddWalletStackParamList, 'ImportWallet'>;

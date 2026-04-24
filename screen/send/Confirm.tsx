@@ -4,17 +4,17 @@ import { Text } from '@rneui/themed';
 import { PayjoinClient } from 'payjoin-client';
 import BigNumber from 'bignumber.js';
 import * as bitcoin from 'bitcoinjs-lib';
-import { BlueText, BlueCard } from '../../BlueComponents';
+import { BlueText, BlueCard } from '../../ShroudComponents';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
 import loc, { formatBalance, formatBalanceWithoutSuffix } from '../../loc';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import presentAlert from '../../components/Alert';
 import { useTheme } from '../../components/themes';
 import Button from '../../components/Button';
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import SafeArea from '../../components/SafeArea';
-import { satoshiToBTC, satoshiToLocalCurrency } from '../../blue_modules/currency';
-import * as BlueElectrum from '../../blue_modules/BlueElectrum';
+import { satoshiToBTC, satoshiToLocalCurrency } from '../../modules/currency';
+import * as BlueElectrum from '../../modules/BlueElectrum';
 import { unlockWithBiometrics, useBiometrics } from '../../hooks/useBiometrics';
 import { TWallet, CreateTransactionTarget } from '../../class/wallets/types';
 import PayjoinTransaction from '../../class/payjoin-transaction';
@@ -24,8 +24,8 @@ import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useStorage } from '../../hooks/context/useStorage';
 import { HDSilentPaymentsWallet } from '../../class';
 import { useSettings } from '../../hooks/context/useSettings';
-import { majorTomToGroundControl } from '../../blue_modules/notifications';
-import { uint8ArrayToHex } from '../../blue_modules/uint8array-extras';
+import { majorTomToGroundControl } from '../../modules/notifications';
+import { uint8ArrayToHex } from '../../modules/uint8array-extras';
 
 enum ActionType {
   SET_LOADING = 'SET_LOADING',

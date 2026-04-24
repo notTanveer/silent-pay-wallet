@@ -2,8 +2,7 @@ import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, TextInput, View } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
-import { BlueFormLabel, BlueFormMultiInput } from '../../BlueComponents';
+import { BlueFormLabel, BlueFormMultiInput } from '../../ShroudComponents';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
 import SafeArea from '../../components/SafeArea';

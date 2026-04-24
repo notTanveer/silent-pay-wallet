@@ -2,11 +2,11 @@ import BigNumber from 'bignumber.js';
 import * as bitcoin from 'bitcoinjs-lib';
 import assert from 'assert';
 
-import * as BlueElectrum from '../blue_modules/BlueElectrum';
+import * as BlueElectrum from '../modules/BlueElectrum';
 import { HDSilentPaymentsWallet } from './wallets/hd-bip352-wallet';
 import { CreateTransactionUtxo } from './wallets/types.ts';
 import { CoinSelectOutput, CoinSelectReturnInput } from 'coinselect';
-import { isUint8Array, uint8ArrayToHex } from '../blue_modules/uint8array-extras';
+import { isUint8Array, uint8ArrayToHex } from '../modules/uint8array-extras';
 
 const witnessToBech32Address = (witness: string): string => {
   const payment = bitcoin.payments.p2wpkh({

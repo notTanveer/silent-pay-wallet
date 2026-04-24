@@ -1,6 +1,6 @@
 import React from 'react';
 import { Platform, StyleSheet, TextInput, View } from 'react-native';
-import { BlueFormLabel } from '../BlueComponents';
+import { BlueFormLabel } from '../ShroudComponents';
 import { useTheme } from './themes';
 import loc from '../loc';
 

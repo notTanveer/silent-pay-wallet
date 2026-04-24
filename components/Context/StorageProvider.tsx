@@ -1,19 +1,19 @@
 import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionManager, LayoutAnimation } from 'react-native';
-import A from '../../blue_modules/analytics';
-import { BlueApp as BlueAppClass, TTXMetadata } from '../../class';
+import A from '../../modules/analytics';
+import { Shroud as ShroudAppClass, TTXMetadata } from '../../class';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import type { TWallet } from '../../class/wallets/types';
 import presentAlert from '../../components/Alert';
 import loc, { formatBalanceWithoutSuffix } from '../../loc';
-import * as BlueElectrum from '../../blue_modules/BlueElectrum';
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
-import { startAndDecrypt } from '../../blue_modules/start-and-decrypt';
-import { isNotificationsEnabled, majorTomToGroundControl, unsubscribe } from '../../blue_modules/notifications';
+import * as BlueElectrum from '../../modules/BlueElectrum';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
+import { startAndDecrypt } from '../../modules/start-and-decrypt';
+import { isNotificationsEnabled, majorTomToGroundControl, unsubscribe } from '../../modules/notifications';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
 import { navigationRef } from '../../NavigationService';
 
-const BlueApp = BlueAppClass.getInstance();
+const Shroud = ShroudAppClass.getInstance();
 
 // hashmap of timestamps we _started_ refetching some wallet
 const _lastTimeTriedToRefetchWallet: { [walletID: string]: number } = {};
@@ -33,20 +33,20 @@ interface StorageContextType {
   resetWallets: () => void;
   walletTransactionUpdateStatus: WalletTransactionsStatus | string;
   setWalletTransactionUpdateStatus: (status: WalletTransactionsStatus | string) => void;
-  getTransactions: typeof BlueApp.getTransactions;
-  fetchWalletBalances: typeof BlueApp.fetchWalletBalances;
-  fetchWalletTransactions: typeof BlueApp.fetchWalletTransactions;
-  getBalance: typeof BlueApp.getBalance;
-  isStorageEncrypted: typeof BlueApp.storageIsEncrypted;
+  getTransactions: typeof Shroud.getTransactions;
+  fetchWalletBalances: typeof Shroud.fetchWalletBalances;
+  fetchWalletTransactions: typeof Shroud.fetchWalletTransactions;
+  getBalance: typeof Shroud.getBalance;
+  isStorageEncrypted: typeof Shroud.storageIsEncrypted;
   startAndDecrypt: typeof startAndDecrypt;
-  encryptStorage: typeof BlueApp.encryptStorage;
-  sleep: typeof BlueApp.sleep;
-  createFakeStorage: typeof BlueApp.createFakeStorage;
-  decryptStorage: typeof BlueApp.decryptStorage;
-  isPasswordInUse: typeof BlueApp.isPasswordInUse;
-  cachedPassword: typeof BlueApp.cachedPassword;
-  getItem: typeof BlueApp.getItem;
-  setItem: typeof BlueApp.setItem;
+  encryptStorage: typeof Shroud.encryptStorage;
+  sleep: typeof Shroud.sleep;
+  createFakeStorage: typeof Shroud.createFakeStorage;
+  decryptStorage: typeof Shroud.decryptStorage;
+  isPasswordInUse: typeof Shroud.isPasswordInUse;
+  cachedPassword: typeof Shroud.cachedPassword;
+  getItem: typeof Shroud.getItem;
+  setItem: typeof Shroud.setItem;
   handleWalletDeletion: (walletID: string, forceDelete?: boolean) => Promise<boolean>;
   confirmWalletDeletion: (wallet: any, onConfirmed: () => void) => void;
 }
@@ -60,7 +60,7 @@ export enum WalletTransactionsStatus {
 export const StorageContext = createContext<StorageContextType>(undefined);
 
 export const StorageProvider = ({ children }: { children: React.ReactNode }) => {
-  const txMetadata = useRef<TTXMetadata>(BlueApp.tx_metadata);
+  const txMetadata = useRef<TTXMetadata>(Shroud.tx_metadata);
 
   const [wallets, setWallets] = useState<TWallet[]>([]);
   const [walletTransactionUpdateStatus, setWalletTransactionUpdateStatus] = useState<WalletTransactionsStatus | string>(
@@ -145,14 +145,14 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
 
   const saveToDisk = useCallback(
     async (force: boolean = false) => {
-      if (!force && BlueApp.getWallets().length === 0) {
+      if (!force && Shroud.getWallets().length === 0) {
         console.debug('Not saving empty wallets array');
         return;
       }
       await InteractionManager.runAfterInteractions(async () => {
-        BlueApp.tx_metadata = txMetadata.current;
-        await BlueApp.saveToDisk();
-        const w: TWallet[] = [...BlueApp.getWallets()];
+        Shroud.tx_metadata = txMetadata.current;
+        await Shroud.saveToDisk();
+        const w: TWallet[] = [...Shroud.getWallets()];
         setWallets(w);
       });
     },
@@ -161,7 +161,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
   );
 
   const forceWalletsUpdate = useCallback(() => {
-    setWallets([...BlueApp.getWallets()]);
+    setWallets([...Shroud.getWallets()]);
   }, []);
 
   // Debounced persist to avoid excessive saves during rapid scans
@@ -179,7 +179,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
 
   const addWallet = useCallback(
     (wallet: TWallet): boolean => {
-      if (BlueApp.wallets.length > 0) {
+      if (Shroud.wallets.length > 0) {
         console.warn('[StorageProvider] Single-wallet mode: refusing to add a second wallet');
         return false;
       }
@@ -191,8 +191,8 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
         wallet.setOnPersistCallback(debouncedPersist);
       }
 
-      BlueApp.wallets.push(wallet);
-      setWallets([...BlueApp.getWallets()]);
+      Shroud.wallets.push(wallet);
+      setWallets([...Shroud.getWallets()]);
       return true;
     },
     [forceWalletsUpdate, debouncedPersist],
@@ -206,8 +206,8 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
 
     if ('clearCache' in wallet && typeof wallet.clearCache === 'function') wallet.clearCache();
 
-    BlueApp.deleteWallet(wallet);
-    setWallets([...BlueApp.getWallets()]);
+    Shroud.deleteWallet(wallet);
+    setWallets([...Shroud.getWallets()]);
   }, []);
 
   const handleWalletDeletion = useCallback(
@@ -325,14 +325,14 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
   );
 
   const resetWallets = useCallback(() => {
-    setWallets(BlueApp.getWallets());
+    setWallets(Shroud.getWallets());
   }, []);
 
   // Initialize wallets
   useEffect(() => {
     if (walletsInitialized) {
-      txMetadata.current = BlueApp.tx_metadata;
-      const currentWallets = BlueApp.getWallets();
+      txMetadata.current = Shroud.tx_metadata;
+      const currentWallets = Shroud.getWallets();
 
       currentWallets.forEach(wallet => {
         if ('setOnBalanceChangeCallback' in wallet && typeof wallet.setOnBalanceChangeCallback === 'function') {
@@ -392,12 +392,12 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
         await Promise.race([
           (async () => {
             const balanceStart = Date.now();
-            await BlueApp.fetchWalletBalances(lastSnappedTo);
+            await Shroud.fetchWalletBalances(lastSnappedTo);
             const balanceEnd = Date.now();
             console.debug('[refreshAllWalletTransactions] fetch balance took', (balanceEnd - balanceStart) / 1000, 'sec');
 
             const txStart = Date.now();
-            await BlueApp.fetchWalletTransactions(lastSnappedTo);
+            await Shroud.fetchWalletTransactions(lastSnappedTo);
             const txEnd = Date.now();
             console.debug('[refreshAllWalletTransactions] fetch tx took', (txEnd - txStart) / 1000, 'sec');
 
@@ -436,12 +436,12 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
           setWalletTransactionUpdateStatus(walletID);
 
           const balanceStart = Date.now();
-          await BlueApp.fetchWalletBalances(index);
+          await Shroud.fetchWalletBalances(index);
           const balanceEnd = Date.now();
           console.debug('[fetchAndSaveWalletTransactions] fetch balance took', (balanceEnd - balanceStart) / 1000, 'sec');
 
           const txStart = Date.now();
-          await BlueApp.fetchWalletTransactions(index);
+          await Shroud.fetchWalletTransactions(index);
           const txEnd = Date.now();
           console.debug('[fetchAndSaveWalletTransactions] fetch tx took', (txEnd - txStart) / 1000, 'sec');
         } catch (err) {
@@ -525,29 +525,29 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       wallets,
       txMetadata: txMetadata.current,
       saveToDisk,
-      getTransactions: BlueApp.getTransactions,
+      getTransactions: Shroud.getTransactions,
       selectedWalletID,
       addWallet,
       deleteWallet,
       addAndSaveWallet,
-      setItem: BlueApp.setItem,
-      getItem: BlueApp.getItem,
-      fetchWalletBalances: BlueApp.fetchWalletBalances,
-      fetchWalletTransactions: BlueApp.fetchWalletTransactions,
+      setItem: Shroud.setItem,
+      getItem: Shroud.getItem,
+      fetchWalletBalances: Shroud.fetchWalletBalances,
+      fetchWalletTransactions: Shroud.fetchWalletTransactions,
       fetchAndSaveWalletTransactions,
-      isStorageEncrypted: BlueApp.storageIsEncrypted,
-      encryptStorage: BlueApp.encryptStorage,
+      isStorageEncrypted: Shroud.storageIsEncrypted,
+      encryptStorage: Shroud.encryptStorage,
       startAndDecrypt,
-      cachedPassword: BlueApp.cachedPassword,
-      getBalance: BlueApp.getBalance,
+      cachedPassword: Shroud.cachedPassword,
+      getBalance: Shroud.getBalance,
       walletsInitialized,
       setWalletsInitialized,
       refreshAllWalletTransactions,
-      sleep: BlueApp.sleep,
-      createFakeStorage: BlueApp.createFakeStorage,
+      sleep: Shroud.sleep,
+      createFakeStorage: Shroud.createFakeStorage,
       resetWallets,
-      decryptStorage: BlueApp.decryptStorage,
-      isPasswordInUse: BlueApp.isPasswordInUse,
+      decryptStorage: Shroud.decryptStorage,
+      isPasswordInUse: Shroud.isPasswordInUse,
       walletTransactionUpdateStatus,
       setWalletTransactionUpdateStatus,
       handleWalletDeletion,

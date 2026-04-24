@@ -1986,7 +1986,7 @@ DEPENDENCIES:
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
   - react-native-biometrics (from `../node_modules/react-native-biometrics`)
   - react-native-blue-crypto (from `../node_modules/react-native-blue-crypto`)
-  - react-native-bw-file-access (from `../blue_modules/react-native-bw-file-access`)
+  - react-native-bw-file-access (from `../modules/react-native-bw-file-access`)
   - react-native-capture-protection (from `../node_modules/react-native-capture-protection`)
   - "react-native-document-picker (from `../node_modules/@react-native-documents/picker`)"
   - react-native-get-random-values (from `../node_modules/react-native-get-random-values`)
@@ -2144,7 +2144,7 @@ EXTERNAL SOURCES:
   react-native-blue-crypto:
     :path: "../node_modules/react-native-blue-crypto"
   react-native-bw-file-access:
-    :path: "../blue_modules/react-native-bw-file-access"
+    :path: "../modules/react-native-bw-file-access"
   react-native-capture-protection:
     :path: "../node_modules/react-native-capture-protection"
   react-native-document-picker:

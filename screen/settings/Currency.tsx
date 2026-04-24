@@ -9,8 +9,8 @@ import {
   initCurrencyDaemon,
   mostRecentFetchedRate,
   setPreferredCurrency,
-} from '../../blue_modules/currency';
-import { BlueCard, BlueText } from '../../BlueComponents';
+} from '../../modules/currency';
+import { BlueCard, BlueText } from '../../ShroudComponents';
 import presentAlert from '../../components/Alert';
 import ListItem from '../../components/ListItem';
 import { useTheme } from '../../components/themes';

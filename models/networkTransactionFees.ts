@@ -1,4 +1,4 @@
-import * as BlueElectrum from '../blue_modules/BlueElectrum';
+import * as BlueElectrum from '../modules/BlueElectrum';
 
 export enum NetworkTransactionFeeType {
   FAST = 'Fast',

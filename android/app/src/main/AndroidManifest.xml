@@ -143,12 +143,13 @@
                 <data android:scheme="file" android:mimeType="image/jpg" />
             </intent-filter>
             
-            <!-- Intent filter for other custom schemes (bitcoin, bluewallet, etc.) -->
+            <!-- Intent filter for other custom schemes (bitcoin, shroud, and legacy bluewallet) -->
             <intent-filter tools:ignore="AppLinkUrlError">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="bitcoin" />
                 <data android:scheme="lightning" />
+                <data android:scheme="shroud" />
                 <data android:scheme="bluewallet" />
                 <data android:scheme="lapp" />
                 <data android:scheme="blue" />

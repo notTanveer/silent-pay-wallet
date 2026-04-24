@@ -2,7 +2,7 @@ import { createDrawerNavigator, DrawerNavigationOptions, DrawerContentComponentP
 import { useLocale } from '@react-navigation/native';
 import React, { useEffect, useMemo } from 'react';
 import { Animated, Easing } from 'react-native';
-import { useSizeClass, SizeClass } from '../blue_modules/sizeClass';
+import { useSizeClass, SizeClass } from '../modules/sizeClass';
 import useCompanionListeners from '../hooks/useCompanionListeners';
 import DrawerList from '../screen/wallets/DrawerList';
 import DetailViewStackScreensStack from './DetailViewScreensStack';

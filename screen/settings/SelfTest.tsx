@@ -8,11 +8,11 @@ import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import BlueCrypto from 'react-native-blue-crypto';
 import wif from 'wif';
 
-import * as BlueElectrum from '../../blue_modules/BlueElectrum';
-import * as encryption from '../../blue_modules/encryption';
-import * as fs from '../../blue_modules/fs';
-import ecc from '../../blue_modules/noble_ecc';
-import { BlueText } from '../../BlueComponents';
+import * as BlueElectrum from '../../modules/BlueElectrum';
+import * as encryption from '../../modules/encryption';
+import * as fs from '../../modules/fs';
+import ecc from '../../modules/noble_ecc';
+import { BlueText } from '../../ShroudComponents';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
 import SaveFileButton from '../../components/SaveFileButton';

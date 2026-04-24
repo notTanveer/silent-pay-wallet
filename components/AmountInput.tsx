@@ -23,8 +23,8 @@ import {
   mostRecentFetchedRate,
   satoshiToBTC,
   updateExchangeRate,
-} from '../blue_modules/currency';
-import { BlueText } from '../BlueComponents';
+} from '../modules/currency';
+import { BlueText } from '../ShroudComponents';
 import confirm from '../helpers/confirm';
 import loc, { formatBalancePlain, formatBalanceWithoutSuffix, removeTrailingZeros } from '../loc';
 import { BitcoinUnit } from '../models/bitcoinUnits';

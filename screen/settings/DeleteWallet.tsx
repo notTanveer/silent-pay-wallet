@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { Alert } from 'react-native';
 import ListItem from '../../components/ListItem';
 import { useStorage } from '../../hooks/context/useStorage';
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import loc from '../../loc';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';

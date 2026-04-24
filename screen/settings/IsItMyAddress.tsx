@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Keyboard, StyleSheet, TextInput, View, ScrollView, Pressable, Text } from 'react-native';
-import { BlueButtonLink, BlueCard, BlueText } from '../../BlueComponents';
+import { BlueButtonLink, BlueCard, BlueText } from '../../ShroudComponents';
 import Button from '../../components/Button';
 import { useTheme } from '../../components/themes';
 import loc from '../../loc';
@@ -9,7 +9,7 @@ import { TWallet } from '../../class/wallets/types';
 import { WalletCarouselItem } from '../../components/WalletsCarousel';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Divider } from '@rneui/themed';
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import presentAlert from '../../components/Alert';
 import { scanQrHelper } from '../../helpers/scan-qr.ts';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation.ts';

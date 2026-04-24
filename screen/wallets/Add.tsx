@@ -3,8 +3,8 @@ import { ActivityIndicator, Alert, LayoutAnimation, Platform, TextInput, useColo
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useRoute } from '@react-navigation/native';
 
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
-import { BlueButtonLink, BlueFormLabel, BlueText } from '../../BlueComponents';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
+import { BlueButtonLink, BlueFormLabel, BlueText } from '../../ShroudComponents';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
 import HeaderMenuButton from '../../components/HeaderMenuButton';

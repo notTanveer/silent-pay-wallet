@@ -1,5 +1,5 @@
 import { CaptureProtection, useCaptureProtection } from 'react-native-capture-protection';
-import { isDesktop } from '../blue_modules/environment';
+import { isDesktop } from '../modules/environment';
 
 export const useScreenProtect = () => {
   const { protectionStatus, status } = useCaptureProtection();

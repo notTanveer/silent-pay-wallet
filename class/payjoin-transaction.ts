@@ -1,12 +1,12 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import { ECPairFactory } from 'ecpair';
 
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../blue_modules/hapticFeedback';
-import ecc from '../blue_modules/noble_ecc';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../modules/hapticFeedback';
+import ecc from '../modules/noble_ecc';
 import presentAlert from '../components/Alert';
 import { HDSilentPaymentsWallet } from './wallets/hd-bip352-wallet';
 import assert from 'assert';
-import { uint8ArrayToHex } from '../blue_modules/uint8array-extras';
+import { uint8ArrayToHex } from '../modules/uint8array-extras';
 const ECPair = ECPairFactory(ecc);
 
 const delay = (milliseconds: number) => new Promise(resolve => setTimeout(resolve, milliseconds));

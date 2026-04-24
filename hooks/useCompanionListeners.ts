@@ -1,11 +1,10 @@
 import { CommonActions } from '@react-navigation/native';
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState, AppStateStatus, Linking } from 'react-native';
-import RNQRGenerator from 'rn-qr-generator';
-import A from '../blue_modules/analytics';
-import { getClipboardContent } from '../blue_modules/clipboard';
-import { updateExchangeRate } from '../blue_modules/currency';
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../blue_modules/hapticFeedback';
+import A from '../modules/analytics';
+import { getClipboardContent } from '../modules/clipboard';
+import { updateExchangeRate } from '../modules/currency';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../modules/hapticFeedback';
 import {
   clearStoredNotifications,
   getDeliveredNotifications,
@@ -13,7 +12,7 @@ import {
   initializeNotifications,
   removeAllDeliveredNotifications,
   setApplicationIconBadgeNumber,
-} from '../blue_modules/notifications';
+} from '../modules/notifications';
 import DeeplinkSchemaMatch from '../class/deeplink-schema-match';
 import presentAlert from '../components/Alert';
 import loc from '../loc';

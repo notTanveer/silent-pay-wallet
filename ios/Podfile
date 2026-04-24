@@ -38,7 +38,7 @@ def configure_target()
     :app_path => "#{Pod::Config.instance.installation_root}/.."
 
   )
-  pod 'react-native-bw-file-access', :path => '../blue_modules/react-native-bw-file-access'
+  pod 'react-native-bw-file-access', :path => '../modules/react-native-bw-file-access'
   pod 'RustJsiBridge', :path => '.'
 end
 

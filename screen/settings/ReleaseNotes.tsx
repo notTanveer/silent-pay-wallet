@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScrollView } from 'react-native';
 
-import { BlueCard, BlueText } from '../../BlueComponents';
+import { BlueCard, BlueText } from '../../ShroudComponents';
 
 const ReleaseNotes: React.FC = () => {
   const notes = require('../../release-notes');

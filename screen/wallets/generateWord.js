@@ -2,8 +2,8 @@ import { useTheme } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { Keyboard, StyleSheet, TextInput, View } from 'react-native';
 
-import { generateChecksumWords } from '../../blue_modules/checksumWords';
-import { BlueCard, BlueText } from '../../BlueComponents';
+import { generateChecksumWords } from '../../modules/checksumWords';
+import { BlueCard, BlueText } from '../../ShroudComponents';
 import { randomBytes } from '../../class/rng';
 import Button from '../../components/Button';
 import loc from '../../loc';

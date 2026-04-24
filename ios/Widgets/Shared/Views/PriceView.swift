@@ -75,7 +75,7 @@ struct PriceView: View {
           .foregroundColor(priceChangePercentage.contains("-") ? .red : .green)
       }
     }
-    .widgetURL(URL(string: "bluewallet://marketprice"))
+    .widgetURL(URL(string: "shroud://marketprice"))
   }
   
   private var accessoryInlineView: some View {

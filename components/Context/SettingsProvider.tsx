@@ -1,12 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BLOCK_EXPLORERS, getBlockExplorerUrl, saveBlockExplorer, BlockExplorer, normalizeUrl } from '../../models/blockExplorer';
-import * as BlueElectrum from '../../blue_modules/BlueElectrum';
+import * as BlueElectrum from '../../modules/BlueElectrum';
 import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import DefaultPreference from 'react-native-default-preference';
-import { isReadClipboardAllowed, setReadClipboardAllowed } from '../../blue_modules/clipboard';
-import { getPreferredCurrency, GROUP_IO_BLUEWALLET, initCurrencyDaemon, setPreferredCurrency } from '../../blue_modules/currency';
-import { clearUseURv1, isURv1Enabled, setUseURv1 } from '../../blue_modules/ur';
-import { BlueApp } from '../../class';
+import { isReadClipboardAllowed, setReadClipboardAllowed } from '../../modules/clipboard';
+import { getPreferredCurrency, GROUP_IO_BLUEWALLET, initCurrencyDaemon, setPreferredCurrency } from '../../modules/currency';
+import { clearUseURv1, isURv1Enabled, setUseURv1 } from '../../modules/ur';
+import { Shroud } from '../../class';
 import { saveLanguage, STORAGE_KEY } from '../../loc';
 import { FiatUnit, TFiatUnit } from '../../models/fiatUnit';
 import {
@@ -22,7 +22,7 @@ const TotalWalletsBalancePreferredUnit = 'TotalWalletsBalancePreferredUnit';
 const getDoNotTrackStorage = async (): Promise<boolean> => {
   try {
     await DefaultPreference.setName(GROUP_IO_BLUEWALLET);
-    const doNotTrack = await DefaultPreference.get(BlueApp.DO_NOT_TRACK);
+    const doNotTrack = await DefaultPreference.get(Shroud.DO_NOT_TRACK);
     return doNotTrack === '1';
   } catch {
     console.error('Error getting DoNotTrack');
@@ -230,9 +230,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
     try {
       await DefaultPreference.setName(GROUP_IO_BLUEWALLET);
       if (value) {
-        await DefaultPreference.set(BlueApp.DO_NOT_TRACK, '1');
+        await DefaultPreference.set(Shroud.DO_NOT_TRACK, '1');
       } else {
-        await DefaultPreference.clear(BlueApp.DO_NOT_TRACK);
+        await DefaultPreference.clear(Shroud.DO_NOT_TRACK);
       }
       setIsDoNotTrackEnabled(value);
     } catch (e) {

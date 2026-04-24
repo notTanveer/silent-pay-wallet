@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
-import { BlueText } from '../../BlueComponents';
+import { BlueText } from '../../ShroudComponents';
 import { HDSegwitBech32Transaction, HDSilentPaymentsWallet } from '../../class';
 import presentAlert from '../../components/Alert';
 import SafeArea from '../../components/SafeArea';

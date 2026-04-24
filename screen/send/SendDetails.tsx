@@ -24,9 +24,9 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SilentPayment } from 'silent-payments';
-import { btcToSatoshi, fiatToBTC } from '../../blue_modules/currency';
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
-import { BlueText } from '../../BlueComponents';
+import { btcToSatoshi, fiatToBTC } from '../../modules/currency';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
+import { BlueText } from '../../ShroudComponents';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import { CreateTransactionTarget, CreateTransactionUtxo, TWallet } from '../../class/wallets/types';

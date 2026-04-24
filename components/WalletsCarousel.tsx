@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import WalletGradient from '../class/wallet-gradient';
-import { useSizeClass, SizeClass } from '../blue_modules/sizeClass';
+import { useSizeClass, SizeClass } from '../modules/sizeClass';
 import loc, { formatBalance, transactionTimeToReadable } from '../loc';
 import { BlurredBalanceView } from './BlurredBalanceView';
 import { useTheme } from './themes';

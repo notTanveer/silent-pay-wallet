@@ -3,9 +3,9 @@ import { StackActions, useIsFocused, useRoute } from '@react-navigation/native';
 import * as bitcoin from 'bitcoinjs-lib';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import * as BlueElectrum from '../../blue_modules/BlueElectrum';
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
-import { BlueCard, BlueText } from '../../BlueComponents';
+import * as BlueElectrum from '../../modules/BlueElectrum';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
+import { BlueCard, BlueText } from '../../ShroudComponents';
 import presentAlert from '../../components/Alert';
 import CopyToClipboardButton from '../../components/CopyToClipboardButton';
 import { DynamicQRCode } from '../../components/DynamicQRCode';
@@ -17,8 +17,8 @@ import loc from '../../loc';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useSettings } from '../../hooks/context/useSettings';
-import { majorTomToGroundControl } from '../../blue_modules/notifications';
-import { openSignedTransactionRaw } from '../../blue_modules/fs';
+import { majorTomToGroundControl } from '../../modules/notifications';
+import { openSignedTransactionRaw } from '../../modules/fs';
 import { BlueSpacing20 } from '../../components/BlueSpacing';
 
 const PsbtWithHardwareWallet = () => {

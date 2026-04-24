@@ -1,8 +1,8 @@
 import { BIP32Interface } from 'bip32';
 import * as bip39 from 'bip39';
 
-import * as bip39custom from '../../blue_modules/bip39';
-import * as BlueElectrum from '../../blue_modules/BlueElectrum';
+import * as bip39custom from '../../modules/bip39';
+import * as BlueElectrum from '../../modules/BlueElectrum';
 import { AbstractWallet } from './abstract-wallet';
 import { Transaction } from './types';
 

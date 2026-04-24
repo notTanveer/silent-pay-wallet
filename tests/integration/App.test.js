@@ -7,7 +7,7 @@ import SelfTest from '../../screen/settings/SelfTest';
 import Settings from '../../screen/settings/Settings';
 import { BlueDefaultTheme } from '../../components/themes';
 
-jest.mock('../../blue_modules/BlueElectrum', () => {
+jest.mock('../../modules/BlueElectrum', () => {
   return {
     connectMain: jest.fn(),
   };

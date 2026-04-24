@@ -7,7 +7,7 @@ import { CommonActions } from '@react-navigation/native';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import loc from '../../loc';
 import presentAlert from '../../components/Alert';
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import { useStorage } from '../../hooks/context/useStorage';
 
 type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'WalletTransactions'>;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { InputAccessoryView, Keyboard, Platform, StyleSheet, View } from 'react-native';
 import { Text } from '@rneui/themed';
-import { BlueButtonLink } from '../BlueComponents';
+import { BlueButtonLink } from '../ShroudComponents';
 import loc from '../loc';
 import { BitcoinUnit } from '../models/bitcoinUnits';
 import { useTheme } from './themes';

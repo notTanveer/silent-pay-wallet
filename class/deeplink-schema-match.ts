@@ -1,7 +1,7 @@
 import bip21, { TOptions } from 'bip21';
 import * as bitcoin from 'bitcoinjs-lib';
 import URL from 'url';
-import { readFileOutsideSandbox } from '../blue_modules/fs';
+import { readFileOutsideSandbox } from '../modules/fs';
 import { Chain } from '../models/bitcoinUnits';
 import type { TWallet } from './wallets/types';
 
@@ -21,6 +21,7 @@ class DeeplinkSchemaMatch {
     return (
       lowercaseString.startsWith('bitcoin:') ||
       lowercaseString.startsWith('lightning:') ||
+      lowercaseString.startsWith('shroud:') ||
       lowercaseString.startsWith('blue:') ||
       lowercaseString.startsWith('bluewallet:') ||
       lowercaseString.startsWith('lapp:')
@@ -47,10 +48,17 @@ class DeeplinkSchemaMatch {
       return;
     }
 
-    if (event.url.toLowerCase().startsWith('bluewallet:bitcoin:') || event.url.toLowerCase().startsWith('bluewallet:lightning:')) {
-      event.url = event.url.substring(11);
-    } else if (event.url.toLocaleLowerCase().startsWith('bluewallet://widget?action=')) {
-      event.url = event.url.substring('bluewallet://'.length);
+    const lowercaseUrl = event.url.toLowerCase();
+
+    if (
+      lowercaseUrl.startsWith('shroud:bitcoin:') ||
+      lowercaseUrl.startsWith('shroud:lightning:') ||
+      lowercaseUrl.startsWith('bluewallet:bitcoin:') ||
+      lowercaseUrl.startsWith('bluewallet:lightning:')
+    ) {
+      event.url = event.url.substring(event.url.indexOf(':') + 1);
+    } else if (lowercaseUrl.startsWith('shroud://widget?action=') || lowercaseUrl.startsWith('bluewallet://widget?action=')) {
+      event.url = event.url.substring(event.url.indexOf('://') + '://'.length);
     }
 
     if (DeeplinkSchemaMatch.isWidgetAction(event.url)) {
@@ -124,7 +132,7 @@ class DeeplinkSchemaMatch {
     } else {
       const urlObject = URL.parse(event.url, true); // eslint-disable-line n/no-deprecated-api
       (async () => {
-        if (urlObject.protocol === 'bluewallet:' || urlObject.protocol === 'lapp:' || urlObject.protocol === 'blue:') {
+        if (urlObject.protocol === 'shroud:' || urlObject.protocol === 'bluewallet:' || urlObject.protocol === 'lapp:' || urlObject.protocol === 'blue:') {
           switch (urlObject.host) {
             case 'setelectrumserver':
               completionHandler([
@@ -144,28 +152,38 @@ class DeeplinkSchemaMatch {
   }
 
   /**
-   * Extracts server from a deeplink like `bluewallet:setelectrumserver?server=electrum1.bluewallet.io%3A443%3As`
+  * Extracts server from a deeplink like `shroud:setelectrumserver?server=electrum1.bluewallet.io%3A443%3As`
    * returns FALSE if none found
    *
    * @param url {string}
    * @return {string|boolean}
    */
   static getServerFromSetElectrumServerAction(url: string): string | false {
-    if (!url.startsWith('bluewallet:setelectrumserver') && !url.startsWith('setelectrumserver')) return false;
+    const lowercaseUrl = url.toLowerCase();
+    if (
+      !lowercaseUrl.startsWith('shroud:setelectrumserver') &&
+      !lowercaseUrl.startsWith('bluewallet:setelectrumserver') &&
+      !lowercaseUrl.startsWith('setelectrumserver')
+    ) {
+      return false;
+    }
     const splt = url.split('server=');
     if (splt[1]) return decodeURIComponent(splt[1]);
     return false;
   }
 
   /**
-   * Extracts url from a deeplink like `bluewallet:setlndhuburl?url=https%3A%2F%2Flndhub.herokuapp.com`
+   * Extracts url from a deeplink like `shroud:setlndhuburl?url=https%3A%2F%2Flndhub.herokuapp.com`
    * returns FALSE if none found
    *
    * @param url {string}
    * @return {string|boolean}
    */
   static getUrlFromSetLndhubUrlAction(url: string): string | false {
-    if (!url.startsWith('bluewallet:setlndhuburl') && !url.startsWith('setlndhuburl')) return false;
+    const lowercaseUrl = url.toLowerCase();
+    if (!lowercaseUrl.startsWith('shroud:setlndhuburl') && !lowercaseUrl.startsWith('bluewallet:setlndhuburl') && !lowercaseUrl.startsWith('setlndhuburl')) {
+      return false;
+    }
     const splt = url.split('url=');
     if (splt[1]) return decodeURIComponent(splt[1]);
     return false;

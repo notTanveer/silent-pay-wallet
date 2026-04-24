@@ -1,6 +1,6 @@
 import React from 'react';
 import { Image, Linking, StyleSheet, Text, View } from 'react-native';
-import { BlueCard } from '../../BlueComponents';
+import { BlueCard } from '../../ShroudComponents';
 import ListItem from '../../components/ListItem';
 import { useTheme } from '../../components/themes';
 import loc, { formatStringAddTwoWhiteSpaces } from '../../loc';

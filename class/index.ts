@@ -1,4 +1,4 @@
-export * from './blue-app';
+export * from './shroud-app';
 export * from './hd-segwit-bech32-transaction';
 export * from './wallets/abstract-hd-wallet';
 export * from './wallets/abstract-wallet';

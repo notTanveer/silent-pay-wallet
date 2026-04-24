@@ -7,8 +7,8 @@ import {
   spScanSingleTransaction,
   RustMatchedUTXO,
   RustBatchScanResult
-} from '../../blue_modules/RustJsiBridge';
-import { hexToUint8Array } from '../../blue_modules/uint8array-extras';
+} from '../../modules/RustJsiBridge';
+import { hexToUint8Array } from '../../modules/uint8array-extras';
 
 
 export class RustTransactionProcessor {

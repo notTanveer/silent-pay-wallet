@@ -8,8 +8,8 @@ import MasterView from './navigation/MasterView';
 import { navigationRef } from './NavigationService';
 import { useLogger } from '@react-navigation/devtools';
 import { StorageProvider } from './components/Context/StorageProvider';
-import { initializeIndexer } from './blue_modules/SilentPaymentIndexer';
-import { initializeRustJsiBridge } from './blue_modules/RustJsiBridge';
+import { initializeIndexer } from './modules/SilentPaymentIndexer';
+import { initializeRustJsiBridge } from './modules/RustJsiBridge';
 
 const App = () => {
   initializeRustJsiBridge();

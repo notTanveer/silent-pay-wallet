@@ -1,6 +1,6 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet.ts';
-import ecc from '../../blue_modules/noble_ecc.ts';
+import ecc from '../../modules/noble_ecc.ts';
 import { type SilentPaymentUTXO } from '../../helpers/silent-payments/types.ts';
 
 describe('BIP-352 Silent Payments', () => {

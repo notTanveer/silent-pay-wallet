@@ -4,7 +4,7 @@ import BigNumber from 'bignumber.js';
 import LottieView from 'lottie-react-native';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@rneui/themed';
-import { BlueCard } from '../../BlueComponents';
+import { BlueCard } from '../../ShroudComponents';
 import Button from '../../components/Button';
 import SafeArea from '../../components/SafeArea';
 import { useTheme } from '../../components/themes';

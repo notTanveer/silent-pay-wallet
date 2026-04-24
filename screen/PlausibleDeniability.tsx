@@ -1,6 +1,6 @@
 import React, { useReducer, useRef } from 'react';
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../blue_modules/hapticFeedback';
-import { BlueCard, BlueText } from '../BlueComponents';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../modules/hapticFeedback';
+import { BlueCard, BlueText } from '../ShroudComponents';
 import presentAlert from '../components/Alert';
 import Button from '../components/Button';
 import loc from '../loc';

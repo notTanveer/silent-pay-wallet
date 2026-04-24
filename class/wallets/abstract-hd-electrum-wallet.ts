@@ -9,9 +9,9 @@ import coinSelect, { CoinSelectOutput, CoinSelectReturnInput, CoinSelectTarget }
 import coinSelectSplit from 'coinselect/split';
 import { ECPairFactory, ECPairInterface } from 'ecpair';
 
-import * as BlueElectrum from '../../blue_modules/BlueElectrum';
-import { ElectrumHistory } from '../../blue_modules/BlueElectrum';
-import ecc from '../../blue_modules/noble_ecc';
+import * as BlueElectrum from '../../modules/BlueElectrum';
+import { ElectrumHistory } from '../../modules/BlueElectrum';
+import ecc from '../../modules/noble_ecc';
 import { randomBytes } from '../rng';
 import { AbstractHDWallet } from './abstract-hd-wallet';
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types';

@@ -159,7 +159,7 @@ const useDeviceQuickActions = () => {
                 ? ''
                 : formatBalance(Number(wallet.getBalance()), wallet.getPreferredBalanceUnit(), true),
             userInfo: {
-              url: `bluewallet://wallet/${wallet.getID()}`,
+              url: `shroud://wallet/${wallet.getID()}`,
             },
             icon: Platform.select({
               android: 'quickactions',

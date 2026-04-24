@@ -9,7 +9,7 @@ import {
   PREFERRED_CURRENCY_STORAGE_KEY,
   setPreferredCurrency,
   GROUP_IO_BLUEWALLET,
-} from '../../blue_modules/currency';
+} from '../../modules/currency';
 import { FiatUnit } from '../../models/fiatUnit';
 
 jest.setTimeout(90 * 1000);
