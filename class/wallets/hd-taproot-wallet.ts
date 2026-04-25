@@ -147,10 +147,6 @@ export class HDTaprootWallet extends AbstractHDElectrumWallet {
     return true;
   }
 
-  allowBIP47() {
-    return true;
-  }
-
   allowSilentPaymentSend(): boolean {
     return true;
   }

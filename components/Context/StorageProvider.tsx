@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionManager, LayoutAnimation } from 'react-native';
 import A from '../../blue_modules/analytics';
-import { BlueApp as BlueAppClass, TCounterpartyMetadata, TTXMetadata } from '../../class';
+import { BlueApp as BlueAppClass, TTXMetadata } from '../../class';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import type { TWallet } from '../../class/wallets/types';
 import presentAlert from '../../components/Alert';
@@ -21,7 +21,6 @@ const _lastTimeTriedToRefetchWallet: { [walletID: string]: number } = {};
 interface StorageContextType {
   wallets: TWallet[];
   txMetadata: TTXMetadata;
-  counterpartyMetadata: TCounterpartyMetadata;
   saveToDisk: (force?: boolean) => Promise<void>;
   selectedWalletID: () => string | undefined; // Change from string|undefined to a function
   addWallet: (wallet: TWallet) => boolean;
@@ -62,7 +61,6 @@ export const StorageContext = createContext<StorageContextType>(undefined);
 
 export const StorageProvider = ({ children }: { children: React.ReactNode }) => {
   const txMetadata = useRef<TTXMetadata>(BlueApp.tx_metadata);
-  const counterpartyMetadata = useRef<TCounterpartyMetadata>(BlueApp.counterparty_metadata || {}); // init
 
   const [wallets, setWallets] = useState<TWallet[]>([]);
   const [walletTransactionUpdateStatus, setWalletTransactionUpdateStatus] = useState<WalletTransactionsStatus | string>(
@@ -153,14 +151,13 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       }
       await InteractionManager.runAfterInteractions(async () => {
         BlueApp.tx_metadata = txMetadata.current;
-        BlueApp.counterparty_metadata = counterpartyMetadata.current;
         await BlueApp.saveToDisk();
         const w: TWallet[] = [...BlueApp.getWallets()];
         setWallets(w);
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [txMetadata.current, counterpartyMetadata.current],
+    [txMetadata.current],
   );
 
   const forceWalletsUpdate = useCallback(() => {
@@ -335,7 +332,6 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
   useEffect(() => {
     if (walletsInitialized) {
       txMetadata.current = BlueApp.tx_metadata;
-      counterpartyMetadata.current = BlueApp.counterparty_metadata;
       const currentWallets = BlueApp.getWallets();
 
       currentWallets.forEach(wallet => {
@@ -391,17 +387,6 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
         }
 
         console.debug('[refreshAllWalletTransactions] Connected to Electrum');
-
-        // Restore fetch payment codes timing measurement
-        if (typeof BlueApp.fetchSenderPaymentCodes === 'function') {
-          const codesStart = Date.now();
-          console.debug('[refreshAllWalletTransactions] Fetching sender payment codes');
-          await BlueApp.fetchSenderPaymentCodes(lastSnappedTo);
-          const codesEnd = Date.now();
-          console.debug('[refreshAllWalletTransactions] fetch payment codes took', (codesEnd - codesStart) / 1000, 'sec');
-        } else {
-          console.warn('[refreshAllWalletTransactions] fetchSenderPaymentCodes is not available');
-        }
 
         console.debug('[refreshAllWalletTransactions] Fetching wallet balances and transactions');
         await Promise.race([
@@ -539,7 +524,6 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
     () => ({
       wallets,
       txMetadata: txMetadata.current,
-      counterpartyMetadata: counterpartyMetadata.current,
       saveToDisk,
       getTransactions: BlueApp.getTransactions,
       selectedWalletID,

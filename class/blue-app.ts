@@ -21,22 +21,6 @@ export type TTXMetadata = {
   };
 };
 
-export type TCounterpartyMetadata = {
-  /**
-   * our contact identifier, such as bip47 payment code
-   */
-  [counterparty: string]: {
-    /**
-     * custom human-readable name we assign ourselves
-     */
-    label: string;
-    /**
-     * some counterparties cannot be deleted because they sent a notif tx onchain, so we just mark them as hidden when user deletes
-     */
-    hidden?: boolean;
-  };
-};
-
 type TRealmTransaction = {
   internal: boolean;
   index: number;
@@ -46,7 +30,6 @@ type TRealmTransaction = {
 type TBucketStorage = {
   wallets: string[]; // array of serialized wallets, not actual wallet objects
   tx_metadata: TTXMetadata;
-  counterparty_metadata: TCounterpartyMetadata;
 };
 
 const isReactNative = typeof navigator !== 'undefined' && navigator?.product === 'ReactNative';
@@ -61,13 +44,11 @@ export class BlueApp {
 
   public cachedPassword?: false | string;
   public tx_metadata: TTXMetadata;
-  public counterparty_metadata: TCounterpartyMetadata;
   public wallets: TWallet[];
 
   constructor() {
     this.wallets = [];
     this.tx_metadata = {};
-    this.counterparty_metadata = {};
     this.cachedPassword = false;
   }
 
@@ -189,7 +170,6 @@ export class BlueApp {
       await this.saveToDisk();
       this.wallets = [];
       this.tx_metadata = {};
-      this.counterparty_metadata = {};
       return this.loadFromDisk();
     } else {
       throw new Error('Incorrect password. Please, try again.');
@@ -219,12 +199,10 @@ export class BlueApp {
     usedBucketNum = false; // resetting currently used bucket so we wont overwrite it
     this.wallets = [];
     this.tx_metadata = {};
-    this.counterparty_metadata = {};
 
     const data: TBucketStorage = {
       wallets: [],
       tx_metadata: {},
-      counterparty_metadata: {},
     };
 
     let buckets = await this.getItem('data');
@@ -361,7 +339,6 @@ export class BlueApp {
       const data: TBucketStorage = JSON.parse(dataRaw);
       if (!data.wallets) return false;
       this.tx_metadata = data.tx_metadata;
-      this.counterparty_metadata = data.counterparty_metadata;
       const wallets = data.wallets;
       for (const key of wallets) {
         let parsedWallet: { type?: string } | undefined;
@@ -555,10 +532,6 @@ export class BlueApp {
           keyCloned._txs_by_internal_index = {};
         }
 
-        if ('_bip47_instance' in keyCloned) {
-          delete keyCloned._bip47_instance; // since it wont be restored into a proper class instance
-        }
-
         walletsToSave.push(JSON.stringify({ ...keyCloned, type: keyCloned.type }));
       }
       if (realm) realm.close();
@@ -566,7 +539,6 @@ export class BlueApp {
       let data: TBucketStorage | string[] /* either a bucket, or an array of encrypted buckets */ = {
         wallets: walletsToSave,
         tx_metadata: this.tx_metadata,
-        counterparty_metadata: this.counterparty_metadata,
       };
 
       if (this.cachedPassword) {
@@ -674,28 +646,6 @@ export class BlueApp {
         await wallet.fetchTransactions();
         if ('fetchPendingTransactions' in wallet) {
           await (wallet as any).fetchPendingTransactions();
-        }
-      }
-    }
-  };
-
-  fetchSenderPaymentCodes = async (index?: number) => {
-    console.log('fetchSenderPaymentCodes for wallet#', typeof index === 'undefined' ? '(all)' : index);
-    if (index || index === 0) {
-      const wallet = this.wallets[index];
-      try {
-        if (!(wallet.allowBIP47() && wallet.isBIP47Enabled() && 'fetchBIP47SenderPaymentCodes' in wallet)) return;
-        await wallet.fetchBIP47SenderPaymentCodes();
-      } catch (error) {
-        console.error('Failed to fetch sender payment codes for wallet', index, error);
-      }
-    } else {
-      for (const wallet of this.wallets) {
-        try {
-          if (!(wallet.allowBIP47() && wallet.isBIP47Enabled() && 'fetchBIP47SenderPaymentCodes' in wallet)) continue;
-          await wallet.fetchBIP47SenderPaymentCodes();
-        } catch (error) {
-          console.error('Failed to fetch sender payment codes for wallet', wallet.label, error);
         }
       }
     }

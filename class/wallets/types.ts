@@ -82,11 +82,6 @@ export type Transaction = {
   blocktime: number;
   timestamp: number; // seconds, not milliseconds
   value?: number;
-
-  /**
-   * if known, who is on the other end of the transaction (BIP47 payment code)
-   */
-  counterparty?: string;
 };
 
 /**
