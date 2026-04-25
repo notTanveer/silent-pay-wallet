@@ -286,9 +286,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
   }
 
   cancelScan(): void {
-    if (this.activeScanPromise !== null) {
-      this.cancelScanCallbackScan = true;
-    }
+    this.cancelScanCallbackScan = true;
     disconnectIndexer();
     this.stopPolling();
   }
@@ -339,6 +337,10 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
    * @returns {Promise<number>} - Number of new UTXOs found
    */
   async scanForPayments(onProgress?: ScanProgressCallback, forceFullScan: boolean = false): Promise<number> {
+    if (this.cancelScanCallbackScan) {
+      return 0;
+    }
+
     if (this.activeScanPromise !== null) {
       return this.activeScanPromise;
     }
@@ -351,7 +353,8 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       return result;
     } finally {
       this.activeScanPromise = null;
-      this.cancelScanCallbackScan = false;
+      // don't cancelScanCallbackScan here — if cancelScan() was called during this scan,
+      // the flag must stay true so subsequent calls to scanForPayments() exit early.
     }
   }
 
@@ -400,9 +403,10 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
           return addedCount;
         },
         onProgress,
+        () => this.cancelScanCallbackScan,
       );
 
-      if (this.lastScannedBlock >= latestHeight && !this.isPollingActive) {
+      if (this.lastScannedBlock >= latestHeight && !this.isPollingActive && !this.cancelScanCallbackScan) {
         this.startPolling();
       }
 
