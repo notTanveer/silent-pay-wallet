@@ -6,7 +6,6 @@ import { useTheme } from '../components/themes';
 import loc from '../loc';
 import {
   AddComponent,
-  ImportCustomDerivationPathComponent,
   ImportSpeedComponent,
   ImportWalletComponent,
   PleaseBackupComponent,
@@ -53,11 +52,6 @@ const AddWalletStack = () => {
           closeButtonPosition: CloseButtonPosition.Left,
           title: loc.wallets.add_title,
         })(theme)}
-      />
-      <Stack.Screen
-        name="ImportCustomDerivationPath"
-        component={ImportCustomDerivationPathComponent}
-        options={navigationStyle({ statusBarStyle: 'light', title: loc.wallets.import_derivation_title })(theme)}
       />
       <Stack.Screen
         name="ImportWallet"
