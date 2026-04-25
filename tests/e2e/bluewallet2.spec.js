@@ -3,13 +3,11 @@ import * as bitcoin from 'bitcoinjs-lib';
 
 import {
   extractTextFromElementById,
-  getSwitchValue,
   hashIt,
   helperImportWallet,
   sleep,
   waitForText,
   tapAndTapAgainIfElementIsNotVisible,
-  tapAndTapAgainIfTextIsNotVisible,
   tapIfTextPresent,
   waitForId,
   countElements,
@@ -386,131 +384,6 @@ describe('BlueWallet UI Tests - import BIP84 wallet', () => {
     assert.strictEqual(transaction.outs.length, 1);
     assert.strictEqual(bitcoin.address.fromOutputScript(transaction.outs[0].script), 'bc1qffcl35r05wyf06meu3dalfevawx559n0ufrxcw'); // to address
     assert.strictEqual(transaction.outs[0].value, 1000n);
-
-    process.env.TRAVIS && require('fs').writeFileSync(lockFile, '1');
-  });
-
-  it('payment codes & manage contacts', async () => {
-    const lockFile = '/tmp/travislock.' + hashIt('t_manage_contacts');
-    if (process.env.TRAVIS) {
-      if (require('fs').existsSync(lockFile)) return console.warn('skipping as it previously passed on Travis');
-    }
-    if (!process.env.HD_MNEMONIC_BIP84) {
-      console.error('process.env.HD_MNEMONIC_BIP84 not set, skipped');
-      return;
-    }
-
-    await device.launchApp({ newInstance: true });
-
-    // go inside the wallet
-    await element(by.text('Imported HD SegWit (BIP84 Bech32 Native)')).tap();
-    await element(by.id('WalletDetails')).tap();
-
-    // switch on BIP47 slider if its not switched
-    if (!(await getSwitchValue('BIP47Switch'))) {
-      await expect(element(by.text('Contacts'))).not.toBeVisible();
-      await element(by.id('BIP47Switch')).tap();
-      await element(by.id('WalletDetailsScroll')).swipe('up', 'fast', 1);
-      await expect(element(by.text('Contacts'))).toBeVisible();
-      await device.pressBack();
-    } else {
-      await device.pressBack();
-    }
-
-    // go to receive screen and check that payment code is there
-
-    await waitForId('ReceiveButton');
-    await element(by.id('ReceiveButton')).tap();
-
-    try {
-      await element(by.text('ASK ME LATER.')).tap();
-    } catch (_) {}
-
-    await element(by.text('Payment Code')).tap();
-    await element(by.id('ReceiveDetailsScrollView')).swipe('up', 'fast', 1); // in case emu screen is small and it doesnt fit
-
-    await expect(
-      element(
-        by.text('PM8TJbcHbQFgBL5mAYUCxJEhsz8F66abWAnVqiq6Pa8Rav8qG6XjaJQmSzNqgc1k63ipiEnobNpAoxNJVzRkdoUEANj9KyBEjLt4hL99RMoa8iJXwwwM'),
-      ),
-    ).toBeVisible();
-
-    // now, testing contacts list
-    await device.pressBack();
-    await device.pressBack();
-    await element(by.text('Imported HD SegWit (BIP84 Bech32 Native)')).tap();
-    await element(by.id('WalletDetails')).tap();
-    await element(by.id('WalletDetailsScroll')).swipe('up', 'fast', 1); // in case emu screen is small and it doesnt fit
-    await tapAndTapAgainIfTextIsNotVisible('Contacts', 'Add Contact');
-
-    await expect(element(by.id('ContactListItem0'))).not.toBeVisible();
-    await element(by.text('Add Contact')).tap();
-    await element(by.type('android.widget.EditText')).replaceText('13HaCAB4jf7FYSZexJxoczyDDnutzZigjS');
-    await sleep(1000);
-    await element(by.text('OK')).tap();
-    await element(by.text('Add Contact')).tap();
-    await element(by.type('android.widget.EditText')).replaceText(
-      'sp1qqgste7k9hx0qftg6qmwlkqtwuy6cycyavzmzj85c6qdfhjdpdjtdgqjuexzk6murw56suy3e0rd2cgqvycxttddwsvgxe2usfpxumr70xc9pkqwv',
-    );
-    await element(by.text('OK')).tap();
-
-    await expect(element(by.id('ContactListItem0'))).toBeVisible();
-    await expect(element(by.id('ContactListItem1'))).toBeVisible();
-
-    await element(by.text('Add Contact')).tap();
-    await element(by.type('android.widget.EditText')).replaceText(
-      'PM8TJS2JxQ5ztXUpBBRnpTbcUXbUHy2T1abfrb3KkAAtMEGNbey4oumH7Hc578WgQJhPjBxteQ5GHHToTYHE3A1w6p7tU6KSoFmWBVbFGjKPisZDbP97',
-    );
-    await element(by.text('OK')).tap();
-
-    await waitForText('On-chain transaction needed');
-    await element(by.text('Cancel')).tap();
-
-    // testing renaming contact:
-    await element(by.id('ContactListItem0')).tap();
-    await element(by.text('Rename contact')).tap();
-    await element(by.type('android.widget.EditText')).replaceText('c0ntact');
-    await element(by.text('OK')).tap();
-    await expect(element(by.text('c0ntact'))).toBeVisible();
-
-    // now, doing a real transaction with our contacts
-
-    await device.pressBack();
-    await device.pressBack();
-    await device.pressBack();
-    await element(by.text('Imported HD SegWit (BIP84 Bech32 Native)')).tap();
-    await waitForId('SendButton');
-
-    await tapAndTapAgainIfElementIsNotVisible('SendButton', 'HeaderMenuButton');
-    await element(by.id('HeaderMenuButton')).tap();
-    await element(by.text('Insert Contact')).tap();
-    await tapAndTapAgainIfElementIsNotVisible('ContactListItem0', 'BitcoinAmountInput');
-    await element(by.id('BitcoinAmountInput')).typeText('0.0001\n');
-
-    await element(by.id('HeaderMenuButton')).tap();
-    await element(by.text('Add Recipient')).tap();
-    await element(by.id('HeaderMenuButton')).tap();
-    await element(by.text('Insert Contact')).tap();
-    await element(by.id('ContactListItem1')).tap();
-    await element(by.id('BitcoinAmountInput')).atIndex(1).typeText('0.0002\n');
-    await sleep(1000);
-    // setting fee rate:
-    await element(by.id('chooseFee')).tap();
-    await element(by.id('feeCustomContainerButton')).tap();
-    await element(by.id('feeCustom')).typeText('1');
-    await element(by.id('feeCustom')).tapReturnKey();
-    await sleep(1000);
-
-    await element(by.id('CreateTransactionButton')).tap();
-    await element(by.id('TransactionDetailsButton')).tap();
-
-    const txhex1 = await extractTextFromElementById('TxhexInput');
-    const tx1 = bitcoin.Transaction.fromHex(txhex1);
-    assert.strictEqual(tx1.outs.length, 3);
-    assert.strictEqual(uint8ArrayToHex(tx1.outs[0].script), '76a91419129d53e6319baf19dba059bead166df90ab8f588ac');
-    assert.strictEqual(tx1.outs[0].value, 10000n);
-    assert.strictEqual(uint8ArrayToHex(tx1.outs[1].script), '5120b81959cd9a4954cd525916cd636b4ffe9466600412ccd162653a0f464489f1a8');
-    assert.strictEqual(tx1.outs[1].value, 20000n);
 
     process.env.TRAVIS && require('fs').writeFileSync(lockFile, '1');
   });

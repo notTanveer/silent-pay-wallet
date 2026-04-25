@@ -84,7 +84,6 @@
         "create_to": "To",
         "create_tx_size": "Transaction Size",
         "create_verify": "Verify on coinb.in",
-        "details_insert_contact": "Insert Contact",
         "details_add_rec_add": "Add Recipient",
         "details_add_rec_rem": "Remove Recipient",
         "details_add_recc_rem_all_alert_description": "Are you sure you want to remove all recipients?",
@@ -109,7 +108,6 @@
         "details_next": "Next",
         "details_no_signed_tx": "The selected file does not contain a transaction that can be imported.",
         "details_note_placeholder": "Note to Self",
-        "counterparty_label_placeholder": "Edit contact name",
         "details_scan": "Scan",
         "details_scan_hint": "Double tap to scan or import a destination",
         "details_total_exceeds_balance": "The sending amount exceeds the available balance.",
@@ -153,9 +151,7 @@
         "success_done": "Done",
         "txSaved": "The transaction file ({filePath}) has been saved.",
         "file_saved_at_path": "The file ({filePath}) has been saved.",
-        "cant_send_to_silentpayment_adress": "This wallet cannot send to SilentPayment addresses",
-        "cant_send_to_bip47": "This wallet cannot send to BIP47 payment codes",
-        "cant_find_bip47_notification": "Add this Payment Code to contacts first"
+        "cant_send_to_silentpayment_adress": "This wallet cannot send to SilentPayment addresses"
     },
     "settings": {
         "about": "About",
@@ -302,8 +298,6 @@
         "status_cancel": "Cancel Transaction",
         "transactions_count": "Transactions Count",
         "txid": "Transaction ID",
-        "from": "From: {counterparty}",
-        "to": "To: {counterparty}",
         "updating": "Updating...",
         "watchOnlyWarningTitle": "Security warning",
         "watchOnlyWarningDescription": "Be cautious of scammers who often use “watch-only” wallets to deceive users. These wallets do not allow you to control or send funds; they only let you view the balance.",
@@ -451,27 +445,6 @@
         "type_receive": "Receive",
         "type_used": "Used",
         "transactions": "Transactions"
-    },
-    "bip47": {
-        "payment_code": "Payment Code",
-        "contacts": "Contacts",
-        "bip47_explain": "Reusable and shareable code",
-        "bip47_explain_subtitle": "BIP47",
-        "purpose": "Reusable and shareable code (BIP47)",
-        "pay_this_contact": "Pay this contact",
-        "rename_contact": "Rename contact",
-        "copy_payment_code": "Copy Payment Code",
-        "hide_contact": "Hide contact",
-        "rename": "Rename",
-        "provide_name": "Provide new name for this contact",
-        "add_contact": "Add Contact",
-        "provide_payment_code": "Provide Payment Code",
-        "invalid_pc": "Invalid Payment Code",
-        "notification_tx_unconfirmed": "Notification transaction is not confirmed yet, please wait",
-        "failed_create_notif_tx": "Failed to create on-chain transaction",
-        "onchain_tx_needed": "On-chain transaction needed",
-        "notif_tx_sent": "Notification transaction sent. Please wait for it to confirm",
-        "notif_tx": "Notification transaction"
     },
     "bip352": {
         "silent_payments": "Silent Payments",
