@@ -13,7 +13,7 @@ import {
   countElements,
   scanText,
 } from './helperz';
-import { uint8ArrayToHex } from '../../blue_modules/uint8array-extras';
+import { uint8ArrayToHex } from '../../modules/uint8array-extras';
 
 // if loglevel is set to `error`, this kind of logging will still get through
 console.warn = console.log = (...args) => {
@@ -43,7 +43,7 @@ beforeAll(async () => {
   await sleep(15000);
 }, 1200_000);
 
-describe('BlueWallet UI Tests - import BIP84 wallet', () => {
+describe('Shroud UI Tests - import BIP84 wallet', () => {
   it('can create a transaction; can scanQR with bip21; can switch units', async () => {
     const lockFile = '/tmp/travislock.' + hashIt('t21');
     if (process.env.TRAVIS) {

@@ -4,13 +4,13 @@ deepLinks=(
   "bitcoin:12eQ9m4sgAwTSQoNXkRABKhCXCsjm2jdVG"
   "bitcoin:bc1qh6tf004ty7z7un2v5ntu4mkf630545gvhs45u7?amount=666&label=Yo"
   "BITCOIN:BC1Q3RL0MKYK0ZRTXFMQN9WPCD3GNAZ00YV9YP0HXE"
-  "bluewallet:bitcoin:12eQ9m4sgAwTSQoNXkRABKhCXCsjm2jdVG"
+  "shroud:bitcoin:12eQ9m4sgAwTSQoNXkRABKhCXCsjm2jdVG"
   "lightning:lnbc10u1pwjqwkkpp5vlc3tttdzhpk9fwzkkue0sf2pumtza7qyw9vucxyyeh0yaqq66yqdq5f38z6mmwd3ujqar9wd6qcqzpgxq97zvuqrzjqvgptfurj3528snx6e3dtwepafxw5fpzdymw9pj20jj09sunnqmwqz9hx5qqtmgqqqqqqqlgqqqqqqgqjq5duu3fs9xq9vn89qk3ezwpygecu4p3n69wm3tnl28rpgn2gmk5hjaznemw0gy32wrslpn3g24khcgnpua9q04fttm2y8pnhmhhc2gncplz0zde"
-  "bluewallet:lightning:lnbc10u1pwjqwkkpp5vlc3tttdzhpk9fwzkkue0sf2pumtza7qyw9vucxyyeh0yaqq66yqdq5f38z6mmwd3ujqar9wd6qcqzpgxq97zvuqrzjqvgptfurj3528snx6e3dtwepafxw5fpzdymw9pj20jj09sunnqmwqz9hx5qqtmgqqqqqqqlgqqqqqqgqjq5duu3fs9xq9vn89qk3ezwpygecu4p3n69wm3tnl28rpgn2gmk5hjaznemw0gy32wrslpn3g24khcgnpua9q04fttm2y8pnhmhhc2gncplz0zde"
+  "shroud:lightning:lnbc10u1pwjqwkkpp5vlc3tttdzhpk9fwzkkue0sf2pumtza7qyw9vucxyyeh0yaqq66yqdq5f38z6mmwd3ujqar9wd6qcqzpgxq97zvuqrzjqvgptfurj3528snx6e3dtwepafxw5fpzdymw9pj20jj09sunnqmwqz9hx5qqtmgqqqqqqqlgqqqqqqgqjq5duu3fs9xq9vn89qk3ezwpygecu4p3n69wm3tnl28rpgn2gmk5hjaznemw0gy32wrslpn3g24khcgnpua9q04fttm2y8pnhmhhc2gncplz0zde"
   "https://azte.co/?c1=3062&c2=2586&c3=5053&c4=5261"
   "https://azte.co/redeem?code=1111222233334444"
-  "bluewallet:setelectrumserver?server=electrum1.bluewallet.io%3A443%3As"
-  "bluewallet:setlndhuburl?url=https%3A%2F%2Flndhub.herokuapp.com"
+  "shroud:setelectrumserver?server=electrum1.bluewallet.io%3A443%3As"
+  "shroud:setlndhuburl?url=https%3A%2F%2Flndhub.herokuapp.com"
   "lnaddress@zbd.gg"
   "zpub6rFDtF1nuXZ9PUL4XzKURh3vJBW6Kj6TUrYL4qPtFNtDXtcTVfiqjQDyrZNwjwzt5HS14qdqo3Co2282Lv3Re6Y5wFZxAVuMEpeygnnDwfx"
 )
@@ -193,7 +193,7 @@ select device in "${devices[@]}"; do
 }
 JSON
       # write payload to temporary file
-      apns_file=$(mktemp /tmp/bluewallet-apns-XXXXXX.apns)
+      apns_file=$(mktemp /tmp/shroud-apns-XXXXXX.apns)
       printf '%s' "$APNS_PAYLOAD" > "$apns_file"
       echo -e "Pushing notification to simulator $udid..."
       xcrun simctl push "$udid" "$apns_file"

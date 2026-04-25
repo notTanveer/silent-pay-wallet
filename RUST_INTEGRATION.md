@@ -5,7 +5,7 @@
 This project integrates Rust via React Native JSI to expose native performance for crypto-heavy operations. The flow is:
 
 ```
-TypeScript (blue_modules/RustJsiBridge.ts)
+TypeScript (modules/RustJsiBridge.ts)
             ↓
 JSI Layer (C++ in android/app/src/main/cpp)
             ↓
@@ -53,7 +53,7 @@ To add new Rust functions:
 
 1. Implement in `rust_jsi_bridge/src/lib.rs` with `#[no_mangle]` and `extern "C"`.
 2. Declare in `android/app/src/main/cpp/RustJsiBridge.cpp` and wrap with a JSI host function.
-3. Add TypeScript wrappers in `blue_modules/RustJsiBridge.ts`.
+3. Add TypeScript wrappers in `modules/RustJsiBridge.ts`.
 4. Build and distribute native libraries (see Build Workflow).
 5. Rebuild the React Native app.
 
@@ -91,7 +91,7 @@ npm run android:rust
 ## Using from TypeScript
 
 ```ts
-import { initializeRustJsiBridge, helloFromRust, multiplyFromRust } from './blue_modules/RustJsiBridge';
+import { initializeRustJsiBridge, helloFromRust, multiplyFromRust } from './modules/RustJsiBridge';
 
 initializeRustJsiBridge();
 // your function goes here. ex - helloFromRust
@@ -136,7 +136,7 @@ silent-pay-wallet/
 │           ├── RustJsiBridgeModule.java # React Native module
 │           └── RustJsiBridgePackage.java
 │
-└── blue_modules/
+└── modules/
     └── RustJsiBridge.ts          # TypeScript wrapper for JS
 ```
 

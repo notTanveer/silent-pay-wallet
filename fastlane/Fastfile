@@ -549,7 +549,7 @@ end
       
       # Define the IPA output path before building
       ipa_directory = File.join(project_root, "ios", "build")
-      ipa_name = "BlueWallet_#{ENV['PROJECT_VERSION']}_#{ENV['NEW_BUILD_NUMBER']}.ipa"
+      ipa_name = "Shroud_#{ENV['PROJECT_VERSION']}_#{ENV['NEW_BUILD_NUMBER']}.ipa"
       ipa_path = File.join(ipa_directory, ipa_name)
       
       begin

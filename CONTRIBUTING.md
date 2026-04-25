@@ -24,4 +24,4 @@ Do *not* add new dependencies. Bonus points if you manage to actually remove a d
 
 All new files must be in typescript. Bonus points if you convert some of the existing files to typescript.
 
-New components must go in `components/`. Bonus points if you refactor some of old components in `BlueComponents.js` to separate files.
+New components must go in `components/`. Bonus points if you refactor some of old components in `ShroudComponents.js` to separate files.

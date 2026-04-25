@@ -1,1 +1,1 @@
-BlueWallet - Bitcoin wallet
+Shroud - Bitcoin wallet

@@ -7,7 +7,7 @@ git_url(ENV["GIT_URL"])
 # Default to "appstore" but can be overridden
 type(ENV["MATCH_TYPE"] || "appstore")
 
-# App identifiers for all BlueWallet apps
+# App identifiers for all Shroud apps
 app_identifier([
   "org.bitshala.shroud", 
   "org.bitshala.shroud.watch", 

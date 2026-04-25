@@ -219,7 +219,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: BlueWallet_IPA
+          name: Shroud_IPA
           path: ${{ env.IPA_OUTPUT_PATH }}
           retention-days: 7
 
@@ -254,14 +254,14 @@ jobs:
       - name: Download IPA from Artifact
         uses: actions/download-artifact@v4
         with:
-          name: BlueWallet_IPA
+          name: Shroud_IPA
           path: ./
 
       - name: Create App Store Connect API Key JSON
         run: echo '${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}' > ./appstore_api_key.json
 
       - name: Set IPA Path Environment Variable
-        run: echo "IPA_OUTPUT_PATH=$(pwd)/BlueWallet_${{ needs.build.outputs.project_version }}_${{ needs.build.outputs.new_build_number }}.ipa" >> $GITHUB_ENV
+        run: echo "IPA_OUTPUT_PATH=$(pwd)/Shroud_${{ needs.build.outputs.project_version }}_${{ needs.build.outputs.new_build_number }}.ipa" >> $GITHUB_ENV
 
       - name: Verify IPA Path Before Upload
         run: |

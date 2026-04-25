@@ -1,3 +1,4 @@
+const path = require('path');
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 
 /**
@@ -13,6 +14,7 @@ const config = {
       crypto: require.resolve('crypto-browserify'),
       net: require.resolve('react-native-tcp-socket'),
       tls: require.resolve('react-native-tcp-socket'),
+      'bc-bech32': path.resolve(__dirname, 'modules/bc-bech32'),
     },
   },
 };

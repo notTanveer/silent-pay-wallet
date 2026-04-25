@@ -13,7 +13,7 @@ beforeAll(async () => {
   await device.launchApp({ delete: true });
 }, 300_000);
 
-describe('BlueWallet UI Tests - import Watch-only wallet (zpub)', () => {
+describe('Shroud UI Tests - import Watch-only wallet (zpub)', () => {
   /**
    * test plan:
    * 1. import wallet
