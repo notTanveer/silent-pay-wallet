@@ -18,7 +18,6 @@ import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamL
 import { useStorage } from '../../hooks/context/useStorage';
 import { useSettings } from '../../hooks/context/useSettings';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import { BlueSpacing20 } from '../../components/BlueSpacing';
 import { BlueLoading } from '../../components/BlueLoading';
 
 const actionKeys = {
@@ -63,16 +62,13 @@ type RouteProps = RouteProp<DetailViewStackParamList, 'TransactionDetails'>;
 const TransactionDetails = () => {
   const { navigate } = useExtendedNavigation<NavigationProps>();
   const { hash, walletID } = useRoute<RouteProps>().params;
-  const { saveToDisk, txMetadata, counterpartyMetadata, wallets, getTransactions } = useStorage();
+  const { saveToDisk, txMetadata, wallets, getTransactions } = useStorage();
   const { selectedBlockExplorer } = useSettings();
   const [from, setFrom] = useState<string[]>([]);
   const [to, setTo] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [tx, setTX] = useState<Transaction>();
   const [memo, setMemo] = useState<string>('');
-  const [counterpartyLabel, setCounterpartyLabel] = useState<string>('');
-  const [paymentCode, setPaymentCode] = useState<string>('');
-  const [isCounterpartyLabelVisible, setIsCounterpartyLabelVisible] = useState<boolean>(false);
   const { colors } = useTheme();
   const stylesHooks = StyleSheet.create({
     memoTextInput: {
@@ -91,12 +87,9 @@ const TransactionDetails = () => {
   const saveTransactionDetails = useCallback(() => {
     if (tx) {
       txMetadata[tx.hash] = { memo };
-      if (counterpartyLabel && paymentCode) {
-        counterpartyMetadata[paymentCode] = { label: counterpartyLabel };
-      }
       saveToDisk();
     }
-  }, [tx, txMetadata, memo, counterpartyLabel, paymentCode, saveToDisk, counterpartyMetadata]);
+  }, [tx, txMetadata, memo, saveToDisk]);
 
   usePreventRemove(false, () => {
     saveTransactionDetails();
@@ -124,18 +117,6 @@ const TransactionDetails = () => {
 
         const wallet = wallets.find(w => w.getID() === walletID);
         assert(wallet, 'Internal error: could not find wallet');
-
-        if (wallet.allowBIP47() && wallet.isBIP47Enabled() && 'getBip47CounterpartyByTxid' in wallet) {
-          const foundPaymentCode = wallet.getBip47CounterpartyByTxid(hash);
-          if (foundPaymentCode) {
-            // okay, this txid _was_ with someone using payment codes, so we show the label edit dialog
-            // and load user-defined alias for the pc if any
-
-            setCounterpartyLabel(counterpartyMetadata ? (counterpartyMetadata[foundPaymentCode]?.label ?? '') : '');
-            setIsCounterpartyLabelVisible(true);
-            setPaymentCode(foundPaymentCode);
-          }
-        }
 
         setMemo(txMetadata[foundTx.hash]?.memo ?? '');
         setTX(foundTx);
@@ -260,20 +241,6 @@ const TransactionDetails = () => {
             onBlur={handleMemoBlur}
             testID="TransactionDetailsMemoInput"
           />
-          {isCounterpartyLabelVisible ? (
-            <View>
-              <BlueSpacing20 />
-              <TextInput
-                placeholder={loc.send.counterparty_label_placeholder}
-                value={counterpartyLabel}
-                onBlur={handleMemoBlur}
-                placeholderTextColor="#81868e"
-                style={[styles.memoTextInput, stylesHooks.memoTextInput]}
-                onChangeText={setCounterpartyLabel}
-              />
-              <BlueSpacing20 />
-            </View>
-          ) : null}
         </View>
 
         {from && (

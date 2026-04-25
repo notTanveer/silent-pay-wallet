@@ -23,7 +23,6 @@ export type SendDetailsParams = {
   utxos?: CreateTransactionUtxo[] | null;
   isEditable?: boolean;
   uri?: string;
-  paymentCode?: string;
   selectedFeeRate?: string | undefined;
   selectedFeeType?: NetworkTransactionFeeType;
   addRecipientParams?: {
@@ -52,7 +51,6 @@ export type SendDetailsStackParamList = {
     memo?: string;
     walletID: string;
     tx: string;
-    targets?: CreateTransactionTarget[]; // needed to know if there were paymentCodes, which turned into addresses in `recipients`
     recipients: CreateTransactionTarget[];
     satoshiPerByte: number;
     payjoinUrl?: string | null;
@@ -85,10 +83,6 @@ export type SendDetailsStackParamList = {
   };
   CoinControl: {
     walletID: string;
-  };
-  PaymentCodeList: {
-    walletID: string;
-    merge?: boolean;
   };
   ScanQRCode: ScanQRCodeParamList;
 };

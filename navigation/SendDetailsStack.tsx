@@ -7,7 +7,6 @@ import {
   CoinControlComponent,
   ConfirmComponent,
   CreateTransactionComponent,
-  PaymentCodesListComponent,
   PsbtWithHardwareWalletComponent,
   SendDetailsComponent,
   SuccessComponent,
@@ -71,11 +70,6 @@ const SendDetailsStack = () => {
         options={navigationStyle({ headerShown: false, gestureEnabled: false })(theme)}
       />
       <Stack.Screen name="CoinControl" component={CoinControlComponent} options={navigationStyle({ title: loc.cc.header })(theme)} />
-      <Stack.Screen
-        name="PaymentCodeList"
-        component={PaymentCodesListComponent}
-        options={navigationStyle({ title: loc.bip47.contacts })(theme)}
-      />
       <Stack.Screen
         name="ScanQRCode"
         component={ScanQRCodeComponent}

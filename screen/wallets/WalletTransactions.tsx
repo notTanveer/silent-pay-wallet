@@ -166,9 +166,6 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { rout
       let smthChanged = false;
       try {
         await BlueElectrum.waitTillConnected();
-        if (wallet.allowBIP47() && wallet.isBIP47Enabled() && 'fetchBIP47SenderPaymentCodes' in wallet) {
-          await wallet.fetchBIP47SenderPaymentCodes();
-        }
         const oldBalance = wallet.getBalance();
         await wallet.fetchBalance();
         if (oldBalance !== wallet.getBalance()) smthChanged = true;

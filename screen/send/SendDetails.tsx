@@ -23,10 +23,10 @@ import {
   View,
   TouchableOpacity,
 } from 'react-native';
+import { SilentPayment } from 'silent-payments';
 import { btcToSatoshi, fiatToBTC } from '../../blue_modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { BlueText } from '../../BlueComponents';
-import { ContactList } from '../../class/contact-list';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import { AbstractHDElectrumWallet } from '../../class/wallets/abstract-hd-electrum-wallet';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
@@ -412,10 +412,8 @@ const SendDetails = () => {
         return presentAlert({ title: loc.errors.error, message: loc.send.details_address_field_is_not_valid });
       }
 
-      const cl = new ContactList();
-
       const dataWithoutSchema = data.replace('bitcoin:', '').replace('BITCOIN:', '');
-      if (wallet.isAddressValid(dataWithoutSchema) || cl.isPaymentCodeValid(dataWithoutSchema)) {
+      if (wallet.isAddressValid(dataWithoutSchema) || SilentPayment.isPaymentCodeValid(dataWithoutSchema)) {
         setAddresses(addrs => {
           addrs[scrollIndex.current].address = dataWithoutSchema;
           return [...addrs];
@@ -490,33 +488,13 @@ const SendDetails = () => {
       }
 
       if (!error) {
-        const cl = new ContactList();
-        if (!wallet.isAddressValid(transaction.address) && !cl.isPaymentCodeValid(transaction.address)) {
+        const isSilentPayment = SilentPayment.isPaymentCodeValid(transaction.address);
+        if (!wallet.isAddressValid(transaction.address) && !isSilentPayment) {
           console.log('validation error');
           error = loc.send.details_address_field_is_not_valid;
-        }
-      }
-
-      // validating payment codes, if any
-      if (!error) {
-        if (transaction.address.startsWith('sp1')) {
-          if (!wallet.allowSilentPaymentSend()) {
-            console.log('validation error');
-            error = loc.send.cant_send_to_silentpayment_adress;
-          }
-        }
-
-        if (transaction.address.startsWith('PM')) {
-          if (!wallet.allowBIP47()) {
-            console.log('validation error');
-            error = loc.send.cant_send_to_bip47;
-          } else if (!(wallet as unknown as AbstractHDElectrumWallet).getBIP47NotificationTransaction(transaction.address)) {
-            console.log('validation error');
-            error = loc.send.cant_find_bip47_notification;
-          } else {
-            // BIP47 is allowed, notif tx is in place, lets sync joint addresses with the receiver
-            await (wallet as unknown as AbstractHDElectrumWallet).syncBip47ReceiversAddresses(transaction.address);
-          }
+        } else if (isSilentPayment && !wallet.allowSilentPaymentSend()) {
+          console.log('validation error');
+          error = loc.send.cant_send_to_silentpayment_adress;
         }
       }
 
@@ -575,9 +553,6 @@ const SendDetails = () => {
       }
     }
 
-    const targetsOrig = JSON.parse(JSON.stringify(targets));
-    // preserving original since it will be mutated
-
     // without forcing `HDSegwitBech32Wallet` i had a weird ts error, complaining about last argument (fp)
     const { tx, outputs, psbt, fee } = (wallet as HDSilentPaymentsWallet)?.createTransaction(
       lutxo,
@@ -617,7 +592,6 @@ const SendDetails = () => {
       memo: transactionMemo,
       walletID: wallet.getID(),
       tx: tx.toHex(),
-      targets: targetsOrig,
       recipients,
       satoshiPerByte: requestedSatPerByte,
       payjoinUrl,
@@ -718,11 +692,6 @@ const SendDetails = () => {
     });
   }, [navigation, wallet]);
 
-  const handleInsertContact = useCallback(() => {
-    if (!wallet) return;
-    navigation.navigate('PaymentCodeList', { walletID: wallet.getID() });
-  }, [navigation, wallet]);
-
   const onReplaceableFeeSwitchValueChanged = useCallback(
     (value: boolean) => {
       setParams({ isTransactionReplaceable: value });
@@ -776,8 +745,6 @@ const SendDetails = () => {
         onReplaceableFeeSwitchValueChanged(!isTransactionReplaceable);
       } else if (id === CommonToolTipActions.CoinControl.id) {
         handleCoinControl();
-      } else if (id === CommonToolTipActions.InsertContact.id) {
-        handleInsertContact();
       } else if (id === CommonToolTipActions.RemoveAllRecipients.id) {
         handleRemoveAllRecipients();
       }
@@ -790,7 +757,6 @@ const SendDetails = () => {
       onReplaceableFeeSwitchValueChanged,
       isTransactionReplaceable,
       handleCoinControl,
-      handleInsertContact,
       handleRemoveAllRecipients,
     ],
   );

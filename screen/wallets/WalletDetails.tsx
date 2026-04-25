@@ -45,12 +45,6 @@ const WalletDetails: React.FC = () => {
   const [backdoorPressed, setBackdoorPressed] = useState<number>(0);
   const walletRef = useRef<TWallet | undefined>(wallets.find(w => w.getID() === walletID));
   const wallet = walletRef.current as TWallet;
-  const [isBIP47Enabled, setIsBIP47Enabled] = useState<boolean>(wallet.isBIP47Enabled ? wallet.isBIP47Enabled() : false);
-
-  const [isContactsVisible, setIsContactsVisible] = useState<boolean>(
-    (wallet.allowBIP47 && wallet.allowBIP47() && wallet.isBIP47Enabled && wallet.isBIP47Enabled()) || false,
-  );
-
   const [hideTransactionsInWalletsList, setHideTransactionsInWalletsList] = useState<boolean>(
     wallet.getHideTransactionsInWalletsList ? !wallet.getHideTransactionsInWalletsList() : true,
   );
@@ -208,10 +202,6 @@ const WalletDetails: React.FC = () => {
     });
   }, [HeaderRight, setOptions]);
 
-  useEffect(() => {
-    setIsContactsVisible(wallet.allowBIP47 && wallet.allowBIP47() && isBIP47Enabled);
-  }, [isBIP47Enabled, wallet]);
-
   useFocusEffect(
     useCallback(() => {
       const task = InteractionManager.runAfterInteractions(() => {
@@ -275,8 +265,6 @@ const WalletDetails: React.FC = () => {
     navigate('WalletAddresses', {
       walletID,
     });
-
-  const navigateToContacts = () => navigate('PaymentCodeList', { walletID });
 
   const exportInternals = async () => {
     if (backdoorPressed < 10) return setBackdoorPressed(backdoorPressed + 1);
@@ -434,32 +422,6 @@ const WalletDetails: React.FC = () => {
                 <BlueText>{wallet.getTransactions().length}</BlueText>
               </>
 
-              {wallet.allowBIP47 && wallet.allowBIP47() ? (
-                <>
-                  <Text style={[styles.textLabel2, stylesHook.textLabel2]}>{loc.bip47.payment_code}</Text>
-                  <View style={styles.hardware}>
-                    <BlueText>{loc.bip47.purpose}</BlueText>
-                    <Switch
-                      value={isBIP47Enabled}
-                      onValueChange={async (value: boolean) => {
-                        setIsBIP47Enabled(value);
-                        if (wallet.switchBIP47) {
-                          wallet.switchBIP47(value);
-                          triggerHapticFeedback(HapticFeedbackTypes.ImpactLight);
-                        }
-                        try {
-                          await saveToDisk();
-                        } catch (error: unknown) {
-                          triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
-                          console.error((error as Error).message);
-                        }
-                      }}
-                      testID="BIP47Switch"
-                    />
-                  </View>
-                </>
-              ) : null}
-
               <View>
                 <View style={styles.row}>
                   {wallet.allowMasterFingerprint && wallet.allowMasterFingerprint() && (
@@ -489,7 +451,6 @@ const WalletDetails: React.FC = () => {
             {wallet instanceof AbstractHDElectrumWallet && (
               <ListItem onPress={navigateToAddresses} title={loc.wallets.details_show_addresses} chevron />
             )}
-            {isContactsVisible ? <ListItem onPress={navigateToContacts} title={loc.bip47.contacts} chevron /> : null}
             <BlueCard style={styles.address}>
               <View>
                 <BlueSpacing20 />

@@ -17,7 +17,6 @@ import WalletDetails from '../screen/wallets/WalletDetails';
 import GenerateWord from '../screen/wallets/generateWord';
 import WalletsList from '../screen/wallets/WalletsList';
 import { DetailViewStack } from './index';
-import PaymentCodesListComponent from './LazyLoadPaymentCodeStack';
 import SettingsButton from '../components/icons/SettingsButton';
 import { useStorage } from '../hooks/context/useStorage';
 import WalletTransactions from '../screen/wallets/WalletTransactions';
@@ -142,12 +141,6 @@ const DetailViewStackScreensStack = () => {
         component={GenerateWord}
         options={navigationStyle({ title: loc.autofill_word.title })(theme)}
       />
-      <DetailViewStack.Screen
-        name="PaymentCodeList"
-        component={PaymentCodesListComponent}
-        options={navigationStyle({ title: loc.bip47.contacts })(theme)}
-      />
-
       <DetailViewStack.Screen
         name="Success"
         component={Success}

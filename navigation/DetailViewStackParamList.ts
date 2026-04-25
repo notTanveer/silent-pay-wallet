@@ -72,10 +72,6 @@ export type DetailViewStackParamList = {
     address: string;
   };
   ScanQRCode: ScanQRCodeParamList;
-  PaymentCodeList: {
-    paymentCode: string;
-    walletID: string;
-  };
   Onboarding: undefined;
   DeleteWallet: undefined;
 };

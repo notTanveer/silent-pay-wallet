@@ -109,7 +109,7 @@ type TransactionStatusProps = {
 const TransactionStatus: React.FC<TransactionStatusProps> = ({ transaction, txid }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { isCPFPPossible, isRBFBumpFeePossible, isRBFCancelPossible, tx, isLoading, eta, intervalMs, wallet, loadingError } = state;
-  const { wallets, txMetadata, counterpartyMetadata, fetchAndSaveWalletTransactions } = useStorage();
+  const { wallets, txMetadata, fetchAndSaveWalletTransactions } = useStorage();
   const { hash, walletID } = useRoute<RouteProps>().params;
   const { navigate, setOptions, goBack } = useExtendedNavigation<NavigationProps>();
   const { colors } = useTheme();
@@ -460,11 +460,6 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({ transaction, txid
     }
   };
 
-  const shortenCounterpartyName = (addr: string): string => {
-    if (addr.length < 20) return addr;
-    return addr.substr(0, 10) + '...' + addr.substr(addr.length - 10, 10);
-  };
-
   const renderTXMetadata = () => {
     if (txMetadata[tx.hash]) {
       if (txMetadata[tx.hash].memo) {
@@ -477,29 +472,6 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({ transaction, txid
         );
       }
     }
-  };
-
-  const renderTXCounterparty = () => {
-    if (!tx.counterparty) return; // no BIP47 counterparty for this tx, return early
-
-    // theres a counterparty. lets lookup if theres an alias for him
-    let counterparty = counterpartyMetadata?.[tx.counterparty]?.label ?? tx.counterparty;
-    counterparty = shortenCounterpartyName(counterparty);
-
-    return (
-      <View style={styles.memo}>
-        <Text selectable style={styles.memoText}>
-          {tx.value < 0
-            ? loc.formatString(loc.transactions.to, {
-                counterparty,
-              })
-            : loc.formatString(loc.transactions.from, {
-                counterparty,
-              })}
-        </Text>
-        <BlueSpacing20 />
-      </View>
-    );
   };
 
   useEffect(() => {
@@ -569,7 +541,6 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({ transaction, txid
               </View>
 
               {renderTXMetadata()}
-              {renderTXCounterparty()}
 
               <View style={[styles.iconRoot, stylesHook.iconRoot]}>
                 <View>

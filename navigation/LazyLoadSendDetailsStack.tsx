@@ -8,7 +8,6 @@ const PsbtWithHardwareWallet = lazy(() => import('../screen/send/psbtWithHardwar
 const CreateTransaction = lazy(() => import('../screen/send/create'));
 const Success = lazy(() => import('../screen/send/success'));
 const CoinControl = lazy(() => import('../screen/send/CoinControl'));
-const PaymentCodesList = lazy(() => import('../screen/wallets/PaymentCodesList'));
 
 // Export each component with its lazy loader and optional configurations
 export const SendDetailsComponent = () => (
@@ -39,11 +38,5 @@ export const SuccessComponent = () => (
 export const CoinControlComponent = () => (
   <Suspense fallback={<LazyLoadingIndicator />}>
     <CoinControl />
-  </Suspense>
-);
-
-export const PaymentCodesListComponent = () => (
-  <Suspense fallback={<LazyLoadingIndicator />}>
-    <PaymentCodesList />
   </Suspense>
 );

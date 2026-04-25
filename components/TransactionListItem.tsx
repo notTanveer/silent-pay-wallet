@@ -62,7 +62,7 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
     const { colors } = useTheme();
     const { navigate } = useExtendedNavigation<NavigationProps>();
     const menuRef = useRef<ToolTipMenuProps>();
-    const { txMetadata, counterpartyMetadata } = useStorage();
+    const { txMetadata } = useStorage();
     const { language, selectedBlockExplorer } = useSettings();
     const insets = useSafeAreaInsets();
     const containerStyle = useMemo(
@@ -76,11 +76,6 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
     );
 
     const combinedStyle = useMemo(() => [containerStyle, style], [containerStyle, style]);
-
-    const shortenContactName = (name: string): string => {
-      if (name.length < 16) return name;
-      return name.substr(0, 7) + '...' + name.substr(name.length - 7, 7);
-    };
 
     const relevantAddress = getRelevantAddress(item);
 
@@ -119,11 +114,7 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [item.confirmations, item.timestamp, language]);
 
-    let counterparty;
-    if (item.counterparty) {
-      counterparty = counterpartyMetadata?.[item.counterparty]?.label ?? item.counterparty;
-    }
-    const txMemo = (counterparty ? `[${shortenContactName(counterparty)}] ` : '') + (txMetadata[item.hash]?.memo ?? '');
+    const txMemo = txMetadata[item.hash]?.memo ?? '';
     const subtitle = useMemo(() => {
       let sub =
         Number(item.confirmations) < 7
