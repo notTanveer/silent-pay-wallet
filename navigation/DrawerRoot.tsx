@@ -3,6 +3,7 @@ import { useLocale } from '@react-navigation/native';
 import React, { useEffect, useMemo } from 'react';
 import { Animated, Easing } from 'react-native';
 import { useSizeClass, SizeClass } from '../blue_modules/sizeClass';
+import useCompanionListeners from '../hooks/useCompanionListeners';
 import DrawerList from '../screen/wallets/DrawerList';
 import DetailViewStackScreensStack from './DetailViewScreensStack';
 import { DrawerParamList } from './DrawerParamList';
@@ -35,6 +36,7 @@ const getAnimationConfig = (isDrawerTransitionConfigured: boolean) => {
 const DrawerRoot = () => {
   const { sizeClass, isLargeScreen } = useSizeClass();
   const { direction } = useLocale();
+  useCompanionListeners();
 
   const getDrawerWidth = useMemo(() => {
     switch (sizeClass) {
