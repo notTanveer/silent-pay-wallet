@@ -107,7 +107,6 @@
     "@rneui/base": "4.0.0-rc.8",
     "@rneui/themed": "4.0.0-rc.8",
     "@silent-pay/core": "^0.0.6",
-    "@spsina/bip47": "github:BlueWallet/bip47#df82345",
     "aezeed": "0.0.5",
     "assert": "2.1.0",
     "base-x": "4.0.1",
