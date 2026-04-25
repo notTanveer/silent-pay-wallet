@@ -4,12 +4,12 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useRoute } from '@react-navigation/native';
 
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
-import { BlueButtonLink, BlueFormLabel, BlueText } from '../../ShroudComponents';
+import { ShroudButtonLink, ShroudFormLabel, ShroudText } from '../../ShroudComponents';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
 import HeaderMenuButton from '../../components/HeaderMenuButton';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import { BlueSpacing20, BlueSpacing40 } from '../../components/BlueSpacing';
+import { Spacing20, Spacing40 } from '../../components/Spacing';
 import { useTheme } from '../../components/themes';
 import { Action } from '../../components/types';
 import { useStorage } from '../../hooks/context/useStorage';
@@ -167,8 +167,8 @@ const WalletsAdd: React.FC = () => {
       automaticallyAdjustContentInsets
       automaticallyAdjustsScrollIndicatorInsets
     >
-      <BlueSpacing20 />
-      <BlueFormLabel>{loc.wallets.add_wallet_name}</BlueFormLabel>
+      <Spacing20 />
+      <ShroudFormLabel>{loc.wallets.add_wallet_name}</ShroudFormLabel>
       <View style={[styles.label, stylesHook.label]}>
         <TextInput
           testID="WalletNameInput"
@@ -181,23 +181,23 @@ const WalletsAdd: React.FC = () => {
           underlineColorAndroid="transparent"
         />
       </View>
-      <BlueFormLabel>{loc.wallets.add_wallet_type}</BlueFormLabel>
+      <ShroudFormLabel>{loc.wallets.add_wallet_type}</ShroudFormLabel>
       <View style={styles.typeCard}>
-        <BlueText>{HDSilentPaymentsWallet.typeReadable}</BlueText>
-        <BlueText style={stylesHook.helperText}>{loc.wallets.add_create}</BlueText>
+        <ShroudText>{HDSilentPaymentsWallet.typeReadable}</ShroudText>
+        <ShroudText style={stylesHook.helperText}>{loc.wallets.add_create}</ShroudText>
       </View>
       <View style={styles.advanced}>
-        <BlueSpacing20 />
+        <Spacing20 />
         {!isLoading ? (
           <>
             <Button testID="Create" title={loc.wallets.add_create} onPress={createWallet} />
-            <BlueButtonLink
+            <ShroudButtonLink
               testID="ImportWallet"
               style={styles.import}
               title={loc.wallets.add_import_wallet}
               onPress={() => navigate('ImportWallet')}
             />
-            <BlueSpacing40 />
+            <Spacing40 />
           </>
         ) : (
           <ActivityIndicator />

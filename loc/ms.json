@@ -352,7 +352,7 @@
     "header": "Hantar",
     "view": "Lihat",
     "manage_keys": "Uruskan Anak Kunci",
-    "how_many_signatures_can_bluewallet_make": "berapa banyak tandatangan Shroud boleh buat",
+    "how_many_signatures_can_shroud_make": "berapa banyak tandatangan Shroud boleh buat",
     "signatures_required_to_spend": "Tandatangan diperlukan {number}",
     "signatures_we_can_make": "boleh buat {number}",
     "scan_or_import_file": "Imbas atau pindah masuk fail",

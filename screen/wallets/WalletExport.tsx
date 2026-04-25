@@ -6,7 +6,7 @@ import { LayoutChangeEvent, ScrollView, StyleSheet, Pressable, View } from 'reac
 import { useScreenProtect } from '../../hooks/useScreenProtect';
 import { validateMnemonic } from '../../modules/bip39';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
-import { BlueText } from '../../ShroudComponents';
+import { ShroudText } from '../../ShroudComponents';
 import QRCodeComponent from '../../components/QRCodeComponent';
 import SeedWords from '../../components/SeedWords';
 import { useTheme } from '../../components/themes';
@@ -29,9 +29,9 @@ const CopyBox: React.FC<{ text: string; onPress: () => void }> = ({ text, onPres
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [pressed && styles.pressed, styles.copyRoot, stylesHook.copyRoot]}>
       <View style={styles.copyLeft}>
-        <BlueText textBreakStrategy="balanced" style={styles.copyText}>
+        <ShroudText textBreakStrategy="balanced" style={styles.copyText}>
           {text}
-        </BlueText>
+        </ShroudText>
       </View>
       <View style={styles.copyRight}>
         <Icon name="copy" type="font-awesome-5" color={colors.foregroundColor} />
@@ -46,7 +46,7 @@ const DoNotDisclose: React.FC = () => {
   return (
     <View style={[styles.warningBox, { backgroundColor: colors.changeText }]}>
       <Icon type="font-awesome-5" name="exclamation-circle" color="white" />
-      <BlueText style={styles.warning}>{loc.wallets.warning_do_not_disclose}</BlueText>
+      <ShroudText style={styles.warning}>{loc.wallets.warning_do_not_disclose}</ShroudText>
     </View>
   );
 };
@@ -142,26 +142,26 @@ const WalletExport: React.FC = () => {
         <DoNotDisclose />
 
         <View>
-          <BlueText style={styles.manualText}>{loc.wallets.write_down_header}</BlueText>
-          <BlueText style={styles.writeText}>{loc.wallets.write_down}</BlueText>
+          <ShroudText style={styles.manualText}>{loc.wallets.write_down_header}</ShroudText>
+          <ShroudText style={styles.writeText}>{loc.wallets.write_down}</ShroudText>
         </View>
 
         {secrets.map((secret, index) => (
           <React.Fragment key={secret}>
-            <BlueText style={styles.scanText}>
+            <ShroudText style={styles.scanText}>
               {loc.formatString(loc.wallets.share_number, {
                 number: index + 1,
               })}
-            </BlueText>
+            </ShroudText>
             <SeedWords word={secret} index={0} />
           </React.Fragment>
         ))}
 
-        <BlueText style={styles.typeText}>
+        <ShroudText style={styles.typeText}>
           {loc.formatString(loc.wallets.wallet_type_this, {
             type: wallet.typeReadable,
           })}
-        </BlueText>
+        </ShroudText>
       </Scroll>
     );
   }
@@ -179,7 +179,7 @@ const WalletExport: React.FC = () => {
     >
       <DoNotDisclose />
 
-      <BlueText style={styles.scanText}>{loc.wallets.scan_import}</BlueText>
+      <ShroudText style={styles.scanText}>{loc.wallets.scan_import}</ShroudText>
 
       <View style={styles.qrCodeContainer}>
         <QRCodeComponent isMenuAvailable={false} value={secret} size={qrCodeSize} />
@@ -189,23 +189,23 @@ const WalletExport: React.FC = () => {
       {secretIsMnemonic ? (
         <>
           <View>
-            <BlueText style={styles.manualText}>{loc.wallets.write_down_header}</BlueText>
-            <BlueText style={styles.writeText}>{loc.wallets.write_down}</BlueText>
+            <ShroudText style={styles.manualText}>{loc.wallets.write_down_header}</ShroudText>
+            <ShroudText style={styles.writeText}>{loc.wallets.write_down}</ShroudText>
           </View>
           <SeedWords word={secret} index={0} />
         </>
       ) : (
         <>
-          <BlueText style={styles.writeText}>{loc.wallets.copy_ln_public}</BlueText>
+          <ShroudText style={styles.writeText}>{loc.wallets.copy_ln_public}</ShroudText>
           <CopyBox text={secret} onPress={handleCopy} />
         </>
       )}
 
-      <BlueText style={styles.typeText}>
+      <ShroudText style={styles.typeText}>
         {loc.formatString(loc.wallets.wallet_type_this, {
           type: wallet.typeReadable,
         })}
-      </BlueText>
+      </ShroudText>
     </ScrollView>
   );
 };

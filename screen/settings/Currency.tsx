@@ -10,7 +10,7 @@ import {
   mostRecentFetchedRate,
   setPreferredCurrency,
 } from '../../modules/currency';
-import { BlueCard, BlueText } from '../../ShroudComponents';
+import { ShroudCard, ShroudText } from '../../ShroudComponents';
 import presentAlert from '../../components/Alert';
 import ListItem from '../../components/ListItem';
 import { useTheme } from '../../components/themes';
@@ -19,7 +19,7 @@ import loc from '../../loc';
 import { FiatUnit, FiatUnitSource, FiatUnitType, getFiatRate } from '../../models/fiatUnit';
 import { useSettings } from '../../hooks/context/useSettings';
 import SafeAreaFlatList from '../../components/SafeAreaFlatList';
-import { BlueSpacing10, BlueSpacing20 } from '../../components/BlueSpacing';
+import { Spacing10, Spacing20 } from '../../components/Spacing';
 
 dayjs.extend(calendar);
 
@@ -149,20 +149,20 @@ const Currency: React.FC = () => {
     if (isSearchFocused && !selectedCurrencyVisible) return null;
 
     return (
-      <BlueCard>
-        <BlueText>
+      <ShroudCard>
+        <ShroudText>
           {loc.settings.currency_source} {selectedCurrency?.source ?? FiatUnitSource.CoinDesk}
-        </BlueText>
-        <BlueSpacing10 />
-        <BlueText>
+        </ShroudText>
+        <Spacing10 />
+        <ShroudText>
           {loc.settings.rate}: {currencyRate.Rate ?? loc._.never}
-        </BlueText>
-        <BlueSpacing10 />
-        <BlueText>
+        </ShroudText>
+        <Spacing10 />
+        <ShroudText>
           {loc.settings.last_updated}: {dayjs(currencyRate.LastUpdated).calendar() ?? loc._.never}
-        </BlueText>
-        <BlueSpacing20 />
-      </BlueCard>
+        </ShroudText>
+        <Spacing20 />
+      </ShroudCard>
     );
   }, [isSearchFocused, selectedCurrencyVisible, selectedCurrency?.source, currencyRate]);
 

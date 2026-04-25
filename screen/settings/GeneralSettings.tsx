@@ -9,7 +9,7 @@ import loc from '../../loc';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useSettings } from '../../hooks/context/useSettings';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import { BlueSpacing20 } from '../../components/BlueSpacing';
+import { Spacing20 } from '../../components/Spacing';
 
 type NavigationProp = NativeStackNavigationProp<DetailViewStackParamList, 'GeneralSettings'>;
 
@@ -52,7 +52,7 @@ const GeneralSettings: React.FC = () => {
         title="Legacy URv1 QR"
         switch={{ onValueChange: setIsLegacyURv1EnabledStorage, value: isLegacyURv1Enabled }}
       />
-      <BlueSpacing20 />
+      <Spacing20 />
     </SafeAreaScrollView>
   );
 };

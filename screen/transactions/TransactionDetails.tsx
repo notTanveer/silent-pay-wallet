@@ -6,7 +6,7 @@ import assert from 'assert';
 import dayjs from 'dayjs';
 import { InteractionManager, Linking, StyleSheet, Text, TextInput, View } from 'react-native';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
-import { BlueCard, BlueText } from '../../ShroudComponents';
+import { ShroudCard, ShroudText } from '../../ShroudComponents';
 import { Transaction, TWallet } from '../../class/wallets/types';
 import presentAlert from '../../components/Alert';
 import CopyToClipboardButton from '../../components/CopyToClipboardButton';
@@ -18,7 +18,7 @@ import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamL
 import { useStorage } from '../../hooks/context/useStorage';
 import { useSettings } from '../../hooks/context/useSettings';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import { BlueLoading } from '../../components/BlueLoading';
+import { Loading } from '../../components/Loading';
 
 const actionKeys = {
   CopyToClipboard: 'copyToClipboard',
@@ -165,7 +165,7 @@ const TransactionDetails = () => {
   };
 
   if (isLoading || !tx) {
-    return <BlueLoading />;
+    return <Loading />;
   }
 
   const weOwnAddress = (address: string): TWallet | null => {
@@ -216,10 +216,10 @@ const TransactionDetails = () => {
 
       fromArray.push(
         <ToolTipMenu key={address} isButton title={address} isMenuPrimaryAction actions={actions} onPressMenuItem={onPressMenuItem}>
-          <BlueText style={isWeOwnAddress ? [styles.rowValue, styles.weOwnAddress] : styles.rowValue}>
+          <ShroudText style={isWeOwnAddress ? [styles.rowValue, styles.weOwnAddress] : styles.rowValue}>
             {address}
             {index === array.length - 1 ? null : ','}
-          </BlueText>
+          </ShroudText>
         </ToolTipMenu>,
       );
     }
@@ -229,7 +229,7 @@ const TransactionDetails = () => {
 
   return (
     <SafeAreaScrollView>
-      <BlueCard>
+      <ShroudCard>
         <View>
           <TextInput
             placeholder={loc.send.details_note_placeholder}
@@ -246,7 +246,7 @@ const TransactionDetails = () => {
         {from && (
           <>
             <View style={styles.rowHeader}>
-              <BlueText style={styles.rowCaption}>{loc.transactions.details_from}</BlueText>
+              <ShroudText style={styles.rowCaption}>{loc.transactions.details_from}</ShroudText>
               <CopyToClipboardButton stringToCopy={from.filter(onlyUnique).join(', ')} />
             </View>
             {renderSection(from.filter(onlyUnique))}
@@ -257,7 +257,7 @@ const TransactionDetails = () => {
         {to && (
           <>
             <View style={styles.rowHeader}>
-              <BlueText style={styles.rowCaption}>{loc.transactions.details_to}</BlueText>
+              <ShroudText style={styles.rowCaption}>{loc.transactions.details_to}</ShroudText>
               <CopyToClipboardButton stringToCopy={to.filter(onlyUnique).join(', ')} />
             </View>
             {renderSection(arrDiff(from, to.filter(onlyUnique)))}
@@ -268,34 +268,34 @@ const TransactionDetails = () => {
         {tx.hash && (
           <>
             <View style={styles.rowHeader}>
-              <BlueText style={styles.txid}>{loc.transactions.txid}</BlueText>
+              <ShroudText style={styles.txid}>{loc.transactions.txid}</ShroudText>
               <CopyToClipboardButton stringToCopy={tx.hash} />
             </View>
-            <BlueText style={styles.rowValue}>{tx.hash}</BlueText>
+            <ShroudText style={styles.rowValue}>{tx.hash}</ShroudText>
             <View style={styles.marginBottom18} />
           </>
         )}
 
         {tx.timestamp && (
           <>
-            <BlueText style={styles.rowCaption}>{loc.transactions.details_received}</BlueText>
-            <BlueText style={styles.rowValue}>{dayjs(tx.timestamp * 1000).format('LLL')}</BlueText>
+            <ShroudText style={styles.rowCaption}>{loc.transactions.details_received}</ShroudText>
+            <ShroudText style={styles.rowValue}>{dayjs(tx.timestamp * 1000).format('LLL')}</ShroudText>
             <View style={styles.marginBottom18} />
           </>
         )}
 
         {tx.inputs && (
           <>
-            <BlueText style={styles.rowCaption}>{loc.transactions.details_inputs}</BlueText>
-            <BlueText style={styles.rowValue}>{tx.inputs.length}</BlueText>
+            <ShroudText style={styles.rowCaption}>{loc.transactions.details_inputs}</ShroudText>
+            <ShroudText style={styles.rowValue}>{tx.inputs.length}</ShroudText>
             <View style={styles.marginBottom18} />
           </>
         )}
 
         {tx.outputs?.length > 0 && (
           <>
-            <BlueText style={styles.rowCaption}>{loc.transactions.details_outputs}</BlueText>
-            <BlueText style={styles.rowValue}>{tx.outputs.length}</BlueText>
+            <ShroudText style={styles.rowCaption}>{loc.transactions.details_outputs}</ShroudText>
+            <ShroudText style={styles.rowValue}>{tx.outputs.length}</ShroudText>
             <View style={styles.marginBottom18} />
           </>
         )}
@@ -308,7 +308,7 @@ const TransactionDetails = () => {
         >
           <Text style={[styles.Link, stylesHooks.Link]}>{loc.transactions.details_view_in_browser}</Text>
         </ToolTipMenu>
-      </BlueCard>
+      </ShroudCard>
     </SafeAreaScrollView>
   );
 };

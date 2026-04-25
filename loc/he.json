@@ -491,7 +491,7 @@
     "shared_key_detected": "חותם-שותף משותף",
     "shared_key_detected_question": "חותם-שותף שותף איתך, אם ברצונך לייבא אותו?",
     "manage_keys": "ניהול מפתחות",
-    "how_many_signatures_can_bluewallet_make": "כמה חתימות ארנק Shroud יכול ליצור",
+    "how_many_signatures_can_shroud_make": "כמה חתימות ארנק Shroud יכול ליצור",
     "signatures_required_to_spend": "חתימות דרושות {number} ",
     "signatures_we_can_make": " ניתן ליצור {number}",
     "scan_or_import_file": "סריקה או יבוא קובץ",

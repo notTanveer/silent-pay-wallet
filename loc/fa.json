@@ -403,7 +403,7 @@
     "header": "ارسال",
     "view": "مشاهده",
     "manage_keys": "مدیریت کلیدها",
-    "how_many_signatures_can_bluewallet_make": "امضاهایی که Shroud می‌تواند ایجاد کند",
+    "how_many_signatures_can_shroud_make": "امضاهایی که Shroud می‌تواند ایجاد کند",
     "signatures_required_to_spend": "امضاهای موردنیاز: {number}",
     "signatures_we_can_make": "می‌تواند {number} امضا ایجاد کند",
     "scan_or_import_file": "اسکن یا واردکردن فایل",

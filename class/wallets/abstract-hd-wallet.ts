@@ -2,7 +2,7 @@ import { BIP32Interface } from 'bip32';
 import * as bip39 from 'bip39';
 
 import * as bip39custom from '../../modules/bip39';
-import * as BlueElectrum from '../../modules/BlueElectrum';
+import * as Electrum from '../../modules/Electrum';
 import { AbstractWallet } from './abstract-wallet';
 import { Transaction } from './types';
 
@@ -156,9 +156,9 @@ export class AbstractHDWallet extends AbstractWallet {
       this.external_addresses_cache[this.next_free_address_index + c] = address; // updating cache just for any case
       let txs = [];
       try {
-        txs = await BlueElectrum.getTransactionsByAddress(address);
+        txs = await Electrum.getTransactionsByAddress(address);
       } catch (Err: any) {
-        console.warn('BlueElectrum.getTransactionsByAddress()', Err.message);
+        console.warn('Electrum.getTransactionsByAddress()', Err.message);
       }
       if (txs.length === 0) {
         // found free address
@@ -194,9 +194,9 @@ export class AbstractHDWallet extends AbstractWallet {
       this.internal_addresses_cache[this.next_free_change_address_index + c] = address; // updating cache just for any case
       let txs = [];
       try {
-        txs = await BlueElectrum.getTransactionsByAddress(address);
+        txs = await Electrum.getTransactionsByAddress(address);
       } catch (Err: any) {
-        console.warn('BlueElectrum.getTransactionsByAddress()', Err.message);
+        console.warn('Electrum.getTransactionsByAddress()', Err.message);
       }
       if (txs.length === 0) {
         // found free address

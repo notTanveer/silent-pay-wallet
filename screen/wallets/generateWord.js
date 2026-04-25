@@ -3,12 +3,12 @@ import React, { useState } from 'react';
 import { Keyboard, StyleSheet, TextInput, View } from 'react-native';
 
 import { generateChecksumWords } from '../../modules/checksumWords';
-import { BlueCard, BlueText } from '../../ShroudComponents';
+import { ShroudCard, ShroudText } from '../../ShroudComponents';
 import { randomBytes } from '../../class/rng';
 import Button from '../../components/Button';
 import loc from '../../loc';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import { BlueSpacing10, BlueSpacing20 } from '../../components/BlueSpacing';
+import { Spacing10, Spacing20 } from '../../components/Spacing';
 
 const GenerateWord = () => {
   const { colors } = useTheme();
@@ -62,7 +62,7 @@ const GenerateWord = () => {
       contentInsetAdjustmentBehavior="automatic"
     >
       <View style={styles.wrapper}>
-        <BlueCard style={styles.mainCard}>
+        <ShroudCard style={styles.mainCard}>
           <View style={[styles.input, stylesHooks.input]}>
             <TextInput
               style={styles.text}
@@ -80,13 +80,13 @@ const GenerateWord = () => {
             />
           </View>
 
-          <BlueSpacing10 />
+          <Spacing10 />
           <Button title={loc.send.input_clear} onPress={clearMnemonicInput} />
-          <BlueSpacing20 />
-          <BlueText style={styles.center} testID="Result">
+          <Spacing20 />
+          <ShroudText style={styles.center} testID="Result">
             {result}
-          </BlueText>
-          <BlueSpacing20 />
+          </ShroudText>
+          <Spacing20 />
           <View>
             <Button
               disabled={mnemonic.trim().length === 0}
@@ -95,8 +95,8 @@ const GenerateWord = () => {
               testID="GenerateWord"
             />
           </View>
-          <BlueSpacing20 />
-        </BlueCard>
+          <Spacing20 />
+        </ShroudCard>
       </View>
     </SafeAreaScrollView>
   );

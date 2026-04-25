@@ -3,9 +3,9 @@ import { ActivityIndicator, Linking, ScrollView, StyleSheet, TextInput, Touchabl
 import Clipboard from '@react-native-clipboard/clipboard';
 import PropTypes from 'prop-types';
 import { Text } from '@rneui/themed';
-import * as BlueElectrum from '../../modules/BlueElectrum';
+import * as Electrum from '../../modules/Electrum';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
-import { BlueCard, BlueText } from '../../ShroudComponents';
+import { ShroudCard, ShroudText } from '../../ShroudComponents';
 import { HDSegwitBech32Transaction, HDSilentPaymentsWallet } from '../../class';
 import presentAlert, { AlertType } from '../../components/Alert';
 import Button from '../../components/Button';
@@ -15,7 +15,7 @@ import loc from '../../loc';
 import { StorageContext } from '../../components/Context/StorageProvider';
 import ReplaceFeeSuggestions from '../../components/ReplaceFeeSuggestions';
 import { majorTomToGroundControl } from '../../modules/notifications';
-import { BlueSpacing, BlueSpacing20 } from '../../components/BlueSpacing';
+import { Spacing, Spacing20 } from '../../components/Spacing';
 
 const styles = StyleSheet.create({
   root: {
@@ -77,8 +77,8 @@ export default class CPFP extends Component {
   broadcast = () => {
     this.setState({ isLoading: true }, async () => {
       try {
-        await BlueElectrum.ping();
-        await BlueElectrum.waitTillConnected();
+        await Electrum.ping();
+        await Electrum.waitTillConnected();
         const result = await this.state.wallet.broadcastTx(this.state.txhex);
         if (result) {
           this.onSuccessBroadcast();
@@ -152,18 +152,18 @@ export default class CPFP extends Component {
   renderStage1(text) {
     return (
       <SafeArea style={styles.root}>
-        <BlueSpacing />
-        <BlueCard style={styles.center}>
-          <BlueText>{text}</BlueText>
-          <BlueSpacing20 />
+        <Spacing />
+        <ShroudCard style={styles.center}>
+          <ShroudText>{text}</ShroudText>
+          <Spacing20 />
           <ReplaceFeeSuggestions onFeeSelected={fee => this.setState({ newFeeRate: fee })} transactionMinimum={this.state.feeRate} />
-          <BlueSpacing />
+          <Spacing />
           <Button
             disabled={this.state.newFeeRate <= this.state.feeRate}
             onPress={() => this.createTransaction()}
             title={loc.transactions.cpfp_create}
           />
-        </BlueCard>
+        </ShroudCard>
       </SafeArea>
     );
   }
@@ -171,8 +171,8 @@ export default class CPFP extends Component {
   renderStage2() {
     return (
       <View style={styles.root}>
-        <BlueCard style={styles.center}>
-          <BlueText style={styles.hex}>{loc.send.create_this_is_hex}</BlueText>
+        <ShroudCard style={styles.center}>
+          <ShroudText style={styles.hex}>{loc.send.create_this_is_hex}</ShroudText>
           <TextInput style={styles.hexInput} height={112} multiline editable value={this.state.txhex} />
 
           <TouchableOpacity accessibilityRole="button" style={styles.action} onPress={() => Clipboard.setString(this.state.txhex)}>
@@ -186,7 +186,7 @@ export default class CPFP extends Component {
             <Text style={styles.actionText}>{loc.send.create_verify}</Text>
           </TouchableOpacity>
           <Button disabled={this.context.isElectrumDisabled} onPress={this.broadcast} title={loc.send.confirm_sendNow} />
-        </BlueCard>
+        </ShroudCard>
       </View>
     );
   }
@@ -207,13 +207,13 @@ export default class CPFP extends Component {
     if (this.state.nonReplaceable) {
       return (
         <SafeArea style={styles.root}>
-          <BlueSpacing20 />
-          <BlueSpacing20 />
-          <BlueSpacing20 />
-          <BlueSpacing20 />
-          <BlueSpacing20 />
+          <Spacing20 />
+          <Spacing20 />
+          <Spacing20 />
+          <Spacing20 />
+          <Spacing20 />
 
-          <BlueText h4>{loc.transactions.cpfp_no_bump}</BlueText>
+          <ShroudText h4>{loc.transactions.cpfp_no_bump}</ShroudText>
         </SafeArea>
       );
     }

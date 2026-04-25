@@ -1,6 +1,6 @@
 import React from 'react';
 import { Platform, StyleSheet, TextInput, View } from 'react-native';
-import { BlueFormLabel } from '../ShroudComponents';
+import { ShroudFormLabel } from '../ShroudComponents';
 import { useTheme } from './themes';
 import loc from '../loc';
 
@@ -22,7 +22,7 @@ export const WalletBirthSection: React.FC<WalletBirthSectionProps> = ({ birthDat
 
   return (
     <View style={styles.container}>
-      <BlueFormLabel>{loc.wallet_birth.birth_date_label}</BlueFormLabel>
+      <ShroudFormLabel>{loc.wallet_birth.birth_date_label}</ShroudFormLabel>
       <TextInput
         style={[styles.input, stylesHook.input]}
         value={birthDate}

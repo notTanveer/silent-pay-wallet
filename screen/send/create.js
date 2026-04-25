@@ -11,7 +11,7 @@ import { PERMISSIONS, request, RESULTS } from 'react-native-permissions';
 import Share from 'react-native-share';
 import { satoshiToBTC } from '../../modules/currency';
 import { isDesktop } from '../../modules/environment';
-import { BlueText } from '../../ShroudComponents';
+import { ShroudText } from '../../ShroudComponents';
 import presentAlert from '../../components/Alert';
 import { DynamicQRCode } from '../../components/DynamicQRCode';
 import { useTheme } from '../../components/themes';
@@ -19,7 +19,7 @@ import loc from '../../loc';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
 import { useSettings } from '../../hooks/context/useSettings';
 import { useScreenProtect } from '../../hooks/useScreenProtect';
-import { BlueSpacing20 } from '../../components/BlueSpacing';
+import { Spacing20 } from '../../components/Spacing';
 
 const SendCreate = () => {
   const { fee, recipients, memo = '', satoshiPerByte, psbt, showAnimatedQr, tx } = useRoute().params;
@@ -124,7 +124,7 @@ const SendCreate = () => {
             {satoshiToBTC(item.value)} {BitcoinUnit.BTC}
           </Text>
           {recipients.length > 1 && (
-            <BlueText style={styles.itemOf}>{loc.formatString(loc._.of, { number: index + 1, total: recipients.length })}</BlueText>
+            <ShroudText style={styles.itemOf}>{loc.formatString(loc._.of, { number: index + 1, total: recipients.length })}</ShroudText>
           )}
         </View>
       </>
@@ -146,12 +146,12 @@ const SendCreate = () => {
     <View>
       {showAnimatedQr && psbt ? (
         <>
-          <BlueSpacing20 />
+          <Spacing20 />
           <DynamicQRCode value={psbt.toHex()} />
-          <BlueSpacing20 />
+          <Spacing20 />
         </>
       ) : null}
-      <BlueText style={[styles.cardText, styleHooks.cardText]}>{loc.send.create_this_is_hex}</BlueText>
+      <ShroudText style={[styles.cardText, styleHooks.cardText]}>{loc.send.create_this_is_hex}</ShroudText>
       <TextInput testID="TxhexInput" style={styles.cardTx} height={72} multiline editable={false} value={tx} />
 
       <TouchableOpacity accessibilityRole="button" style={styles.actionTouch} onPress={() => Clipboard.setString(tx)}>

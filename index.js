@@ -21,7 +21,7 @@ LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
 ]);
 
-const BlueAppComponent = () => {
+const ShroudAppComponent = () => {
   useEffect(() => {
     restoreSavedPreferredFiatCurrencyAndExchangeFromStorage();
     A(A.ENUM.INIT);
@@ -30,4 +30,4 @@ const BlueAppComponent = () => {
   return <App />;
 };
 
-AppRegistry.registerComponent('Shroud', () => BlueAppComponent);
+AppRegistry.registerComponent('Shroud', () => ShroudAppComponent);

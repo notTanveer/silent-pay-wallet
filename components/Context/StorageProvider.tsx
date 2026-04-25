@@ -6,7 +6,7 @@ import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import type { TWallet } from '../../class/wallets/types';
 import presentAlert from '../../components/Alert';
 import loc, { formatBalanceWithoutSuffix } from '../../loc';
-import * as BlueElectrum from '../../modules/BlueElectrum';
+import * as Electrum from '../../modules/Electrum';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import { startAndDecrypt } from '../../modules/start-and-decrypt';
 import { isNotificationsEnabled, majorTomToGroundControl, unsubscribe } from '../../modules/notifications';
@@ -377,13 +377,13 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
           setWalletTransactionUpdateStatus(WalletTransactionsStatus.ALL);
         }
         console.debug('[refreshAllWalletTransactions] Waiting for connectivity...');
-        await BlueElectrum.waitTillConnected();
-        if (!(await BlueElectrum.ping())) {
+        await Electrum.waitTillConnected();
+        if (!(await Electrum.ping())) {
           // above `waitTillConnected` is not reliable, as app might have returned from long sleep, so it thinks its
           // connected but actually socket is closed. thus, we ping, and if it fails - we wait again (reconnection code
           // should pick up)
           console.log('[refreshAllWalletTransactions] ping failed, waiting for connection...');
-          await BlueElectrum.waitTillConnected();
+          await Electrum.waitTillConnected();
         }
 
         console.debug('[refreshAllWalletTransactions] Connected to Electrum');
@@ -432,7 +432,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
           }
           _lastTimeTriedToRefetchWallet[walletID] = Date.now();
 
-          await BlueElectrum.waitTillConnected();
+          await Electrum.waitTillConnected();
           setWalletTransactionUpdateStatus(walletID);
 
           const balanceStart = Date.now();

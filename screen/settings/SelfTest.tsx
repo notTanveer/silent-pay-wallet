@@ -8,17 +8,17 @@ import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import BlueCrypto from 'react-native-blue-crypto';
 import wif from 'wif';
 
-import * as BlueElectrum from '../../modules/BlueElectrum';
+import * as Electrum from '../../modules/Electrum';
 import * as encryption from '../../modules/encryption';
 import * as fs from '../../modules/fs';
 import ecc from '../../modules/noble_ecc';
-import { BlueText } from '../../ShroudComponents';
+import { ShroudText } from '../../ShroudComponents';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
 import SaveFileButton from '../../components/SaveFileButton';
 import loc from '../../loc';
-import { BlueSpacing20 } from '../../components/BlueSpacing';
-import { BlueLoading } from '../../components/BlueLoading.tsx';
+import { Spacing20 } from '../../components/Spacing';
+import { Loading } from '../../components/Loading.tsx';
 
 const bip32 = BIP32Factory(ecc);
 
@@ -73,15 +73,15 @@ export default class SelfTest extends Component {
       //
 
       if (typeof navigator !== 'undefined' && navigator.product === 'ReactNative') {
-        await BlueElectrum.ping();
-        await BlueElectrum.waitTillConnected();
+        await Electrum.ping();
+        await Electrum.waitTillConnected();
         const addr4elect = '3GCvDBAktgQQtsbN6x5DYiQCMmgZ9Yk8BK';
-        const electrumBalance = await BlueElectrum.getBalanceByAddress(addr4elect);
+        const electrumBalance = await Electrum.getBalanceByAddress(addr4elect);
         if (electrumBalance.confirmed !== 51432)
-          throw new Error('BlueElectrum getBalanceByAddress failure, got ' + JSON.stringify(electrumBalance));
+          throw new Error('Electrum getBalanceByAddress failure, got ' + JSON.stringify(electrumBalance));
 
-        const electrumTxs = await BlueElectrum.getTransactionsByAddress(addr4elect);
-        if (electrumTxs.length !== 1) throw new Error('BlueElectrum getTransactionsByAddress failure, got ' + JSON.stringify(electrumTxs));
+        const electrumTxs = await Electrum.getTransactionsByAddress(addr4elect);
+        if (electrumTxs.length !== 1) throw new Error('Electrum getTransactionsByAddress failure, got ' + JSON.stringify(electrumTxs));
       } else {
         // skipping RN-specific test'
       }
@@ -143,7 +143,7 @@ export default class SelfTest extends Component {
       //
 
       if (typeof navigator !== 'undefined' && navigator.product === 'ReactNative') {
-        assertStrictEqual(await Linking.canOpenURL('https://github.com/BlueWallet/BlueWallet/'), true, 'Linking can not open https url');
+        assertStrictEqual(await Linking.canOpenURL('https://github.com/Bitshala-Incubator/silent-pay-wallet/'), true, 'Linking can not open https url');
       } else {
         // skipping RN-specific test'
       }
@@ -169,38 +169,38 @@ export default class SelfTest extends Component {
   render() {
     return (
       <ScrollView automaticallyAdjustContentInsets contentInsetAdjustmentBehavior="automatic">
-        <BlueSpacing20 />
+        <Spacing20 />
 
         {this.state.isLoading ? (
-          <BlueLoading testID="SelfTestLoading" />
+          <Loading testID="SelfTestLoading" />
         ) : (
           (() => {
             if (this.state.isOk) {
               return (
                 <View style={styles.center}>
-                  <BlueText testID="SelfTestOk" h4>
+                  <ShroudText testID="SelfTestOk" h4>
                     OK
-                  </BlueText>
-                  <BlueSpacing20 />
-                  <BlueText>{loc.settings.about_selftest_ok}</BlueText>
+                  </ShroudText>
+                  <Spacing20 />
+                  <ShroudText>{loc.settings.about_selftest_ok}</ShroudText>
                 </View>
               );
             } else {
               return (
                 <View style={styles.center}>
-                  <BlueText h4 numberOfLines={0}>
+                  <ShroudText h4 numberOfLines={0}>
                     {this.state.errorMessage}
-                  </BlueText>
+                  </ShroudText>
                 </View>
               );
             }
           })()
         )}
-        <BlueSpacing20 />
-        <SaveFileButton fileName="bluewallet-selftest.txt" fileContent={'Success on ' + new Date().toUTCString()}>
+        <Spacing20 />
+        <SaveFileButton fileName="shroud-selftest.txt" fileContent={'Success on ' + new Date().toUTCString()}>
           <Button title="Test Save to Storage" />
         </SaveFileButton>
-        <BlueSpacing20 />
+        <Spacing20 />
         <Button title="Test File Import" onPress={this.onPressImportDocument} />
       </ScrollView>
     );

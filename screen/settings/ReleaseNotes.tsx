@@ -1,16 +1,16 @@
 import React from 'react';
 import { ScrollView } from 'react-native';
 
-import { BlueCard, BlueText } from '../../ShroudComponents';
+import { ShroudCard, ShroudText } from '../../ShroudComponents';
 
 const ReleaseNotes: React.FC = () => {
   const notes = require('../../release-notes');
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" automaticallyAdjustContentInsets>
-      <BlueCard>
-        <BlueText>{notes}</BlueText>
-      </BlueCard>
+      <ShroudCard>
+        <ShroudText>{notes}</ShroudText>
+      </ShroudCard>
     </ScrollView>
   );
 };

@@ -381,7 +381,7 @@
     "header": "Send",
     "view": "Vis",
     "manage_keys": "Administrer Nøkler",
-    "how_many_signatures_can_bluewallet_make": "hvor mange signaturer kan Shroud lage",
+    "how_many_signatures_can_shroud_make": "hvor mange signaturer kan Shroud lage",
     "signatures_required_to_spend": "Signaturer kreves {number}",
     "signatures_we_can_make": "kan lage {number}",
     "scan_or_import_file": "Skann eller importer fil",

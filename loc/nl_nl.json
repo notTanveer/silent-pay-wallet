@@ -382,7 +382,7 @@
     "header": "Verzenden",
     "view": "Bekijken",
     "manage_keys": "Beheer sleutels",
-    "how_many_signatures_can_bluewallet_make": "hoeveel handtekeningen kan Shroud maken",
+    "how_many_signatures_can_shroud_make": "hoeveel handtekeningen kan Shroud maken",
     "signatures_required_to_spend": "Signatures vereist {number}",
     "signatures_we_can_make": "kan {number} aanmaken",
     "scan_or_import_file": "Scan of importeer bestand",

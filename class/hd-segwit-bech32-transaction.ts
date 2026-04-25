@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import * as bitcoin from 'bitcoinjs-lib';
 import assert from 'assert';
 
-import * as BlueElectrum from '../modules/BlueElectrum';
+import * as Electrum from '../modules/Electrum';
 import { HDSilentPaymentsWallet } from './wallets/hd-bip352-wallet';
 import { CreateTransactionUtxo } from './wallets/types.ts';
 import { CoinSelectOutput, CoinSelectReturnInput } from 'coinselect';
@@ -67,7 +67,7 @@ export class HDSegwitBech32Transaction {
    */
   async _fetchTxhexAndDecode() {
     assert(this._txid, 'this._txid must be a string');
-    const hexes = await BlueElectrum.multiGetTransactionByTxid([this._txid], false, 10);
+    const hexes = await Electrum.multiGetTransactionByTxid([this._txid], false, 10);
     this._txhex = hexes[this._txid];
     if (!this._txhex) throw new Error("Transaction can't be found in mempool");
     this._txDecoded = bitcoin.Transaction.fromHex(this._txhex);
@@ -109,7 +109,7 @@ export class HDSegwitBech32Transaction {
    * @private
    */
   async _fetchRemoteTx() {
-    const result = await BlueElectrum.multiGetTransactionByTxid([this._txid || this._txDecoded!.getId()], true);
+    const result = await Electrum.multiGetTransactionByTxid([this._txid || this._txDecoded!.getId()], true);
     this._remoteTx = Object.values(result)[0];
   }
 
@@ -182,7 +182,7 @@ export class HDSegwitBech32Transaction {
       prevInputs.push(Buffer.from(inp.hash).reverse().toString('hex'));
     }
 
-    const prevTransactions = await BlueElectrum.multiGetTransactionByTxid(prevInputs, true);
+    const prevTransactions = await Electrum.multiGetTransactionByTxid(prevInputs, true);
 
     // fetched, now lets count how much satoshis went in
     let wentIn = 0;

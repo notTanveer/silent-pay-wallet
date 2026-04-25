@@ -1,6 +1,6 @@
 import React from 'react';
 import { Image, Linking, StyleSheet, Text, View } from 'react-native';
-import { BlueCard } from '../../ShroudComponents';
+import { ShroudCard } from '../../ShroudComponents';
 import ListItem from '../../components/ListItem';
 import { useTheme } from '../../components/themes';
 import loc, { formatStringAddTwoWhiteSpaces } from '../../loc';
@@ -25,7 +25,7 @@ const About: React.FC = () => {
 
   return (
     <SafeAreaScrollView testID="AboutScrollView" contentInsetAdjustmentBehavior="automatic" automaticallyAdjustContentInsets>
-      <BlueCard>
+      <ShroudCard>
         <View style={styles.center}>
           <Image style={styles.logo} source={require('../../img/icon.png')} />
           <Text style={styles.textFree}>{loc.settings.about_free}</Text>
@@ -49,7 +49,7 @@ const About: React.FC = () => {
           onPress={handleOnGithubPress}
           title={loc.settings.about_sm_github}
         />
-      </BlueCard>
+      </ShroudCard>
     </SafeAreaScrollView>
   );
 };

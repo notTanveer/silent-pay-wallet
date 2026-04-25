@@ -273,7 +273,7 @@
     "header": "Надіслати",
     "view": "Переглянути",
     "manage_keys": "Керувати Ключами",
-    "how_many_signatures_can_bluewallet_make": "скільки підписів може зробити Shroud",
+    "how_many_signatures_can_shroud_make": "скільки підписів може зробити Shroud",
     "signatures_required_to_spend": "Потрібно {number} підписи",
     "signatures_we_can_make": "може зробити {number}",
     "scan_or_import_file": "Відсканувати або імпортувати файл",

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Keyboard, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BlueText } from '../ShroudComponents';
+import { ShroudText } from '../ShroudComponents';
 import loc, { formatStringAddTwoWhiteSpaces } from '../loc';
 import NetworkTransactionFees, { NetworkTransactionFee, NetworkTransactionFeeType } from '../models/networkTransactionFees';
 import { useTheme } from './themes';
@@ -165,7 +165,7 @@ const ReplaceFeeSuggestions: React.FC<ReplaceFeeSuggestionsProps> = ({ onFeeSele
           <Text style={stylesHook.rateText}>sat/byte</Text>
         </View>
       </TouchableOpacity>
-      <BlueText style={stylesHook.alternativeText}>{loc.formatString(loc.send.fee_replace_minvb, { min: transactionMinimum })}</BlueText>
+      <ShroudText style={stylesHook.alternativeText}>{loc.formatString(loc.send.fee_replace_minvb, { min: transactionMinimum })}</ShroudText>
     </View>
   );
 };

@@ -16,7 +16,7 @@ import {
   checkNotificationPermissionStatus,
   NOTIFICATIONS_NO_AND_DONT_ASK_FLAG,
 } from '../../modules/notifications';
-import { BlueCard, BlueText } from '../../ShroudComponents';
+import { ShroudCard, ShroudText } from '../../ShroudComponents';
 import presentAlert from '../../components/Alert';
 import { Button } from '../../components/Button';
 import CopyToClipboardButton from '../../components/CopyToClipboardButton';
@@ -27,7 +27,7 @@ import { Divider } from '@rneui/base';
 import { openSettings } from 'react-native-permissions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import { BlueSpacing20, BlueSpacing40 } from '../../components/BlueSpacing';
+import { Spacing20, Spacing40 } from '../../components/Spacing';
 import { useLocale } from '@react-navigation/native';
 
 const NotificationSettings: React.FC = () => {
@@ -206,17 +206,17 @@ const NotificationSettings: React.FC = () => {
       />
 
       <Pressable onPress={handleTap}>
-        <BlueCard>
-          <BlueText style={styles.multilineText}>{loc.settings.push_notifications_explanation}</BlueText>
-        </BlueCard>
+        <ShroudCard>
+          <ShroudText style={styles.multilineText}>{loc.settings.push_notifications_explanation}</ShroudText>
+        </ShroudCard>
       </Pressable>
 
       {tapCount >= 10 && (
         <>
           <Divider />
-          <BlueCard>
-            <BlueText>{loc.settings.groundcontrol_explanation}</BlueText>
-          </BlueCard>
+          <ShroudCard>
+            <ShroudText>{loc.settings.groundcontrol_explanation}</ShroudText>
+          </ShroudCard>
 
           <ButtonRNElements
             icon={{
@@ -231,7 +231,7 @@ const NotificationSettings: React.FC = () => {
             buttonStyle={[styles.buttonStyle, stylesWithThemeHook.buttonStyles]}
           />
 
-          <BlueCard>
+          <ShroudCard>
             <View style={[styles.uri, stylesWithThemeHook.uri]}>
               <TextInput
                 placeholder={getDefaultUri()}
@@ -247,24 +247,24 @@ const NotificationSettings: React.FC = () => {
               />
             </View>
 
-            <BlueSpacing20 />
-            <BlueText style={styles.centered} onPress={() => setTapCount(tapCount + 1)}>
+            <Spacing20 />
+            <ShroudText style={styles.centered} onPress={() => setTapCount(tapCount + 1)}>
               ♪ Ground Control to Major Tom ♪
-            </BlueText>
-            <BlueText style={styles.centered} onPress={() => setTapCount(tapCount + 1)}>
+            </ShroudText>
+            <ShroudText style={styles.centered} onPress={() => setTapCount(tapCount + 1)}>
               ♪ Commencing countdown, engines on ♪
-            </BlueText>
+            </ShroudText>
 
             <View>
               <CopyToClipboardButton stringToCopy={tokenInfo} displayText={tokenInfo} />
             </View>
 
-            <BlueSpacing20 />
+            <Spacing20 />
             <Button onPress={save} title={loc.settings.save} />
-          </BlueCard>
+          </ShroudCard>
         </>
       )}
-      <BlueSpacing40 />
+      <Spacing40 />
       <ListItem title={loc.settings.privacy_system_settings} onPress={onSystemSettings} chevron />
     </SafeAreaScrollView>
   );

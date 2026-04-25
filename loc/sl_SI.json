@@ -386,7 +386,7 @@
     "header": "Pošlji",
     "view": "Prikaži",
     "manage_keys": "Urejanje ključev",
-    "how_many_signatures_can_bluewallet_make": "koliko podpisov lahko naredi Shroud",
+    "how_many_signatures_can_shroud_make": "koliko podpisov lahko naredi Shroud",
     "signatures_required_to_spend": "Zahtevano podpisov {number}",
     "signatures_we_can_make": "na napravi {number}",
     "scan_or_import_file": "Skeniraj ali uvozi datoteko",

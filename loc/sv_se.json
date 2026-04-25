@@ -396,7 +396,7 @@
     "header": "Skicka",
     "view": "Granska",
     "manage_keys": "Hantera nycklar",
-    "how_many_signatures_can_bluewallet_make": "hur många signaturer kan Shroud göra",
+    "how_many_signatures_can_shroud_make": "hur många signaturer kan Shroud göra",
     "signatures_required_to_spend": "Signaturer krävs {number}",
     "signatures_we_can_make": "kan göra {number}",
     "scan_or_import_file": "Skanna eller importera fil",

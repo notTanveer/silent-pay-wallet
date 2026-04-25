@@ -326,7 +326,7 @@
     "header": "Kirim",
     "view": "Lihat",
     "manage_keys": "Kelola kunci",
-    "how_many_signatures_can_bluewallet_make": "Shroud bisa membuat berapa tanda tangan?",
+    "how_many_signatures_can_shroud_make": "Shroud bisa membuat berapa tanda tangan?",
     "signatures_we_can_make": "bisa membuat {number}",
     "scan_or_import_file": "Pindai atau impor berkas",
     "lets_start": "Ayo mulai",

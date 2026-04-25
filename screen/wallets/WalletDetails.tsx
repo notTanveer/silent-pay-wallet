@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { writeFileAndExport } from '../../modules/fs';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
-import { BlueCard, BlueText } from '../../ShroudComponents';
+import { ShroudCard, ShroudText } from '../../ShroudComponents';
 import { AbstractHDElectrumWallet } from '../../class/wallets/abstract-hd-electrum-wallet';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
@@ -32,8 +32,8 @@ import HeaderMenuButton from '../../components/HeaderMenuButton';
 import { Action } from '../../components/types';
 import { CommonToolTipActions } from '../../typings/CommonToolTipActions';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import { BlueSpacing20 } from '../../components/BlueSpacing';
-import { BlueLoading } from '../../components/BlueLoading';
+import { Spacing20 } from '../../components/Spacing';
+import { Loading } from '../../components/Loading';
 
 type RouteProps = RouteProp<DetailViewStackParamList, 'WalletDetails'>;
 const WalletDetails: React.FC = () => {
@@ -360,10 +360,10 @@ const WalletDetails: React.FC = () => {
     <SafeAreaScrollView centerContent={isLoading} testID="WalletDetailsScroll">
       <>
         {isLoading ? (
-          <BlueLoading />
+          <Loading />
         ) : (
           <>
-            <BlueCard style={styles.address}>
+            <ShroudCard style={styles.address}>
               <Text style={[styles.textLabel2, stylesHook.textLabel2]}>{loc.wallets.add_wallet_name.toLowerCase()}</Text>
               <View style={[styles.input, stylesHook.input]}>
                 <TextInput
@@ -384,19 +384,19 @@ const WalletDetails: React.FC = () => {
                   testID="WalletNameInput"
                 />
               </View>
-              <BlueSpacing20 />
+              <Spacing20 />
               <Text style={[styles.textLabel1, stylesHook.textLabel1]}>{loc.wallets.details_type.toLowerCase()}</Text>
               <Text style={[styles.textValue, stylesHook.textValue]} selectable>
                 {wallet.typeReadable}
               </Text>
 
-              <BlueSpacing20 />
+              <Spacing20 />
               <>
                 <Text onPress={exportInternals} style={[styles.textLabel2, stylesHook.textLabel2]}>
                   {loc.transactions.list_title.toLowerCase()}
                 </Text>
                 <View style={styles.hardware}>
-                  <BlueText>{loc.wallets.details_display}</BlueText>
+                  <ShroudText>{loc.wallets.details_display}</ShroudText>
                   <Switch
                     value={hideTransactionsInWalletsList}
                     onValueChange={async (value: boolean) => {
@@ -419,7 +419,7 @@ const WalletDetails: React.FC = () => {
                 <Text onPress={purgeTransactions} style={[styles.textLabel2, stylesHook.textLabel2]} testID="PurgeBackdoorButton">
                   {loc.transactions.transactions_count.toLowerCase()}
                 </Text>
-                <BlueText>{wallet.getTransactions().length}</BlueText>
+                <ShroudText>{wallet.getTransactions().length}</ShroudText>
               </>
 
               <View>
@@ -428,10 +428,10 @@ const WalletDetails: React.FC = () => {
                     <View style={styles.marginRight16}>
                       <Text style={[styles.textLabel2, stylesHook.textLabel2]}>{loc.wallets.details_master_fingerprint.toLowerCase()}</Text>
                       {isMasterFingerPrintVisible ? (
-                        <BlueText selectable>{masterFingerprint ?? <ActivityIndicator />}</BlueText>
+                        <ShroudText selectable>{masterFingerprint ?? <ActivityIndicator />}</ShroudText>
                       ) : (
                         <TouchableOpacity onPress={onViewMasterFingerPrintPress}>
-                          <BlueText>{loc.wallets.details_master_fingerprint_view}</BlueText>
+                          <ShroudText>{loc.wallets.details_master_fingerprint_view}</ShroudText>
                         </TouchableOpacity>
                       )}
                     </View>
@@ -440,38 +440,38 @@ const WalletDetails: React.FC = () => {
                   {derivationPath && (
                     <View>
                       <Text style={[styles.textLabel2, stylesHook.textLabel2]}>{loc.wallets.details_derivation_path}</Text>
-                      <BlueText selectable testID="DerivationPath">
+                      <ShroudText selectable testID="DerivationPath">
                         {derivationPath}
-                      </BlueText>
+                      </ShroudText>
                     </View>
                   )}
                 </View>
               </View>
-            </BlueCard>
+            </ShroudCard>
             {wallet instanceof AbstractHDElectrumWallet && (
               <ListItem onPress={navigateToAddresses} title={loc.wallets.details_show_addresses} chevron />
             )}
-            <BlueCard style={styles.address}>
+            <ShroudCard style={styles.address}>
               <View>
-                <BlueSpacing20 />
+                <Spacing20 />
                 <Button onPress={navigateToWalletExport} testID="WalletExport" title={loc.wallets.details_export_backup} />
 
                 {wallet.allowXpub && wallet.allowXpub() && (
                   <>
-                    <BlueSpacing20 />
+                    <Spacing20 />
                     <SecondButton onPress={navigateToXPub} testID="XpubButton" title={loc.wallets.details_show_xpub} />
                   </>
                 )}
                 {wallet.allowSignVerifyMessage && wallet.allowSignVerifyMessage() && (
                   <>
-                    <BlueSpacing20 />
+                    <Spacing20 />
                     <SecondButton onPress={navigateToSignVerify} testID="SignVerify" title={loc.addresses.sign_title} />
                   </>
                 )}
-                <BlueSpacing20 />
-                <BlueSpacing20 />
+                <Spacing20 />
+                <Spacing20 />
               </View>
-            </BlueCard>
+            </ShroudCard>
           </>
         )}
       </>

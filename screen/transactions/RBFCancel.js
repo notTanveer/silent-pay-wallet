@@ -1,14 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
-import { BlueText } from '../../ShroudComponents';
+import { ShroudText } from '../../ShroudComponents';
 import { HDSegwitBech32Transaction, HDSilentPaymentsWallet } from '../../class';
 import presentAlert from '../../components/Alert';
 import SafeArea from '../../components/SafeArea';
 import loc from '../../loc';
 import CPFP from './CPFP';
 import { StorageContext } from '../../components/Context/StorageProvider';
-import { BlueSpacing20 } from '../../components/BlueSpacing';
+import { Spacing20 } from '../../components/Spacing';
 
 export default class RBFCancel extends CPFP {
   static contextType = StorageContext;
@@ -90,13 +90,13 @@ export default class RBFCancel extends CPFP {
     if (this.state.nonReplaceable) {
       return (
         <SafeArea>
-          <BlueSpacing20 />
-          <BlueSpacing20 />
-          <BlueSpacing20 />
-          <BlueSpacing20 />
-          <BlueSpacing20 />
+          <Spacing20 />
+          <Spacing20 />
+          <Spacing20 />
+          <Spacing20 />
+          <Spacing20 />
 
-          <BlueText h4>{loc.transactions.cancel_no}</BlueText>
+          <ShroudText h4>{loc.transactions.cancel_no}</ShroudText>
         </SafeArea>
       );
     }

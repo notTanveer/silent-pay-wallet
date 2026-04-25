@@ -360,7 +360,7 @@
     "header": "Trimite",
     "view": "Afișează",
     "manage_keys": "Administrează chei",
-    "how_many_signatures_can_bluewallet_make": "cîte semnături poate face Shroud",
+    "how_many_signatures_can_shroud_make": "cîte semnături poate face Shroud",
     "signatures_required_to_spend": "Semnături necesare {number}",
     "signatures_we_can_make": "poate realiza {number}",
     "scan_or_import_file": "Scanează sau importă fișier",

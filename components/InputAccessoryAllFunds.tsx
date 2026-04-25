@@ -1,7 +1,7 @@
 import React from 'react';
 import { InputAccessoryView, Keyboard, Platform, StyleSheet, View } from 'react-native';
 import { Text } from '@rneui/themed';
-import { BlueButtonLink } from '../ShroudComponents';
+import { ShroudButtonLink } from '../ShroudComponents';
 import loc from '../loc';
 import { BitcoinUnit } from '../models/bitcoinUnits';
 import { useTheme } from './themes';
@@ -32,7 +32,7 @@ const InputAccessoryAllFunds: React.FC<InputAccessoryAllFundsProps> = ({ balance
       <View style={styles.left}>
         <Text style={[styles.totalLabel, stylesHook.totalLabel]}>{loc.send.input_total}</Text>
         {canUseAll ? (
-          <BlueButtonLink onPress={onUseAllPressed} style={styles.totalCan} title={`${balance} ${BitcoinUnit.BTC}`} />
+          <ShroudButtonLink onPress={onUseAllPressed} style={styles.totalCan} title={`${balance} ${BitcoinUnit.BTC}`} />
         ) : (
           <Text style={[styles.totalCanNot, stylesHook.totalCanNot]}>
             {balance} {BitcoinUnit.BTC}
@@ -40,7 +40,7 @@ const InputAccessoryAllFunds: React.FC<InputAccessoryAllFundsProps> = ({ balance
         )}
       </View>
       <View style={styles.right}>
-        <BlueButtonLink style={styles.done} title={loc.send.input_done} onPress={Keyboard.dismiss} />
+        <ShroudButtonLink style={styles.done} title={loc.send.input_done} onPress={Keyboard.dismiss} />
       </View>
     </View>
   );

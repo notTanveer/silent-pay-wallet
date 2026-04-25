@@ -1,6 +1,6 @@
 import React from 'react';
 import { InputAccessoryView, Keyboard, Platform, StyleSheet, View } from 'react-native';
-import { BlueButtonLink } from '../ShroudComponents';
+import { ShroudButtonLink } from '../ShroudComponents';
 import loc from '../loc';
 import { useTheme } from './themes';
 import Clipboard from '@react-native-clipboard/clipboard';
@@ -26,9 +26,9 @@ export const DoneAndDismissKeyboardInputAccessory: React.FC<DoneAndDismissKeyboa
 
   const inputView = (
     <View style={[styles.container, styleHooks.container]}>
-      <BlueButtonLink title={loc.send.input_clear} onPress={props.onClearTapped} />
-      <BlueButtonLink title={loc.send.input_paste} onPress={onPasteTapped} />
-      <BlueButtonLink title={loc.send.input_done} onPress={Keyboard.dismiss} />
+      <ShroudButtonLink title={loc.send.input_clear} onPress={props.onClearTapped} />
+      <ShroudButtonLink title={loc.send.input_paste} onPress={onPasteTapped} />
+      <ShroudButtonLink title={loc.send.input_done} onPress={Keyboard.dismiss} />
     </View>
   );
 

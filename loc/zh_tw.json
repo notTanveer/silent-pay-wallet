@@ -328,7 +328,7 @@
     "header": "發送",
     "view": "查看",
     "manage_keys": "管理密鑰",
-    "how_many_signatures_can_bluewallet_make": "Shroud能夠生成多少簽署？",
+    "how_many_signatures_can_shroud_make": "Shroud能夠生成多少簽署？",
     "signatures_required_to_spend": "需要簽署 {number}",
     "signatures_we_can_make": "可以使{number}",
     "scan_or_import_file": "掃描或匯入檔案",

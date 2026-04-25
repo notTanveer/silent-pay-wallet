@@ -399,7 +399,7 @@
     "header": "Küldés",
     "view": "Megnéz",
     "manage_keys": "Kulcsok kezelése",
-    "how_many_signatures_can_bluewallet_make": "mennyi szignatúrát tud a Shroud létrehozni",
+    "how_many_signatures_can_shroud_make": "mennyi szignatúrát tud a Shroud létrehozni",
     "signatures_required_to_spend": "Aláírás szükséges {number}",
     "signatures_we_can_make": "létretudsz hozni {number}-et/őt/at",
     "scan_or_import_file": "Szkennelés vagy fájl importálása",

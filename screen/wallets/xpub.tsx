@@ -2,7 +2,7 @@ import { NavigationProp, RouteProp, useFocusEffect, useNavigation, useRoute } fr
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, InteractionManager, View } from 'react-native';
 import Share from 'react-native-share';
-import { BlueText } from '../../ShroudComponents';
+import { ShroudText } from '../../ShroudComponents';
 import Button from '../../components/Button';
 import CopyTextToClipboard from '../../components/CopyTextToClipboard';
 import QRCodeComponent from '../../components/QRCodeComponent';
@@ -12,7 +12,7 @@ import loc from '../../loc';
 import { styles, useDynamicStyles } from './xpub.styles';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useSettings } from '../../hooks/context/useSettings';
-import { BlueSpacing20 } from '../../components/BlueSpacing';
+import { Spacing20 } from '../../components/Spacing';
 
 type WalletXpubRouteProp = RouteProp<{ params: { walletID: string; xpub: string } }, 'params'>;
 export type RootStackParamList = {
@@ -98,9 +98,9 @@ const WalletXpub: React.FC = () => {
             {wallet && (
               <>
                 <View>
-                  <BlueText>{wallet.typeReadable}</BlueText>
+                  <ShroudText>{wallet.typeReadable}</ShroudText>
                 </View>
-                <BlueSpacing20 />
+                <Spacing20 />
               </>
             )}
             <QRCodeComponent value={xpub} size={qrCodeSize} />

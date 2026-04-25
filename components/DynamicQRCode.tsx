@@ -6,7 +6,7 @@ import { encodeUR } from '../modules/ur';
 import { BlueCurrentTheme } from '../components/themes';
 import loc from '../loc';
 import QRCodeComponent from './QRCodeComponent';
-import { BlueSpacing20 } from './BlueSpacing';
+import { Spacing20 } from './Spacing';
 
 const { height, width } = Dimensions.get('window');
 
@@ -142,13 +142,13 @@ export class DynamicQRCode extends Component<DynamicQRCodeProps, DynamicQRCodeSt
 
         {!this.state.hideControls && (
           <View style={animatedQRCodeStyle.container}>
-            <BlueSpacing20 />
+            <Spacing20 />
             <View>
               <Text style={animatedQRCodeStyle.text}>
                 {loc.formatString(loc._.of, { number: this.state.index + 1, total: this.state.total })}
               </Text>
             </View>
-            <BlueSpacing20 />
+            <Spacing20 />
             <View style={animatedQRCodeStyle.controller}>
               <TouchableOpacity
                 accessibilityRole="button"

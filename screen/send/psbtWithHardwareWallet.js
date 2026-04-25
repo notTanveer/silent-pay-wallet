@@ -3,9 +3,9 @@ import { StackActions, useIsFocused, useRoute } from '@react-navigation/native';
 import * as bitcoin from 'bitcoinjs-lib';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import * as BlueElectrum from '../../modules/BlueElectrum';
+import * as Electrum from '../../modules/Electrum';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
-import { BlueCard, BlueText } from '../../ShroudComponents';
+import { ShroudCard, ShroudText } from '../../ShroudComponents';
 import presentAlert from '../../components/Alert';
 import CopyToClipboardButton from '../../components/CopyToClipboardButton';
 import { DynamicQRCode } from '../../components/DynamicQRCode';
@@ -19,7 +19,7 @@ import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useSettings } from '../../hooks/context/useSettings';
 import { majorTomToGroundControl } from '../../modules/notifications';
 import { openSignedTransactionRaw } from '../../modules/fs';
-import { BlueSpacing20 } from '../../components/BlueSpacing';
+import { Spacing20 } from '../../components/Spacing';
 
 const PsbtWithHardwareWallet = () => {
   const { txMetadata, fetchAndSaveWalletTransactions, wallets } = useStorage();
@@ -135,8 +135,8 @@ const PsbtWithHardwareWallet = () => {
       }
     }
     try {
-      await BlueElectrum.ping();
-      await BlueElectrum.waitTillConnected();
+      await Electrum.ping();
+      await Electrum.waitTillConnected();
       const result = await wallet.broadcastTx(txHex);
       if (result) {
         setIsLoading(false);
@@ -172,8 +172,8 @@ const PsbtWithHardwareWallet = () => {
   const _renderBroadcastHex = () => {
     return (
       <View style={[styles.rootPadding, stylesHook.rootPadding]}>
-        <BlueCard style={[styles.hexWrap, stylesHook.hexWrap]}>
-          <BlueText style={[styles.hexLabel, stylesHook.hexLabel]}>{loc.send.create_this_is_hex}</BlueText>
+        <ShroudCard style={[styles.hexWrap, stylesHook.hexWrap]}>
+          <ShroudText style={[styles.hexLabel, stylesHook.hexLabel]}>{loc.send.create_this_is_hex}</ShroudText>
           <TextInput style={[styles.hexInput, stylesHook.hexInput]} height={112} multiline editable value={txHex} />
 
           <TouchableOpacity accessibilityRole="button" style={styles.hexTouch} onPress={copyHexToClipboard}>
@@ -182,14 +182,14 @@ const PsbtWithHardwareWallet = () => {
           <TouchableOpacity accessibilityRole="button" style={styles.hexTouch} onPress={handleOnVerifyPressed}>
             <Text style={[styles.hexText, stylesHook.hexText]}>{loc.send.create_verify}</Text>
           </TouchableOpacity>
-          <BlueSpacing20 />
+          <Spacing20 />
           <SecondButton
             disabled={isElectrumDisabled}
             onPress={broadcast}
             title={loc.send.confirm_sendNow}
             testID="PsbtWithHardwareWalletBroadcastTransactionButton"
           />
-        </BlueCard>
+        </ShroudCard>
       </View>
     );
   };
@@ -227,14 +227,14 @@ const PsbtWithHardwareWallet = () => {
     <ActivityIndicator />
   ) : (
     <View style={styles.container}>
-      <BlueCard>
-        <BlueText testID="TextHelperForPSBT">{loc.send.psbt_this_is_psbt}</BlueText>
-        <BlueSpacing20 />
+      <ShroudCard>
+        <ShroudText testID="TextHelperForPSBT">{loc.send.psbt_this_is_psbt}</ShroudText>
+        <Spacing20 />
         <Text testID="PSBTHex" style={styles.hidden}>
           {psbt.toHex()}
         </Text>
         <DynamicQRCode value={psbt.toHex()} ref={dynamicQRCode} />
-        <BlueSpacing20 />
+        <Spacing20 />
         <SecondButton
           testID="PsbtTxScanButton"
           icon={{
@@ -246,7 +246,7 @@ const PsbtWithHardwareWallet = () => {
           ref={openScannerButton}
           title={loc.send.psbt_tx_scan}
         />
-        <BlueSpacing20 />
+        <Spacing20 />
         <SecondButton
           icon={{
             name: 'login',
@@ -256,7 +256,7 @@ const PsbtWithHardwareWallet = () => {
           onPress={onOpenSignedTransaction}
           title={loc.send.psbt_tx_open}
         />
-        <BlueSpacing20 />
+        <Spacing20 />
         <SaveFileButton
           fileName={`${Date.now()}.psbt`}
           fileContent={typeof psbt === 'string' ? psbt : psbt.toBase64()}
@@ -273,11 +273,11 @@ const PsbtWithHardwareWallet = () => {
             title={loc.send.psbt_tx_export}
           />
         </SaveFileButton>
-        <BlueSpacing20 />
+        <Spacing20 />
         <View style={styles.copyToClipboard}>
           <CopyToClipboardButton stringToCopy={typeof psbt === 'string' ? psbt : psbt.toBase64()} displayText={loc.send.psbt_clipboard} />
         </View>
-      </BlueCard>
+      </ShroudCard>
     </View>
   );
 

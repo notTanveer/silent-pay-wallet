@@ -387,7 +387,7 @@
     "header": "Enviar",
     "view": "Ver",
     "manage_keys": "Administrar claves",
-    "how_many_signatures_can_bluewallet_make": "Cuántas firmas puede hacer Shroud",
+    "how_many_signatures_can_shroud_make": "Cuántas firmas puede hacer Shroud",
     "signatures_required_to_spend": "{number} firmas requeridas",
     "signatures_we_can_make": "puede hacer {number}",
     "scan_or_import_file": "Escanear o importar archivo",

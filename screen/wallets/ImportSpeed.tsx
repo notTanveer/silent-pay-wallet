@@ -2,15 +2,15 @@ import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, TextInput, View } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { BlueFormLabel, BlueFormMultiInput } from '../../ShroudComponents';
+import { ShroudFormLabel, ShroudFormMultiInput } from '../../ShroudComponents';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
 import SafeArea from '../../components/SafeArea';
 import { useTheme } from '../../components/themes';
 import { useStorage } from '../../hooks/context/useStorage';
 import { AddWalletStackParamList } from '../../navigation/AddWalletStack';
-import { BlueSpacing20 } from '../../components/BlueSpacing';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
+import { Spacing20 } from '../../components/Spacing';
 
 type NavigationProp = NativeStackNavigationProp<AddWalletStackParamList, 'ImportSpeed'>;
 
@@ -74,13 +74,13 @@ const ImportSpeed = () => {
 
   return (
     <SafeArea style={styles.root}>
-      <BlueSpacing20 />
-      <BlueFormLabel>Mnemonic</BlueFormLabel>
-      <BlueSpacing20 />
-      <BlueFormMultiInput testID="SpeedMnemonicInput" value={importText} onChangeText={setImportText} />
-      <BlueFormLabel>Passphrase</BlueFormLabel>
+      <Spacing20 />
+      <ShroudFormLabel>Mnemonic</ShroudFormLabel>
+      <Spacing20 />
+      <ShroudFormMultiInput testID="SpeedMnemonicInput" value={importText} onChangeText={setImportText} />
+      <ShroudFormLabel>Passphrase</ShroudFormLabel>
       <TextInput testID="SpeedPassphraseInput" value={passphrase} style={styles.pathInput} onChangeText={setPassphrase} />
-      <BlueSpacing20 />
+      <Spacing20 />
       <View style={styles.center}>
         <Button testID="SpeedDoImport" title="Import" onPress={importMnemonic} />
         {loading && <ActivityIndicator />}

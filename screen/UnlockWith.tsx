@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useReducer, useRef } from 'react';
 import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../modules/hapticFeedback';
-import { BlueTextCentered } from '../ShroudComponents';
+import { ShroudTextCentered } from '../ShroudComponents';
 import Button from '../components/Button';
 import SafeArea from '../components/SafeArea';
 import { BiometricType, unlockWithBiometrics, useBiometrics } from '../hooks/useBiometrics';
@@ -137,7 +137,7 @@ const UnlockWith: React.FC = () => {
         case AuthType.Encrypted:
           return <Button onPress={onUnlockPressed} title={loc._.unlock} />;
         case AuthType.BiometricsUnavailable:
-          return <BlueTextCentered>{loc.settings.biometrics_no_longer_available}</BlueTextCentered>;
+          return <ShroudTextCentered>{loc.settings.biometrics_no_longer_available}</ShroudTextCentered>;
         default:
           return null;
       }

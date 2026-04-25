@@ -1,7 +1,7 @@
 import React from 'react';
 import { InputAccessoryView, Keyboard, Platform, StyleSheet, View } from 'react-native';
 import { useTheme } from './themes';
-import { BlueButtonLink } from '../ShroudComponents';
+import { ShroudButtonLink } from '../ShroudComponents';
 import loc from '../loc';
 
 export const DismissKeyboardInputAccessoryViewID = 'DismissKeyboardInputAccessory';
@@ -20,7 +20,7 @@ export const DismissKeyboardInputAccessory: React.FC = () => {
   return (
     <InputAccessoryView nativeID={DismissKeyboardInputAccessoryViewID}>
       <View style={[styles.container, styleHooks.container]}>
-        <BlueButtonLink title={loc.send.input_done} onPress={Keyboard.dismiss} />
+        <ShroudButtonLink title={loc.send.input_done} onPress={Keyboard.dismiss} />
       </View>
     </InputAccessoryView>
   );

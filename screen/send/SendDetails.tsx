@@ -26,7 +26,7 @@ import {
 import { SilentPayment } from 'silent-payments';
 import { btcToSatoshi, fiatToBTC } from '../../modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
-import { BlueText } from '../../ShroudComponents';
+import { ShroudText } from '../../ShroudComponents';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import { CreateTransactionTarget, CreateTransactionUtxo, TWallet } from '../../class/wallets/types';
@@ -998,9 +998,9 @@ const SendDetails = () => {
             style={({ pressed }) => [pressed && styles.pressed, styles.frozenContainer]}
             onPress={handleCoinControl}
           >
-            <BlueText>
+            <ShroudText>
               {loc.formatString(loc.send.details_frozen, { amount: formatBalanceWithoutSuffix(frozenBalance, BitcoinUnit.BTC, true) })}
-            </BlueText>
+            </ShroudText>
           </Pressable>
         )}
 

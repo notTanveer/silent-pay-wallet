@@ -4,7 +4,7 @@ import { ActivityIndicator, Keyboard, LayoutAnimation, Platform, ScrollView, Sty
 import { Icon } from '@rneui/themed';
 import Share from 'react-native-share';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
-import { BlueFormLabel } from '../../ShroudComponents';
+import { ShroudFormLabel } from '../../ShroudComponents';
 import presentAlert from '../../components/Alert';
 import { FButton, FContainer } from '../../components/FloatButtons';
 import { useTheme } from '../../components/themes';
@@ -14,7 +14,7 @@ import {
   DoneAndDismissKeyboardInputAccessory,
   DoneAndDismissKeyboardInputAccessoryViewID,
 } from '../../components/DoneAndDismissKeyboardInputAccessory';
-import { BlueSpacing10, BlueSpacing20, BlueSpacing40 } from '../../components/BlueSpacing';
+import { Spacing10, Spacing20, Spacing40 } from '../../components/Spacing';
 
 const SignVerify = () => {
   const { colors } = useTheme();
@@ -119,9 +119,9 @@ const SignVerify = () => {
     >
       {!isKeyboardVisible && (
         <>
-          <BlueSpacing20 />
-          <BlueFormLabel>{loc.addresses.sign_help}</BlueFormLabel>
-          <BlueSpacing20 />
+          <Spacing20 />
+          <ShroudFormLabel>{loc.addresses.sign_help}</ShroudFormLabel>
+          <Spacing20 />
         </>
       )}
 
@@ -140,7 +140,7 @@ const SignVerify = () => {
         spellCheck={false}
         editable={!loading}
       />
-      <BlueSpacing10 />
+      <Spacing10 />
 
       <TextInput
         multiline
@@ -157,7 +157,7 @@ const SignVerify = () => {
         spellCheck={false}
         editable={!loading}
       />
-      <BlueSpacing10 />
+      <Spacing10 />
 
       <TextInput
         multiline
@@ -175,7 +175,7 @@ const SignVerify = () => {
         onFocus={() => handleFocus(true)}
         onBlur={() => handleFocus(false)}
       />
-      <BlueSpacing40 />
+      <Spacing40 />
 
       {isShareVisible && !isKeyboardVisible && (
         <>
@@ -190,7 +190,7 @@ const SignVerify = () => {
               }
             />
           </FContainer>
-          <BlueSpacing10 />
+          <Spacing10 />
         </>
       )}
 
@@ -200,7 +200,7 @@ const SignVerify = () => {
             <FButton onPress={handleSign} text={loc.addresses.sign_sign} disabled={loading} />
             <FButton onPress={handleVerify} text={loc.addresses.sign_verify} disabled={loading} />
           </FContainer>
-          <BlueSpacing10 />
+          <Spacing10 />
         </>
       )}
 

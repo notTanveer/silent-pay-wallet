@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { ActivityIndicator, Keyboard, Platform, StyleSheet, TouchableWithoutFeedback, View, TouchableOpacity, Image } from 'react-native';
-import { BlueFormLabel, BlueFormMultiInput } from '../../ShroudComponents';
+import { ShroudFormLabel, ShroudFormMultiInput } from '../../ShroudComponents';
 import Button from '../../components/Button';
 import {
   DoneAndDismissKeyboardInputAccessory,
@@ -18,7 +18,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AddressInputScanButton } from '../../components/AddressInputScanButton';
 import { useScreenProtect } from '../../hooks/useScreenProtect';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import { BlueSpacing20 } from '../../components/BlueSpacing';
+import { Spacing20 } from '../../components/Spacing';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet.ts';
 import { useStorage } from '../../hooks/context/useStorage';
 import presentAlert from '../../components/Alert';
@@ -247,7 +247,7 @@ const ImportWallet = () => {
 
   const renderOptionsAndImportButton = (
     <>
-      <BlueSpacing20 />
+      <Spacing20 />
       <View style={[styles.center, stylesHook.center]}>
         <>
           <Button
@@ -257,7 +257,7 @@ const ImportWallet = () => {
             onPress={handleImport}
             backgroundColor="#754CE8"
           />
-          <BlueSpacing20 />
+          <Spacing20 />
           <AddressInputScanButton type="link" onChangeText={setImportText} testID="ScanImport" />
         </>
       </View>
@@ -270,13 +270,13 @@ const ImportWallet = () => {
       keyboardShouldPersistTaps="always"
       automaticallyAdjustKeyboardInsets
     >
-      <BlueSpacing20 />
+      <Spacing20 />
       <TouchableWithoutFeedback accessibilityRole="button" onPress={speedBackdoorTap} testID="SpeedBackdoor">
-        <BlueFormLabel>{loc.wallets.import_explanation}</BlueFormLabel>
+        <ShroudFormLabel>{loc.wallets.import_explanation}</ShroudFormLabel>
       </TouchableWithoutFeedback>
-      <BlueSpacing20 />
+      <Spacing20 />
       <View style={styles.mnemonicInputContainer}>
-        <BlueFormMultiInput
+        <ShroudFormMultiInput
           value={importText}
           onBlur={onBlur}
           onChangeText={setImportText}
@@ -286,7 +286,7 @@ const ImportWallet = () => {
         />
       </View>
 
-      <BlueSpacing20 />
+      <Spacing20 />
       <WalletBirthSection birthDate={birthDate} setBirthDate={setBirthDate} />
 
       {isLoading && <ActivityIndicator size="large" color={colors.mainColor} style={styles.activityIndicator} />}

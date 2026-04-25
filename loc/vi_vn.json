@@ -388,7 +388,7 @@
     "header": "Gửi",
     "view": "Xem",
     "manage_keys": "Quản lý các khóa ",
-    "how_many_signatures_can_bluewallet_make": "Shroud có thể tạo bao nhiêu chữ ký",
+    "how_many_signatures_can_shroud_make": "Shroud có thể tạo bao nhiêu chữ ký",
     "signatures_required_to_spend": "Các chìa khoá cần thiết {number}",
     "signatures_we_can_make": "có thể tạo {number}",
     "scan_or_import_file": "Quét hoặc nhập tệp",

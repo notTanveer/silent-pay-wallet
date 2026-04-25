@@ -3,10 +3,10 @@ import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { BackHandler, InteractionManager, Platform, StyleSheet, Text, View } from 'react-native';
 import Share from 'react-native-share';
-import * as BlueElectrum from '../../modules/BlueElectrum';
+import * as Electrum from '../../modules/Electrum';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import { majorTomToGroundControl, tryToObtainPermissions } from '../../modules/notifications';
-import { BlueCard, BlueText } from '../../ShroudComponents';
+import { ShroudCard, ShroudText } from '../../ShroudComponents';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
@@ -23,8 +23,8 @@ import loc, { formatBalance } from '../../loc';
 import { BitcoinUnit, Chain } from '../../models/bitcoinUnits';
 import { ReceiveDetailsStackParamList } from '../../navigation/ReceiveDetailsStackParamList';
 import { SuccessView } from '../send/success';
-import { BlueSpacing40 } from '../../components/BlueSpacing';
-import { BlueLoading } from '../../components/BlueLoading';
+import { Spacing40 } from '../../components/Spacing';
+import { Loading } from '../../components/Loading';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 
 const segmentControlValues = [loc.bip352.silent_payments, loc.wallets.details_address];
@@ -179,7 +179,7 @@ const ReceiveDetails = () => {
         if (!addressToUse) return;
 
         console.debug('checking address', addressToUse, 'for balance...');
-        const balance = await BlueElectrum.getBalanceByAddress(addressToUse);
+        const balance = await Electrum.getBalanceByAddress(addressToUse);
         console.debug('...got', balance);
 
         if (balance.unconfirmed > 0) {
@@ -190,13 +190,13 @@ const ReceiveDetails = () => {
             triggerHapticFeedback(HapticFeedbackTypes.ImpactHeavy);
           }
 
-          const txs = await BlueElectrum.getMempoolTransactionsByAddress(addressToUse);
+          const txs = await Electrum.getMempoolTransactionsByAddress(addressToUse);
           const tx = txs.pop();
           if (tx) {
-            const rez = await BlueElectrum.multiGetTransactionByTxid([tx.tx_hash], true, 10);
+            const rez = await Electrum.multiGetTransactionByTxid([tx.tx_hash], true, 10);
             if (rez[tx.tx_hash] && rez[tx.tx_hash].vsize) {
               const satPerVbyte = Math.round(tx.fee / rez[tx.tx_hash].vsize);
-              const fees = await BlueElectrum.estimateFees();
+              const fees = await Electrum.estimateFees();
               if (satPerVbyte >= fees.fast) {
                 setEta(loc.formatString(loc.transactions.eta_10m));
               } else if (satPerVbyte >= fees.medium) {
@@ -263,9 +263,9 @@ const ReceiveDetails = () => {
     return (
       <View style={styles.scrollBody}>
         <SuccessView />
-        <BlueText style={[styles.label, stylesHook.label]} numberOfLines={1}>
+        <ShroudText style={[styles.label, stylesHook.label]} numberOfLines={1}>
           {displayBalance}
-        </BlueText>
+        </ShroudText>
       </View>
     );
   };
@@ -274,13 +274,13 @@ const ReceiveDetails = () => {
     return (
       <View style={styles.scrollBody}>
         <TransactionPendingIconBig />
-        <BlueSpacing40 />
-        <BlueText style={[styles.label, stylesHook.label]} numberOfLines={1}>
+        <Spacing40 />
+        <ShroudText style={[styles.label, stylesHook.label]} numberOfLines={1}>
           {displayBalance}
-        </BlueText>
-        <BlueText style={[styles.label, stylesHook.label]} numberOfLines={1}>
+        </ShroudText>
+        <ShroudText style={[styles.label, stylesHook.label]} numberOfLines={1}>
           {eta}
-        </BlueText>
+        </ShroudText>
       </View>
     );
   };
@@ -399,12 +399,12 @@ const ReceiveDetails = () => {
 
         {!showAddress && !showPendingBalance && !showConfirmedBalance && (
           <View style={styles.loadingContainer}>
-            <BlueLoading />
+            <Loading />
           </View>
         )}
 
         <View style={styles.share}>
-          <BlueCard>
+          <ShroudCard>
             <Button
               onPress={handleShareButtonPressed}
               title={loc.receive.details_share}
@@ -421,7 +421,7 @@ const ReceiveDetails = () => {
                 )
               }
             />
-          </BlueCard>
+          </ShroudCard>
         </View>
       </SafeAreaScrollView>
     </View>

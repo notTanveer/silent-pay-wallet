@@ -19,7 +19,7 @@ if (aspectRatio > 1.6) {
  *
  * @type {React.FC<any>}
  */
-export const BlueButtonLink = forwardRef((props, ref) => {
+export const ShroudButtonLink = forwardRef((props, ref) => {
   const { colors } = useTheme();
   return (
     <Pressable accessibilityRole="button" style={({ pressed }) => [styles.blueButtonLink, pressed && styles.pressed]} {...props} ref={ref}>
@@ -28,11 +28,11 @@ export const BlueButtonLink = forwardRef((props, ref) => {
   );
 });
 
-export const BlueCard = props => {
+export const ShroudCard = props => {
   return <View {...props} style={{ padding: 20 }} />;
 };
 
-export const BlueText = ({ bold = false, ...props }) => {
+export const ShroudText = ({ bold = false, ...props }) => {
   const { colors } = useTheme();
   const { direction } = useLocale();
   const style = StyleSheet.compose(
@@ -46,12 +46,12 @@ export const BlueText = ({ bold = false, ...props }) => {
   return <Text {...props} style={style} />;
 };
 
-export const BlueTextCentered = props => {
+export const ShroudTextCentered = props => {
   const { colors } = useTheme();
   return <Text {...props} style={{ color: colors.foregroundColor, textAlign: 'center' }} />;
 };
 
-export const BlueFormLabel = props => {
+export const ShroudFormLabel = props => {
   const { colors } = useTheme();
   const { direction } = useLocale();
 
@@ -68,7 +68,7 @@ export const BlueFormLabel = props => {
   );
 };
 
-export const BlueFormMultiInput = props => {
+export const ShroudFormMultiInput = props => {
   const { colors } = useTheme();
 
   return (
@@ -108,7 +108,7 @@ export class is {
   }
 }
 
-export function BlueBigCheckmark({ style = {} }) {
+export function ShroudBigCheckmark({ style = {} }) {
   const defaultStyles = {
     backgroundColor: '#ccddf9',
     width: 120,

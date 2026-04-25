@@ -5,7 +5,7 @@ import { BitcoinUnit } from '../../models/bitcoinUnits';
 import type { HDSilentPaymentsWallet } from './hd-bip352-wallet.ts';
 
 export type Utxo = {
-  // Returned by BlueElectrum
+  // Returned by Electrum
   height: number;
   address: string;
   txid: string;

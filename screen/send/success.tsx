@@ -4,7 +4,7 @@ import BigNumber from 'bignumber.js';
 import LottieView from 'lottie-react-native';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@rneui/themed';
-import { BlueCard } from '../../ShroudComponents';
+import { ShroudCard } from '../../ShroudComponents';
 import Button from '../../components/Button';
 import SafeArea from '../../components/SafeArea';
 import { useTheme } from '../../components/themes';
@@ -84,7 +84,7 @@ export const SuccessView = ({ amount, amountUnit, fee, invoiceDescription, shoul
   return (
     <View style={styles.root}>
       {amount || (fee ?? 0) > 0 ? (
-        <BlueCard style={styles.amount}>
+        <ShroudCard style={styles.amount}>
           <View style={styles.view}>
             {amount ? (
               <>
@@ -101,7 +101,7 @@ export const SuccessView = ({ amount, amountUnit, fee, invoiceDescription, shoul
           <Text numberOfLines={0} style={styles.feeText}>
             {invoiceDescription}
           </Text>
-        </BlueCard>
+        </ShroudCard>
       ) : null}
 
       <View style={styles.ready}>

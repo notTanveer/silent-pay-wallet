@@ -292,7 +292,7 @@
     "confirm": "पक्का ",
     "header": "पठाउनुहोस्",
     "view": "हेर्नुहोस्",
-    "how_many_signatures_can_bluewallet_make": "ब्लू वालेटले कति हस्ताक्षर गर्न सक्छ",
+    "how_many_signatures_can_shroud_make": "ब्लू वालेटले कति हस्ताक्षर गर्न सक्छ",
     "signatures_required_to_spend": "हस्ताक्षर आवश्यक छ {number}",
     "signatures_we_can_make": "बनाउन सक्छ {number}",
     "lets_start": "सुरु गरौँ",

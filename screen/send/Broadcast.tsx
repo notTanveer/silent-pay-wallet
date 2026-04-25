@@ -2,9 +2,9 @@ import React, { useCallback, useState } from 'react';
 import * as bitcoin from 'bitcoinjs-lib';
 import { ActivityIndicator, Keyboard, Linking, StyleSheet, TextInput, View } from 'react-native';
 
-import * as BlueElectrum from '../../modules/BlueElectrum';
+import * as Electrum from '../../modules/Electrum';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
-import { BlueButtonLink, BlueCard, BlueFormLabel, BlueTextCentered } from '../../ShroudComponents';
+import { ShroudButtonLink, ShroudCard, ShroudFormLabel, ShroudTextCentered } from '../../ShroudComponents';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
 import SafeArea from '../../components/SafeArea';
@@ -13,8 +13,8 @@ import loc from '../../loc';
 import { useSettings } from '../../hooks/context/useSettings';
 import { majorTomToGroundControl } from '../../modules/notifications';
 import { scanQrHelper } from '../../helpers/scan-qr.ts';
-import { BlueSpacing10, BlueSpacing20 } from '../../components/BlueSpacing';
-import { BlueBigCheckmark } from '../../components/BlueBigCheckmark.tsx';
+import { Spacing10, Spacing20 } from '../../components/Spacing';
+import { BigCheckmark } from '../../components/BigCheckmark.tsx';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 
 const BROADCAST_RESULT = Object.freeze({
@@ -58,9 +58,9 @@ const Broadcast: React.FC = () => {
     Keyboard.dismiss();
     setBroadcastResult(BROADCAST_RESULT.pending);
     try {
-      await BlueElectrum.ping();
-      await BlueElectrum.waitTillConnected();
-      const walletObj = new HDSilentPaymentsWallet();
+      await Electrum.ping();
+      await Electrum.waitTillConnected();
+    const walletObj = new HDSilentPaymentsWallet();
       if (txHex) {
         const result = await walletObj.broadcastTx(txHex);
         if (result) {
@@ -111,9 +111,9 @@ const Broadcast: React.FC = () => {
     <SafeArea>
       <View style={styles.wrapper} testID="BroadcastView">
         {BROADCAST_RESULT.success !== broadcastResult && (
-          <BlueCard style={styles.mainCard}>
+          <ShroudCard style={styles.mainCard}>
             <View style={styles.topFormRow}>
-              <BlueFormLabel>{status}</BlueFormLabel>
+              <ShroudFormLabel>{status}</ShroudFormLabel>
               {BROADCAST_RESULT.pending === broadcastResult && <ActivityIndicator size="small" />}
             </View>
 
@@ -129,10 +129,10 @@ const Broadcast: React.FC = () => {
                 testID="TxHex"
               />
             </View>
-            <BlueSpacing20 />
+            <Spacing20 />
 
             <Button title={loc.wallets.import_scan_qr} onPress={handleQRScan} />
-            <BlueSpacing20 />
+            <Spacing20 />
 
             <Button
               title={loc.send.broadcastButton}
@@ -140,8 +140,8 @@ const Broadcast: React.FC = () => {
               disabled={broadcastResult === BROADCAST_RESULT.pending || txHex?.length === 0 || txHex === undefined}
               testID="BroadcastButton"
             />
-            <BlueSpacing20 />
-          </BlueCard>
+            <Spacing20 />
+          </ShroudCard>
         )}
         {BROADCAST_RESULT.success === broadcastResult && tx && <SuccessScreen tx={tx} url={`${selectedBlockExplorer.url}/tx/${tx}`} />}
       </View>
@@ -156,15 +156,15 @@ const SuccessScreen: React.FC<{ tx: string; url: string }> = ({ tx, url }) => {
 
   return (
     <View style={styles.wrapper}>
-      <BlueCard>
+      <ShroudCard>
         <View style={styles.broadcastResultWrapper}>
-          <BlueBigCheckmark />
-          <BlueSpacing20 />
-          <BlueTextCentered>{loc.settings.success_transaction_broadcasted}</BlueTextCentered>
-          <BlueSpacing10 />
-          <BlueButtonLink title={loc.settings.open_link_in_explorer} onPress={() => Linking.openURL(url)} />
+          <BigCheckmark />
+          <Spacing20 />
+          <ShroudTextCentered>{loc.settings.success_transaction_broadcasted}</ShroudTextCentered>
+          <Spacing10 />
+          <ShroudButtonLink title={loc.settings.open_link_in_explorer} onPress={() => Linking.openURL(url)} />
         </View>
-      </BlueCard>
+      </ShroudCard>
     </View>
   );
 };

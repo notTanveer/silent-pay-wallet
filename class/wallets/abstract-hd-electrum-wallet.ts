@@ -9,8 +9,8 @@ import coinSelect, { CoinSelectOutput, CoinSelectReturnInput, CoinSelectTarget }
 import coinSelectSplit from 'coinselect/split';
 import { ECPairFactory, ECPairInterface } from 'ecpair';
 
-import * as BlueElectrum from '../../modules/BlueElectrum';
-import { ElectrumHistory } from '../../modules/BlueElectrum';
+import * as Electrum from '../../modules/Electrum';
+import { ElectrumHistory } from '../../modules/Electrum';
 import ecc from '../../modules/noble_ecc';
 import { randomBytes } from '../rng';
 import { AbstractHDWallet } from './abstract-hd-wallet';
@@ -277,7 +277,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
     }
 
     // first: batch fetch for all addresses histories
-    const histories = await BlueElectrum.multiGetHistoryByAddress(addresses2fetch);
+    const histories = await Electrum.multiGetHistoryByAddress(addresses2fetch);
     const txs: Record<string, ElectrumHistory> = {};
     for (const history of Object.values(histories)) {
       for (const tx of history as ElectrumHistory[]) {
@@ -286,7 +286,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
     }
 
     // next, batch fetching each txid we got
-    const txdatas = await BlueElectrum.multiGetTransactionByTxid(Object.keys(txs), true);
+    const txdatas = await Electrum.multiGetTransactionByTxid(Object.keys(txs), true);
 
     // now, tricky part. we collect all transactions from inputs (vin), and batch fetch them too.
     // then we combine all this data (we need inputs to see source addresses and amounts)
@@ -300,7 +300,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
         // ^^^^ not all inputs have txid, some of them are Coinbase (newly-created coins)
       }
     }
-    const vintxdatas = await BlueElectrum.multiGetTransactionByTxid(vinTxids, true);
+    const vintxdatas = await Electrum.multiGetTransactionByTxid(vinTxids, true);
 
     // fetched all transactions from our inputs. now we need to combine it.
     // iterating all _our_ transactions:
@@ -509,7 +509,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
     let lastChunkWithUsedAddressesNum = null;
     let lastHistoriesWithUsedAddresses = null;
     for (let c = 0; c < Math.round(index / this.gap_limit); c++) {
-      const histories = await BlueElectrum.multiGetHistoryByAddress(gerenateChunkAddresses(c));
+      const histories = await Electrum.multiGetHistoryByAddress(gerenateChunkAddresses(c));
       // @ts-ignore
       if (this.constructor._getTransactionsFromHistories(histories).length > 0) {
         // in this particular chunk we have used addresses
@@ -552,7 +552,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
     let lastChunkWithUsedAddressesNum = null;
     let lastHistoriesWithUsedAddresses = null;
     for (let c = 0; c < Math.round(index / this.gap_limit); c++) {
-      const histories = await BlueElectrum.multiGetHistoryByAddress(gerenateChunkAddresses(c));
+      const histories = await Electrum.multiGetHistoryByAddress(gerenateChunkAddresses(c));
       // @ts-ignore
       if (this.constructor._getTransactionsFromHistories(histories).length > 0) {
         // in this particular chunk we have used addresses
@@ -611,7 +611,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
       lagAddressesToFetch.push(this._getInternalAddressByIndex(c));
     }
 
-    const txs = await BlueElectrum.multiGetHistoryByAddress(lagAddressesToFetch); // <------ electrum call
+    const txs = await Electrum.multiGetHistoryByAddress(lagAddressesToFetch); // <------ electrum call
 
     for (let c = this.next_free_address_index; c < this.next_free_address_index + this.gap_limit; c++) {
       const address = this._getExternalAddressByIndex(c);
@@ -647,7 +647,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
       addresses2fetch.push(this._getInternalAddressByIndex(c));
     }
 
-    const balances = await BlueElectrum.multiGetBalanceByAddress(addresses2fetch);
+    const balances = await Electrum.multiGetBalanceByAddress(addresses2fetch);
 
     // converting to a more compact internal format
     for (let c = 0; c < this.next_free_address_index + this.gap_limit; c++) {
@@ -728,7 +728,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
 
     addressess = [...new Set(addressess)]; // deduplicate just for any case
 
-    const fetchedUtxo = await BlueElectrum.multiGetUtxoByAddress(addressess);
+    const fetchedUtxo = await Electrum.multiGetUtxoByAddress(addressess);
     this._utxo = [];
     for (const arr of Object.values(fetchedUtxo)) {
       this._utxo = this._utxo.concat(arr);
@@ -737,7 +737,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
     // this belongs in `.getUtxo()`
     for (const u of this._utxo) {
       u.wif = this._getWifForAddress(u.address);
-      if (!u.confirmations && u.height) u.confirmations = BlueElectrum.estimateCurrentBlockheight() - u.height;
+      if (!u.confirmations && u.height) u.confirmations = Electrum.estimateCurrentBlockheight() - u.height;
     }
 
     this._utxo = this._utxo.sort((a, b) => Number(a.value) - Number(b.value));
@@ -799,7 +799,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
             value,
             confirmations: tx.confirmations,
             wif: false,
-            height: BlueElectrum.estimateCurrentBlockheight() - (tx.confirmations ?? 0),
+            height: Electrum.estimateCurrentBlockheight() - (tx.confirmations ?? 0),
           });
         }
       }
@@ -1172,7 +1172,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
    * @returns {Promise<boolean>}
    */
   async wasEverUsed(): Promise<boolean> {
-    const txs1 = await BlueElectrum.getTransactionsByAddress(this._getExternalAddressByIndex(0));
+    const txs1 = await Electrum.getTransactionsByAddress(this._getExternalAddressByIndex(0));
     return txs1.length > 0;
   }
 
@@ -1305,7 +1305,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
   }
 
   async broadcastTx(txhex: string): Promise<boolean> {
-    const broadcast = await BlueElectrum.broadcastV2(txhex);
+    const broadcast = await Electrum.broadcastV2(txhex);
     console.log({ broadcast });
     if (broadcast.indexOf('successfully') !== -1) return true;
     return broadcast.length === 64; // return string is txid (precise length), so it was broadcasted ok

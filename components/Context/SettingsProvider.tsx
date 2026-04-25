@@ -1,10 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BLOCK_EXPLORERS, getBlockExplorerUrl, saveBlockExplorer, BlockExplorer, normalizeUrl } from '../../models/blockExplorer';
-import * as BlueElectrum from '../../modules/BlueElectrum';
+import * as Electrum from '../../modules/Electrum';
 import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import DefaultPreference from 'react-native-default-preference';
 import { isReadClipboardAllowed, setReadClipboardAllowed } from '../../modules/clipboard';
-import { getPreferredCurrency, GROUP_IO_BLUEWALLET, initCurrencyDaemon, setPreferredCurrency } from '../../modules/currency';
+import { getPreferredCurrency, GROUP_IO_SHROUD, initCurrencyDaemon, setPreferredCurrency } from '../../modules/currency';
 import { clearUseURv1, isURv1Enabled, setUseURv1 } from '../../modules/ur';
 import { Shroud } from '../../class';
 import { saveLanguage, STORAGE_KEY } from '../../loc';
@@ -21,7 +21,7 @@ const TotalWalletsBalancePreferredUnit = 'TotalWalletsBalancePreferredUnit';
 
 const getDoNotTrackStorage = async (): Promise<boolean> => {
   try {
-    await DefaultPreference.setName(GROUP_IO_BLUEWALLET);
+    await DefaultPreference.setName(GROUP_IO_SHROUD);
     const doNotTrack = await DefaultPreference.get(Shroud.DO_NOT_TRACK);
     return doNotTrack === '1';
   } catch {
@@ -32,7 +32,7 @@ const getDoNotTrackStorage = async (): Promise<boolean> => {
 
 export const setTotalBalanceViewEnabledStorage = async (value: boolean): Promise<void> => {
   try {
-    await DefaultPreference.setName(GROUP_IO_BLUEWALLET);
+    await DefaultPreference.setName(GROUP_IO_SHROUD);
     await DefaultPreference.set(TotalWalletsBalanceKey, value ? 'true' : 'false');
     console.debug('setTotalBalanceViewEnabledStorage value:', value);
   } catch (e) {
@@ -42,7 +42,7 @@ export const setTotalBalanceViewEnabledStorage = async (value: boolean): Promise
 
 export const getIsTotalBalanceViewEnabled = async (): Promise<boolean> => {
   try {
-    await DefaultPreference.setName(GROUP_IO_BLUEWALLET);
+    await DefaultPreference.setName(GROUP_IO_SHROUD);
     const isEnabledValue = (await DefaultPreference.get(TotalWalletsBalanceKey)) ?? 'true';
     console.debug('getIsTotalBalanceViewEnabled', isEnabledValue);
     return isEnabledValue === 'true';
@@ -54,7 +54,7 @@ export const getIsTotalBalanceViewEnabled = async (): Promise<boolean> => {
 
 export const setTotalBalancePreferredUnitStorageFunc = async (unit: BitcoinUnit): Promise<void> => {
   try {
-    await DefaultPreference.setName(GROUP_IO_BLUEWALLET);
+    await DefaultPreference.setName(GROUP_IO_SHROUD);
     await DefaultPreference.set(TotalWalletsBalancePreferredUnit, unit);
   } catch (e) {
     console.error('Error setting TotalBalancePreferredUnit:', e);
@@ -63,7 +63,7 @@ export const setTotalBalancePreferredUnitStorageFunc = async (unit: BitcoinUnit)
 
 export const getTotalBalancePreferredUnit = async (): Promise<BitcoinUnit> => {
   try {
-    await DefaultPreference.setName(GROUP_IO_BLUEWALLET);
+    await DefaultPreference.setName(GROUP_IO_SHROUD);
     const unit = (await DefaultPreference.get(TotalWalletsBalancePreferredUnit)) as BitcoinUnit | null;
     return unit ?? BitcoinUnit.BTC;
   } catch (e) {
@@ -142,13 +142,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        await DefaultPreference.setName(GROUP_IO_BLUEWALLET);
+        await DefaultPreference.setName(GROUP_IO_SHROUD);
       } catch (e) {
         console.error('Error setting preference name:', e);
       }
 
       const promises: Promise<void>[] = [
-        BlueElectrum.isDisabled().then(disabled => {
+        Electrum.isDisabled().then(disabled => {
           setIsElectrumDisabled(disabled);
         }),
         AsyncStorage.getItem(STORAGE_KEY).then(lang => {
@@ -204,7 +204,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
 
   useEffect(() => {
     if (walletsInitialized) {
-      isElectrumDisabled ? BlueElectrum.forceDisconnect() : BlueElectrum.connectMain();
+      isElectrumDisabled ? Electrum.forceDisconnect() : Electrum.connectMain();
     }
   }, [isElectrumDisabled, walletsInitialized]);
 
@@ -228,7 +228,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
 
   const setDoNotTrackStorage = useCallback(async (value: boolean): Promise<void> => {
     try {
-      await DefaultPreference.setName(GROUP_IO_BLUEWALLET);
+      await DefaultPreference.setName(GROUP_IO_SHROUD);
       if (value) {
         await DefaultPreference.set(Shroud.DO_NOT_TRACK, '1');
       } else {

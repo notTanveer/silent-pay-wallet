@@ -13,7 +13,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { Icon } from '@rneui/themed';
-import * as BlueElectrum from '../../modules/BlueElectrum';
+import * as Electrum from '../../modules/Electrum';
 import { isDesktop } from '../../modules/environment';
 import * as fs from '../../modules/fs';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
@@ -165,7 +165,7 @@ const WalletTransactions: React.FC<WalletTransactionsProps> = ({ route }: { rout
 
       let smthChanged = false;
       try {
-        await BlueElectrum.waitTillConnected();
+        await Electrum.waitTillConnected();
         const oldBalance = wallet.getBalance();
         await wallet.fetchBalance();
         if (oldBalance !== wallet.getBalance()) smthChanged = true;

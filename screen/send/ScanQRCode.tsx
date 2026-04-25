@@ -6,7 +6,7 @@ import { Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-n
 import Base43 from '../../modules/base43';
 import * as fs from '../../modules/fs';
 import { BlueURDecoder, decodeUR, extractSingleWorkload } from '../../modules/ur';
-import { BlueText } from '../../ShroudComponents';
+import { ShroudText } from '../../ShroudComponents';
 import { openPrivacyDesktopSettings } from '../../class/camera';
 import Button from '../../components/Button';
 import { useTheme } from '../../components/themes';
@@ -17,8 +17,8 @@ import CameraScreen from '../../components/CameraScreen';
 import SafeArea from '../../components/SafeArea';
 import presentAlert from '../../components/Alert';
 import { SendDetailsStackParamList } from '../../navigation/SendDetailsStackParamList.ts';
-import { BlueSpacing40 } from '../../components/BlueSpacing';
-import { BlueLoading } from '../../components/BlueLoading.tsx';
+import { Spacing40 } from '../../components/Spacing';
+import { Loading } from '../../components/Loading.tsx';
 
 let decoder: BlueURDecoder | undefined;
 
@@ -277,19 +277,19 @@ const ScanQRCode = () => {
   };
 
   const render = isLoading ? (
-    <BlueLoading />
+    <Loading />
   ) : (
     <View>
       {cameraStatusGranted === false ? (
         <View style={[styles.openSettingsContainer, stylesHook.openSettingsContainer]}>
-          <BlueText>{loc.send.permission_camera_message}</BlueText>
-          <BlueSpacing40 />
+          <ShroudText>{loc.send.permission_camera_message}</ShroudText>
+          <Spacing40 />
           <Button title={loc.send.open_settings} onPress={openPrivacyDesktopSettings} />
-          <BlueSpacing40 />
+          <Spacing40 />
           {showFileImportButton && <Button title={loc.wallets.import_file} onPress={showFilePicker} />}
-          <BlueSpacing40 />
+          <Spacing40 />
           <Button title={loc.wallets.list_long_choose} onPress={onShowImagePickerButtonPress} />
-          <BlueSpacing40 />
+          <Spacing40 />
           <Button title={loc._.cancel} onPress={dismiss} />
         </View>
       ) : isFocused && cameraStatusGranted ? (
@@ -304,15 +304,15 @@ const ScanQRCode = () => {
       ) : null}
       {urTotal > 0 && (
         <View style={[styles.progressWrapper, stylesHook.progressWrapper]} testID="UrProgressBar">
-          <BlueText>{loc.wallets.please_continue_scanning}</BlueText>
-          <BlueText>
+          <ShroudText>{loc.wallets.please_continue_scanning}</ShroudText>
+          <ShroudText>
             {urHave} / {urTotal}
-          </BlueText>
+          </ShroudText>
         </View>
       )}
       {backdoorVisible && (
         <View style={styles.backdoorInputWrapper}>
-          <BlueText>Provide QR code contents manually:</BlueText>
+          <ShroudText>Provide QR code contents manually:</ShroudText>
           <TextInput
             testID="scanQrBackdoorInput"
             multiline

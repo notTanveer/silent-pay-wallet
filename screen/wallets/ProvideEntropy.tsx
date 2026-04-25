@@ -23,7 +23,7 @@ import { Tabs } from '../../components/Tabs';
 import { BlueCurrentTheme, useTheme } from '../../components/themes';
 import loc from '../../loc';
 import { AddWalletStackParamList } from '../../navigation/AddWalletStack';
-import { BlueSpacing20 } from '../../components/BlueSpacing';
+import { Spacing20 } from '../../components/Spacing';
 
 type RouteProps = RouteProp<AddWalletStackParamList, 'ProvideEntropy'>;
 type NavigationProp = NativeStackNavigationProp<AddWalletStackParamList, 'ProvideEntropy'>;
@@ -344,7 +344,7 @@ const ProvideEntropy = () => {
 
   return (
     <SafeArea>
-      <BlueSpacing20 />
+      <Spacing20 />
       <TouchableOpacity accessibilityRole="button" onPress={() => setShow(!show)}>
         <View style={[styles.entropy, stylesHook.entropy]}>
           <Text style={[styles.entropyText, stylesHook.entropyText]}>

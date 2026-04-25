@@ -425,7 +425,7 @@
     "share": "Jaa...",
     "view": "Näytä",
     "manage_keys": "Hallitse Avaimia",
-    "how_many_signatures_can_bluewallet_make": "kuinka monta allekirjoitusta Shroud voi tehdä",
+    "how_many_signatures_can_shroud_make": "kuinka monta allekirjoitusta Shroud voi tehdä",
     "signatures_required_to_spend": "Vaaditaan allekirjoituksia {number}",
     "signatures_we_can_make": "voidaan tehdä {number}",
     "scan_or_import_file": "Skannaa tai tuo tiedosto",

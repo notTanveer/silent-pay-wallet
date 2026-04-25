@@ -1,6 +1,6 @@
 import React, { useReducer, useRef } from 'react';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../modules/hapticFeedback';
-import { BlueCard, BlueText } from '../ShroudComponents';
+import { ShroudCard, ShroudText } from '../ShroudComponents';
 import presentAlert from '../components/Alert';
 import Button from '../components/Button';
 import loc from '../loc';
@@ -12,8 +12,8 @@ import PromptPasswordConfirmationModal, {
 import { useExtendedNavigation } from '../hooks/useExtendedNavigation';
 import { StackActions } from '@react-navigation/native';
 import SafeAreaScrollView from '../components/SafeAreaScrollView';
-import { BlueSpacing20 } from '../components/BlueSpacing';
-import { BlueLoading } from '../components/BlueLoading';
+import { Spacing20 } from '../components/Spacing';
+import { Loading } from '../components/Loading';
 
 // Action Types
 const SET_LOADING = 'SET_LOADING';
@@ -95,20 +95,20 @@ const PlausibleDeniability: React.FC = () => {
   return (
     <SafeAreaScrollView centerContent={state.isLoading}>
       {state.isLoading ? (
-        <BlueLoading />
+        <Loading />
       ) : (
-        <BlueCard>
-          <BlueText>{loc.plausibledeniability.help}</BlueText>
-          <BlueText />
-          <BlueText>{loc.plausibledeniability.help2}</BlueText>
-          <BlueSpacing20 />
+        <ShroudCard>
+          <ShroudText>{loc.plausibledeniability.help}</ShroudText>
+          <ShroudText />
+          <ShroudText>{loc.plausibledeniability.help2}</ShroudText>
+          <Spacing20 />
           <Button
             testID="CreateFakeStorageButton"
             title={loc.plausibledeniability.create_fake_storage}
             onPress={handleOnCreateFakeStorageButtonPressed}
             disabled={state.isLoading}
           />
-        </BlueCard>
+        </ShroudCard>
       )}
       <PromptPasswordConfirmationModal
         ref={promptRef}

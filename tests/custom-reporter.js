@@ -16,12 +16,12 @@ class CustomReporter {
 
     // since we cant distinguish several testcases in `it.each(...)`, we just ignore them so they will always run
     if (testCaseResult.fullName.includes('can fetch balance, transactions & utxo, disableBatching=')) return;
-    if (testCaseResult.fullName.includes('BlueElectrum can do multiGetBalanceByAddress(), disableBatching=')) return;
+    if (testCaseResult.fullName.includes('Electrum can do multiGetBalanceByAddress(), disableBatching=')) return;
     if (testCaseResult.fullName.includes('ElectrumClient can do multiGetHistoryByAddress(), disableBatching=')) return;
     if (testCaseResult.fullName.includes('ElectrumClient can do multiGetTransactionByTxid(), disableBatching=')) return;
     if (testCaseResult.fullName.includes('ElectrumClient can do multiGetHistoryByAddress() to obtain txhex, disableBatching=')) return;
     if (testCaseResult.fullName.includes('addresses for vout missing')) return;
-    if (testCaseResult.fullName.includes('txdatas were coming back null from BlueElectrum because of high batchsize')) return;
+    if (testCaseResult.fullName.includes('txdatas were coming back null from Electrum because of high batchsize')) return;
 
     const hash = require('crypto').createHash('md5').update(testCaseResult.fullName).digest('hex');
     if (testCaseResult.status === 'passed') {

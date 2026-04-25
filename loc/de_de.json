@@ -516,7 +516,7 @@
     "shared_key_detected": "Geteilte Mitsignierer",
     "shared_key_detected_question": "Ein Mitsignierer wurde mit Ihnen geteilt. Diesen jetzt importierten?",
     "manage_keys": "Schlüssel verwalten",
-    "how_many_signatures_can_bluewallet_make": "Anzahl Signaturen durch Shroud",
+    "how_many_signatures_can_shroud_make": "Anzahl Signaturen durch Shroud",
     "signatures_required_to_spend": "Benötigte Signaturen {number}",
     "signatures_we_can_make": "von {number}",
     "scan_or_import_file": "Datei scannen oder importieren",

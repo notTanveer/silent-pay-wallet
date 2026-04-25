@@ -1,26 +1,26 @@
 import React from 'react';
 import { View, ViewProps, StyleSheet } from 'react-native';
 
-interface BlueSpacingProps extends ViewProps {
+interface SpacingProps extends ViewProps {
   horizontal?: boolean; // Optional prop to determine if spacing is horizontal
 }
 
-export const BlueSpacing10: React.FC<BlueSpacingProps> = props => {
+export const Spacing10: React.FC<SpacingProps> = props => {
   const { style, ...otherProps } = props;
   return <View {...otherProps} style={[styles.spacing10, style]} />;
 };
 
-export const BlueSpacing20: React.FC<BlueSpacingProps> = props => {
+export const Spacing20: React.FC<SpacingProps> = props => {
   const { horizontal = false, style, ...otherProps } = props;
   return <View {...otherProps} style={[horizontal ? styles.spacing20Horizontal : styles.spacing20Vertical, style]} />;
 };
 
-export const BlueSpacing40: React.FC<BlueSpacingProps> = props => {
+export const Spacing40: React.FC<SpacingProps> = props => {
   const { style, ...otherProps } = props;
   return <View {...otherProps} style={[styles.spacing40, style]} />;
 };
 
-export const BlueSpacing: React.FC<BlueSpacingProps> = props => {
+export const Spacing: React.FC<SpacingProps> = props => {
   const { style, ...otherProps } = props;
   return <View {...otherProps} style={[styles.spacing60, style]} />;
 };

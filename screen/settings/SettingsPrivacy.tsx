@@ -10,6 +10,7 @@ import { useStorage } from '../../hooks/context/useStorage';
 import { useSettings } from '../../hooks/context/useSettings';
 import { isDesktop } from '../../modules/environment';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
+import { Spacing20 } from '../../components/Spacing';
 
 enum SettingsPrivacySection {
   None,
