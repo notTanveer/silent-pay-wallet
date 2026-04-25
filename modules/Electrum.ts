@@ -641,7 +641,7 @@ export function txhexToElectrumTransaction(txhex: string): ElectrumTransactionWi
     } else if (/^76a914[0-9a-f]{40}88ac$/i.test(scriptHex)) {
       type = 'pubkeyhash';
     }
-    
+
     if (!address && legacyAddress) {
       address = legacyAddress;
     }

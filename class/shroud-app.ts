@@ -7,6 +7,7 @@ import RNSecureKeyStore, { ACCESSIBLE } from 'react-native-secure-key-store';
 import Realm from 'realm';
 
 import * as encryption from '../modules/encryption';
+import { GROUP_IO_SHROUD } from '../modules/currency';
 import presentAlert from '../components/Alert';
 import { randomBytes } from './rng';
 import { ExtendedTransaction, Transaction, TWallet } from './wallets/types';
@@ -345,7 +346,7 @@ export class Shroud {
         try {
           parsedWallet = JSON.parse(key);
         } catch (error) {
-          console.warn('[BlueApp] Failed to parse stored wallet payload:', error);
+          console.warn('[ShroudApp] Failed to parse stored wallet payload:', error);
           continue;
         }
 
@@ -411,6 +412,8 @@ export class Shroud {
         walletToInflate._txs_by_internal_index[tx.index] = walletToInflate._txs_by_internal_index[tx.index] || [];
         const transaction = JSON.parse(tx.tx);
         walletToInflate._txs_by_internal_index[tx.index].push(transaction);
+      } else {
+        console.warn('inflateWalletFromRealm: unexpected tx.internal value, skipping record:', tx.internal);
       }
     }
   }
@@ -723,13 +726,14 @@ export class Shroud {
   };
 
   isDoNotTrackEnabled = async (): Promise<boolean> => {
+    await DefaultPreference.setName(GROUP_IO_SHROUD);
     try {
       const keyExists = await AsyncStorage.getItem(Shroud.DO_NOT_TRACK);
       if (keyExists !== null) {
         const doNotTrackValue = !!keyExists;
         if (doNotTrackValue) {
           await DefaultPreference.set(Shroud.DO_NOT_TRACK, '1');
-          AsyncStorage.removeItem(Shroud.DO_NOT_TRACK);
+          await AsyncStorage.removeItem(Shroud.DO_NOT_TRACK);
         } else {
           return Boolean(await DefaultPreference.get(Shroud.DO_NOT_TRACK));
         }
@@ -740,6 +744,7 @@ export class Shroud {
   };
 
   setDoNotTrack = async (value: boolean) => {
+    await DefaultPreference.setName(GROUP_IO_SHROUD);
     if (value) {
       await DefaultPreference.set(Shroud.DO_NOT_TRACK, '1');
     } else {
@@ -795,6 +800,3 @@ export class Shroud {
     }
   }
 }
-
-export const ShroudApp = Shroud;
-export const BlueApp = Shroud;

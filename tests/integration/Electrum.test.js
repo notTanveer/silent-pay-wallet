@@ -299,10 +299,7 @@ describe('Electrum', () => {
     // possible solution: fetch it without verbose and decode locally. unfortunatelly it omits such info as confirmations, time etc
     // so whoever uses it should be prepared for this.
     // tbh consumer wallets dont usually work with such big txs, so probably we dont need it
-    const txdatas = await Electrum.multiGetTransactionByTxid(
-      ['484a11c5e086a281413b9192b4f60c06abf745f08c2c28c4b4daefe6df3b9e5c'],
-      true,
-    );
+    const txdatas = await Electrum.multiGetTransactionByTxid(['484a11c5e086a281413b9192b4f60c06abf745f08c2c28c4b4daefe6df3b9e5c'], true);
     assert.ok(txdatas['484a11c5e086a281413b9192b4f60c06abf745f08c2c28c4b4daefe6df3b9e5c']);
   });
 

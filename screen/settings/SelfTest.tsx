@@ -143,7 +143,11 @@ export default class SelfTest extends Component {
       //
 
       if (typeof navigator !== 'undefined' && navigator.product === 'ReactNative') {
-        assertStrictEqual(await Linking.canOpenURL('https://github.com/Bitshala-Incubator/silent-pay-wallet/'), true, 'Linking can not open https url');
+        assertStrictEqual(
+          await Linking.canOpenURL('https://github.com/Bitshala-Incubator/silent-pay-wallet/'),
+          true,
+          'Linking can not open https url',
+        );
       } else {
         // skipping RN-specific test'
       }

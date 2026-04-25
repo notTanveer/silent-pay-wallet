@@ -60,7 +60,7 @@ const Broadcast: React.FC = () => {
     try {
       await Electrum.ping();
       await Electrum.waitTillConnected();
-    const walletObj = new HDSilentPaymentsWallet();
+      const walletObj = new HDSilentPaymentsWallet();
       if (txHex) {
         const result = await walletObj.broadcastTx(txHex);
         if (result) {

@@ -1,6 +1,7 @@
 import { CommonActions } from '@react-navigation/native';
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState, AppStateStatus, Linking } from 'react-native';
+import RNQRGenerator from 'rn-qr-generator';
 import A from '../modules/analytics';
 import { getClipboardContent } from '../modules/clipboard';
 import { updateExchangeRate } from '../modules/currency';

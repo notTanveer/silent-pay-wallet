@@ -1,23 +1,23 @@
 import { Platform } from 'react-native';
 
-import { Shroud as ShroudAppClass } from '../class/';
+import { Shroud } from '../class/';
 import prompt from '../helpers/prompt';
 import { showKeychainWipeAlert } from '../hooks/useBiometrics';
 import loc from '../loc';
 
-const Shroud = ShroudAppClass.getInstance();
+const shroudApp = Shroud.getInstance();
 // If attempt reaches 10, a wipe keychain option will be provided to the user.
 let unlockAttempt = 0;
 
 export const startAndDecrypt = async (retry?: boolean): Promise<boolean> => {
   console.log('startAndDecrypt');
-  if (Shroud.getWallets().length > 0) {
+  if (shroudApp.getWallets().length > 0) {
     console.log('App already has some wallets, so we are in already started state, exiting startAndDecrypt');
     return true;
   }
-  await Shroud.migrateKeys();
+  await shroudApp.migrateKeys();
   let password: undefined | string;
-  if (await Shroud.storageIsEncrypted()) {
+  if (await shroudApp.storageIsEncrypted()) {
     do {
       password = await prompt((retry && loc._.bad_password) || loc._.enter_password, loc._.storage_is_encrypted, false);
     } while (!password);
@@ -25,7 +25,7 @@ export const startAndDecrypt = async (retry?: boolean): Promise<boolean> => {
   let success = false;
   let wasException = false;
   try {
-    success = await Shroud.loadFromDisk(password);
+    success = await shroudApp.loadFromDisk(password);
   } catch (error) {
     // in case of exception reading from keystore, lets retry instead of assuming there is no storage and
     // proceeding with no wallets
@@ -37,7 +37,7 @@ export const startAndDecrypt = async (retry?: boolean): Promise<boolean> => {
     // retrying, but only once
     try {
       await new Promise(resolve => setTimeout(resolve, 3000)); // sleep
-      success = await Shroud.loadFromDisk(password);
+      success = await shroudApp.loadFromDisk(password);
     } catch (error) {
       console.warn('second exception loading from disk:', error);
     }
@@ -67,4 +67,4 @@ export const startAndDecrypt = async (retry?: boolean): Promise<boolean> => {
   }
 };
 
-export default Shroud;
+export default shroudApp;

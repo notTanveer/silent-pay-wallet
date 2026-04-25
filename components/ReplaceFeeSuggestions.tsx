@@ -165,7 +165,9 @@ const ReplaceFeeSuggestions: React.FC<ReplaceFeeSuggestionsProps> = ({ onFeeSele
           <Text style={stylesHook.rateText}>sat/byte</Text>
         </View>
       </TouchableOpacity>
-      <ShroudText style={stylesHook.alternativeText}>{loc.formatString(loc.send.fee_replace_minvb, { min: transactionMinimum })}</ShroudText>
+      <ShroudText style={stylesHook.alternativeText}>
+        {loc.formatString(loc.send.fee_replace_minvb, { min: transactionMinimum })}
+      </ShroudText>
     </View>
   );
 };

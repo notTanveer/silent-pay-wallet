@@ -311,7 +311,9 @@ export const AmountInput: React.FC<AmountInputProps> = props => {
         <View style={styles.outdatedRateContainer}>
           <Badge status="warning" />
           <View style={styles.spacing8} />
-          <ShroudText>{loc.formatString(loc.send.outdated_rate, { date: dayjs(outdatedRefreshRate.LastUpdated).format('l LT') })}</ShroudText>
+          <ShroudText>
+            {loc.formatString(loc.send.outdated_rate, { date: dayjs(outdatedRefreshRate.LastUpdated).format('l LT') })}
+          </ShroudText>
           <View style={styles.spacing8} />
           <TouchableOpacity
             accessibilityRole="button"

@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionManager, LayoutAnimation } from 'react-native';
 import A from '../../modules/analytics';
-import { Shroud as ShroudAppClass, TTXMetadata } from '../../class';
+import { Shroud, TTXMetadata } from '../../class';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import type { TWallet } from '../../class/wallets/types';
 import presentAlert from '../../components/Alert';
@@ -13,7 +13,7 @@ import { isNotificationsEnabled, majorTomToGroundControl, unsubscribe } from '..
 import { BitcoinUnit } from '../../models/bitcoinUnits';
 import { navigationRef } from '../../NavigationService';
 
-const Shroud = ShroudAppClass.getInstance();
+const shroudApp = Shroud.getInstance();
 
 // hashmap of timestamps we _started_ refetching some wallet
 const _lastTimeTriedToRefetchWallet: { [walletID: string]: number } = {};
@@ -33,20 +33,20 @@ interface StorageContextType {
   resetWallets: () => void;
   walletTransactionUpdateStatus: WalletTransactionsStatus | string;
   setWalletTransactionUpdateStatus: (status: WalletTransactionsStatus | string) => void;
-  getTransactions: typeof Shroud.getTransactions;
-  fetchWalletBalances: typeof Shroud.fetchWalletBalances;
-  fetchWalletTransactions: typeof Shroud.fetchWalletTransactions;
-  getBalance: typeof Shroud.getBalance;
-  isStorageEncrypted: typeof Shroud.storageIsEncrypted;
+  getTransactions: typeof shroudApp.getTransactions;
+  fetchWalletBalances: typeof shroudApp.fetchWalletBalances;
+  fetchWalletTransactions: typeof shroudApp.fetchWalletTransactions;
+  getBalance: typeof shroudApp.getBalance;
+  isStorageEncrypted: typeof shroudApp.storageIsEncrypted;
   startAndDecrypt: typeof startAndDecrypt;
-  encryptStorage: typeof Shroud.encryptStorage;
-  sleep: typeof Shroud.sleep;
-  createFakeStorage: typeof Shroud.createFakeStorage;
-  decryptStorage: typeof Shroud.decryptStorage;
-  isPasswordInUse: typeof Shroud.isPasswordInUse;
-  cachedPassword: typeof Shroud.cachedPassword;
-  getItem: typeof Shroud.getItem;
-  setItem: typeof Shroud.setItem;
+  encryptStorage: typeof shroudApp.encryptStorage;
+  sleep: typeof shroudApp.sleep;
+  createFakeStorage: typeof shroudApp.createFakeStorage;
+  decryptStorage: typeof shroudApp.decryptStorage;
+  isPasswordInUse: typeof shroudApp.isPasswordInUse;
+  cachedPassword: typeof shroudApp.cachedPassword;
+  getItem: typeof shroudApp.getItem;
+  setItem: typeof shroudApp.setItem;
   handleWalletDeletion: (walletID: string, forceDelete?: boolean) => Promise<boolean>;
   confirmWalletDeletion: (wallet: any, onConfirmed: () => void) => void;
 }
@@ -60,7 +60,7 @@ export enum WalletTransactionsStatus {
 export const StorageContext = createContext<StorageContextType>(undefined);
 
 export const StorageProvider = ({ children }: { children: React.ReactNode }) => {
-  const txMetadata = useRef<TTXMetadata>(Shroud.tx_metadata);
+  const txMetadata = useRef<TTXMetadata>(shroudApp.tx_metadata);
 
   const [wallets, setWallets] = useState<TWallet[]>([]);
   const [walletTransactionUpdateStatus, setWalletTransactionUpdateStatus] = useState<WalletTransactionsStatus | string>(
@@ -145,14 +145,14 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
 
   const saveToDisk = useCallback(
     async (force: boolean = false) => {
-      if (!force && Shroud.getWallets().length === 0) {
+      if (!force && shroudApp.getWallets().length === 0) {
         console.debug('Not saving empty wallets array');
         return;
       }
       await InteractionManager.runAfterInteractions(async () => {
-        Shroud.tx_metadata = txMetadata.current;
-        await Shroud.saveToDisk();
-        const w: TWallet[] = [...Shroud.getWallets()];
+        shroudApp.tx_metadata = txMetadata.current;
+        await shroudApp.saveToDisk();
+        const w: TWallet[] = [...shroudApp.getWallets()];
         setWallets(w);
       });
     },
@@ -161,7 +161,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
   );
 
   const forceWalletsUpdate = useCallback(() => {
-    setWallets([...Shroud.getWallets()]);
+    setWallets([...shroudApp.getWallets()]);
   }, []);
 
   // Debounced persist to avoid excessive saves during rapid scans
@@ -179,7 +179,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
 
   const addWallet = useCallback(
     (wallet: TWallet): boolean => {
-      if (Shroud.wallets.length > 0) {
+      if (shroudApp.wallets.length > 0) {
         console.warn('[StorageProvider] Single-wallet mode: refusing to add a second wallet');
         return false;
       }
@@ -191,8 +191,8 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
         wallet.setOnPersistCallback(debouncedPersist);
       }
 
-      Shroud.wallets.push(wallet);
-      setWallets([...Shroud.getWallets()]);
+      shroudApp.wallets.push(wallet);
+      setWallets([...shroudApp.getWallets()]);
       return true;
     },
     [forceWalletsUpdate, debouncedPersist],
@@ -206,8 +206,8 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
 
     if ('clearCache' in wallet && typeof wallet.clearCache === 'function') wallet.clearCache();
 
-    Shroud.deleteWallet(wallet);
-    setWallets([...Shroud.getWallets()]);
+    shroudApp.deleteWallet(wallet);
+    setWallets([...shroudApp.getWallets()]);
   }, []);
 
   const handleWalletDeletion = useCallback(
@@ -325,14 +325,14 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
   );
 
   const resetWallets = useCallback(() => {
-    setWallets(Shroud.getWallets());
+    setWallets(shroudApp.getWallets());
   }, []);
 
   // Initialize wallets
   useEffect(() => {
     if (walletsInitialized) {
-      txMetadata.current = Shroud.tx_metadata;
-      const currentWallets = Shroud.getWallets();
+      txMetadata.current = shroudApp.tx_metadata;
+      const currentWallets = shroudApp.getWallets();
 
       currentWallets.forEach(wallet => {
         if ('setOnBalanceChangeCallback' in wallet && typeof wallet.setOnBalanceChangeCallback === 'function') {
@@ -392,12 +392,12 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
         await Promise.race([
           (async () => {
             const balanceStart = Date.now();
-            await Shroud.fetchWalletBalances(lastSnappedTo);
+            await shroudApp.fetchWalletBalances(lastSnappedTo);
             const balanceEnd = Date.now();
             console.debug('[refreshAllWalletTransactions] fetch balance took', (balanceEnd - balanceStart) / 1000, 'sec');
 
             const txStart = Date.now();
-            await Shroud.fetchWalletTransactions(lastSnappedTo);
+            await shroudApp.fetchWalletTransactions(lastSnappedTo);
             const txEnd = Date.now();
             console.debug('[refreshAllWalletTransactions] fetch tx took', (txEnd - txStart) / 1000, 'sec');
 
@@ -436,12 +436,12 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
           setWalletTransactionUpdateStatus(walletID);
 
           const balanceStart = Date.now();
-          await Shroud.fetchWalletBalances(index);
+          await shroudApp.fetchWalletBalances(index);
           const balanceEnd = Date.now();
           console.debug('[fetchAndSaveWalletTransactions] fetch balance took', (balanceEnd - balanceStart) / 1000, 'sec');
 
           const txStart = Date.now();
-          await Shroud.fetchWalletTransactions(index);
+          await shroudApp.fetchWalletTransactions(index);
           const txEnd = Date.now();
           console.debug('[fetchAndSaveWalletTransactions] fetch tx took', (txEnd - txStart) / 1000, 'sec');
         } catch (err) {
@@ -525,29 +525,29 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       wallets,
       txMetadata: txMetadata.current,
       saveToDisk,
-      getTransactions: Shroud.getTransactions,
+      getTransactions: shroudApp.getTransactions,
       selectedWalletID,
       addWallet,
       deleteWallet,
       addAndSaveWallet,
-      setItem: Shroud.setItem,
-      getItem: Shroud.getItem,
-      fetchWalletBalances: Shroud.fetchWalletBalances,
-      fetchWalletTransactions: Shroud.fetchWalletTransactions,
+      setItem: shroudApp.setItem,
+      getItem: shroudApp.getItem,
+      fetchWalletBalances: shroudApp.fetchWalletBalances,
+      fetchWalletTransactions: shroudApp.fetchWalletTransactions,
       fetchAndSaveWalletTransactions,
-      isStorageEncrypted: Shroud.storageIsEncrypted,
-      encryptStorage: Shroud.encryptStorage,
+      isStorageEncrypted: shroudApp.storageIsEncrypted,
+      encryptStorage: shroudApp.encryptStorage,
       startAndDecrypt,
-      cachedPassword: Shroud.cachedPassword,
-      getBalance: Shroud.getBalance,
+      cachedPassword: shroudApp.cachedPassword,
+      getBalance: shroudApp.getBalance,
       walletsInitialized,
       setWalletsInitialized,
       refreshAllWalletTransactions,
-      sleep: Shroud.sleep,
-      createFakeStorage: Shroud.createFakeStorage,
+      sleep: shroudApp.sleep,
+      createFakeStorage: shroudApp.createFakeStorage,
       resetWallets,
-      decryptStorage: Shroud.decryptStorage,
-      isPasswordInUse: Shroud.isPasswordInUse,
+      decryptStorage: shroudApp.decryptStorage,
+      isPasswordInUse: shroudApp.isPasswordInUse,
       walletTransactionUpdateStatus,
       setWalletTransactionUpdateStatus,
       handleWalletDeletion,

@@ -132,7 +132,12 @@ class DeeplinkSchemaMatch {
     } else {
       const urlObject = URL.parse(event.url, true); // eslint-disable-line n/no-deprecated-api
       (async () => {
-        if (urlObject.protocol === 'shroud:' || urlObject.protocol === 'bluewallet:' || urlObject.protocol === 'lapp:' || urlObject.protocol === 'blue:') {
+        if (
+          urlObject.protocol === 'shroud:' ||
+          urlObject.protocol === 'bluewallet:' ||
+          urlObject.protocol === 'lapp:' ||
+          urlObject.protocol === 'blue:'
+        ) {
           switch (urlObject.host) {
             case 'setelectrumserver':
               completionHandler([
@@ -152,7 +157,7 @@ class DeeplinkSchemaMatch {
   }
 
   /**
-  * Extracts server from a deeplink like `shroud:setelectrumserver?server=electrum1.bluewallet.io%3A443%3As`
+   * Extracts server from a deeplink like `shroud:setelectrumserver?server=electrum1.bluewallet.io%3A443%3As`
    * returns FALSE if none found
    *
    * @param url {string}
@@ -181,7 +186,11 @@ class DeeplinkSchemaMatch {
    */
   static getUrlFromSetLndhubUrlAction(url: string): string | false {
     const lowercaseUrl = url.toLowerCase();
-    if (!lowercaseUrl.startsWith('shroud:setlndhuburl') && !lowercaseUrl.startsWith('bluewallet:setlndhuburl') && !lowercaseUrl.startsWith('setlndhuburl')) {
+    if (
+      !lowercaseUrl.startsWith('shroud:setlndhuburl') &&
+      !lowercaseUrl.startsWith('bluewallet:setlndhuburl') &&
+      !lowercaseUrl.startsWith('setlndhuburl')
+    ) {
       return false;
     }
     const splt = url.split('url=');
