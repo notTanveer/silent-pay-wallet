@@ -6,6 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import loc from '../../loc';
+import presentAlert from '../../components/Alert';
 import { useStorage } from '../../hooks/context/useStorage';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { getDefaultIndexer } from '../../blue_modules/SilentPaymentIndexer';
@@ -27,7 +28,10 @@ const OnboardingScreen: React.FC = () => {
     const w = new HDSilentPaymentsWallet();
     w.setLabel(loc.wallets.details_title);
     await w.generate();
-    addWallet(w);
+    if (!addWallet(w)) {
+      presentAlert({ message: loc.wallets.single_wallet_limit });
+      return;
+    }
     await saveToDisk();
 
     try {

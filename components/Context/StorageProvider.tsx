@@ -23,7 +23,7 @@ interface StorageContextType {
   counterpartyMetadata: TCounterpartyMetadata;
   saveToDisk: (force?: boolean) => Promise<void>;
   selectedWalletID: () => string | undefined; // Change from string|undefined to a function
-  addWallet: (wallet: TWallet) => void;
+  addWallet: (wallet: TWallet) => boolean;
   deleteWallet: (wallet: TWallet) => void;
   addAndSaveWallet: (wallet: TWallet) => Promise<void>;
   fetchAndSaveWalletTransactions: (walletID: string) => Promise<void>;
@@ -180,10 +180,10 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
   }, []);
 
   const addWallet = useCallback(
-    (wallet: TWallet) => {
+    (wallet: TWallet): boolean => {
       if (BlueApp.wallets.length > 0) {
         console.warn('[StorageProvider] Single-wallet mode: refusing to add a second wallet');
-        return;
+        return false;
       }
 
       if ('setOnBalanceChangeCallback' in wallet && typeof wallet.setOnBalanceChangeCallback === 'function') {
@@ -195,6 +195,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
 
       BlueApp.wallets.push(wallet);
       setWallets([...BlueApp.getWallets()]);
+      return true;
     },
     [forceWalletsUpdate, debouncedPersist],
   );
@@ -479,7 +480,11 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       const emptyWalletLabel = new LegacyWallet().getLabel();
       if (w.getLabel() === emptyWalletLabel) w.setLabel(loc.wallets.import_imported + ' ' + w.typeReadable);
       w.setUserHasSavedExport(true);
-      addWallet(w);
+      if (!addWallet(w)) {
+        triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
+        presentAlert({ message: loc.wallets.single_wallet_limit });
+        return;
+      }
       triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
       await saveToDisk();
       A(A.ENUM.CREATED_WALLET);
