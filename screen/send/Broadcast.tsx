@@ -5,7 +5,6 @@ import { ActivityIndicator, Keyboard, Linking, StyleSheet, TextInput, View } fro
 import * as BlueElectrum from '../../blue_modules/BlueElectrum';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { BlueButtonLink, BlueCard, BlueFormLabel, BlueTextCentered } from '../../BlueComponents';
-import { HDSegwitBech32Wallet } from '../../class';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
 import SafeArea from '../../components/SafeArea';
@@ -16,6 +15,7 @@ import { majorTomToGroundControl } from '../../blue_modules/notifications';
 import { scanQrHelper } from '../../helpers/scan-qr.ts';
 import { BlueSpacing10, BlueSpacing20 } from '../../components/BlueSpacing';
 import { BlueBigCheckmark } from '../../components/BlueBigCheckmark.tsx';
+import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 
 const BROADCAST_RESULT = Object.freeze({
   none: 'Input transaction hex',
@@ -60,7 +60,7 @@ const Broadcast: React.FC = () => {
     try {
       await BlueElectrum.ping();
       await BlueElectrum.waitTillConnected();
-      const walletObj = new HDSegwitBech32Wallet();
+      const walletObj = new HDSilentPaymentsWallet();
       if (txHex) {
         const result = await walletObj.broadcastTx(txHex);
         if (result) {

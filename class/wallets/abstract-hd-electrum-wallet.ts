@@ -7,7 +7,8 @@ import * as bip39 from 'bip39';
 import * as bitcoin from 'bitcoinjs-lib';
 import { Psbt, Transaction as BTransaction } from 'bitcoinjs-lib';
 import b58 from 'bs58check';
-import { CoinSelectOutput, CoinSelectReturnInput } from 'coinselect';
+import coinSelect, { CoinSelectOutput, CoinSelectReturnInput, CoinSelectTarget } from 'coinselect';
+import coinSelectSplit from 'coinselect/split';
 import { ECPairFactory, ECPairInterface } from 'ecpair';
 
 import * as BlueElectrum from '../../blue_modules/BlueElectrum';
@@ -1907,6 +1908,81 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
     const remotePaymentNode = senderBIP47_instance.getPaymentCodeNode();
     const hdNode = bip47_instance.getPaymentWallet(remotePaymentNode, index);
     return hdNode.toWIF();
+  }
+
+  isAddressValid(address: string): boolean {
+    try {
+      bitcoin.address.toOutputScript(address);
+
+      if (!address.toLowerCase().startsWith('bc1')) return true;
+      const decoded = bitcoin.address.fromBech32(address);
+      if (decoded.version === 0) return true;
+      if (decoded.version === 1 && decoded.data.length !== 32) return false;
+      if (decoded.version === 1 && !ecc.isPoint(Buffer.concat([Buffer.from([2]), decoded.data]))) return false;
+      if (decoded.version > 1) return false;
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async broadcastTx(txhex: string): Promise<boolean> {
+    const broadcast = await BlueElectrum.broadcastV2(txhex);
+    console.log({ broadcast });
+    if (broadcast.indexOf('successfully') !== -1) return true;
+    return broadcast.length === 64; // return string is txid (precise length), so it was broadcasted ok
+  }
+
+  coinselect(
+    utxos: CreateTransactionUtxo[],
+    targets: CreateTransactionTarget[],
+    feeRate: number,
+  ): {
+    inputs: CoinSelectReturnInput[];
+    outputs: CoinSelectOutput[];
+    fee: number;
+  } {
+    let algo = coinSelect;
+    // if targets has output without a value, we want send MAX to it
+    if (targets.some(i => !('value' in i))) {
+      algo = coinSelectSplit as unknown as typeof coinSelect;
+    }
+
+    const _utxos = JSON.parse(JSON.stringify(utxos)) as CreateTransactionUtxo[];
+    const _targets = JSON.parse(JSON.stringify(targets)) as CreateTransactionTarget[];
+
+    // compensating for coinselect inability to deal with segwit inputs, and overriding script length for proper vbytes calculation
+    for (const u of _utxos) {
+      if (u.script?.length) {
+        continue;
+      }
+
+      if (this.segwitType === 'p2wpkh') {
+        u.script = { length: 27 };
+      } else if (this.segwitType === 'p2sh(p2wpkh)') {
+        u.script = { length: 50 };
+      } else if (this.segwitType === 'p2tr') {
+        u.script = { length: 17 };
+      }
+    }
+
+    for (const t of _targets) {
+      if (t.address?.startsWith('bc1')) {
+        t.script = { length: bitcoin.address.toOutputScript(t.address).length + 3 };
+      }
+
+      if (t.script?.hex) {
+        t.script.length = t.script.hex.length / 2 - 4;
+      }
+    }
+
+    const { inputs, outputs, fee } = algo(_utxos, _targets as CoinSelectTarget[], feeRate);
+
+    if (!inputs || !outputs) {
+      throw new Error('Not enough balance. Try sending smaller amount or decrease the fee.');
+    }
+
+    return { inputs, outputs, fee };
   }
 
   _getBIP47PubkeyByIndex(paymentCode: string, index: number): Buffer {

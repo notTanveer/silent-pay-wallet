@@ -1,7 +1,8 @@
 import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionManager, LayoutAnimation } from 'react-native';
 import A from '../../blue_modules/analytics';
-import { BlueApp as BlueAppClass, LegacyWallet, TCounterpartyMetadata, TTXMetadata, WatchOnlyWallet } from '../../class';
+import { BlueApp as BlueAppClass, TCounterpartyMetadata, TTXMetadata } from '../../class';
+import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import type { TWallet } from '../../class/wallets/types';
 import presentAlert from '../../components/Alert';
 import loc, { formatBalanceWithoutSuffix } from '../../loc';
@@ -477,7 +478,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
         presentAlert({ message: loc.wallets.single_wallet_limit });
         return;
       }
-      const emptyWalletLabel = new LegacyWallet().getLabel();
+      const emptyWalletLabel = new HDSilentPaymentsWallet().getLabel();
       if (w.getLabel() === emptyWalletLabel) w.setLabel(loc.wallets.import_imported + ' ' + w.typeReadable);
       w.setUserHasSavedExport(true);
       if (!addWallet(w)) {
@@ -490,7 +491,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       A(A.ENUM.CREATED_WALLET);
       presentAlert({
         hapticFeedback: HapticFeedbackTypes.ImpactHeavy,
-        message: w.type === WatchOnlyWallet.type ? loc.wallets.import_success_watchonly : loc.wallets.import_success,
+        message: loc.wallets.import_success,
       });
 
       await w.fetchBalance();

@@ -4,7 +4,7 @@ import * as bitcoin from 'bitcoinjs-lib';
 import { ECPairFactory } from 'ecpair';
 
 import ecc from '../../blue_modules/noble_ecc';
-import { HDSegwitBech32Wallet, WatchOnlyWallet } from '../../class';
+import { HDSilentPaymentsWallet } from '../../class';
 import { CreateTransactionUtxo } from '../../class/wallets/types';
 import { uint8ArrayToHex } from '../../blue_modules/uint8array-extras';
 
@@ -12,7 +12,7 @@ const ECPair = ECPairFactory(ecc);
 
 describe('Bech32 Segwit HD (BIP84) with BIP47', () => {
   it('should work', async () => {
-    const bobWallet = new HDSegwitBech32Wallet();
+    const bobWallet = new HDSilentPaymentsWallet();
     // @see https://gist.github.com/SamouraiDev/6aad669604c5930864bd
     bobWallet.setSecret('reward upper indicate eight swift arch injury crystal super wrestle already dentist');
 
@@ -24,7 +24,7 @@ describe('Bech32 Segwit HD (BIP84) with BIP47', () => {
   });
 
   it('getters, setters, flags work', async () => {
-    const w = new HDSegwitBech32Wallet();
+    const w = new HDSilentPaymentsWallet();
     await w.generate();
 
     expect(w.allowBIP47()).toEqual(true);
@@ -34,11 +34,6 @@ describe('Bech32 Segwit HD (BIP84) with BIP47', () => {
     expect(w.isBIP47Enabled()).toEqual(true);
     w.switchBIP47(false);
     expect(w.isBIP47Enabled()).toEqual(false);
-
-    // checking that derived watch-only does not support that:
-    const ww = new WatchOnlyWallet();
-    ww.setSecret(w.getXpub());
-    expect(ww.allowBIP47()).toEqual(false);
   });
 
   it('should work (samurai)', async () => {
@@ -47,7 +42,7 @@ describe('Bech32 Segwit HD (BIP84) with BIP47', () => {
       return;
     }
 
-    const w = new HDSegwitBech32Wallet();
+    const w = new HDSilentPaymentsWallet();
     w.setSecret(process.env.BIP47_HD_MNEMONIC.split(':')[0]);
     w.setPassphrase('1');
 
@@ -97,7 +92,7 @@ describe('Bech32 Segwit HD (BIP84) with BIP47', () => {
       return;
     }
 
-    const w = new HDSegwitBech32Wallet();
+    const w = new HDSilentPaymentsWallet();
     w.setSecret(process.env.BIP47_HD_MNEMONIC.split(':')[1]);
 
     assert.strictEqual(
@@ -127,7 +122,7 @@ describe('Bech32 Segwit HD (BIP84) with BIP47', () => {
     const bip47instanceReceiver = BIP47Factory(ecc).fromBip39Seed(process.env.BIP47_HD_MNEMONIC.split(':')[0], undefined, '1');
 
     // notifier:
-    const walletSender = new HDSegwitBech32Wallet();
+    const walletSender = new HDSilentPaymentsWallet();
     walletSender.setSecret(process.env.BIP47_HD_MNEMONIC.split(':')[1]);
     walletSender.switchBIP47(true);
 
@@ -188,7 +183,7 @@ describe('Bech32 Segwit HD (BIP84) with BIP47', () => {
     const bip47instanceReceiver = BIP47Factory(ecc).fromBip39Seed(process.env.BIP47_HD_MNEMONIC.split(':')[0], undefined, '1');
 
     // notifier:
-    const walletSender = new HDSegwitBech32Wallet();
+    const walletSender = new HDSilentPaymentsWallet();
     walletSender.setSecret(process.env.BIP47_HD_MNEMONIC.split(':')[1]);
     walletSender.switchBIP47(true);
 
@@ -269,7 +264,7 @@ describe('Bech32 Segwit HD (BIP84) with BIP47', () => {
       return;
     }
 
-    const walletSender = new HDSegwitBech32Wallet();
+    const walletSender = new HDSilentPaymentsWallet();
     walletSender.setSecret(process.env.BIP47_HD_MNEMONIC.split(':')[1]);
     walletSender.switchBIP47(true);
 
@@ -298,17 +293,19 @@ describe('Bech32 Segwit HD (BIP84) with BIP47', () => {
     );
     assert(tx);
 
-    const legacyAddressDestination = tx.outs.find(o => bitcoin.address.fromOutputScript(o.script) === '13HaCAB4jf7FYSZexJxoczyDDnutzZigjS');
+    const legacyAddressDestination = tx.outs.find(
+      (o: any) => bitcoin.address.fromOutputScript(o.script) === '13HaCAB4jf7FYSZexJxoczyDDnutzZigjS',
+    );
     assert.strictEqual(legacyAddressDestination?.value, 22000n);
 
-    const spDestinatiob = tx.outs.find(o => Number(o.value) === 10234);
+    const spDestinatiob = tx.outs.find((o: any) => Number(o.value) === 10234);
     assert.strictEqual(
       bitcoin.address.fromOutputScript(spDestinatiob!.script!),
       'bc1pu7dwaehvur4lpc7cqmynnjgx5ngthk574p05mgwxf9lecv4r6j5s02nhxq',
     );
 
     const changeDestination = tx.outs.find(
-      o => bitcoin.address.fromOutputScript(o.script) === 'bc1q7vraw79vcf7qhnefeaul578h7vjc7tr95ywfuq',
+      (o: any) => bitcoin.address.fromOutputScript(o.script) === 'bc1q7vraw79vcf7qhnefeaul578h7vjc7tr95ywfuq',
     );
 
     const calculatedFee =
@@ -326,7 +323,7 @@ describe('Bech32 Segwit HD (BIP84) with BIP47', () => {
       return;
     }
 
-    const w = new HDSegwitBech32Wallet();
+    const w = new HDSilentPaymentsWallet();
     w.setSecret(process.env.BIP47_HD_MNEMONIC.split(':')[0]);
     w.setPassphrase('1');
 

@@ -4,7 +4,7 @@ import { ECPairFactory } from 'ecpair';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../blue_modules/hapticFeedback';
 import ecc from '../blue_modules/noble_ecc';
 import presentAlert from '../components/Alert';
-import { HDSegwitBech32Wallet } from './wallets/hd-segwit-bech32-wallet';
+import { HDSilentPaymentsWallet } from './wallets/hd-bip352-wallet';
 import assert from 'assert';
 import { uint8ArrayToHex } from '../blue_modules/uint8array-extras';
 const ECPair = ECPairFactory(ecc);
@@ -16,10 +16,10 @@ const delay = (milliseconds: number) => new Promise(resolve => setTimeout(resolv
 export default class PayjoinTransaction {
   private _psbt: bitcoin.Psbt;
   private _broadcast: (txhex: string) => Promise<true | undefined>;
-  private _wallet: HDSegwitBech32Wallet;
+  private _wallet: HDSilentPaymentsWallet;
   private _payjoinPsbt: any;
 
-  constructor(psbt: bitcoin.Psbt, broadcast: (txhex: string) => Promise<true | undefined>, wallet: HDSegwitBech32Wallet) {
+  constructor(psbt: bitcoin.Psbt, broadcast: (txhex: string) => Promise<true | undefined>, wallet: HDSilentPaymentsWallet) {
     this._psbt = psbt;
     this._broadcast = broadcast;
     this._wallet = wallet;

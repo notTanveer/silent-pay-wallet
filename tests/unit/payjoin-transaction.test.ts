@@ -2,7 +2,7 @@ import assert from 'assert';
 import * as bitcoin from 'bitcoinjs-lib';
 import { PayjoinClient } from 'payjoin-client';
 
-import { HDSegwitBech32Wallet } from '../../class';
+import { HDSilentPaymentsWallet } from '../../class';
 import PayjoinTransaction from '../../class/payjoin-transaction';
 import { uint8ArrayToHex } from '../../blue_modules/uint8array-extras';
 
@@ -24,7 +24,7 @@ describe('PayjoinTransaction', () => {
       console.error('process.env.MNEMONICS_COLDCARD not set, skipped');
       return;
     }
-    const w = new HDSegwitBech32Wallet();
+    const w = new HDSilentPaymentsWallet();
     w.setSecret(process.env.MNEMONICS_COLDCARD);
     const { tx: txOrig, psbt: psbtOrig } = w.createTransaction(
       utxos,
@@ -75,7 +75,7 @@ describe('PayjoinTransaction', () => {
       console.error('process.env.MNEMONICS_COLDCARD not set, skipped');
       return;
     }
-    const w = new HDSegwitBech32Wallet();
+    const w = new HDSilentPaymentsWallet();
     w.setSecret(process.env.MNEMONICS_COLDCARD);
     // bitcoin:bc1qy0ydthpa35m37pvwl5tu76j0srcmcwtmaur3aw?amount=0.0001&pj=https://btc.donate.kukks.org/BTC/pj
 

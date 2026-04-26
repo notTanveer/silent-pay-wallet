@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { BlueText } from '../../BlueComponents';
-import { HDSegwitBech32Transaction, HDSegwitBech32Wallet } from '../../class';
+import { HDSegwitBech32Transaction, HDSilentPaymentsWallet } from '../../class';
 import presentAlert from '../../components/Alert';
 import SafeArea from '../../components/SafeArea';
 import loc from '../../loc';
@@ -31,7 +31,7 @@ export default class RBFBumpFee extends CPFP {
   }
 
   async checkPossibilityOfRBFBumpFee() {
-    if (this.state.wallet.type !== HDSegwitBech32Wallet.type) {
+    if (this.state.wallet.type !== HDSilentPaymentsWallet.type) {
       return this.setState({ nonReplaceable: true, isLoading: false });
     }
 

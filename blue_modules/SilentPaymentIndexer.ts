@@ -65,8 +65,9 @@ export class SilentPaymentIndexer {
     endHeight: number,
     processTransactions: (transactions: IndexerTransaction[]) => Promise<number>,
     onProgress?: ScanProgressCallback,
+    cancelCallback?: () => boolean,
   ): Promise<void> {
-    await this.scanBlocks(startHeight, endHeight, processTransactions, onProgress);
+    await this.scanBlocks(startHeight, endHeight, processTransactions, onProgress, cancelCallback);
   }
 
   private async scanBlocks(
@@ -74,6 +75,7 @@ export class SilentPaymentIndexer {
     endHeight: number,
     onRangeProcessed?: (transactions: IndexerTransaction[]) => Promise<number>,
     onProgress?: ScanProgressCallback,
+    cancelCallback?: () => boolean,
   ): Promise<void> {
     const RANGE_BATCH_SIZE = 50;
     const totalBlocks = endHeight - startHeight + 1;
@@ -81,6 +83,10 @@ export class SilentPaymentIndexer {
     let utxosFound = 0;
 
     for (let rangeStart = startHeight; rangeStart <= endHeight; rangeStart += RANGE_BATCH_SIZE) {
+      if (cancelCallback?.()) {
+        throw new Error('SCAN_CANCELLED');
+      }
+
       const rangeEnd = Math.min(rangeStart + RANGE_BATCH_SIZE - 1, endHeight);
       const rangeSize = rangeEnd - rangeStart + 1;
 
@@ -104,7 +110,10 @@ export class SilentPaymentIndexer {
             utxosFound,
           });
         }
-      } catch (error) {
+      } catch (error: any) {
+        if (error?.message === 'SCAN_CANCELLED') {
+          throw error;
+        }
         console.error(`[Indexer] ✗ Failed to fetch range ${rangeStart}-${rangeEnd}:`, error);
       }
     }

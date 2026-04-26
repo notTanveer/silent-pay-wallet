@@ -6,7 +6,8 @@ import { Icon } from '@rneui/themed';
 import * as BlueElectrum from '../../blue_modules/BlueElectrum';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { BlueCard, BlueText } from '../../BlueComponents';
-import { HDSegwitBech32Transaction, HDSegwitBech32Wallet } from '../../class';
+import { HDSegwitBech32Transaction } from '../../class';
+import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import { Transaction, TWallet } from '../../class/wallets/types';
 import Button from '../../components/Button';
 import TransactionIncomingIcon from '../../components/icons/TransactionIncomingIcon';
@@ -335,7 +336,7 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({ transaction, txid
     }
 
     if (wallet) {
-      const cpfbTx = new HDSegwitBech32Transaction(null, tx.hash, wallet as HDSegwitBech32Wallet);
+      const cpfbTx = new HDSegwitBech32Transaction(null, tx.hash, wallet as HDSilentPaymentsWallet);
       if ((await cpfbTx.isToUsTransaction()) && (await cpfbTx.getRemoteConfirmationsNum()) === 0) {
         return setIsCPFPPossible(ButtonStatus.Possible);
       } else {
@@ -350,7 +351,7 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({ transaction, txid
       return setIsRBFBumpFeePossible(ButtonStatus.NotPossible);
     }
 
-    const rbfTx = new HDSegwitBech32Transaction(null, tx.hash, wallet as HDSegwitBech32Wallet);
+    const rbfTx = new HDSegwitBech32Transaction(null, tx.hash, wallet as HDSilentPaymentsWallet);
     if (
       (await rbfTx.isOurTransaction()) &&
       (await rbfTx.getRemoteConfirmationsNum()) === 0 &&
@@ -368,7 +369,7 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({ transaction, txid
       return setIsRBFCancelPossible(ButtonStatus.NotPossible);
     }
 
-    const rbfTx = new HDSegwitBech32Transaction(null, tx.hash, wallet as HDSegwitBech32Wallet);
+    const rbfTx = new HDSegwitBech32Transaction(null, tx.hash, wallet as HDSilentPaymentsWallet);
     if (
       (await rbfTx.isOurTransaction()) &&
       (await rbfTx.getRemoteConfirmationsNum()) === 0 &&

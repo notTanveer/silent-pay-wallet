@@ -182,7 +182,7 @@ const SignVerify = () => {
           <FContainer inline>
             <FButton
               onPress={handleShare}
-              text={loc.multisig.share}
+              text={loc.wallets.details_share}
               icon={
                 <View style={styles.buttonsIcon}>
                   <Icon name="external-link" size={16} type="font-awesome" color={colors.buttonAlternativeTextColor} />

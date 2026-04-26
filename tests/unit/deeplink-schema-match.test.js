@@ -1,7 +1,7 @@
 import assert from 'assert';
 
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
-import { HDSegwitBech32Wallet } from '../../class';
+import { HDSilentPaymentsWallet } from '../../class';
 
 jest.mock('../../blue_modules/BlueElectrum', () => {
   return {
@@ -79,81 +79,6 @@ describe.each(['', '//'])('unit - DeepLinkSchemaMatch', function (suffix) {
           'ElectrumSettings',
           {
             server: 'electrum1.bluewallet.io:443:s',
-          },
-        ],
-      },
-      {
-        argument: {
-          url: require('fs').readFileSync('./tests/unit/fixtures/skeleton-cobo.txt', 'ascii'),
-        },
-        expected: [
-          'AddWalletRoot',
-          {
-            screen: 'ImportWallet',
-            params: {
-              triggerImport: true,
-              label: require('fs').readFileSync('./tests/unit/fixtures/skeleton-cobo.txt', 'ascii'),
-            },
-          },
-        ],
-      },
-      {
-        argument: {
-          url: require('fs').readFileSync('./tests/unit/fixtures/skeleton-coldcard.txt', 'ascii'),
-        },
-        expected: [
-          'AddWalletRoot',
-          {
-            screen: 'ImportWallet',
-            params: {
-              triggerImport: true,
-              label: require('fs').readFileSync('./tests/unit/fixtures/skeleton-coldcard.txt', 'ascii'),
-            },
-          },
-        ],
-      },
-      {
-        argument: {
-          url: require('fs').readFileSync('./tests/unit/fixtures/skeleton-electrum.txt', 'ascii'),
-        },
-        expected: [
-          'AddWalletRoot',
-          {
-            screen: 'ImportWallet',
-            params: {
-              triggerImport: true,
-              label: require('fs').readFileSync('./tests/unit/fixtures/skeleton-electrum.txt', 'ascii'),
-            },
-          },
-        ],
-      },
-      {
-        argument: {
-          url: require('fs').readFileSync('./tests/unit/fixtures/skeleton-walletdescriptor.txt', 'ascii'),
-        },
-        expected: [
-          'AddWalletRoot',
-          {
-            screen: 'ImportWallet',
-            params: {
-              triggerImport: true,
-              label: require('fs').readFileSync('./tests/unit/fixtures/skeleton-walletdescriptor.txt', 'ascii'),
-            },
-          },
-        ],
-      },
-      {
-        argument: {
-          url: 'zpub6rFDtF1nuXZ9PUL4XzKURh3vJBW6Kj6TUrYL4qPtFNtDXtcTVfiqjQDyrZNwjwzt5HS14qdqo3Co2282Lv3Re6Y5wFZxAVuMEpeygnnDwfx',
-        },
-        expected: [
-          'AddWalletRoot',
-          {
-            screen: 'ImportWallet',
-            params: {
-              triggerImport: true,
-              label: 'zpub6rFDtF1nuXZ9PUL4XzKURh3vJBW6Kj6TUrYL4qPtFNtDXtcTVfiqjQDyrZNwjwzt5HS14qdqo3Co2282Lv3Re6Y5wFZxAVuMEpeygnnDwfx',
-            },
           },
         ],
       },
@@ -293,9 +218,8 @@ describe.each(['', '//'])('unit - DeepLinkSchemaMatch', function (suffix) {
   });
 
   it('isBothBitcoin navigates directly with single wallet', async () => {
-    const bw = new HDSegwitBech32Wallet();
+    const bw = new HDSilentPaymentsWallet();
 
-    // Single-wallet mode: navigates directly to SendDetails for an onchain wallet
     const response = await asyncNavigationRouteFor(
       {
         url: 'bitcoin:BC1QR7P8NSYPZEJY4KP7CJS0HL5T9X0VF3AYF6UQPC?amount=0.00185579&lightning=LNBC1855790N1PNUPWSFPP5P5RVQJA067PV6NJQ3EFKLP78TN6MHUK842ZFGDCTXRDSGNTY765QDZ62PSKJEPQW3HJQSNPD36XJCEQFPHKUETEVFSKGEM9WGSRYVPJXSSZSNMJV3JHYGZFGSAZQARFVD4K2AR5V95KCMMJ9YCQZPUXQZ6GSP53E4EX9YTD2MGDN2C2CFA0J0SM3E7PVLPJ208H5LMYPNJMGZ7RLGS9QXPQYSGQ6GQMEQXJKKF2DHXJK8XQ4WGLM5NTE3RKEXGYQC6HYGFKS9SHHA6HL9X4339MXHNNQFSH7TS62PU8T9RSWTK6HQ4LV4GW3DPD25DQ8UQQYC909N',

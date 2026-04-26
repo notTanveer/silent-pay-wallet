@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { BlueText } from '../../BlueComponents';
-import { HDSegwitBech32Transaction, HDSegwitBech32Wallet } from '../../class';
+import { HDSegwitBech32Transaction, HDSilentPaymentsWallet } from '../../class';
 import presentAlert from '../../components/Alert';
 import SafeArea from '../../components/SafeArea';
 import loc from '../../loc';
@@ -23,7 +23,7 @@ export default class RBFCancel extends CPFP {
   }
 
   async checkPossibilityOfRBFCancel() {
-    if (this.state.wallet.type !== HDSegwitBech32Wallet.type) {
+    if (this.state.wallet.type !== HDSilentPaymentsWallet.type) {
       return this.setState({ nonReplaceable: true, isLoading: false });
     }
 

@@ -1,14 +1,11 @@
 import BigNumber from 'bignumber.js';
 import * as bitcoin from 'bitcoinjs-lib';
+import { bech32, bech32m } from 'bech32';
 import DefaultPreference from 'react-native-default-preference';
 import RNFS from 'react-native-fs';
 import Realm from 'realm';
 import { sha256 as _sha256 } from '@noble/hashes/sha256';
 
-import { LegacyWallet } from '../class/wallets/legacy-wallet';
-import { SegwitBech32Wallet } from '../class/wallets/segwit-bech32-wallet';
-import { SegwitP2SHWallet } from '../class/wallets/segwit-p2sh-wallet';
-import { TaprootWallet } from '../class/wallets/taproot-wallet';
 import presentAlert from '../components/Alert';
 import loc from '../loc';
 import { GROUP_IO_BLUEWALLET } from './currency';
@@ -66,6 +63,30 @@ type ElectrumTransaction = {
 
 type ElectrumTransactionWithHex = ElectrumTransaction & {
   hex: string;
+};
+
+const decodeOutputAddress = (scriptHex: string): string | false => {
+  try {
+    return bitcoin.address.fromOutputScript(Buffer.from(scriptHex, 'hex'), bitcoin.networks.bitcoin);
+  } catch (_) {}
+  // Fallback: decode native segwit (P2WPKH, P2WSH, P2TR) manually when initEccLib hasn't been called
+  try {
+    const buf = Buffer.from(scriptHex, 'hex');
+    if (buf[0] === 0x51 && buf[1] === 0x20 && buf.length === 34) {
+      // P2TR: OP_1 OP_PUSH32 <32-byte-key>
+      const words = bech32m.toWords(buf.slice(2));
+      return bech32m.encode('bc', [1, ...words]);
+    } else if (buf[0] === 0x00 && buf[1] === 0x14 && buf.length === 22) {
+      // P2WPKH: OP_0 OP_PUSH20 <20-byte-hash>
+      const words = bech32.toWords(buf.slice(2));
+      return bech32.encode('bc', [0, ...words]);
+    } else if (buf[0] === 0x00 && buf[1] === 0x20 && buf.length === 34) {
+      // P2WSH: OP_0 OP_PUSH32 <32-byte-hash>
+      const words = bech32.toWords(buf.slice(2));
+      return bech32.encode('bc', [0, ...words]);
+    }
+  } catch (_) {}
+  return false;
 };
 
 type MempoolTransaction = {
@@ -600,20 +621,29 @@ export function txhexToElectrumTransaction(txhex: string): ElectrumTransactionWi
   for (const out of tx.outs) {
     const value = new BigNumber(out.value).dividedBy(100000000).toNumber();
     let address: false | string = false;
-    let type: false | string = false;
+    let type = 'nonstandard';
 
-    if (SegwitBech32Wallet.scriptPubKeyToAddress(uint8ArrayToHex(out.script))) {
-      address = SegwitBech32Wallet.scriptPubKeyToAddress(uint8ArrayToHex(out.script));
-      type = 'witness_v0_keyhash';
-    } else if (SegwitP2SHWallet.scriptPubKeyToAddress(uint8ArrayToHex(out.script))) {
-      address = SegwitP2SHWallet.scriptPubKeyToAddress(uint8ArrayToHex(out.script));
-      type = '???'; // TODO
-    } else if (LegacyWallet.scriptPubKeyToAddress(uint8ArrayToHex(out.script))) {
-      address = LegacyWallet.scriptPubKeyToAddress(uint8ArrayToHex(out.script));
-      type = '???'; // TODO
-    } else {
-      address = TaprootWallet.scriptPubKeyToAddress(uint8ArrayToHex(out.script));
+    const scriptHex = uint8ArrayToHex(out.script);
+    address = decodeOutputAddress(scriptHex);
+    let legacyAddress: string | false = false;
+    try {
+      legacyAddress = bitcoin.payments.p2pkh({ output: Buffer.from(scriptHex, 'hex'), network: bitcoin.networks.bitcoin }).address ?? false;
+    } catch (_) {}
+
+    if (/^5120[0-9a-f]{64}$/i.test(scriptHex)) {
       type = 'witness_v1_taproot';
+    } else if (/^0020[0-9a-f]{64}$/i.test(scriptHex)) {
+      type = 'witness_v0_scripthash';
+    } else if (/^0014[0-9a-f]{40}$/i.test(scriptHex)) {
+      type = 'witness_v0_keyhash';
+    } else if (/^a914[0-9a-f]{40}87$/i.test(scriptHex)) {
+      type = 'scripthash';
+    } else if (/^76a914[0-9a-f]{40}88ac$/i.test(scriptHex)) {
+      type = 'pubkeyhash';
+    }
+    
+    if (!address && legacyAddress) {
+      address = legacyAddress;
     }
 
     if (!address) {

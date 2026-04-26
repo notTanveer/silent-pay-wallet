@@ -6,6 +6,7 @@ import { Psbt } from 'bitcoinjs-lib';
 import { CoinSelectReturnInput } from 'coinselect';
 
 const bip32 = BIP32Factory(ecc);
+bitcoin.initEccLib(ecc);
 
 /**
  * @see https://github.com/bitcoin/bips/blob/master/bip-0086.mediawiki

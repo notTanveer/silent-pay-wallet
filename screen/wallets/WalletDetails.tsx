@@ -13,7 +13,6 @@ import {
 import { writeFileAndExport } from '../../blue_modules/fs';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../blue_modules/hapticFeedback';
 import { BlueCard, BlueText } from '../../BlueComponents';
-import { HDAezeedWallet, HDSegwitBech32Wallet, LegacyWallet, SegwitBech32Wallet, SegwitP2SHWallet, WatchOnlyWallet } from '../../class';
 import { AbstractHDElectrumWallet } from '../../class/wallets/abstract-hd-electrum-wallet';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
@@ -33,7 +32,7 @@ import HeaderMenuButton from '../../components/HeaderMenuButton';
 import { Action } from '../../components/types';
 import { CommonToolTipActions } from '../../typings/CommonToolTipActions';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import { BlueSpacing10, BlueSpacing20 } from '../../components/BlueSpacing';
+import { BlueSpacing20 } from '../../components/BlueSpacing';
 import { BlueLoading } from '../../components/BlueLoading';
 
 type RouteProps = RouteProp<DetailViewStackParamList, 'WalletDetails'>;
@@ -46,9 +45,6 @@ const WalletDetails: React.FC = () => {
   const [backdoorPressed, setBackdoorPressed] = useState<number>(0);
   const walletRef = useRef<TWallet | undefined>(wallets.find(w => w.getID() === walletID));
   const wallet = walletRef.current as TWallet;
-  const [walletUseWithHardwareWallet, setWalletUseWithHardwareWallet] = useState<boolean>(
-    wallet.useWithHardwareWalletEnabled ? wallet.useWithHardwareWalletEnabled() : false,
-  );
   const [isBIP47Enabled, setIsBIP47Enabled] = useState<boolean>(wallet.isBIP47Enabled ? wallet.isBIP47Enabled() : false);
 
   const [isContactsVisible, setIsContactsVisible] = useState<boolean>(
@@ -66,13 +62,8 @@ const WalletDetails: React.FC = () => {
   const walletTransactionsLength = useMemo<number>(() => wallet.getTransactions().length, [wallet]);
   const derivationPath = useMemo<string | null>(() => {
     try {
-      // @ts-expect-error: Need to fix later
-      if (wallet.getDerivationPath) {
-        // @ts-expect-error: Need to fix later
-        const path = wallet.getDerivationPath();
-        return path.length > 0 ? path : null;
-      }
-      return null;
+      const path = wallet.getDerivationPath();
+      return path && path.length > 0 ? path : null;
     } catch (e) {
       return null;
     }
@@ -225,9 +216,7 @@ const WalletDetails: React.FC = () => {
     useCallback(() => {
       const task = InteractionManager.runAfterInteractions(() => {
         if (isMasterFingerPrintVisible && wallet.allowMasterFingerprint && wallet.allowMasterFingerprint()) {
-          // @ts-expect-error: Need to fix later
           if (wallet.getMasterFingerprintHex) {
-            // @ts-expect-error: Need to fix later
             setMasterFingerprint(wallet.getMasterFingerprintHex());
           }
         } else {
@@ -292,7 +281,7 @@ const WalletDetails: React.FC = () => {
   const exportInternals = async () => {
     if (backdoorPressed < 10) return setBackdoorPressed(backdoorPressed + 1);
     setBackdoorPressed(0);
-    if (wallet.type !== HDSegwitBech32Wallet.type) return;
+    if (!(wallet instanceof AbstractHDElectrumWallet)) return;
     const fileNameExternals = 'wallet-externals.json';
     const contents = JSON.stringify(
       {
@@ -323,7 +312,7 @@ const WalletDetails: React.FC = () => {
     setBackdoorPressed(0);
     const msg = 'Transactions & balances purged. Pls go to main screen and back to rerender screen';
 
-    if (wallet.type === HDSegwitBech32Wallet.type) {
+    if (wallet instanceof AbstractHDElectrumWallet) {
       wallet._txs_by_external_index = {};
       wallet._txs_by_internal_index = {};
       presentAlert({ message: msg });
@@ -387,28 +376,6 @@ const WalletDetails: React.FC = () => {
         ) : (
           <>
             <BlueCard style={styles.address}>
-              {(() => {
-                if (
-                  [LegacyWallet.type, SegwitBech32Wallet.type, SegwitP2SHWallet.type].includes(wallet.type) ||
-                  (wallet.type === WatchOnlyWallet.type && !wallet.isHd())
-                ) {
-                  return (
-                    <>
-                      <Text style={[styles.textLabel1, stylesHook.textLabel1]}>{loc.wallets.details_address.toLowerCase()}</Text>
-                      <Text style={[styles.textValue, stylesHook.textValue]} selectable>
-                        {(() => {
-                          // gracefully handling faulty wallets, so at least user has an option to delete the wallet
-                          try {
-                            return wallet.getAddress ? wallet.getAddress() : '';
-                          } catch (error: any) {
-                            return error.message;
-                          }
-                        })()}
-                      </Text>
-                    </>
-                  );
-                }
-              })()}
               <Text style={[styles.textLabel2, stylesHook.textLabel2]}>{loc.wallets.add_wallet_name.toLowerCase()}</Text>
               <View style={[styles.input, stylesHook.input]}>
                 <TextInput
@@ -435,12 +402,6 @@ const WalletDetails: React.FC = () => {
                 {wallet.typeReadable}
               </Text>
 
-              {wallet.type === HDAezeedWallet.type && (
-                <>
-                  <Text style={[styles.textLabel1, stylesHook.textLabel1]}>{loc.wallets.identity_pubkey.toLowerCase()}</Text>
-                  <BlueText>{wallet.getIdentityPubkey()}</BlueText>
-                </>
-              )}
               <BlueSpacing20 />
               <>
                 <Text onPress={exportInternals} style={[styles.textLabel2, stylesHook.textLabel2]}>
@@ -500,31 +461,6 @@ const WalletDetails: React.FC = () => {
               ) : null}
 
               <View>
-                {wallet.type === WatchOnlyWallet.type && wallet.isHd && wallet.isHd() && (
-                  <>
-                    <BlueSpacing10 />
-                    <Text style={[styles.textLabel2, stylesHook.textLabel2]}>{loc.wallets.details_advanced.toLowerCase()}</Text>
-                    <View style={styles.hardware}>
-                      <BlueText>{loc.wallets.details_use_with_hardware_wallet}</BlueText>
-                      <Switch
-                        value={walletUseWithHardwareWallet}
-                        onValueChange={async (value: boolean) => {
-                          setWalletUseWithHardwareWallet(value);
-                          if (wallet.setUseWithHardwareWalletEnabled) {
-                            wallet.setUseWithHardwareWalletEnabled(value);
-                            triggerHapticFeedback(HapticFeedbackTypes.ImpactLight);
-                          }
-                          try {
-                            await saveToDisk();
-                          } catch (error: unknown) {
-                            triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
-                            console.error((error as Error).message);
-                          }
-                        }}
-                      />
-                    </View>
-                  </>
-                )}
                 <View style={styles.row}>
                   {wallet.allowMasterFingerprint && wallet.allowMasterFingerprint() && (
                     <View style={styles.marginRight16}>
@@ -533,7 +469,7 @@ const WalletDetails: React.FC = () => {
                         <BlueText selectable>{masterFingerprint ?? <ActivityIndicator />}</BlueText>
                       ) : (
                         <TouchableOpacity onPress={onViewMasterFingerPrintPress}>
-                          <BlueText>{loc.multisig.view}</BlueText>
+                          <BlueText>{loc.wallets.details_master_fingerprint_view}</BlueText>
                         </TouchableOpacity>
                       )}
                     </View>
@@ -550,7 +486,7 @@ const WalletDetails: React.FC = () => {
                 </View>
               </View>
             </BlueCard>
-            {(wallet instanceof AbstractHDElectrumWallet || (wallet.type === WatchOnlyWallet.type && wallet.isHd && wallet.isHd())) && (
+            {wallet instanceof AbstractHDElectrumWallet && (
               <ListItem onPress={navigateToAddresses} title={loc.wallets.details_show_addresses} chevron />
             )}
             {isContactsVisible ? <ListItem onPress={navigateToContacts} title={loc.bip47.contacts} chevron /> : null}
