@@ -1,7 +1,6 @@
 import bip21, { TOptions } from 'bip21';
 import * as bitcoin from 'bitcoinjs-lib';
 import URL from 'url';
-import { readFileOutsideSandbox } from '../modules/fs';
 import { Chain } from '../models/bitcoinUnits';
 import type { TWallet } from './wallets/types';
 
@@ -12,289 +11,94 @@ type TContext = {
   addWallet: (wallet: TWallet) => void;
 };
 
-type TBothBitcoinAndLightning = { bitcoin: string; lndInvoice: string } | undefined;
-
 class DeeplinkSchemaMatch {
   static hasSchema(schemaString: string): boolean {
     if (typeof schemaString !== 'string' || schemaString.length <= 0) return false;
-    const lowercaseString = schemaString.trim().toLowerCase();
-    return (
-      lowercaseString.startsWith('bitcoin:') ||
-      lowercaseString.startsWith('lightning:') ||
-      lowercaseString.startsWith('shroud:') ||
-      lowercaseString.startsWith('blue:') ||
-      lowercaseString.startsWith('bluewallet:') ||
-      lowercaseString.startsWith('lapp:')
-    );
+    const lower = schemaString.trim().toLowerCase();
+    return lower.startsWith('bitcoin:') || lower.startsWith('shroud:');
   }
 
   /**
-   * Examines the content of the event parameter.
-   * If the content is recognizable, create a dictionary with the respective
-   * navigation dictionary required by react-navigation
+   * Examines the URL of the event and dispatches the appropriate navigation route.
    *
-   * @param event {{url: string}} URL deeplink as passed to app, e.g. `bitcoin:bc1qh6tf004ty7z7un2v5ntu4mkf630545gvhs45u7?amount=666&label=Yo`
-   * @param completionHandler {function} Callback that returns [string, params: object]
+   * Supported schemes:
+   *   bitcoin:           — standard on-chain payment URI (BIP21)
+   *   shroud:bitcoin:    — same, wrapped in the app scheme
+   *   shroud://widget?action=  — home-screen widget actions
+   *   shroud:setelectrumserver — configure the Electrum server
+   *
+   * @param event {{url: string}}
+   * @param completionHandler {function} Callback that receives [routeName, params]
    */
   static navigationRouteFor(
     event: { url: string },
     completionHandler: (args: TCompletionHandlerParams) => void,
     context: TContext = { wallets: [], saveToDisk: () => {}, addWallet: () => {} },
   ) {
-    if (event.url === null) {
-      return;
-    }
-    if (typeof event.url !== 'string') {
-      return;
-    }
+    if (!event.url || typeof event.url !== 'string') return;
 
-    const lowercaseUrl = event.url.toLowerCase();
+    const lower = event.url.toLowerCase();
 
-    if (
-      lowercaseUrl.startsWith('shroud:bitcoin:') ||
-      lowercaseUrl.startsWith('shroud:lightning:') ||
-      lowercaseUrl.startsWith('bluewallet:bitcoin:') ||
-      lowercaseUrl.startsWith('bluewallet:lightning:')
-    ) {
-      event.url = event.url.substring(event.url.indexOf(':') + 1);
-    } else if (lowercaseUrl.startsWith('shroud://widget?action=') || lowercaseUrl.startsWith('bluewallet://widget?action=')) {
-      event.url = event.url.substring(event.url.indexOf('://') + '://'.length);
+    // rip out the shroud: wrapper from shroud:bitcoin: (or shroud:BITCOIN:) URIs.
+    if (lower.startsWith('shroud:bitcoin:')) {
+      event.url = event.url.substring('shroud:'.length);
+    } else if (lower.startsWith('shroud://widget?action=')) {
+      event.url = event.url.substring('shroud://'.length);
     }
 
     if (DeeplinkSchemaMatch.isWidgetAction(event.url)) {
-      if (context.wallets.length > 0) {
-        const wallet = context.wallets[0];
+      const wallet = context.wallets[0];
+      if (wallet?.chain === Chain.ONCHAIN) {
         const action = event.url.split('widget?action=')[1];
-        if (wallet && wallet.chain === Chain.ONCHAIN) {
-          if (action === 'openSend') {
-            completionHandler([
-              'SendDetailsRoot',
-              {
-                screen: 'SendDetails',
-                params: {
-                  walletID: wallet.getID(),
-                },
-              },
-            ]);
-          } else if (action === 'openReceive') {
-            completionHandler([
-              'DetailViewStackScreensStack',
-              {
-                screen: 'ReceiveDetails',
-                params: {
-                  walletID: wallet.getID(),
-                },
-              },
-            ]);
-          }
+        if (action === 'openSend') {
+          completionHandler(['SendDetailsRoot', { screen: 'SendDetails', params: { walletID: wallet.getID() } }]);
+        } else if (action === 'openReceive') {
+          completionHandler(['DetailViewStackScreensStack', { screen: 'ReceiveDetails', params: { walletID: wallet.getID() } }]);
         }
       }
-    } else if (DeeplinkSchemaMatch.isPossiblySignedPSBTFile(event.url)) {
-      readFileOutsideSandbox(decodeURI(event.url))
-        .then(file => {
-          if (file) {
-            completionHandler([
-              'SendDetailsRoot',
-              {
-                screen: 'PsbtWithHardwareWallet',
-                params: {
-                  deepLinkPSBT: file,
-                },
-              },
-            ]);
-          }
-        })
-        .catch(e => console.warn(e));
       return;
     }
-    let isBothBitcoinAndLightning: TBothBitcoinAndLightning;
-    try {
-      isBothBitcoinAndLightning = DeeplinkSchemaMatch.isBothBitcoinAndLightning(event.url);
-    } catch (e) {
-      console.log(e);
+
+    if (DeeplinkSchemaMatch.isBitcoinAddress(event.url)) {
+      completionHandler(['SendDetailsRoot', { screen: 'SendDetails', params: { uri: event.url.replace('://', ':') } }]);
+      return;
     }
-    if (isBothBitcoinAndLightning) {
-      // Single-wallet mode: use the first wallet directly
-      const wallet = context.wallets[0];
-      if (wallet) {
-        completionHandler(DeeplinkSchemaMatch.isBothBitcoinAndLightningOnWalletSelect(wallet, isBothBitcoinAndLightning));
+
+    const urlObject = URL.parse(event.url, true); // eslint-disable-line n/no-deprecated-api
+    if (urlObject.protocol === 'shroud:') {
+      switch (urlObject.host) {
+        case 'setelectrumserver':
+          completionHandler(['ElectrumSettings', { server: DeeplinkSchemaMatch.getServerFromSetElectrumServerAction(event.url) }]);
+          break;
       }
-    } else if (DeeplinkSchemaMatch.isBitcoinAddress(event.url)) {
-      completionHandler([
-        'SendDetailsRoot',
-        {
-          screen: 'SendDetails',
-          params: {
-            uri: event.url.replace('://', ':'),
-          },
-        },
-      ]);
-    } else {
-      const urlObject = URL.parse(event.url, true); // eslint-disable-line n/no-deprecated-api
-      (async () => {
-        if (
-          urlObject.protocol === 'shroud:' ||
-          urlObject.protocol === 'bluewallet:' ||
-          urlObject.protocol === 'lapp:' ||
-          urlObject.protocol === 'blue:'
-        ) {
-          switch (urlObject.host) {
-            case 'setelectrumserver':
-              completionHandler([
-                'ElectrumSettings',
-                {
-                  server: DeeplinkSchemaMatch.getServerFromSetElectrumServerAction(event.url),
-                },
-              ]);
-              break;
-            case 'setlndhuburl':
-              console.warn('Ignoring unsupported deeplink action: setlndhuburl');
-              break;
-          }
-        }
-      })();
     }
   }
 
   /**
-   * Extracts server from a deeplink like `shroud:setelectrumserver?server=electrum1.bluewallet.io%3A443%3As`
-   * returns FALSE if none found
-   *
-   * @param url {string}
-   * @return {string|boolean}
+   * Extracts the server from a deeplink like `shroud:setelectrumserver?server=electrum1.bluewallet.io%3A443%3As`.
+   * Returns false if the URL is not a valid setelectrumserver action.
    */
   static getServerFromSetElectrumServerAction(url: string): string | false {
-    const lowercaseUrl = url.toLowerCase();
-    if (
-      !lowercaseUrl.startsWith('shroud:setelectrumserver') &&
-      !lowercaseUrl.startsWith('bluewallet:setelectrumserver') &&
-      !lowercaseUrl.startsWith('setelectrumserver')
-    ) {
+    const lower = url.toLowerCase();
+    if (!lower.startsWith('shroud:setelectrumserver') && !lower.startsWith('setelectrumserver')) {
       return false;
     }
-    const splt = url.split('server=');
-    if (splt[1]) return decodeURIComponent(splt[1]);
-    return false;
-  }
-
-  /**
-   * Extracts url from a deeplink like `shroud:setlndhuburl?url=https%3A%2F%2Flndhub.herokuapp.com`
-   * returns FALSE if none found
-   *
-   * @param url {string}
-   * @return {string|boolean}
-   */
-  static getUrlFromSetLndhubUrlAction(url: string): string | false {
-    const lowercaseUrl = url.toLowerCase();
-    if (
-      !lowercaseUrl.startsWith('shroud:setlndhuburl') &&
-      !lowercaseUrl.startsWith('bluewallet:setlndhuburl') &&
-      !lowercaseUrl.startsWith('setlndhuburl')
-    ) {
-      return false;
-    }
-    const splt = url.split('url=');
-    if (splt[1]) return decodeURIComponent(splt[1]);
-    return false;
-  }
-
-  static isTXNFile(filePath: string): boolean {
-    return (
-      (filePath.toLowerCase().startsWith('file:') || filePath.toLowerCase().startsWith('content:')) &&
-      filePath.toLowerCase().endsWith('.txn')
-    );
-  }
-
-  static isPossiblySignedPSBTFile(filePath: string): boolean {
-    return (
-      (filePath.toLowerCase().startsWith('file:') || filePath.toLowerCase().startsWith('content:')) &&
-      filePath.toLowerCase().endsWith('-signed.psbt')
-    );
-  }
-
-  static isPossiblyPSBTFile(filePath: string): boolean {
-    return (
-      (filePath.toLowerCase().startsWith('file:') || filePath.toLowerCase().startsWith('content:')) &&
-      filePath.toLowerCase().endsWith('.psbt')
-    );
-  }
-
-  static isBothBitcoinAndLightningOnWalletSelect(wallet: TWallet, uri: any): TCompletionHandlerParams {
-    // Lightning removed: always route to on-chain SendDetails
-    return [
-      'SendDetailsRoot',
-      {
-        screen: 'SendDetails',
-        params: {
-          uri: uri.bitcoin,
-          walletID: wallet.getID(),
-        },
-      },
-    ];
+    const parts = url.split('server=');
+    return parts[1] ? decodeURIComponent(parts[1]) : false;
   }
 
   static isBitcoinAddress(address: string): boolean {
     address = address.replace('://', ':').replace('bitcoin:', '').replace('BITCOIN:', '').replace('bitcoin=', '').split('?')[0];
-    let isValidBitcoinAddress = false;
     try {
       bitcoin.address.toOutputScript(address);
-      isValidBitcoinAddress = true;
-    } catch (err) {
-      isValidBitcoinAddress = false;
+      return true;
+    } catch {
+      return false;
     }
-    return isValidBitcoinAddress;
-  }
-
-  static isLightningInvoice(invoice: string): boolean {
-    let isValidLightningInvoice = false;
-    if (
-      invoice.toLowerCase().startsWith('lightning:lnb') ||
-      invoice.toLowerCase().startsWith('lightning://lnb') ||
-      invoice.toLowerCase().startsWith('lnb')
-    ) {
-      isValidLightningInvoice = true;
-    }
-    return isValidLightningInvoice;
   }
 
   static isWidgetAction(text: string): boolean {
     return text.startsWith('widget?action=');
-  }
-
-  static isBothBitcoinAndLightning(url: string): TBothBitcoinAndLightning {
-    if (url.includes('lightning') && (url.includes('bitcoin') || url.includes('BITCOIN'))) {
-      const txInfo = url.split(/(bitcoin:\/\/|BITCOIN:\/\/|bitcoin:|BITCOIN:|lightning:|lightning=|bitcoin=)+/);
-      let btc: string | false = false;
-      let lndInvoice: string | false = false;
-      for (const [index, value] of txInfo.entries()) {
-        try {
-          // Inside try-catch. We dont wan't to  crash in case of an out-of-bounds error.
-          if (value.startsWith('bitcoin') || value.startsWith('BITCOIN')) {
-            btc = `bitcoin:${txInfo[index + 1]}`;
-            if (!DeeplinkSchemaMatch.isBitcoinAddress(btc)) {
-              btc = false;
-              break;
-            }
-          } else if (value.startsWith('lightning')) {
-            const lnpart = txInfo[index + 1].split('&').find(el => el.toLowerCase().startsWith('ln'));
-            lndInvoice = `lightning:${lnpart}`;
-            if (!this.isLightningInvoice(lndInvoice)) {
-              lndInvoice = false;
-              break;
-            }
-          }
-        } catch (e) {
-          console.log(e);
-        }
-        if (btc && lndInvoice) break;
-      }
-      if (btc && lndInvoice) {
-        return { bitcoin: btc, lndInvoice };
-      } else {
-        return undefined;
-      }
-    }
-    return undefined;
   }
 
   static bip21decode(uri?: string) {

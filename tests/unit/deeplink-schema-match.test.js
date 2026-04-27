@@ -1,7 +1,6 @@
 import assert from 'assert';
 
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
-import { HDSilentPaymentsWallet } from '../../class';
 
 jest.mock('../../modules/Electrum', () => {
   return {
@@ -35,7 +34,6 @@ describe.each(['', '//'])('unit - DeepLinkSchemaMatch', function (suffix) {
     assert.ok(DeeplinkSchemaMatch.hasSchema(`shroud:bitcoin:${suffix}BC1QH6TF004TY7Z7UN2V5NTU4MKF630545GVHS45U7?amount=666&label=Yo`));
     assert.ok(DeeplinkSchemaMatch.hasSchema(`shroud:BITCOIN:${suffix}BC1Q3RL0MKYK0ZRTXFMQN9WPCD3GNAZ00YV9YP0HXE`));
     assert.ok(DeeplinkSchemaMatch.hasSchema(`shroud:BITCOIN:${suffix}BC1Q3RL0MKYK0ZRTXFMQN9WPCD3GNAZ00YV9YP0HXE?amount=666&label=Yo`));
-    assert.ok(DeeplinkSchemaMatch.hasSchema(`bluewallet:bitcoin:${suffix}12eQ9m4sgAwTSQoNXkRABKhCXCsjm2jdVG`));
   });
 
   it('isBitcoin Address', () => {
@@ -73,13 +71,6 @@ describe.each(['', '//'])('unit - DeepLinkSchemaMatch', function (suffix) {
         ],
       },
       {
-        argument: { url: `bluewallet:BITCOIN:${suffix}BC1Q3RL0MKYK0ZRTXFMQN9WPCD3GNAZ00YV9YP0HXE?amount=666&label=Yo` },
-        expected: [
-          'SendDetailsRoot',
-          { screen: 'SendDetails', params: { uri: 'BITCOIN:BC1Q3RL0MKYK0ZRTXFMQN9WPCD3GNAZ00YV9YP0HXE?amount=666&label=Yo' } },
-        ],
-      },
-      {
         argument: {
           url: 'shroud:setelectrumserver?server=electrum1.bluewallet.io%3A443%3As',
         },
@@ -96,18 +87,6 @@ describe.each(['', '//'])('unit - DeepLinkSchemaMatch', function (suffix) {
       const navValue = await asyncNavigationRouteFor(event.argument);
       assert.deepStrictEqual(navValue, event.expected);
     }
-
-    // BIP21 w/BOLT11 support - single wallet mode navigates directly
-    const mockWallet = { chain: 'ONCHAIN', getID: () => 'test-wallet-id' };
-    const rez = await asyncNavigationRouteFor(
-      {
-        url: `bitcoin:${suffix}1DamianM2k8WfNEeJmyqSe2YW1upB7UATx?amount=0.000001&lightning=lnbc1u1pwry044pp53xlmkghmzjzm3cljl6729cwwqz5hhnhevwfajpkln850n7clft4sdqlgfy4qv33ypmj7sj0f32rzvfqw3jhxaqcqzysxq97zvuq5zy8ge6q70prnvgwtade0g2k5h2r76ws7j2926xdjj2pjaq6q3r4awsxtm6k5prqcul73p3atveljkn6wxdkrcy69t6k5edhtc6q7lgpe4m5k4`,
-      },
-      { wallets: [mockWallet], saveToDisk: () => {}, addWallet: () => {}, setSharedCosigner: () => {} },
-    );
-    assert.strictEqual(rez[0], 'SendDetailsRoot');
-    assert.strictEqual(rez[1].screen, 'SendDetails');
-    assert.strictEqual(rez[1].params.walletID, 'test-wallet-id');
   });
 
   it('decodes bip21', () => {
@@ -177,42 +156,10 @@ describe.each(['', '//'])('unit - DeepLinkSchemaMatch', function (suffix) {
     );
   });
 
-  it('recognizes files', () => {
-    // txn files:
-    assert.ok(DeeplinkSchemaMatch.isTXNFile('file://com.android.externalstorage.documents/document/081D-1403%3Atxhex.txn'));
-    assert.ok(!DeeplinkSchemaMatch.isPossiblySignedPSBTFile('file://com.android.externalstorage.documents/document/081D-1403%3Atxhex.txn'));
-
-    assert.ok(DeeplinkSchemaMatch.isTXNFile('content://com.android.externalstorage.documents/document/081D-1403%3Atxhex.txn'));
-    assert.ok(
-      !DeeplinkSchemaMatch.isPossiblySignedPSBTFile('content://com.android.externalstorage.documents/document/081D-1403%3Atxhex.txn'),
-    );
-
-    // psbt files (signed):
-    assert.ok(
-      DeeplinkSchemaMatch.isPossiblySignedPSBTFile(
-        'content://com.android.externalstorage.documents/document/081D-1403%3Atxhex-signed.psbt',
-      ),
-    );
-    assert.ok(
-      DeeplinkSchemaMatch.isPossiblySignedPSBTFile('file://com.android.externalstorage.documents/document/081D-1403%3Atxhex-signed.psbt'),
-    );
-
-    assert.ok(!DeeplinkSchemaMatch.isTXNFile('content://com.android.externalstorage.documents/document/081D-1403%3Atxhex-signed.psbt'));
-    assert.ok(!DeeplinkSchemaMatch.isTXNFile('file://com.android.externalstorage.documents/document/081D-1403%3Atxhex-signed.psbt'));
-
-    // psbt files (unsigned):
-    assert.ok(DeeplinkSchemaMatch.isPossiblyPSBTFile('content://com.android.externalstorage.documents/document/081D-1403%3Atxhex.psbt'));
-    assert.ok(DeeplinkSchemaMatch.isPossiblyPSBTFile('file://com.android.externalstorage.documents/document/081D-1403%3Atxhex.psbt'));
-  });
-
   it('can work with some deeplink actions', () => {
     assert.strictEqual(DeeplinkSchemaMatch.getServerFromSetElectrumServerAction('sgasdgasdgasd'), false);
     assert.strictEqual(
       DeeplinkSchemaMatch.getServerFromSetElectrumServerAction('shroud:setelectrumserver?server=electrum1.bluewallet.io%3A443%3As'),
-      'electrum1.bluewallet.io:443:s',
-    );
-    assert.strictEqual(
-      DeeplinkSchemaMatch.getServerFromSetElectrumServerAction('bluewallet:setelectrumserver?server=electrum1.bluewallet.io%3A443%3As'),
       'electrum1.bluewallet.io:443:s',
     );
     assert.strictEqual(
@@ -229,18 +176,15 @@ describe.each(['', '//'])('unit - DeepLinkSchemaMatch', function (suffix) {
     );
   });
 
-  it('isBothBitcoin navigates directly with single wallet', async () => {
-    const bw = new HDSilentPaymentsWallet();
-
-    const response = await asyncNavigationRouteFor(
-      {
-        url: 'bitcoin:BC1QR7P8NSYPZEJY4KP7CJS0HL5T9X0VF3AYF6UQPC?amount=0.00185579&lightning=LNBC1855790N1PNUPWSFPP5P5RVQJA067PV6NJQ3EFKLP78TN6MHUK842ZFGDCTXRDSGNTY765QDZ62PSKJEPQW3HJQSNPD36XJCEQFPHKUETEVFSKGEM9WGSRYVPJXSSZSNMJV3JHYGZFGSAZQARFVD4K2AR5V95KCMMJ9YCQZPUXQZ6GSP53E4EX9YTD2MGDN2C2CFA0J0SM3E7PVLPJ208H5LMYPNJMGZ7RLGS9QXPQYSGQ6GQMEQXJKKF2DHXJK8XQ4WGLM5NTE3RKEXGYQC6HYGFKS9SHHA6HL9X4339MXHNNQFSH7TS62PU8T9RSWTK6HQ4LV4GW3DPD25DQ8UQQYC909N',
-      },
-      { wallets: [bw], saveToDisk: () => {}, addWallet: () => {}, setSharedCosigner: () => {} },
-    );
+  it('bitcoin+lightning BIP21 URI routes to on-chain SendDetails', async () => {
+    // A BIP21 URI with a lightning= param is treated as a plain Bitcoin address;
+    // isBitcoinAddress strips query params so the address validates correctly.
+    const response = await asyncNavigationRouteFor({
+      url: 'bitcoin:BC1QR7P8NSYPZEJY4KP7CJS0HL5T9X0VF3AYF6UQPC?amount=0.00185579&lightning=LNBC1855790N1PNUPWSFPP5P5RVQJA067PV6NJQ3EFKLP78TN6MHUK842ZFGDCTXRDSGNTY765QDZ62PSKJEPQW3HJQSNPD36XJCEQFPHKUETEVFSKGEM9WGSRYVPJXSSZSNMJV3JHYGZFGSAZQARFVD4K2AR5V95KCMMJ9YCQZPUXQZ6GSP53E4EX9YTD2MGDN2C2CFA0J0SM3E7PVLPJ208H5LMYPNJMGZ7RLGS9QXPQYSGQ6GQMEQXJKKF2DHXJK8XQ4WGLM5NTE3RKEXGYQC6HYGFKS9SHHA6HL9X4339MXHNNQFSH7TS62PU8T9RSWTK6HQ4LV4GW3DPD25DQ8UQQYC909N',
+    });
 
     assert.strictEqual(response[0], 'SendDetailsRoot');
     assert.strictEqual(response[1].screen, 'SendDetails');
-    assert.strictEqual(response[1].params.walletID, bw.getID());
+    assert.ok(response[1].params.uri.startsWith('bitcoin:BC1QR7P8NSYPZEJY4KP7CJS0HL5T9X0VF3AYF6UQPC'));
   });
 });

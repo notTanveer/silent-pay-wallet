@@ -94,11 +94,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>bitcoin</string>
-				<string>lightning</string>
 				<string>shroud</string>
-				<string>bluewallet</string>
-				<string>lapp</string>
-				<string>blue</string>
 			</array>
 		</dict>
 	</array>
