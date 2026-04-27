@@ -35,13 +35,13 @@ type TBucketStorage = {
 
 const isReactNative = typeof navigator !== 'undefined' && navigator?.product === 'ReactNative';
 
-export class Shroud {
+export class ShroudApp {
   static FLAG_ENCRYPTED = 'data_encrypted';
   static DO_NOT_TRACK = 'donottrack';
 
-  private static _instance: Shroud | null = null;
+  private static _instance: ShroudApp | null = null;
 
-  static keys2migrate = [Shroud.DO_NOT_TRACK];
+  static keys2migrate = [ShroudApp.DO_NOT_TRACK];
 
   public cachedPassword?: false | string;
   public tx_metadata: TTXMetadata;
@@ -53,12 +53,12 @@ export class Shroud {
     this.cachedPassword = false;
   }
 
-  static getInstance(): Shroud {
-    if (!Shroud._instance) {
-      Shroud._instance = new Shroud();
+  static getInstance(): ShroudApp {
+    if (!ShroudApp._instance) {
+      ShroudApp._instance = new ShroudApp();
     }
 
-    return Shroud._instance;
+    return ShroudApp._instance;
   }
 
   async migrateKeys() {
@@ -67,7 +67,7 @@ export class Shroud {
       return;
     }
 
-    for (const key of Shroud.keys2migrate) {
+    for (const key of ShroudApp.keys2migrate) {
       try {
         const value = await RNSecureKeyStore.get(key);
         if (value) {
@@ -125,9 +125,9 @@ export class Shroud {
   storageIsEncrypted = async (): Promise<boolean> => {
     let data;
     try {
-      data = await this.getItemWithFallbackToRealm(Shroud.FLAG_ENCRYPTED);
+      data = await this.getItemWithFallbackToRealm(ShroudApp.FLAG_ENCRYPTED);
     } catch (error: any) {
-      console.warn('error reading `' + Shroud.FLAG_ENCRYPTED + '` key:', error.message);
+      console.warn('error reading `' + ShroudApp.FLAG_ENCRYPTED + '` key:', error.message);
       return false;
     }
 
@@ -189,7 +189,7 @@ export class Shroud {
     data = JSON.stringify(data);
     this.cachedPassword = password;
     await this.setItem('data', data);
-    await this.setItem(Shroud.FLAG_ENCRYPTED, '1');
+    await this.setItem(ShroudApp.FLAG_ENCRYPTED, '1');
   };
 
   /**
@@ -579,12 +579,12 @@ export class Shroud {
       }
 
       await this.setItem('data', JSON.stringify(data));
-      await this.setItem(Shroud.FLAG_ENCRYPTED, this.cachedPassword ? '1' : '');
+      await this.setItem(ShroudApp.FLAG_ENCRYPTED, this.cachedPassword ? '1' : '');
 
       // now, backing up same data in realm:
       const realmkeyValue = await this.openRealmKeyValue();
       this.saveToRealmKeyValue(realmkeyValue, 'data', JSON.stringify(data));
-      this.saveToRealmKeyValue(realmkeyValue, Shroud.FLAG_ENCRYPTED, this.cachedPassword ? '1' : '');
+      this.saveToRealmKeyValue(realmkeyValue, ShroudApp.FLAG_ENCRYPTED, this.cachedPassword ? '1' : '');
       realmkeyValue.close();
     } catch (error: any) {
       console.error('save to disk exception:', error.message);
@@ -728,27 +728,27 @@ export class Shroud {
   isDoNotTrackEnabled = async (): Promise<boolean> => {
     await DefaultPreference.setName(GROUP_IO_SHROUD);
     try {
-      const keyExists = await AsyncStorage.getItem(Shroud.DO_NOT_TRACK);
+      const keyExists = await AsyncStorage.getItem(ShroudApp.DO_NOT_TRACK);
       if (keyExists !== null) {
         const doNotTrackValue = !!keyExists;
         if (doNotTrackValue) {
-          await DefaultPreference.set(Shroud.DO_NOT_TRACK, '1');
-          await AsyncStorage.removeItem(Shroud.DO_NOT_TRACK);
+          await DefaultPreference.set(ShroudApp.DO_NOT_TRACK, '1');
+          await AsyncStorage.removeItem(ShroudApp.DO_NOT_TRACK);
         } else {
-          return Boolean(await DefaultPreference.get(Shroud.DO_NOT_TRACK));
+          return Boolean(await DefaultPreference.get(ShroudApp.DO_NOT_TRACK));
         }
       }
     } catch (_) {}
-    const doNotTrackValue = await DefaultPreference.get(Shroud.DO_NOT_TRACK);
+    const doNotTrackValue = await DefaultPreference.get(ShroudApp.DO_NOT_TRACK);
     return doNotTrackValue === '1' || false;
   };
 
   setDoNotTrack = async (value: boolean) => {
     await DefaultPreference.setName(GROUP_IO_SHROUD);
     if (value) {
-      await DefaultPreference.set(Shroud.DO_NOT_TRACK, '1');
+      await DefaultPreference.set(ShroudApp.DO_NOT_TRACK, '1');
     } else {
-      await DefaultPreference.clear(Shroud.DO_NOT_TRACK);
+      await DefaultPreference.clear(ShroudApp.DO_NOT_TRACK);
     }
   };
 

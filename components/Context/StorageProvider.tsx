@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionManager, LayoutAnimation } from 'react-native';
 import A from '../../modules/analytics';
-import { Shroud, TTXMetadata } from '../../class';
+import { ShroudApp, TTXMetadata } from '../../class';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import type { TWallet } from '../../class/wallets/types';
 import presentAlert from '../../components/Alert';
@@ -13,7 +13,7 @@ import { isNotificationsEnabled, majorTomToGroundControl, unsubscribe } from '..
 import { BitcoinUnit } from '../../models/bitcoinUnits';
 import { navigationRef } from '../../NavigationService';
 
-const shroudApp = Shroud.getInstance();
+const shroudApp = ShroudApp.getInstance();
 
 // hashmap of timestamps we _started_ refetching some wallet
 const _lastTimeTriedToRefetchWallet: { [walletID: string]: number } = {};

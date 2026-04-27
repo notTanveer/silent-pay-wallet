@@ -6,7 +6,7 @@ import DefaultPreference from 'react-native-default-preference';
 import { isReadClipboardAllowed, setReadClipboardAllowed } from '../../modules/clipboard';
 import { getPreferredCurrency, GROUP_IO_SHROUD, initCurrencyDaemon, setPreferredCurrency } from '../../modules/currency';
 import { clearUseURv1, isURv1Enabled, setUseURv1 } from '../../modules/ur';
-import { Shroud } from '../../class';
+import { ShroudApp } from '../../class';
 import { saveLanguage, STORAGE_KEY } from '../../loc';
 import { FiatUnit, TFiatUnit } from '../../models/fiatUnit';
 import {
@@ -22,7 +22,7 @@ const TotalWalletsBalancePreferredUnit = 'TotalWalletsBalancePreferredUnit';
 const getDoNotTrackStorage = async (): Promise<boolean> => {
   try {
     await DefaultPreference.setName(GROUP_IO_SHROUD);
-    const doNotTrack = await DefaultPreference.get(Shroud.DO_NOT_TRACK);
+    const doNotTrack = await DefaultPreference.get(ShroudApp.DO_NOT_TRACK);
     return doNotTrack === '1';
   } catch {
     console.error('Error getting DoNotTrack');
@@ -230,9 +230,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
     try {
       await DefaultPreference.setName(GROUP_IO_SHROUD);
       if (value) {
-        await DefaultPreference.set(Shroud.DO_NOT_TRACK, '1');
+        await DefaultPreference.set(ShroudApp.DO_NOT_TRACK, '1');
       } else {
-        await DefaultPreference.clear(Shroud.DO_NOT_TRACK);
+        await DefaultPreference.clear(ShroudApp.DO_NOT_TRACK);
       }
       setIsDoNotTrackEnabled(value);
     } catch (e) {

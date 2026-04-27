@@ -1,9 +1,9 @@
 import Bugsnag from '@bugsnag/react-native';
 import { getUniqueId } from 'react-native-device-info';
 
-import { Shroud } from '../class';
+import { ShroudApp } from '../class';
 
-const shroudApp = Shroud.getInstance();
+const shroudApp = ShroudApp.getInstance();
 
 /**
  * in case Bugsnag was started, but user decided to opt out while using the app, we have this
