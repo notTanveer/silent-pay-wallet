@@ -373,7 +373,6 @@
         "write_down_header": "Create a manual backup",
         "write_down": "Write down and securely store these words. Use them to restore your wallet at a later time.",
         "wallet_type_this": "This wallet type is {type}.",
-        "share_number": "Share {number}",
         "copy_ln_public": "Copy and securely store this information to restore your wallet at a later time.",
         "xpub_title": "Wallet XPUB",
         "more_info": "More Info",
