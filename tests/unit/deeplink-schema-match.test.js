@@ -99,9 +99,7 @@ describe.each(['', '//'])('unit - DeepLinkSchemaMatch', function (suffix) {
       },
     });
 
-    decoded = DeeplinkSchemaMatch.bip21decode(
-      `bitcoin:${suffix}bc1qnapskphjnwzw2w3dk4anpxntunc77v6qrua0f7?amount=0.0001`,
-    );
+    decoded = DeeplinkSchemaMatch.bip21decode(`bitcoin:${suffix}bc1qnapskphjnwzw2w3dk4anpxntunc77v6qrua0f7?amount=0.0001`);
 
     decoded = DeeplinkSchemaMatch.bip21decode(`BITCOIN:${suffix}1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH?amount=20.3&label=Foobar`);
     assert.deepStrictEqual(decoded, {
@@ -133,9 +131,7 @@ describe.each(['', '//'])('unit - DeepLinkSchemaMatch', function (suffix) {
 
   it('can decodeBitcoinUri', () => {
     assert.deepStrictEqual(
-      DeeplinkSchemaMatch.decodeBitcoinUri(
-        `bitcoin:${suffix}bc1qnapskphjnwzw2w3dk4anpxntunc77v6qrua0f7?amount=0.0001`,
-      ),
+      DeeplinkSchemaMatch.decodeBitcoinUri(`bitcoin:${suffix}bc1qnapskphjnwzw2w3dk4anpxntunc77v6qrua0f7?amount=0.0001`),
       {
         address: 'bc1qnapskphjnwzw2w3dk4anpxntunc77v6qrua0f7',
         amount: 0.0001,

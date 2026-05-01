@@ -773,9 +773,7 @@ describe('Shroud UI Tests - no wallets', () => {
     await device.pressBack();
     await waitForId('WalletsList');
     await tapAndTapAgainIfElementIsNotVisible('HomeScreenScanButton', 'ScanQrBackdoorButton');
-    await scanText(
-      'bitcoin:1DamianM2k8WfNEeJmyqSe2YW1upB7UATx?amount=0.000001',
-    );
+    await scanText('bitcoin:1DamianM2k8WfNEeJmyqSe2YW1upB7UATx?amount=0.000001');
 
     await waitForId('SelectWalletsList');
     await element(by.text('Imported Lightning')).tap();
@@ -788,9 +786,7 @@ describe('Shroud UI Tests - no wallets', () => {
     await device.pressBack();
     await waitForId('WalletsList');
     await tapAndTapAgainIfElementIsNotVisible('HomeScreenScanButton', 'ScanQrBackdoorButton');
-    await scanText(
-      'bitcoin:1DamianM2k8WfNEeJmyqSe2YW1upB7UATx?amount=0.000001',
-    );
+    await scanText('bitcoin:1DamianM2k8WfNEeJmyqSe2YW1upB7UATx?amount=0.000001');
 
     await waitForId('SelectWalletsList');
     await element(by.text('cr34t3d')).tap();
