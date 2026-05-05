@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
-import { navigationRef } from '../NavigationService.ts';
+import { navigationRef } from '../NavigationService';
 
 const isCameraAuthorizationStatusGranted = async () => {
   const status = await check(Platform.OS === 'android' ? PERMISSIONS.ANDROID.CAMERA : PERMISSIONS.IOS.CAMERA);
