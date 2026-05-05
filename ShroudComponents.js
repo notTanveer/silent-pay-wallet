@@ -3,7 +3,6 @@ import React, { forwardRef } from 'react';
 import { Dimensions, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Icon, Text } from '@rneui/themed';
 import { useTheme } from './components/themes';
-import { useLocale } from '@react-navigation/native';
 
 const { height, width } = Dimensions.get('window');
 const aspectRatio = height / width;
@@ -39,11 +38,9 @@ export const ShroudCard = props => {
 
 export const ShroudText = ({ bold = false, ...props }) => {
   const { colors } = useTheme();
-  const { direction } = useLocale();
   const style = StyleSheet.compose(
     {
       color: colors.foregroundColor,
-      writingDirection: direction,
       fontWeight: bold ? 'bold' : 'normal',
     },
     props.style,
@@ -58,7 +55,6 @@ export const ShroudTextCentered = props => {
 
 export const ShroudFormLabel = props => {
   const { colors } = useTheme();
-  const { direction } = useLocale();
 
   return (
     <Text
@@ -67,7 +63,6 @@ export const ShroudFormLabel = props => {
         color: colors.foregroundColor,
         fontWeight: '400',
         marginHorizontal: 20,
-        writingDirection: direction,
       }}
     />
   );

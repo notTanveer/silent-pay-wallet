@@ -292,9 +292,8 @@ const postTokenConfig = async () => {
   }
 
   try {
-    const lang = (await AsyncStorage.getItem('lang')) || 'en';
     const appVersion = getSystemName() + ' ' + getSystemVersion() + ';' + getApplicationName() + ' ' + getVersion();
-    console.debug('postTokenConfig: Posting configuration', { lang, appVersion });
+    console.debug('postTokenConfig: Posting configuration', { appVersion });
 
     await fetch(`${baseURI}/setTokenConfiguration`, {
       method: 'POST',
@@ -302,13 +301,12 @@ const postTokenConfig = async () => {
       body: JSON.stringify({
         token: pushToken.token,
         os: pushToken.os,
-        lang,
+        lang: 'en',
         app_version: appVersion,
       }),
     });
   } catch (e) {
     console.error(e);
-    await AsyncStorage.setItem('lang', 'en');
     throw e;
   }
 };
