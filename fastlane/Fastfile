@@ -2,8 +2,6 @@
 def app_identifiers
   [
     "org.bitshala.shroud",
-    "org.bitshala.shroud.watch",
-    "org.bitshala.shroud.watch.extension",
     "org.bitshala.shroud.Stickers",
     "org.bitshala.shroud.MarketWidget"
   ]
