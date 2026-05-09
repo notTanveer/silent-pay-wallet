@@ -63,9 +63,12 @@ The above command will build the app and install it. Once you launch the app it 
 * To run on iOS:
 
 ```
+npm run rust:build
 npx pod-install
 npm start
 ```
+
+`npm run rust:build` compiles the Rust silent-payments crate and writes `ios/RustJsiBridge.xcframework`, which the `RustJsiBridge` pod links against. Re-run it whenever you change Rust sources; the xcframework is gitignored and not committed.
 
 In another terminal window within the Shroud folder:
 ```
