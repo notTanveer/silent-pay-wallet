@@ -75,7 +75,7 @@ class DeeplinkSchemaMatch {
   }
 
   /**
-   * Extracts the server from a deeplink like `shroud:setelectrumserver?server=electrum1.bluewallet.io%3A443%3As`.
+   * Extracts the server from a deeplink like `shroud:setelectrumserver?server=electrum.example.com%3A443%3As`.
    * Returns false if the URL is not a valid setelectrumserver action.
    */
   static getServerFromSetElectrumServerAction(url: string): string | false {
