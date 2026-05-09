@@ -75,7 +75,7 @@ jobs:
         with:
           xcode-version: latest
 
-      - name: Install Simulator Runtimes (iOS & watchOS)
+      - name: Install Simulator Runtimes (iOS)
         run: |
           echo "Available simulator runtimes (before):"
           xcrun simctl list runtimes
@@ -89,14 +89,6 @@ jobs:
             xcodebuild -downloadPlatform iOS
           else
             echo "iOS 17 or newer simulator runtime already present."
-          fi
-
-          # Ensure a watchOS 11+ runtime exists
-          if ! xcrun simctl list runtimes | grep -Eq "watchOS (1[1-9]|[2-9][0-9])"; then
-            echo "Installing watchOS simulator runtime (11 or newer)..."
-            xcodebuild -downloadPlatform watchOS
-          else
-            echo "watchOS 11 or newer simulator runtime already present."
           fi
 
           echo "Available simulator runtimes (after):"
