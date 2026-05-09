@@ -81,7 +81,7 @@ npx pod-install
 npm start
 ```
 
-Open ios/BlueWallet.xcworkspace. Once the project loads, select the scheme/target BlueWallet. Click Run.
+Open ios/Shroud.xcworkspace. Once the project loads, select the scheme/target Shroud. Click Run.
 
 ## TESTS
 

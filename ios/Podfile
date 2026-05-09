@@ -18,7 +18,7 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
-workspace 'BlueWallet'
+workspace 'Shroud'
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 setup_permissions(['Camera', 'Notifications'])
@@ -43,7 +43,7 @@ def configure_target()
 end
 
 
-target 'BlueWallet' do
+target 'Shroud' do
   configure_target()
 end
 

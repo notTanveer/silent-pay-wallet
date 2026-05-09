@@ -17,7 +17,7 @@
                BlueprintIdentifier = "6D2A6460258BA92C0092292B"
                BuildableName = "Stickers.appex"
                BlueprintName = "Stickers"
-               ReferencedContainer = "container:BlueWallet.xcodeproj">
+               ReferencedContainer = "container:Shroud.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -29,9 +29,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "BlueWallet.app"
-               BlueprintName = "BlueWallet"
-               ReferencedContainer = "container:BlueWallet.xcodeproj">
+               BuildableName = "Shroud.app"
+               BlueprintName = "Shroud"
+               ReferencedContainer = "container:Shroud.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -49,9 +49,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B47B21E82B2128B8001F6690"
-               BuildableName = "BlueWalletUITests.xctest"
-               BlueprintName = "BlueWalletUITests"
-               ReferencedContainer = "container:BlueWallet.xcodeproj">
+               BuildableName = "ShroudUITests.xctest"
+               BlueprintName = "ShroudUITests"
+               ReferencedContainer = "container:Shroud.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -73,9 +73,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "BlueWallet.app"
-            BlueprintName = "BlueWallet"
-            ReferencedContainer = "container:BlueWallet.xcodeproj">
+            BuildableName = "Shroud.app"
+            BlueprintName = "Shroud"
+            ReferencedContainer = "container:Shroud.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -92,9 +92,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "BlueWallet.app"
-            BlueprintName = "BlueWallet"
-            ReferencedContainer = "container:BlueWallet.xcodeproj">
+            BuildableName = "Shroud.app"
+            BlueprintName = "Shroud"
+            ReferencedContainer = "container:Shroud.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

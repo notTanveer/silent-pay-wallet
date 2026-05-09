@@ -125,7 +125,7 @@ jobs:
       - name: Determine Marketing Version
         id: determine_marketing_version
         run: |
-          MARKETING_VERSION=$(grep MARKETING_VERSION BlueWallet.xcodeproj/project.pbxproj | awk -F '= ' '{print $2}' | tr -d ' ;' | head -1)
+          MARKETING_VERSION=$(grep MARKETING_VERSION Shroud.xcodeproj/project.pbxproj | awk -F '= ' '{print $2}' | tr -d ' ;' | head -1)
           echo "PROJECT_VERSION=$MARKETING_VERSION" >> $GITHUB_ENV
           echo "project_version=$MARKETING_VERSION" >> $GITHUB_OUTPUT
         working-directory: ios

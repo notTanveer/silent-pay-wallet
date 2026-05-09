@@ -1,14 +1,14 @@
 //
-//  BlueWalletUITest.swift
-//  BlueWalletUITests
+//  ShroudUITest.swift
+//  ShroudUITests
 //
 //  Created by Marcos Rodriguez on 2/28/24.
-//  Copyright © 2024 BlueWallet. All rights reserved.
+//  Copyright © 2026 Shroud contributors. All rights reserved.
 //
 
 import XCTest
 
-final class BlueWalletUITest: XCTestCase {
+final class ShroudUITest: XCTestCase {
   
   override func setUpWithError() throws {
         continueAfterFailure = false

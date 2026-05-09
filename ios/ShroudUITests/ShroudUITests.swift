@@ -1,14 +1,14 @@
 //
-//  BlueWalletUITests.swift
-//  BlueWalletUITests
+//  ShroudUITests.swift
+//  ShroudUITests
 //
 //  Created by Marcos Rodriguez on 12/6/23.
-//  Copyright © 2023 BlueWallet. All rights reserved.
+//  Copyright © 2026 Shroud contributors. All rights reserved.
 //
 
 import XCTest
 
-class BlueWalletUITests: XCTestCase {
+class ShroudUITests: XCTestCase {
 
     var app: XCUIApplication!
 

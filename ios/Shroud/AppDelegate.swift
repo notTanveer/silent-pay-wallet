@@ -417,7 +417,7 @@ class AppDelegate: RCTAppDelegate, UNUserNotificationCenterDelegate {
             builder.replace(menu: .file, with: newFileMenu)
         }
         
-        // BlueWallet -> Settings (Command + ,)
+        // Shroud -> Settings (Command + ,)
         let settingsCommand = UIKeyCommand(
             title: "Settings...",
             action: #selector(openSettings),
@@ -462,7 +462,7 @@ class AppDelegate: RCTAppDelegate, UNUserNotificationCenterDelegate {
     }
     
     @objc func showHelp(_ sender: Any) {
-        if let url = URL(string: "https://bluewallet.io/docs") {
+        if let url = URL(string: "https://github.com/Bitshala-Incubator/silent-pay-wallet") {
             UIApplication.shared.open(url, options: [:], completionHandler: nil)
         }
     }
