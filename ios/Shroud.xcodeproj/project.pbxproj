@@ -73,7 +73,6 @@
 		B4549F362B82B10D002E3153 /* ci_post_clone.sh in Resources */ = {isa = PBXBuildFile; fileRef = B4549F352B82B10D002E3153 /* ci_post_clone.sh */; };
 		B461B852299599F800E431AA /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B461B851299599F800E431AA /* AppDelegate.swift */; };
 		B4742E972CCDBE8300380EEE /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B4742E962CCDBE8300380EEE /* Localizable.xcstrings */; };
-		B4742E9A2CCDBE8300380EEE /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B4742E962CCDBE8300380EEE /* Localizable.xcstrings */; };
 		B4742E9B2CCDBE8300380EEE /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B4742E962CCDBE8300380EEE /* Localizable.xcstrings */; };
 		B4793DBB2CEDACBD00C92C2E /* Chain.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4793DBA2CEDACBD00C92C2E /* Chain.swift */; };
 		B4793DBC2CEDACBD00C92C2E /* Chain.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4793DBA2CEDACBD00C92C2E /* Chain.swift */; };
