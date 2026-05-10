@@ -189,15 +189,11 @@ const useCompanionListeners = (skipIfNotInitialized = true) => {
             throw new Error(loc.send.qr_error_no_qrcode);
           }
           triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
-          DeeplinkSchemaMatch.navigationRouteFor(
-            { url: qrValue },
-            (value: [string, any]) => navigationRef.navigate(...value),
-            {
-              wallets,
-              addWallet,
-              saveToDisk,
-            },
-          );
+          DeeplinkSchemaMatch.navigationRouteFor({ url: qrValue }, (value: [string, any]) => navigationRef.navigate(...value), {
+            wallets,
+            addWallet,
+            saveToDisk,
+          });
         } else {
           DeeplinkSchemaMatch.navigationRouteFor(event, (value: [string, any]) => navigationRef.navigate(...value), {
             wallets,

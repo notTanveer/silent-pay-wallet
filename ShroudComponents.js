@@ -22,7 +22,12 @@ if (aspectRatio > 1.6) {
 export const ShroudButtonLink = forwardRef((props, ref) => {
   const { colors } = useTheme();
   return (
-    <Pressable accessibilityRole="button" style={({ pressed }) => [styles.shroudButtonLink, pressed && styles.pressed]} {...props} ref={ref}>
+    <Pressable
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.shroudButtonLink, pressed && styles.pressed]}
+      {...props}
+      ref={ref}
+    >
       <Text style={{ color: colors.foregroundColor, textAlign: 'center', fontSize: 16 }}>{props.title}</Text>
     </Pressable>
   );

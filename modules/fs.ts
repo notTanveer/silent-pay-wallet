@@ -111,7 +111,7 @@ export const showImagePickerAndReadImage = async (): Promise<string | undefined>
       maxHeight: 800,
       maxWidth: 600,
       selectionLimit: 1,
-      includeBase64: true
+      includeBase64: true,
     });
 
     if (response.didCancel) {
@@ -139,7 +139,14 @@ export const showFilePickerAndReadFile = async function (): Promise<{ data: stri
     const [pickedFile] = await pick({
       type:
         Platform.OS === 'ios'
-          ? ['org.bitshala.shroud.psbt', 'org.bitshala.shroud.psbt.txn', 'org.bitshala.shroud.backup', types.plainText, types.json, types.images]
+          ? [
+              'org.bitshala.shroud.psbt',
+              'org.bitshala.shroud.psbt.txn',
+              'org.bitshala.shroud.backup',
+              types.plainText,
+              types.json,
+              types.images,
+            ]
           : [types.allFiles],
     });
 
@@ -231,7 +238,8 @@ export const openSignedTransactionRaw: () => Promise<string> = async () => {
 
 export const pickTransaction = async () => {
   const [res] = await pick({
-    type: Platform.OS === 'ios' ? ['org.bitshala.shroud.psbt', 'org.bitshala.shroud.psbt.txn', types.plainText, types.json] : [types.allFiles],
+    type:
+      Platform.OS === 'ios' ? ['org.bitshala.shroud.psbt', 'org.bitshala.shroud.psbt.txn', types.plainText, types.json] : [types.allFiles],
   });
 
   return res;
