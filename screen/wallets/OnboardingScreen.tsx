@@ -41,7 +41,7 @@ const OnboardingScreen: React.FC = () => {
       console.log(`Wallet birth height set to: ${latestHeightResponse.height}`);
       await saveToDisk();
     } catch (error) {
-      console.warn('Could not set birth height, will default to activation height:', error);
+      console.warn('Could not set or persist birth height, will default to activation height:', error);
     }
 
     triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
