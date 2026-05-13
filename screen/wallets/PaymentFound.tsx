@@ -21,7 +21,7 @@ const CONFIRMATIONS_THRESHOLD = 6;
 type PaymentFoundProps = NativeStackScreenProps<DetailViewStackParamList, 'PaymentFound'>;
 
 const PaymentFound: React.FC<PaymentFoundProps> = ({ route }) => {
-  const { txid, blockHeight } = route.params;
+  const { txid, blockHeight, tipHeight } = route.params;
   const { wallets } = useStorage();
   const wallet = wallets.length > 0 ? (wallets[0] as HDSilentPaymentsWallet) : null;
   const navigation = useExtendedNavigation();
@@ -33,11 +33,10 @@ const PaymentFound: React.FC<PaymentFoundProps> = ({ route }) => {
     const tx = wallet.getTransactions().find(t => t.txid === txid);
     if (!tx) return null;
 
-    const lastScanned = wallet.getLastScannedBlock();
-    const confirmations = lastScanned > 0 && blockHeight > 0 ? Math.max(lastScanned - blockHeight + 1, 0) : 0;
+    const confirmations = tipHeight > 0 && blockHeight > 0 ? Math.max(tipHeight - blockHeight + 1, 0) : 0;
 
     return { tx, value: tx.value, confirmations };
-  }, [wallet, txid, blockHeight]);
+  }, [wallet, txid, blockHeight, tipHeight]);
 
   const isConfirmed = (txData?.confirmations ?? 0) >= CONFIRMATIONS_THRESHOLD;
   const confirmationsDisplay = Math.min(txData?.confirmations ?? 0, CONFIRMATIONS_THRESHOLD);

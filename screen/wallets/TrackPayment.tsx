@@ -76,6 +76,7 @@ const TrackPayment: React.FC<TrackPaymentProps> = () => {
         navigate('PaymentFound', {
           txid: txid.trim(),
           blockHeight: result.blockHeight,
+          tipHeight: result.tipHeight,
         });
       } else {
         triggerHapticFeedback(HapticFeedbackTypes.NotificationWarning);

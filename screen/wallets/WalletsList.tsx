@@ -477,10 +477,14 @@ const WalletsList: React.FC = () => {
   const WALLET_HEIGHT = 195;
   const SECTION_HEADER_HEIGHT = 56; // Base height
   const LARGE_TITLE_EXTRA_HEIGHT = 20; // Additional height for large titles
+  const TRACK_PAYMENT_BANNER_HEIGHT = 90;
 
   const getSectionHeaderHeight = useCallback(() => {
-    return SECTION_HEADER_HEIGHT + (sizeClass === SizeClass.Large ? LARGE_TITLE_EXTRA_HEIGHT : 0);
-  }, [sizeClass]);
+    const hasBanner = wallets.length > 0;
+    return (
+      SECTION_HEADER_HEIGHT + (sizeClass === SizeClass.Large ? LARGE_TITLE_EXTRA_HEIGHT : 0) + (hasBanner ? TRACK_PAYMENT_BANNER_HEIGHT : 0)
+    );
+  }, [sizeClass, wallets.length]);
 
   const getItemLayout = useCallback(
     (data: any, index: number) => {

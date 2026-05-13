@@ -75,6 +75,6 @@ export type DetailViewStackParamList = {
   Onboarding: undefined;
   DeleteWallet: undefined;
   TrackPayment: undefined;
-  PaymentFound: { txid: string; blockHeight: number };
+  PaymentFound: { txid: string; blockHeight: number; tipHeight: number };
   NoPaymentFound: undefined;
 };

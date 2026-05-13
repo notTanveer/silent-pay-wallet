@@ -425,9 +425,9 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     }
   }
 
-  async scanByTxid(txid: string): Promise<{ found: boolean; utxosFound: number; blockHeight: number }> {
+  async scanByTxid(txid: string): Promise<{ found: boolean; utxosFound: number; blockHeight: number; tipHeight: number }> {
     const indexer = getDefaultIndexer();
-    const response = await indexer.getTransactionByTxid(txid);
+    const [response, tipResponse] = await Promise.all([indexer.getTransactionByTxid(txid), indexer.getLatestBlockHeight()]);
     const tx = response.transaction;
 
     const result = await this.processTransactions([tx]);
@@ -444,7 +444,12 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       this.onPersistCallback?.();
     }
 
-    return { found: result.utxos.length > 0, utxosFound: result.utxos.length, blockHeight: tx.blockHeight };
+    return {
+      found: result.utxos.length > 0,
+      utxosFound: result.utxos.length,
+      blockHeight: tx.blockHeight,
+      tipHeight: tipResponse.height,
+    };
   }
 
   async fetchUtxo(): Promise<void> {
