@@ -430,7 +430,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     const response = await indexer.getTransactionByTxid(txid);
     const tx = response.transaction;
 
-    const result = await this.processTransactions([tx], tx.blockHeight);
+    const result = await this.processTransactions([tx]);
 
     let newlyAdded = false;
     for (const utxo of result.utxos) {
