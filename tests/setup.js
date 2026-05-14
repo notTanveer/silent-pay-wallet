@@ -39,10 +39,6 @@ jest.mock('react-native-secure-key-store', () => {
   return {};
 });
 
-jest.mock('@react-native-community/push-notification-ios', () => {
-  return {};
-});
-
 jest.mock('react-native-permissions', () => require('react-native-permissions/mock'));
 
 jest.mock('react-native-device-info', () => {
