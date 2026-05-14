@@ -21,11 +21,10 @@ import loc from '../loc';
 import { navigationRef } from '../NavigationService';
 import ActionSheet from '../screen/ActionSheet';
 import { useStorage } from './context/useStorage';
-import useDeviceQuickActions from './useDeviceQuickActions';
 import { useExtendedNavigation } from './useExtendedNavigation';
 
 /**
- * Cross-platform listeners: deeplinks, clipboard prompts, push notifications, quick actions.
+ * Cross-platform listeners: deeplinks, clipboard prompts, push notifications.
  * Apple-only companions (Watch/Widget/Handoff/MenuElements) live in their own hooks and
  * are intentionally not initialized here.
  */
@@ -36,8 +35,6 @@ const useCompanionListeners = (skipIfNotInitialized = true) => {
   const navigation = useExtendedNavigation();
 
   const shouldActivateListeners = !skipIfNotInitialized || walletsInitialized;
-
-  useDeviceQuickActions();
 
   const processPushNotifications = useCallback(async () => {
     if (!shouldActivateListeners) return false;
