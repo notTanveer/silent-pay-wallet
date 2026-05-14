@@ -59,13 +59,6 @@ export type DetailViewStackParamList = {
   ToolsScreen: undefined;
   SettingsPrivacy: undefined;
   WalletXpubRoot: undefined;
-  SignVerifyRoot: {
-    screen: 'SignVerify';
-    params: {
-      walletID: string;
-      address: string;
-    };
-  };
   ReceiveDetails: {
     walletID?: string;
     address: string;
