@@ -72,39 +72,6 @@
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".BitcoinPriceWidget" android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
-                <action android:name="android.intent.action.SCREEN_ON"/>
-                <action android:name="android.intent.action.SCREEN_OFF"/>
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/bitcoin_price_widget_info"/>
-        </receiver>
-
-        <!-- Market Widget -->
-        <receiver
-            android:name=".MarketWidget"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/market_widget_info" />
-        </receiver>
-
-        <!-- Market Widget Configuration Activity -->
-        <activity
-            android:name=".MarketWidgetConfigureActivity"
-            android:exported="true"
-            android:theme="@style/Theme.AppCompat.Light">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
-            </intent-filter>
-        </activity>
-
         <service
             android:name="com.dieam.reactnativepushnotification.modules.RNPushNotificationListenerService"
             android:exported="false">
