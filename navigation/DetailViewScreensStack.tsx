@@ -31,7 +31,6 @@ import About from '../screen/settings/About';
 import DefaultView from '../screen/settings/DefaultView';
 import ElectrumSettings from '../screen/settings/ElectrumSettings';
 import EncryptStorage from '../screen/settings/EncryptStorage';
-import NotificationSettings from '../screen/settings/NotificationSettings';
 import SelfTest from '../screen/settings/SelfTest';
 import ReleaseNotes from '../screen/settings/ReleaseNotes';
 import ToolsScreen from '../screen/settings/tools';
@@ -207,11 +206,6 @@ const DetailViewStackScreensStack = () => {
         name="EncryptStorage"
         component={EncryptStorage}
         options={navigationStyle({ title: loc.settings.encrypt_title })(theme)}
-      />
-      <DetailViewStack.Screen
-        name="NotificationSettings"
-        component={NotificationSettings}
-        options={navigationStyle({ title: loc.settings.notifications })(theme)}
       />
       <DetailViewStack.Screen name="SelfTest" component={SelfTest} options={navigationStyle({ title: loc.settings.selfTest })(theme)} />
       <DetailViewStack.Screen

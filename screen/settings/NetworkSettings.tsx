@@ -1,5 +1,4 @@
 import React from 'react';
-import { isNotificationsCapable } from '../../modules/notifications';
 import ListItem from '../../components/ListItem';
 import loc from '../../loc';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
@@ -20,14 +19,6 @@ const NetworkSettings: React.FC = () => {
     <SafeAreaScrollView contentInsetAdjustmentBehavior="automatic" automaticallyAdjustContentInsets>
       <ListItem title={loc.settings.block_explorer} onPress={navigateToBlockExplorerSettings} testID="BlockExplorerSettings" chevron />
       <ListItem title={loc.settings.network_electrum} onPress={navigateToElectrumSettings} testID="ElectrumSettings" chevron />
-      {isNotificationsCapable && (
-        <ListItem
-          title={loc.settings.notifications}
-          onPress={() => navigation.navigate('NotificationSettings')}
-          testID="NotificationSettings"
-          chevron
-        />
-      )}
     </SafeAreaScrollView>
   );
 };

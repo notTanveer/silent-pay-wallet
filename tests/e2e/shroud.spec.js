@@ -3,7 +3,6 @@ import * as bitcoin from 'bitcoinjs-lib';
 
 import {
   scanText,
-  expectToBeVisible,
   extractTextFromElementById,
   hashIt,
   helperCreateWallet,
@@ -136,20 +135,7 @@ describe('Shroud UI Tests - no wallets', () => {
     await device.pressBack();
     */
 
-    // notifications
-    // turn on notifications if available
-    // console.warn('waitForId');
-    // await sleep(300000);
-    if (await expectToBeVisible('NotificationSettings')) {
-      await element(by.id('NotificationSettings')).tap();
-      await element(by.id('NotificationsSwitch')).tap();
-      await sleep(3_000);
-      await element(by.id('NotificationsSwitch')).tap();
-      await device.pressBack();
-      await device.pressBack();
-    } else {
-      await device.pressBack();
-    }
+    await device.pressBack();
 
     // tools
     await element(by.id('Tools')).tap();

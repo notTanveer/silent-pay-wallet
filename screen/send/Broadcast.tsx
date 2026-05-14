@@ -11,7 +11,6 @@ import SafeArea from '../../components/SafeArea';
 import { useTheme } from '../../components/themes';
 import loc from '../../loc';
 import { useSettings } from '../../hooks/context/useSettings';
-import { majorTomToGroundControl } from '../../modules/notifications';
 import { scanQrHelper } from '../../helpers/scan-qr.ts';
 import { Spacing10, Spacing20 } from '../../components/Spacing';
 import { BigCheckmark } from '../../components/BigCheckmark.tsx';
@@ -70,7 +69,6 @@ const Broadcast: React.FC = () => {
 
           setBroadcastResult(BROADCAST_RESULT.success);
           triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
-          majorTomToGroundControl([], [], [txid]);
         } else {
           setBroadcastResult(BROADCAST_RESULT.error);
         }

@@ -214,7 +214,6 @@
         "encrypt_use_expl": "{type} will be used to confirm your identity before making a transaction, unlocking, exporting, or deleting a wallet. {type} will not be used to unlock encrypted storage.",
         "biometrics_fail": "If {type} is not enabled, or fails to unlock, you can use your device passcode as an alternative.",
         "general": "General",
-        "groundcontrol_explanation": "GroundControl is a free, open-source push notifications server for Bitcoin wallets. You can install your own GroundControl server and put its URL here to not rely on Shroud’s infrastructure. Leave blank to use GroundControl’s default server.",
         "header": "Settings",
         "last_updated": "Last Updated",
         "license": "License",
@@ -222,8 +221,6 @@
         "network_broadcast": "Broadcast Transaction",
         "network_electrum": "Electrum Server",
         "electrum_suggested_description": "When a preferred server is not set, a suggested server will be selected for use at random.",
-        "not_a_valid_uri": "Invalid URI",
-        "notifications": "Notifications",
         "open_link_in_explorer": "Open link in explorer",
         "password": "Password",
         "password_explain": "Enter the password you will use to unlock your storage.",
@@ -237,19 +234,11 @@
         "privacy_do_not_track": "Disable Analytics",
         "privacy_do_not_track_explanation": "Performance and reliability information will not be submitted for analysis.",
         "rate": "Rate",
-        "push_notifications_explanation": "By enabling notifications, your device token will be sent to the server, along with wallet addresses and transaction IDs for all wallets and transactions made after enabling notifications. The device token is used to send notifications, and the wallet information allows us to notify you about incoming Bitcoin or transaction confirmations.\n\nOnly information from after you enable notifications is transmitted—nothing from before is collected.\n\nDisabling notifications will remove all of this information from the server. Additionally, deleting a wallet from the app will also remove its associated information from the server.",
         "selfTest": "Self-Test",
         "save": "Save",
-        "saved": "Saved",
         "success_transaction_broadcasted": "Your transaction has been successfully broadcasted!",
         "warning": "⚠️ Work in Progress - This wallet is currently under active development.",
         "tools": "Tools"
-    },
-    "notifications": {
-        "would_you_like_to_receive_notifications": "Would you like to receive notifications when you get incoming payments?",
-        "notifications_subtitle": "Incoming payments and transaction confirmations",
-        "no_and_dont_ask": "No, and do not ask me again.",
-        "permission_denied_message": "You have denied permission to send you notifications. If you would like to receive notifications, please enable them in your device settings."
     },
     "transactions": {
         "cancel_explain": "We will replace this transaction with one that pays you and has higher fees. This effectively cancels the current transaction. This is called RBF—Replace by Fee.",
@@ -366,7 +355,7 @@
         "copy_ln_public": "Copy and securely store this information to restore your wallet at a later time.",
         "xpub_title": "Wallet XPUB",
         "more_info": "More Info",
-        "details_delete_wallet_error_message": "There was an issue confirming if this wallet was removed from notifications—this could be due to a network issue or poor connection. If you continue, you might still receive notifications for transactions related to this wallet, even after it is deleted.",
+        "details_delete_wallet_error_message": "Something went wrong while deleting this wallet. You can try again, or delete it anyway.",
         "details_delete_anyway": "Delete anyway"
     },
     "total_balance_view": {
