@@ -36,5 +36,4 @@ jobs:
       env:
         TRAVIS: 1
         HD_MNEMONIC: ${{ secrets.HD_MNEMONIC }}
-        HD_MNEMONIC_BIP84: ${{ secrets.HD_MNEMONIC_BIP84 }}
         RETRY: 1

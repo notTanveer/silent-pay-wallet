@@ -4,11 +4,11 @@
 find android | grep '\.apk' --color=never | xargs -l rm
 
 # creating fresh keystore
-rm detox.keystore
+rm -f detox.keystore
 keytool -genkeypair -v -keystore detox.keystore -alias detox  -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname  'cn=Unknown, ou=Unknown, o=Unknown, c=Unknown'
 
 # building release APK
-cd android && ./gradlew assembleRelease assembleAndroidTest -DtestBuildType=release && cd ..
+cd android && ./gradlew assembleRelease app:assembleAndroidTest -DtestBuildType=release && cd ..
 
 # signing
 echo wheres waldo?

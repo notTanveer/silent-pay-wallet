@@ -1,4 +1,4 @@
-name: Tests
+name: E2E Tests
 
 # https://dev.to/edvinasbartkus/running-react-native-detox-tests-for-ios-and-android-on-github-actions-2ekn
 # https://medium.com/@reime005/the-best-ci-cd-for-react-native-with-e2e-support-4860b4aaab29
@@ -6,7 +6,7 @@ name: Tests
 env:
   TRAVIS: 1
   HD_MNEMONIC: ${{ secrets.HD_MNEMONIC }}
-  HD_MNEMONIC_BIP84: ${{ secrets.HD_MNEMONIC_BIP84 }}
+  MNEMONIC_TEST: ${{ secrets.MNEMONIC_TEST }}
 
 on: [pull_request]
 
@@ -79,6 +79,12 @@ jobs:
         sudo udevadm control --reload-rules
         sudo udevadm trigger --name-match=kvm
 
+    - name: Build Rust JSI bridge for Android
+      run: npm run rust:build
+
+    - name: Create .env for E2E
+      run: cp .env.example .env
+
     - name: Build
       run: npm run e2e:release-build
 
@@ -89,11 +95,10 @@ jobs:
       uses: reactivecircus/android-emulator-runner@v2
       with:
         api-level: 31
-        avd-name: Pixel_API_29_AOSP
-        force-avd-creation: false
+        avd-name: Pixel_API_31
         emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none -partition-size 2047
         arch: x86_64
-        script: npm run e2e:release-test --  --record-videos all --record-logs all --take-screenshots all --headless -d 200000 -R 5 --artifacts-location /mnt/artifacts
+        script: npm run e2e:release-test --  --record-videos all --record-logs all --take-screenshots all --headless -d 200000 --retries 3 --artifacts-location /mnt/artifacts
 
     - uses: actions/upload-artifact@v4
       if: failure()

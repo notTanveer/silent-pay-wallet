@@ -41,7 +41,6 @@
     "jest-environment-node": "^29.7.0",
     "node-fetch": "^2.6.7",
     "prettier": "^3.2.5",
-    "react-native-dotenv": "^3.4.11",
     "ts-jest": "^29.1.1",
     "typescript": "5.5.4"
   },
@@ -151,6 +150,7 @@
     "silent-payments": "github:BlueWallet/SilentPayments#7ac4d17",
     "stream-browserify": "3.0.0",
     "url": "0.11.4",
-    "wif": "2.0.6"
+    "wif": "2.0.6",
+    "react-native-dotenv": "^3.4.11"
   }
 }
