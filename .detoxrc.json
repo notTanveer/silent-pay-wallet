@@ -10,7 +10,7 @@
     "ios": {
       "type": "ios.app",
       "binaryPath": "SPECIFY_PATH_TO_YOUR_APP_BINARY",
-      "build": "xcodebuild clean build -workspace ios/BlueWallet.xcworkspace -scheme BlueWallet -configuration Release -derivedDataPath ios/build -sdk iphonesimulator13.2"
+      "build": "xcodebuild clean build -workspace ios/Shroud.xcworkspace -scheme Shroud -configuration Release -derivedDataPath ios/build -sdk iphonesimulator13.2"
     },
     "android.debug": {
       "type": "android.apk",
@@ -34,7 +34,7 @@
     "emulator": {
       "type": "android.emulator",
       "device": {
-        "avdName": "Pixel_API_29_AOSP"
+        "avdName": "Pixel_API_31"
       }
     }
   },
