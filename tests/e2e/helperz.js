@@ -42,32 +42,80 @@ export async function waitForText(text, timeout = 33000) {
   }
 }
 
-export async function helperImportWallet(importText, walletType, expectedWalletLabel, expectedBalance, passphrase) {
-  await waitForId('WalletsList');
-
-  await element(by.id('WalletsList')).swipe('left', 'fast', 1); // in case emu screen is small and it doesnt fit
-  await sleep(500); // Wait until bounce animation finishes.
-  // going to Import Wallet screen and importing mnemonic
-  await tapAndTapAgainIfElementIsNotVisible('CreateAWallet', 'ImportWallet');
-  await element(by.id('ImportWallet')).tap();
-  // tapping 5 times invisible button is a backdoor:
-  for (let c = 0; c < 5; c++) {
-    await element(by.id('SpeedBackdoor')).tap();
-    await sleep(1000);
+export async function getSwitchValue(switchId) {
+  try {
+    await expect(element(by.id(switchId))).toHaveToggleValue(true);
+    return true;
+  } catch (_) {
+    return false;
   }
-  await element(by.id('SpeedMnemonicInput')).replaceText(importText);
-  await element(by.id('SpeedWalletTypeInput')).replaceText(walletType);
-  if (passphrase) await element(by.id('SpeedPassphraseInput')).replaceText(passphrase);
-  await element(by.id('SpeedDoImport')).tap();
+}
 
-  // waiting for import result
-  await waitForText('OK', 3 * 61000);
-  await element(by.text('OK')).tap();
+export async function launchAppForE2E({ delete: del = true } = {}) {
+  await device.launchApp({
+    delete: del,
+    newInstance: true,
+    launchArgs: { detoxE2E: true },
+  });
+}
 
-  // lets go inside wallet
-  await element(by.text(expectedWalletLabel)).tap();
-  // label might change in the future
-  await expect(element(by.id('WalletBalance'))).toHaveText(expectedBalance);
+export async function helperCreateWallet() {
+  await device.disableSynchronization();
+  try {
+    await waitFor(element(by.id('CreateWallet')))
+      .toBeVisible()
+      .withTimeout(60_000);
+    await element(by.id('CreateWallet')).tap();
+    await waitFor(element(by.id('PleaseBackupScrollView')))
+      .toBeVisible()
+      .withTimeout(15_000);
+    for (let i = 0; i < 5; i++) {
+      await element(by.id('SkipVerifyBackdoor')).tap();
+    }
+    await waitFor(element(by.id('HomeScreenReceiveButton')))
+      .toBeVisible()
+      .withTimeout(15_000);
+  } finally {
+    await device.enableSynchronization();
+  }
+}
+
+export async function helperImportWallet(mnemonic, { birthDate } = {}) {
+  await device.disableSynchronization();
+  try {
+    await waitFor(element(by.id('ImportWallet')))
+      .toBeVisible()
+      .withTimeout(60_000);
+    await element(by.id('ImportWallet')).tap();
+    await waitFor(element(by.id('MnemonicInput')))
+      .toBeVisible()
+      .withTimeout(15_000);
+    await element(by.id('MnemonicInput')).replaceText(mnemonic);
+    if (birthDate) {
+      await element(by.id('BirthDateInput')).replaceText(birthDate);
+    }
+    await element(by.id('DoImport')).tap();
+    await waitFor(element(by.id('HomeScreenReceiveButton')))
+      .toBeVisible()
+      .withTimeout(60_000);
+  } finally {
+    await device.enableSynchronization();
+  }
+}
+
+// Dismisses the "Have you saved your wallet's backup phrase?" Alert that fires
+// the first time a fresh wallet navigates to an export-gated screen (e.g.
+// Receive). Test-side equivalent of a user clicking "Yes, I have." Silently
+// no-ops if the dialog isn't shown.
+export async function dismissBackupReminderIfPresent({ timeout = 5_000 } = {}) {
+  try {
+    await waitFor(element(by.text('Yes, I have.')))
+      .toBeVisible()
+      .withTimeout(timeout);
+    await element(by.text('Yes, I have.')).tap();
+  } catch (_) {
+    // dialog not shown
+  }
 }
 
 export async function sleep(ms) {
@@ -77,25 +125,6 @@ export async function sleep(ms) {
 export function hashIt(s) {
   return Buffer.from(sha256(s)).toString('hex');
 }
-
-export async function helperDeleteWallet() {
-  await element(by.id('SettingsButton')).tap();
-  await element(by.id('DeleteWalletButton')).tap();
-  await waitForText('Yes, delete');
-  await element(by.text('Yes, delete')).tap();
-  await waitForId('ImportWallet');
-}
-
-/*
-
-module.exports.helperImportWallet = helperImportWallet;
-module.exports.waitForId = waitForId;
-module.exports.waitForText = waitForText;
-module.exports.sleep = sleep;
-module.exports.hashIt = hashIt;
-module.exports.helperDeleteWallet = helperDeleteWallet;
-
-*/
 
 /**
  * a hack to extract element text. warning, this might break in future
@@ -136,26 +165,6 @@ export const expectToBeVisible = async id => {
     return false;
   }
 };
-
-export async function helperCreateWallet(walletName) {
-  await element(by.id('WalletsList')).swipe('left', 'fast', 1); // in case emu screen is small and it doesnt fit
-  await sleep(200); // Wait until bounce animation finishes.
-  await tapAndTapAgainIfElementIsNotVisible('CreateAWallet', 'WalletNameInput');
-  await element(by.id('WalletNameInput')).replaceText(walletName || 'cr34t3d');
-  await waitForId('ActivateBitcoinButton');
-  await element(by.id('ActivateBitcoinButton')).tap();
-  await element(by.id('ActivateBitcoinButton')).tap();
-  // why tf we need 2 taps for it to work..? mystery
-  await tapAndTapAgainIfElementIsNotVisible('Create', 'PleaseBackupScrollView');
-
-  await element(by.id('PleaseBackupScrollView')).swipe('up', 'fast', 1); // in case emu screen is small and it doesnt fit
-
-  await waitForId('PleasebackupOk');
-  await element(by.id('PleasebackupOk')).tap();
-  await expect(element(by.id('WalletsList'))).toBeVisible();
-  await element(by.id('WalletsList')).swipe('right', 'fast', 1); // in case emu screen is small and it doesnt fit
-  await expect(element(by.id(walletName || 'cr34t3d'))).toBeVisible();
-}
 
 export async function tapAndTapAgainIfElementIsNotVisible(idToTap, idToCheckVisible) {
   // tap
