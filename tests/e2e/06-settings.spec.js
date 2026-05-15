@@ -1,0 +1,32 @@
+import { helperCreateWallet, launchAppForE2E } from './helperz';
+
+describe('Settings', () => {
+  beforeAll(async () => {
+    await launchAppForE2E({ delete: true });
+    await helperCreateWallet();
+  });
+
+  it('navigates through visible settings entries', async () => {
+    await element(by.id('SettingsButton')).tap();
+    await waitFor(element(by.id('Currency')))
+      .toBeVisible()
+      .withTimeout(10_000);
+
+    await element(by.id('Currency')).tap();
+    await device.pressBack();
+    await waitFor(element(by.id('Language')))
+      .toBeVisible()
+      .withTimeout(5_000);
+
+    await element(by.id('Language')).tap();
+    await device.pressBack();
+    await waitFor(element(by.id('AboutButton')))
+      .toBeVisible()
+      .withTimeout(5_000);
+
+    await element(by.id('AboutButton')).tap();
+    await waitFor(element(by.id('AboutScrollView')))
+      .toBeVisible()
+      .withTimeout(5_000);
+  });
+});
