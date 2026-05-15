@@ -74,7 +74,7 @@ const OnboardingScreen: React.FC = () => {
           <Text style={[styles.welcomeSubtitle, { color: colors.labelText }]}>{loc.onboarding.subtitle}</Text>
 
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.createButton} onPress={handleContinue}>
+            <TouchableOpacity style={styles.createButton} onPress={handleContinue} testID="CreateWallet">
               <Text style={styles.createButtonText}>{loc.onboarding.create_wallet}</Text>
             </TouchableOpacity>
 

@@ -1,6 +1,15 @@
 import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
-import { BackHandler, ScrollView, StyleSheet, Text, TouchableOpacity, View, InteractionManager } from 'react-native';
+import {
+  BackHandler,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+  InteractionManager,
+} from 'react-native';
 import { useSettings } from '../../hooks/context/useSettings';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useScreenProtect } from '../../hooks/useScreenProtect';
@@ -10,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import SeedWords from '../../components/SeedWords.tsx';
 import loc from '../../loc';
 import SeedVerification from '../../components/SeedVerification';
+import { isE2E } from '../../helpers/e2e';
 
 type RouteProps = RouteProp<AddWalletStackParamList, 'PleaseBackup'>;
 
@@ -17,6 +27,8 @@ enum BackupStep {
   SHOW_SEED = 'show-seed',
   VERIFY = 'verify',
 }
+
+const SKIP_VERIFY_TAP_THRESHOLD = 5;
 
 const PleaseBackup: React.FC = () => {
   const { wallets } = useStorage();
@@ -27,12 +39,17 @@ const PleaseBackup: React.FC = () => {
   const { isPrivacyBlurEnabled } = useSettings();
   const { enableScreenProtect, disableScreenProtect } = useScreenProtect();
   const [currentStep, setCurrentStep] = useState<BackupStep>(BackupStep.SHOW_SEED);
+  const [skipVerifyTaps, setSkipVerifyTaps] = useState(0);
   const handleVerifyComplete = useCallback(() => {
     InteractionManager.runAfterInteractions(() => {
       navigation.navigateToWalletsList();
     });
     return true;
   }, [navigation]);
+
+  useEffect(() => {
+    if (skipVerifyTaps >= SKIP_VERIFY_TAP_THRESHOLD) handleVerifyComplete();
+  }, [skipVerifyTaps, handleVerifyComplete]);
 
   const handleProceedToVerification = () => {
     setCurrentStep(BackupStep.VERIFY);
@@ -78,6 +95,16 @@ const PleaseBackup: React.FC = () => {
                 <Text style={styles.buttonText}>{loc.pleasebackup.noted}</Text>
               </TouchableOpacity>
             </View>
+            {isE2E() && (
+              <TouchableWithoutFeedback
+                onPress={() => setSkipVerifyTaps(c => c + 1)}
+                accessible={false}
+                importantForAccessibility="no-hide-descendants"
+                testID="SkipVerifyBackdoor"
+              >
+                <View style={styles.skipVerifyBackdoor} />
+              </TouchableWithoutFeedback>
+            )}
           </ScrollView>
         )}
 
@@ -136,6 +163,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '500',
     textAlign: 'center',
+  },
+  skipVerifyBackdoor: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    opacity: 0,
   },
 });
 
