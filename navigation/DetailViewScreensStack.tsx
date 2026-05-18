@@ -31,7 +31,6 @@ import About from '../screen/settings/About';
 import DefaultView from '../screen/settings/DefaultView';
 import ElectrumSettings from '../screen/settings/ElectrumSettings';
 import EncryptStorage from '../screen/settings/EncryptStorage';
-import Language from '../screen/settings/Language';
 import NotificationSettings from '../screen/settings/NotificationSettings';
 import SelfTest from '../screen/settings/SelfTest';
 import ReleaseNotes from '../screen/settings/ReleaseNotes';
@@ -209,7 +208,6 @@ const DetailViewStackScreensStack = () => {
         component={EncryptStorage}
         options={navigationStyle({ title: loc.settings.encrypt_title })(theme)}
       />
-      <DetailViewStack.Screen name="Language" component={Language} options={navigationStyle({ title: loc.settings.language })(theme)} />
       <DetailViewStack.Screen
         name="NotificationSettings"
         component={NotificationSettings}

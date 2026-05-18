@@ -15,7 +15,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import * as RNLocalize from 'react-native-localize';
 import debounce from '../../modules/debounce';
 import { TWallet, Utxo } from '../../class/wallets/types';
 import BottomModal, { BottomModalHandle } from '../../components/BottomModal';
@@ -154,9 +153,7 @@ const OutputModal: React.FC<TOutputModalProps> = ({
     tranText: { fontWeight: 'normal', fontSize: 13, color: colors.alternativeTextColor },
     memo: { fontSize: 13, marginTop: 3, color: colors.alternativeTextColor },
   });
-  const confirmationsFormatted = new Intl.NumberFormat(RNLocalize.getLocales()[0].languageCode, { maximumSignificantDigits: 3 }).format(
-    confirmations,
-  );
+  const confirmationsFormatted = new Intl.NumberFormat('en', { maximumSignificantDigits: 3 }).format(confirmations);
 
   return (
     <RNElementsListItem bottomDivider containerStyle={oStyles.container}>
