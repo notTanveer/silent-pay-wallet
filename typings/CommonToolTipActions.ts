@@ -3,9 +3,7 @@ import loc from '../loc';
 
 const keys = {
   CopyTXID: 'copyTX_ID',
-  CopyBlockExplorerLink: 'copy_blockExplorer',
   ExpandNote: 'expandNote',
-  OpenInBlockExplorer: 'open_in_blockExplorer',
   CopyAmount: 'copyAmount',
   CopyNote: 'copyNote',
   ImportWallet: 'importWallet',
@@ -99,16 +97,6 @@ export const CommonToolTipActions: Record<string, ToolTipAction> = {
     id: keys.CopyTXID,
     text: loc.transactions.details_copy_txid,
     icon: icons.Clipboard,
-  },
-  CopyBlockExplorerLink: {
-    id: keys.CopyBlockExplorerLink,
-    text: loc.transactions.details_copy_block_explorer_link,
-    icon: icons.Clipboard,
-  },
-  OpenInBlockExplorer: {
-    id: keys.OpenInBlockExplorer,
-    text: loc.transactions.details_view_in_browser,
-    icon: icons.Link,
   },
   ExpandNote: {
     id: keys.ExpandNote,

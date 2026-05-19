@@ -1,16 +1,15 @@
 import React, { useCallback, useState } from 'react';
 import * as bitcoin from 'bitcoinjs-lib';
-import { ActivityIndicator, Keyboard, Linking, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Keyboard, StyleSheet, TextInput, View } from 'react-native';
 
 import * as Electrum from '../../modules/Electrum';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
-import { ShroudButtonLink, ShroudCard, ShroudFormLabel, ShroudTextCentered } from '../../ShroudComponents';
+import { ShroudCard, ShroudFormLabel, ShroudTextCentered } from '../../ShroudComponents';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
 import SafeArea from '../../components/SafeArea';
 import { useTheme } from '../../components/themes';
 import loc from '../../loc';
-import { useSettings } from '../../hooks/context/useSettings';
 import { scanQrHelper } from '../../helpers/scan-qr.ts';
 import { Spacing10, Spacing20 } from '../../components/Spacing';
 import { BigCheckmark } from '../../components/BigCheckmark.tsx';
@@ -28,7 +27,6 @@ const Broadcast: React.FC = () => {
   const [txHex, setTxHex] = useState<string | undefined>();
   const { colors } = useTheme();
   const [broadcastResult, setBroadcastResult] = useState<string>(BROADCAST_RESULT.none);
-  const { selectedBlockExplorer } = useSettings();
 
   const stylesHooks = StyleSheet.create({
     input: {
@@ -141,13 +139,13 @@ const Broadcast: React.FC = () => {
             <Spacing20 />
           </ShroudCard>
         )}
-        {BROADCAST_RESULT.success === broadcastResult && tx && <SuccessScreen tx={tx} url={`${selectedBlockExplorer.url}/tx/${tx}`} />}
+        {BROADCAST_RESULT.success === broadcastResult && tx && <SuccessScreen tx={tx} />}
       </View>
     </SafeArea>
   );
 };
 
-const SuccessScreen: React.FC<{ tx: string; url: string }> = ({ tx, url }) => {
+const SuccessScreen: React.FC<{ tx: string }> = ({ tx }) => {
   if (!tx) {
     return null;
   }
@@ -160,7 +158,6 @@ const SuccessScreen: React.FC<{ tx: string; url: string }> = ({ tx, url }) => {
           <Spacing20 />
           <ShroudTextCentered>{loc.settings.success_transaction_broadcasted}</ShroudTextCentered>
           <Spacing10 />
-          <ShroudButtonLink title={loc.settings.open_link_in_explorer} onPress={() => Linking.openURL(url)} />
         </View>
       </ShroudCard>
     </View>

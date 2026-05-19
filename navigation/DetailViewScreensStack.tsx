@@ -5,7 +5,6 @@ import navigationStyle, { CloseButtonPosition } from '../components/navigationSt
 import { useTheme } from '../components/themes';
 import loc from '../loc';
 import Broadcast from '../screen/send/Broadcast';
-import IsItMyAddress from '../screen/settings/IsItMyAddress';
 import Success from '../screen/send/success';
 import CPFP from '../screen/transactions/CPFP';
 import TransactionDetails from '../screen/transactions/TransactionDetails';
@@ -14,7 +13,6 @@ import RBFCancel from '../screen/transactions/RBFCancel';
 import TransactionStatus from '../screen/transactions/TransactionStatus';
 import WalletAddresses from '../screen/wallets/WalletAddresses';
 import WalletDetails from '../screen/wallets/WalletDetails';
-import GenerateWord from '../screen/wallets/generateWord';
 import WalletsList from '../screen/wallets/WalletsList';
 import { DetailViewStack } from './index';
 import SettingsButton from '../components/icons/SettingsButton';
@@ -22,19 +20,12 @@ import { useStorage } from '../hooks/context/useStorage';
 import WalletTransactions from '../screen/wallets/WalletTransactions';
 import Settings from '../screen/settings/Settings';
 import Currency from '../screen/settings/Currency';
-import GeneralSettings from '../screen/settings/GeneralSettings';
 import PlausibleDeniability from '../screen/PlausibleDeniability';
 import Licensing from '../screen/settings/Licensing';
-import NetworkSettings from '../screen/settings/NetworkSettings';
-import SettingsBlockExplorer from '../screen/settings/SettingsBlockExplorer';
 import About from '../screen/settings/About';
-import DefaultView from '../screen/settings/DefaultView';
 import ElectrumSettings from '../screen/settings/ElectrumSettings';
 import EncryptStorage from '../screen/settings/EncryptStorage';
 import SelfTest from '../screen/settings/SelfTest';
-import ReleaseNotes from '../screen/settings/ReleaseNotes';
-import ToolsScreen from '../screen/settings/tools';
-import SettingsPrivacy from '../screen/settings/SettingsPrivacy';
 
 import getWalletTransactionsOptions from './helpers/getWalletTransactionsOptions';
 import { useSizeClass, SizeClass } from '../modules/sizeClass';
@@ -132,17 +123,6 @@ const DetailViewStackScreensStack = () => {
         options={navigationStyle({ title: loc.send.create_broadcast })(theme)}
       />
       <DetailViewStack.Screen
-        name="IsItMyAddress"
-        component={IsItMyAddress}
-        initialParams={{ address: undefined }}
-        options={navigationStyle({ title: loc.is_it_my_address.title })(theme)}
-      />
-      <DetailViewStack.Screen
-        name="GenerateWord"
-        component={GenerateWord}
-        options={navigationStyle({ title: loc.autofill_word.title })(theme)}
-      />
-      <DetailViewStack.Screen
         name="Success"
         component={Success}
         options={{
@@ -169,33 +149,12 @@ const DetailViewStackScreensStack = () => {
       />
       <DetailViewStack.Screen name="Currency" component={Currency} options={navigationStyle({ title: loc.settings.currency })(theme)} />
       <DetailViewStack.Screen
-        name="GeneralSettings"
-        component={GeneralSettings}
-        options={navigationStyle({ title: loc.settings.general })(theme)}
-      />
-      <DetailViewStack.Screen
         name="PlausibleDeniability"
         component={PlausibleDeniability}
         options={navigationStyle({ title: loc.plausibledeniability.title })(theme)}
       />
       <DetailViewStack.Screen name="Licensing" component={Licensing} options={navigationStyle({ title: loc.settings.license })(theme)} />
-      <DetailViewStack.Screen
-        name="NetworkSettings"
-        component={NetworkSettings}
-        options={navigationStyle({ title: loc.settings.network })(theme)}
-      />
-      <DetailViewStack.Screen
-        name="SettingsBlockExplorer"
-        component={SettingsBlockExplorer}
-        options={navigationStyle({ title: loc.settings.block_explorer })(theme)}
-      />
-
       <DetailViewStack.Screen name="About" component={About} options={navigationStyle({ title: loc.settings.about })(theme)} />
-      <DetailViewStack.Screen
-        name="DefaultView"
-        component={DefaultView}
-        options={navigationStyle({ title: loc.settings.default_title })(theme)}
-      />
       <DetailViewStack.Screen
         name="ElectrumSettings"
         component={ElectrumSettings}
@@ -208,17 +167,6 @@ const DetailViewStackScreensStack = () => {
         options={navigationStyle({ title: loc.settings.encrypt_title })(theme)}
       />
       <DetailViewStack.Screen name="SelfTest" component={SelfTest} options={navigationStyle({ title: loc.settings.selfTest })(theme)} />
-      <DetailViewStack.Screen
-        name="ReleaseNotes"
-        component={ReleaseNotes}
-        options={navigationStyle({ title: loc.settings.about_release_notes })(theme)}
-      />
-      <DetailViewStack.Screen name="ToolsScreen" component={ToolsScreen} options={navigationStyle({ title: loc.settings.tools })(theme)} />
-      <DetailViewStack.Screen
-        name="SettingsPrivacy"
-        component={SettingsPrivacy}
-        options={navigationStyle({ title: loc.settings.privacy })(theme)}
-      />
       <DetailViewStack.Screen
         name="TrackPayment"
         component={TrackPayment}

@@ -1,4 +1,3 @@
-import { BLOCK_EXPLORERS, getBlockExplorerUrl, saveBlockExplorer, BlockExplorer, normalizeUrl } from '../../models/blockExplorer';
 import * as Electrum from '../../modules/Electrum';
 import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import DefaultPreference from 'react-native-default-preference';
@@ -82,8 +81,6 @@ interface SettingsContextType {
   setIsTotalBalanceEnabledStorage: (value: boolean) => Promise<void>;
   totalBalancePreferredUnit: BitcoinUnit;
   setTotalBalancePreferredUnitStorage: (unit: BitcoinUnit) => Promise<void>;
-  selectedBlockExplorer: BlockExplorer;
-  setBlockExplorerStorage: (explorer: BlockExplorer) => Promise<boolean>;
   isElectrumDisabled: boolean;
   setIsElectrumDisabled: (value: boolean) => void;
 }
@@ -103,8 +100,6 @@ const defaultSettingsContext: SettingsContextType = {
   setIsTotalBalanceEnabledStorage: async () => {},
   totalBalancePreferredUnit: BitcoinUnit.BTC,
   setTotalBalancePreferredUnitStorage: async () => {},
-  selectedBlockExplorer: BLOCK_EXPLORERS.default,
-  setBlockExplorerStorage: async () => false,
   isElectrumDisabled: false,
   setIsElectrumDisabled: () => {},
 };
@@ -119,7 +114,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
   const [isClipboardGetContentEnabled, setIsClipboardGetContentEnabled] = useState<boolean>(true);
   const [isTotalBalanceEnabled, setIsTotalBalanceEnabled] = useState<boolean>(true);
   const [totalBalancePreferredUnit, setTotalBalancePreferredUnit] = useState<BitcoinUnit>(BitcoinUnit.BTC);
-  const [selectedBlockExplorer, setSelectedBlockExplorer] = useState<BlockExplorer>(BLOCK_EXPLORERS.default);
   const [isElectrumDisabled, setIsElectrumDisabled] = useState<boolean>(true);
 
   const { walletsInitialized } = useStorage();
@@ -150,10 +144,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
         }),
         getTotalBalancePreferredUnit().then(preferredUnit => {
           setTotalBalancePreferredUnit(preferredUnit);
-        }),
-        getBlockExplorerUrl().then(url => {
-          const predefinedExplorer = Object.values(BLOCK_EXPLORERS).find(explorer => normalizeUrl(explorer.url) === normalizeUrl(url));
-          setSelectedBlockExplorer(predefinedExplorer ?? ({ key: 'custom', name: 'Custom', url } as BlockExplorer));
         }),
       ];
 
@@ -250,19 +240,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
     }
   }, []);
 
-  const setBlockExplorerStorage = useCallback(async (explorer: BlockExplorer): Promise<boolean> => {
-    try {
-      const success = await saveBlockExplorer(explorer.url);
-      if (success) {
-        setSelectedBlockExplorer(explorer);
-      }
-      return success;
-    } catch (e) {
-      console.error('Error setting BlockExplorer:', e);
-      return false;
-    }
-  }, []);
-
   const value = useMemo(
     () => ({
       preferredFiatCurrency,
@@ -279,8 +256,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
       setIsTotalBalanceEnabledStorage,
       totalBalancePreferredUnit,
       setTotalBalancePreferredUnitStorage,
-      selectedBlockExplorer,
-      setBlockExplorerStorage,
       isElectrumDisabled,
       setIsElectrumDisabled,
     }),
@@ -299,8 +274,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
       setIsTotalBalanceEnabledStorage,
       totalBalancePreferredUnit,
       setTotalBalancePreferredUnitStorage,
-      selectedBlockExplorer,
-      setBlockExplorerStorage,
       isElectrumDisabled,
     ],
   );
