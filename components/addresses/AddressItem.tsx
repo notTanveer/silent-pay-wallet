@@ -61,7 +61,7 @@ const AddressItem = ({ item, balanceUnit, walletID, onPress, searchQuery = '', r
     }
   }, [navigate, walletID, item.address, onPress]);
 
-  const menuActions = useMemo(() => [CommonToolTipActions.CopyTXID, CommonToolTipActions.Share], []);
+  const menuActions = useMemo(() => [CommonToolTipActions.CopyToClipboard, CommonToolTipActions.Share], []);
 
   const balance = formatBalance(item.balance, balanceUnit, true);
 
@@ -75,7 +75,7 @@ const AddressItem = ({ item, balanceUnit, walletID, onPress, searchQuery = '', r
 
   const onToolTipPress = useCallback(
     (id: string) => {
-      if (id === CommonToolTipActions.CopyTXID.id) {
+      if (id === CommonToolTipActions.CopyToClipboard.id) {
         handleCopyPress();
       } else if (id === CommonToolTipActions.Share.id) {
         handleSharePress();
