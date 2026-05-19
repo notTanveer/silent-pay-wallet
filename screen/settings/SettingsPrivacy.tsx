@@ -15,7 +15,6 @@ enum SettingsPrivacySection {
   None,
   All,
   ReadClipboard,
-  Widget,
   TemporaryScreenshots,
   TotalBalance,
 }
