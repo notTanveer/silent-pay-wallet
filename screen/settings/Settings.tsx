@@ -11,6 +11,7 @@ const Settings = () => {
   return (
     <SafeAreaScrollView>
       <ListItem title={loc.settings.currency} onPress={() => navigate('Currency')} testID="Currency" chevron />
+      <ListItem title={loc.settings.encrypt_title} onPress={() => navigate('EncryptStorage')} testID="SecurityButton" chevron />
       {/* TODO: Eventually make this a separate screen with proper description */}
       <DeleteWallet />
       <ListItem title={loc.settings.about} onPress={() => navigate('About')} testID="AboutButton" chevron />
