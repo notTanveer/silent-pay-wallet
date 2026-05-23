@@ -6,7 +6,6 @@ import Share from 'react-native-share';
 import presentAlert from '../components/Alert';
 import loc from '../loc';
 import { isDesktop } from './environment';
-import { readFile } from './react-native-bw-file-access';
 import { detectQRCodeInImage } from 'react-native-camera-kit-no-google';
 
 const _sanitizeFileName = (fileName: string) => {
@@ -14,7 +13,7 @@ const _sanitizeFileName = (fileName: string) => {
   return fileName.replace(/[^a-zA-Z0-9\-_.]/g, '');
 };
 
-export const isCancel = (err: any): boolean => {
+const isCancel = (err: any): boolean => {
   return err.code && err.code === errorCodes.OPERATION_CANCELED;
 };
 
@@ -68,25 +67,6 @@ export const writeFileAndExport = async function (fileName: string, contents: st
     console.error(error);
     presentAlert({ message: error.message });
   }
-};
-
-/**
- * Opens & reads *.psbt files, and returns base64 psbt. FALSE if something went wrong (wont throw).
- */
-export const openSignedTransaction = async function (): Promise<string | false> {
-  try {
-    const [res] = await pick({
-      type: Platform.OS === 'ios' ? ['org.bitshala.shroud.psbt', 'org.bitshala.shroud.psbt.txn', types.json] : [types.allFiles],
-    });
-
-    return await _readPsbtFileIntoBase64(res.uri);
-  } catch (err) {
-    if (!isCancel(err)) {
-      presentAlert({ message: loc.send.details_no_signed_tx });
-    }
-  }
-
-  return false;
 };
 
 const _readPsbtFileIntoBase64 = async function (uri: string): Promise<string> {
@@ -205,17 +185,6 @@ const handleImageFile = async (fileCopyUri: string): Promise<{ data: string | fa
   throw new Error(loc.send.qr_error_no_qrcode);
 };
 
-export const readFileOutsideSandbox = (filePath: string) => {
-  if (Platform.OS === 'ios') {
-    return readFile(filePath);
-  } else if (Platform.OS === 'android') {
-    return RNFS.readFile(filePath);
-  } else {
-    presentAlert({ message: 'Not implemented for this platform' });
-    throw new Error('Not implemented for this platform');
-  }
-};
-
 export const openSignedTransactionRaw: () => Promise<string> = async () => {
   try {
     const [res] = await pick({
@@ -234,13 +203,4 @@ export const openSignedTransactionRaw: () => Promise<string> = async () => {
 
     return '';
   }
-};
-
-export const pickTransaction = async () => {
-  const [res] = await pick({
-    type:
-      Platform.OS === 'ios' ? ['org.bitshala.shroud.psbt', 'org.bitshala.shroud.psbt.txn', types.plainText, types.json] : [types.allFiles],
-  });
-
-  return res;
 };

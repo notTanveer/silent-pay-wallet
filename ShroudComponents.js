@@ -1,17 +1,8 @@
 /* eslint react/prop-types: "off", react-native/no-inline-styles: "off" */
 import React, { forwardRef } from 'react';
-import { Dimensions, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { Icon, Text } from '@rneui/themed';
+import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Text } from '@rneui/themed';
 import { useTheme } from './components/themes';
-
-const { height, width } = Dimensions.get('window');
-const aspectRatio = height / width;
-let isIpad;
-if (aspectRatio > 1.6) {
-  isIpad = false;
-} else {
-  isIpad = true;
-}
 
 /**
  * TODO: remove this comment once this file gets properly converted to typescript.
@@ -101,31 +92,6 @@ export const ShroudFormMultiInput = props => {
     />
   );
 };
-
-export class is {
-  static ipad() {
-    return isIpad;
-  }
-}
-
-export function ShroudBigCheckmark({ style = {} }) {
-  const defaultStyles = {
-    backgroundColor: '#ccddf9',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    alignSelf: 'center',
-    justifyContent: 'center',
-    marginTop: 0,
-    marginBottom: 0,
-  };
-  const mergedStyles = { ...defaultStyles, ...style };
-  return (
-    <View style={mergedStyles}>
-      <Icon name="check" size={50} type="font-awesome" color="#0f5cc0" />
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   shroudButtonLink: {

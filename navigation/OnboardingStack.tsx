@@ -5,7 +5,7 @@ import CreateWalletScreen from '../screen/wallets/CreateWalletScreen';
 import PleaseBackup from '../screen/wallets/PleaseBackup';
 import { RouteProp } from '@react-navigation/native';
 
-export type OnboardingStackParamList = {
+type OnboardingStackParamList = {
   OnboardingMain: undefined;
   CreateWalletScreen: undefined;
   PleaseBackup: { walletID: string };

@@ -3,7 +3,7 @@ import { Dimensions, Platform, useWindowDimensions } from 'react-native';
 import { isDesktop, isTablet } from '../../modules/environment';
 import useAppState from '../../hooks/useAppState';
 
-export enum SizeClass {
+enum SizeClass {
   Compact,
   Regular,
   Large,
@@ -116,7 +116,7 @@ type SizeClassProviderProps = {
   children: ReactNode;
 };
 
-export const SizeClassContext = createContext<ISizeClassContext>({
+const SizeClassContext = createContext<ISizeClassContext>({
   sizeClass: SizeClass.Regular,
   horizontalSizeClass: SizeClass.Regular,
   verticalSizeClass: SizeClass.Regular,

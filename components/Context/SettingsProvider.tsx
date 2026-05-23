@@ -23,7 +23,7 @@ const getDoNotTrackStorage = async (): Promise<boolean> => {
   }
 };
 
-export const setTotalBalanceViewEnabledStorage = async (value: boolean): Promise<void> => {
+const setTotalBalanceViewEnabledStorage = async (value: boolean): Promise<void> => {
   try {
     await DefaultPreference.setName(GROUP_IO_SHROUD);
     await DefaultPreference.set(TotalWalletsBalanceKey, value ? 'true' : 'false');
@@ -33,7 +33,7 @@ export const setTotalBalanceViewEnabledStorage = async (value: boolean): Promise
   }
 };
 
-export const getIsTotalBalanceViewEnabled = async (): Promise<boolean> => {
+const getIsTotalBalanceViewEnabled = async (): Promise<boolean> => {
   try {
     await DefaultPreference.setName(GROUP_IO_SHROUD);
     const isEnabledValue = (await DefaultPreference.get(TotalWalletsBalanceKey)) ?? 'true';
@@ -45,7 +45,7 @@ export const getIsTotalBalanceViewEnabled = async (): Promise<boolean> => {
   }
 };
 
-export const setTotalBalancePreferredUnitStorageFunc = async (unit: BitcoinUnit): Promise<void> => {
+const setTotalBalancePreferredUnitStorageFunc = async (unit: BitcoinUnit): Promise<void> => {
   try {
     await DefaultPreference.setName(GROUP_IO_SHROUD);
     await DefaultPreference.set(TotalWalletsBalancePreferredUnit, unit);
@@ -54,7 +54,7 @@ export const setTotalBalancePreferredUnitStorageFunc = async (unit: BitcoinUnit)
   }
 };
 
-export const getTotalBalancePreferredUnit = async (): Promise<BitcoinUnit> => {
+const getTotalBalancePreferredUnit = async (): Promise<BitcoinUnit> => {
   try {
     await DefaultPreference.setName(GROUP_IO_SHROUD);
     const unit = (await DefaultPreference.get(TotalWalletsBalancePreferredUnit)) as BitcoinUnit | null;
