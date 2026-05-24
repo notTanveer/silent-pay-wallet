@@ -743,15 +743,6 @@ export class ShroudApp {
     return doNotTrackValue === '1' || false;
   };
 
-  setDoNotTrack = async (value: boolean) => {
-    await DefaultPreference.setName(GROUP_IO_SHROUD);
-    if (value) {
-      await DefaultPreference.set(ShroudApp.DO_NOT_TRACK, '1');
-    } else {
-      await DefaultPreference.clear(ShroudApp.DO_NOT_TRACK);
-    }
-  };
-
   /**
    * Simple async sleeper function
    */

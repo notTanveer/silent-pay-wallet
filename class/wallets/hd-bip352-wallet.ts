@@ -6,9 +6,7 @@ import { disconnectIndexer, getDefaultIndexer } from '../../modules/SilentPaymen
 import ecc from '../../modules/noble_ecc';
 import {
   getSilentPaymentAddress,
-  getScanPrivateKey,
   getSpendPrivateKey,
-  getScanPublicKey,
   getSpendPublicKey,
   RustTransactionProcessor,
   createTransactionProcessor,
@@ -209,19 +207,9 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     return getSilentPaymentAddress(seed);
   }
 
-  getScanPrivateKey(): Uint8Array {
-    const seed = this.getSeed();
-    return getScanPrivateKey(seed);
-  }
-
   getSpendPrivateKey(): Uint8Array {
     const seed = this.getSeed();
     return getSpendPrivateKey(seed);
-  }
-
-  getScanPublicKey(): Uint8Array {
-    const seed = this.getSeed();
-    return getScanPublicKey(seed);
   }
 
   getSpendPublicKey(): Uint8Array {
@@ -291,10 +279,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     this.stopPolling();
   }
 
-  isScanActive(): boolean {
-    return this.activeScanPromise !== null;
-  }
-
   private startPolling(): void {
     if (this.isPollingActive) {
       return;
@@ -317,10 +301,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       this.pollingIntervalId = null;
       this.isPollingActive = false;
     }
-  }
-
-  isPolling(): boolean {
-    return this.isPollingActive;
   }
 
   /**
@@ -548,14 +528,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     const silentPaymentBalance = unspentSpUtxos.reduce((sum, utxo) => sum + utxo.value, 0);
 
     return regularBalance + silentPaymentBalance;
-  }
-
-  getLastScannedBlock(): number {
-    return this.lastScannedBlock;
-  }
-
-  getBirthHeight(): number {
-    return this._birthHeight;
   }
 
   setBirthHeight(height: number): void {
@@ -924,54 +896,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       return txid;
     } catch (error) {
       this.releaseUTXOsFromTx(hex);
-      throw error;
-    }
-  }
-
-  setLastScannedBlock(height: number): void {
-    this.lastScannedBlock = height;
-  }
-
-  async refreshUTXOSpentStatus(): Promise<number> {
-    if (this.cancelScanCallbackScan) {
-      return 0;
-    }
-
-    try {
-      const indexer = getDefaultIndexer();
-      const utxos = this.getSilentPaymentUTXOs();
-      let spentCount = 0;
-
-      const utxosByBlock = new Map<number, SilentPaymentUTXO[]>();
-      for (const utxo of utxos) {
-        if (!utxosByBlock.has(utxo.height)) {
-          utxosByBlock.set(utxo.height, []);
-        }
-        utxosByBlock.get(utxo.height)!.push(utxo);
-      }
-
-      for (const [blockHeight, blockUtxos] of utxosByBlock) {
-        try {
-          const response = await indexer.getTransactionsByHeight(blockHeight);
-
-          for (const utxo of blockUtxos) {
-            const tx = response.transactions.find(t => t.id === utxo.txid);
-            if (tx) {
-              const output = tx.outputs.find(o => o.vout === utxo.vout);
-              if (output && Boolean(output.isSpent) && !utxo.isSpent) {
-                this.markUTXOAsSpent(utxo.txid, utxo.vout);
-                spentCount++;
-              }
-            }
-          }
-        } catch (error) {
-          console.warn(`[SP] Failed to check block ${blockHeight}:`, error);
-        }
-      }
-
-      return spentCount;
-    } catch (error) {
-      console.error('[SP] Error refreshing UTXO spent status:', error);
       throw error;
     }
   }

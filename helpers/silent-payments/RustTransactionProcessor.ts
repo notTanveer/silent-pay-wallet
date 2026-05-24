@@ -2,7 +2,7 @@ import { Buffer } from 'buffer';
 import * as bitcoin from 'bitcoinjs-lib';
 import { getScanPrivateKey, getSpendPublicKey } from './SilentPaymentKeyDerivation';
 import { IndexerTransaction, SilentPaymentUTXO } from './types';
-import { spScanTransactions, spScanSingleTransaction, RustMatchedUTXO, RustBatchScanResult } from '../../modules/RustJsiBridge';
+import { spScanTransactions, RustMatchedUTXO, RustBatchScanResult } from '../../modules/RustJsiBridge';
 import { hexToUint8Array } from '../../modules/uint8array-extras';
 
 export class RustTransactionProcessor {
@@ -35,17 +35,6 @@ export class RustTransactionProcessor {
       isSpent: rustUtxo.isSpent,
       blockTime: rustUtxo.blockTime,
     };
-  }
-
-  process(tx: IndexerTransaction, silentPaymentAddress: string): SilentPaymentUTXO[] {
-    try {
-      const matchedUtxos = spScanSingleTransaction(this.scanPrivkeyHex, this.spendPubkeyHex, tx);
-
-      return matchedUtxos.map(utxo => this.convertToSilentPaymentUTXO(utxo, silentPaymentAddress));
-    } catch (error) {
-      console.error(`Error processing transaction ${tx.id}:`, error);
-      return [];
-    }
   }
 
   async processBatch(

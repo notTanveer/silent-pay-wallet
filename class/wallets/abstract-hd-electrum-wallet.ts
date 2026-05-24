@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import BIP32Factory, { BIP32Interface } from 'bip32';
 import * as bip39 from 'bip39';
 import * as bitcoin from 'bitcoinjs-lib';
-import { Psbt, Transaction as BTransaction } from 'bitcoinjs-lib';
+import { Psbt } from 'bitcoinjs-lib';
 import b58 from 'bs58check';
 import coinSelect, { CoinSelectOutput, CoinSelectReturnInput, CoinSelectTarget } from 'coinselect';
 import coinSelectSplit from 'coinselect/split';
@@ -1128,33 +1128,6 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
     return address;
   }
 
-  _nodeToLegacyAddress(hdNode: BIP32Interface): string {
-    const { address } = bitcoin.payments.p2pkh({
-      pubkey: hdNode.publicKey,
-    });
-
-    if (!address) {
-      throw new Error('Could not create address in _nodeToLegacyAddress');
-    }
-
-    return address;
-  }
-
-  /**
-   * Creates Segwit P2SH Bitcoin address
-   */
-  _nodeToP2shSegwitAddress(hdNode: BIP32Interface): string {
-    const { address } = bitcoin.payments.p2sh({
-      redeem: bitcoin.payments.p2wpkh({ pubkey: hdNode.publicKey }),
-    });
-
-    if (!address) {
-      throw new Error('Could not create address in _nodeToP2shSegwitAddress');
-    }
-
-    return address;
-  }
-
   static _getTransactionsFromHistories(histories: Record<string, ElectrumHistory[]>) {
     const txs = [];
     for (const history of Object.values(histories)) {
@@ -1211,47 +1184,6 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
   }
 
   /**
-   * Tries to signs passed psbt object (by reference). If there are enough signatures - tries to finalize psbt
-   * and returns Transaction (ready to extract hex)
-   *
-   * @param psbt {Psbt}
-   * @returns {{ tx: Transaction }}
-   */
-  cosignPsbt(psbt: Psbt) {
-    const seed = this._getSeed();
-    const hdRoot = bip32.fromSeed(seed);
-
-    for (let cc = 0; cc < psbt.inputCount; cc++) {
-      try {
-        psbt.signInputHD(cc, hdRoot);
-      } catch (e) {} // protects agains duplicate cosignings
-
-      if (!psbt.inputHasHDKey(cc, hdRoot)) {
-        for (const derivation of psbt.data.inputs[cc].bip32Derivation || []) {
-          const splt = derivation.path.split('/');
-          const internal = +splt[splt.length - 2];
-          const index = +splt[splt.length - 1];
-          const wif = this._getWIFByIndex(!!internal, index);
-          if (!wif) {
-            throw new Error('Internal error: cant get WIF by index during cosingPsbt');
-          }
-          const keyPair = ECPair.fromWIF(wif);
-          try {
-            psbt.signInput(cc, keyPair);
-          } catch (e) {} // protects agains duplicate cosignings or if this output can't be signed with current wallet
-        }
-      }
-    }
-
-    let tx: BTransaction | false = false;
-    if (this.calculateHowManySignaturesWeHaveFromPsbt(psbt) === psbt.inputCount) {
-      tx = psbt.finalizeAllInputs().extractTransaction();
-    }
-
-    return { tx };
-  }
-
-  /**
    * @param seed {Buffer} Buffer object with seed
    * @returns {string} Hex string of fingerprint derived from mnemonics. Always has length of 8 chars and correct leading zeroes. All caps
    */
@@ -1260,15 +1192,6 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
     let hex = root.fingerprint.toString('hex');
     while (hex.length < 8) hex = '0' + hex; // leading zeroes
     return hex.toUpperCase();
-  }
-
-  /**
-   * @param mnemonic {string}  Mnemonic phrase (12 or 24 words)
-   * @returns {string} Hex fingerprint
-   */
-  static mnemonicToFingerprint(mnemonic: string, passphrase?: string) {
-    const seed = bip39.mnemonicToSeedSync(mnemonic, passphrase);
-    return AbstractHDElectrumWallet.seedToFingerprint(seed);
   }
 
   /**
