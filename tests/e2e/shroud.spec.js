@@ -71,8 +71,6 @@ describe('Shroud UI Tests - no wallets', () => {
     await element(by.id('SettingsPrivacy')).tap();
     await element(by.id('ClipboardSwitch')).tap();
     await element(by.id('ClipboardSwitch')).tap();
-    await element(by.id('QuickActionsSwitch')).tap();
-    await element(by.id('QuickActionsSwitch')).tap();
     await device.pressBack();
     await device.pressBack();
 

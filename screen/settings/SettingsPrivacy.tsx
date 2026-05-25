@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import { openSettings } from 'react-native-permissions';
 import A from '../../modules/analytics';
@@ -15,15 +15,13 @@ enum SettingsPrivacySection {
   None,
   All,
   ReadClipboard,
-  QuickActions,
-  Widget,
   TemporaryScreenshots,
   TotalBalance,
 }
 
 const SettingsPrivacy: React.FC = () => {
   const { colors } = useTheme();
-  const { isStorageEncrypted, wallets } = useStorage();
+  const { wallets } = useStorage();
   const {
     isDoNotTrackEnabled,
     setDoNotTrackStorage,
@@ -31,30 +29,16 @@ const SettingsPrivacy: React.FC = () => {
     setIsPrivacyBlurEnabled,
     isClipboardGetContentEnabled,
     setIsClipboardGetContentEnabledStorage,
-    isQuickActionsEnabled,
-    setIsQuickActionsEnabledStorage,
     isTotalBalanceEnabled,
     setIsTotalBalanceEnabledStorage,
   } = useSettings();
-  const [isLoading, setIsLoading] = useState<number>(SettingsPrivacySection.All);
+  const [isLoading, setIsLoading] = useState<number>(SettingsPrivacySection.None);
 
-  const [storageIsEncrypted, setStorageIsEncrypted] = useState<boolean>(true);
   const styleHooks = StyleSheet.create({
     root: {
       backgroundColor: colors.background,
     },
   });
-
-  useEffect(() => {
-    (async () => {
-      try {
-        setStorageIsEncrypted(await isStorageEncrypted());
-      } catch (e) {
-        console.log(e);
-      }
-      setIsLoading(SettingsPrivacySection.None);
-    })();
-  }, [isStorageEncrypted]);
 
   const onDoNotTrackValueChange = async (value: boolean) => {
     setIsLoading(SettingsPrivacySection.All);
@@ -63,16 +47,6 @@ const SettingsPrivacy: React.FC = () => {
       A.setOptOut(value);
     } catch (e) {
       console.debug('onDoNotTrackValueChange catch', e);
-    }
-    setIsLoading(SettingsPrivacySection.None);
-  };
-
-  const onQuickActionsValueChange = async (value: boolean) => {
-    setIsLoading(SettingsPrivacySection.QuickActions);
-    try {
-      setIsQuickActionsEnabledStorage(value);
-    } catch (e) {
-      console.debug('onQuickActionsValueChange catch', e);
     }
     setIsLoading(SettingsPrivacySection.None);
   };
@@ -115,23 +89,6 @@ const SettingsPrivacy: React.FC = () => {
           testID: 'ClipboardSwitch',
         }}
         subtitle={loc.settings.privacy_clipboard_explanation}
-      />
-
-      <ListItem
-        title={loc.settings.privacy_quickactions}
-        Component={TouchableWithoutFeedback}
-        switch={{
-          onValueChange: onQuickActionsValueChange,
-          value: storageIsEncrypted ? false : isQuickActionsEnabled,
-          disabled: isLoading === SettingsPrivacySection.All || storageIsEncrypted,
-          testID: 'QuickActionsSwitch',
-        }}
-        subtitle={
-          <>
-            <Text style={styles.subtitleText}>{loc.settings.privacy_quickactions_explanation}</Text>
-            {storageIsEncrypted && <Text style={styles.subtitleText}>{loc.settings.encrypted_feature_disabled}</Text>}
-          </>
-        }
       />
 
       <ListItem
