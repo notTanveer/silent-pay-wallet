@@ -2,12 +2,7 @@ import React, { createContext, ReactNode, useEffect, useMemo, useState } from 'r
 import { Dimensions, Platform, useWindowDimensions } from 'react-native';
 import { isDesktop, isTablet } from '../../modules/environment';
 import useAppState from '../../hooks/useAppState';
-
-enum SizeClass {
-  Compact,
-  Regular,
-  Large,
-}
+import { SizeClass } from '../../modules/sizeClass';
 
 interface ISizeClassContext {
   sizeClass: SizeClass;
