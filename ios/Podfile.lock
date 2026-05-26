@@ -1268,8 +1268,6 @@ PODS:
     - ReactCommon/turbomodule/core
   - react-native-biometrics (3.0.1):
     - React-Core
-  - react-native-bw-file-access (1.0.0):
-    - React-Core
   - react-native-capture-protection (2.0.7):
     - React-Core
   - react-native-document-picker (10.1.5):
@@ -1660,8 +1658,6 @@ PODS:
     - React-Core
   - RNCClipboard (1.16.3):
     - React-Core
-  - RNCPushNotificationIOS (1.11.0):
-    - React-Core
   - RNDefaultPreference (1.5.1):
     - React-Core
   - RNDeviceInfo (14.0.4):
@@ -1714,8 +1710,6 @@ PODS:
     - React-Core
   - RNPermissions (5.4.2):
     - React-Core
-  - RNQuickAction (0.3.13):
-    - React
   - RNReactNativeHapticFeedback (2.3.3):
     - DoubleConversion
     - glog
@@ -1971,7 +1965,6 @@ DEPENDENCIES:
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
   - react-native-biometrics (from `../node_modules/react-native-biometrics`)
-  - react-native-bw-file-access (from `../modules/react-native-bw-file-access`)
   - react-native-capture-protection (from `../node_modules/react-native-capture-protection`)
   - "react-native-document-picker (from `../node_modules/@react-native-documents/picker`)"
   - react-native-get-random-values (from `../node_modules/react-native-get-random-values`)
@@ -2013,7 +2006,6 @@ DEPENDENCIES:
   - RealmJS (from `../node_modules/realm`)
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
   - "RNCClipboard (from `../node_modules/@react-native-clipboard/clipboard`)"
-  - "RNCPushNotificationIOS (from `../node_modules/@react-native-community/push-notification-ios`)"
   - RNDefaultPreference (from `../node_modules/react-native-default-preference`)
   - RNDeviceInfo (from `../node_modules/react-native-device-info`)
   - RNFS (from `../node_modules/react-native-fs`)
@@ -2021,7 +2013,6 @@ DEPENDENCIES:
   - RNKeychain (from `../node_modules/react-native-keychain`)
   - RNLocalize (from `../node_modules/react-native-localize`)
   - RNPermissions (from `../node_modules/react-native-permissions`)
-  - RNQuickAction (from `../node_modules/react-native-quick-actions`)
   - RNReactNativeHapticFeedback (from `../node_modules/react-native-haptic-feedback`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
@@ -2121,8 +2112,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
   react-native-biometrics:
     :path: "../node_modules/react-native-biometrics"
-  react-native-bw-file-access:
-    :path: "../modules/react-native-bw-file-access"
   react-native-capture-protection:
     :path: "../node_modules/react-native-capture-protection"
   react-native-document-picker:
@@ -2205,8 +2194,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-async-storage/async-storage"
   RNCClipboard:
     :path: "../node_modules/@react-native-clipboard/clipboard"
-  RNCPushNotificationIOS:
-    :path: "../node_modules/@react-native-community/push-notification-ios"
   RNDefaultPreference:
     :path: "../node_modules/react-native-default-preference"
   RNDeviceInfo:
@@ -2221,8 +2208,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-localize"
   RNPermissions:
     :path: "../node_modules/react-native-permissions"
-  RNQuickAction:
-    :path: "../node_modules/react-native-quick-actions"
   RNReactNativeHapticFeedback:
     :path: "../node_modules/react-native-haptic-feedback"
   RNReanimated:
@@ -2284,7 +2269,6 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 63278529b5cf531a7eaf8fc71244fabb062ca90c
   React-microtasksnativemodule: 6a39463c32ce831c4c2aa8469273114d894b6be9
   react-native-biometrics: 43ed5b828646a7862dbc7945556446be00798e7d
-  react-native-bw-file-access: fe925b77dbf48500df0b294c6851f8c84607a203
   react-native-capture-protection: d2d5ced5fead227abb1304518d55774de19c3021
   react-native-document-picker: d71fb688c2a16a1ad30a622ba2fe4461531dbd57
   react-native-get-random-values: d16467cf726c618e9c7a8c3c39c31faa2244bbba
@@ -2326,7 +2310,6 @@ SPEC CHECKSUMS:
   RealmJS: 9fd51c849eb552ade9f7b11db42a319b4f6cab4c
   RNCAsyncStorage: b44e8a4e798c3e1f56bffccd0f591f674fb9198f
   RNCClipboard: f6679d470d0da2bce2a37b0af7b9e0bf369ecda5
-  RNCPushNotificationIOS: 6c4ca3388c7434e4a662b92e4dfeeee858e6f440
   RNDefaultPreference: 8a089ee8ce829a66c5453e3c5434f0785499d1c3
   RNDeviceInfo: d863506092aef7e7af3a1c350c913d867d795047
   RNFS: 89de7d7f4c0f6bafa05343c578f61118c8282ed8
@@ -2334,7 +2317,6 @@ SPEC CHECKSUMS:
   RNKeychain: fa7765e6af5a8ec866bea4e86d2a1086f562d69f
   RNLocalize: 3c4d0abd777a546fa77bdb6caef85a87fb9ea349
   RNPermissions: c48851513712284b650e8a166fdd409aa81b6104
-  RNQuickAction: c2c8f379e614428be0babe4d53a575739667744d
   RNReactNativeHapticFeedback: f9cfb40676f21a52e9e172648d033f539156a5ec
   RNReanimated: 76e3bdba62bb728ea8d8d23b451e8070e6c2c2bc
   RNScreens: 9ef996b6041d0960a4794a845f7d0808b171b4ef
@@ -2345,6 +2327,6 @@ SPEC CHECKSUMS:
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: e14bad835e12b6c7e2260fc320bd00e0f4b45add
 
-PODFILE CHECKSUM: bb9413d120e560e7bd3a2f4d963a8ac013dff89d
+PODFILE CHECKSUM: 7bec4fba9337ade03a218e100bba2bd1b66f7808
 
 COCOAPODS: 1.15.2
