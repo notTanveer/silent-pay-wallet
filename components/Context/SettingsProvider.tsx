@@ -23,16 +23,6 @@ const getDoNotTrackStorage = async (): Promise<boolean> => {
   }
 };
 
-const setTotalBalanceViewEnabledStorage = async (value: boolean): Promise<void> => {
-  try {
-    await DefaultPreference.setName(GROUP_IO_SHROUD);
-    await DefaultPreference.set(TotalWalletsBalanceKey, value ? 'true' : 'false');
-    console.debug('setTotalBalanceViewEnabledStorage value:', value);
-  } catch (e) {
-    console.error('Error setting TotalBalanceViewEnabled:', e);
-  }
-};
-
 const getIsTotalBalanceViewEnabled = async (): Promise<boolean> => {
   try {
     await DefaultPreference.setName(GROUP_IO_SHROUD);
