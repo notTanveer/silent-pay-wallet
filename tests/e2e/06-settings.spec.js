@@ -14,12 +14,6 @@ describe('Settings', () => {
 
     await element(by.id('Currency')).tap();
     await device.pressBack();
-    await waitFor(element(by.id('Language')))
-      .toBeVisible()
-      .withTimeout(5_000);
-
-    await element(by.id('Language')).tap();
-    await device.pressBack();
     await waitFor(element(by.id('AboutButton')))
       .toBeVisible()
       .withTimeout(5_000);

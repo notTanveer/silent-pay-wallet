@@ -13,4 +13,10 @@ describe('Receive', () => {
       .toBeVisible()
       .withTimeout(15_000);
   });
+
+  it('renders an address', async () => {
+    await waitFor(element(by.id('AddressCopyCard')))
+      .toExist()
+      .withTimeout(15_000);
+  });
 });
