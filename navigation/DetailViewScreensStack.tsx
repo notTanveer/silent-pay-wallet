@@ -16,7 +16,7 @@ import WalletDetails from '../screen/wallets/WalletDetails';
 import WalletsList from '../screen/wallets/WalletsList';
 import { DetailViewStack } from './index';
 import SettingsButton from '../components/icons/SettingsButton';
-import { useStorage } from '../hooks/context/useStorage';
+import { ShroudApp } from '../class';
 import WalletTransactions from '../screen/wallets/WalletTransactions';
 import Settings from '../screen/settings/Settings';
 import Currency from '../screen/settings/Currency';
@@ -34,11 +34,11 @@ import ReceiveDetails from '../screen/receive/ReceiveDetails';
 import TrackPayment from '../screen/wallets/TrackPayment';
 import PaymentFound from '../screen/wallets/PaymentFound';
 import NoPaymentFound from '../screen/wallets/NoPaymentFound';
+import SyncScreen from '../screen/wallets/SyncScreen';
 import OnboardingStack from './OnboardingStack';
 
 const DetailViewStackScreensStack = () => {
   const theme = useTheme();
-  const { wallets } = useStorage();
   const { sizeClass } = useSizeClass();
   const DetailButton = useMemo(() => <HeaderRightButton testID="DetailButton" disabled={true} title={loc.send.create_details} />, []);
   const RightBarButtons = useMemo(() => <SettingsButton />, []);
@@ -56,7 +56,11 @@ const DetailViewStackScreensStack = () => {
     };
   }, [RightBarButtons, sizeClass, theme.colors.customHeader, theme.colors.navigationBarColor]);
 
-  const initialRoute = wallets.length === 0 ? 'Onboarding' : 'WalletsList';
+  // Derive the initial route from the ShroudApp singleton (populated synchronously by
+  // startAndDecrypt before walletsInitialized flips) rather than the React `wallets` state,
+  // which lags one render behind on launch and would otherwise pin us to Onboarding even
+  // when a wallet exists. initialRouteName is only read once at navigator mount.
+  const initialRoute = ShroudApp.getInstance().getWallets().length === 0 ? 'Onboarding' : 'WalletsList';
 
   return (
     <DetailViewStack.Navigator
@@ -200,6 +204,14 @@ const DetailViewStackScreensStack = () => {
           statusBarStyle: 'light',
           headerShown: true,
           presentation: 'modal',
+        })(theme)}
+      />
+      <DetailViewStack.Screen
+        name="SyncScreen"
+        component={SyncScreen}
+        options={navigationStyle({
+          title: loc.sync.title,
+          statusBarStyle: 'auto',
         })(theme)}
       />
     </DetailViewStack.Navigator>

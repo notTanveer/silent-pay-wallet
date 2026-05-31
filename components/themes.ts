@@ -73,6 +73,33 @@ export const BlueDefaultTheme = {
     androidRippleColor: '#CCCCCC',
     primary: '#754CE8',
     secondary: '#472EBF',
+
+    // --- Revamp design tokens (Sync/scan UI) ---
+    // Light-only by design; dark mode inherits these light values via the spread in BlueDarkTheme.
+    // Dedicated keys (not the React Navigation reserved primary/text/border) so DarkTheme can't recolor them.
+    brandPrimary: '#754CE8',
+    statusPaused: '#9792A6',
+    statusSuccess: '#55B685',
+    statusError: '#D0021B',
+    surfaceSubtle: '#F6F5FD', // banner / card background
+    accentSubtle: '#E6E2FA', // banner & card border, "check again" button bg, scanning icon ring
+    progressTrack: '#EAECF0',
+    buttonBorder: '#EBEBEB',
+    textPrimary: '#1A1A1A', // titles, primary copy
+    textSecondary: '#8E8E93', // subtitles, privacy copy
+    textMeta: '#92929B', // ETA / "%" meta text
+    textMuted: '#7B7A7E', // card row labels
+    chevron: '#C7C7CC', // disclosure chevron
+    white: '#FFFFFF',
+    black: '#000000', // large emphasis numerals
+    // SyncStatusIcon per-status ring/fill tints (glyph color = brandPrimary / status* above)
+    syncFillScanning: '#DCD2F9',
+    syncRingPaused: '#EEEEF1',
+    syncFillPaused: '#E4E2E8',
+    syncRingDone: '#E2FAEA',
+    syncFillDone: '#D2F9DC',
+    syncRingError: '#FDF1F2',
+    syncFillError: '#FBE9EB',
   },
 };
 
