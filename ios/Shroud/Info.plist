@@ -187,6 +187,10 @@
 		<string>Ionicons.ttf</string>
 		<string>MaterialIcons.ttf</string>
 		<string>Octicons.ttf</string>
+		<string>ClashGrotesk-Regular.otf</string>
+		<string>ClashGrotesk-Medium.otf</string>
+		<string>ClashGrotesk-Bold.otf</string>
+		<string>ClashGrotesk-Semibold.otf</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>
