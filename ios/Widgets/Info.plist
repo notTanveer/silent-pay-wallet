@@ -64,5 +64,12 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>UIAppFonts</key>
+	<array>
+		<string>ClashGrotesk-Regular.otf</string>
+		<string>ClashGrotesk-Medium.otf</string>
+		<string>ClashGrotesk-Bold.otf</string>
+		<string>ClashGrotesk-Semibold.otf</string>
+	</array>
 </dict>
 </plist>
