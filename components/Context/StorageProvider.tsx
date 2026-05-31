@@ -11,6 +11,7 @@ import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/haptic
 import { startAndDecrypt } from '../../modules/start-and-decrypt';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
 import { navigationRef } from '../../NavigationService';
+import { type ScanStateInfo, IDLE_SCAN_STATE, isScannable } from '../../helpers/silent-payments';
 
 const shroudApp = ShroudApp.getInstance();
 
@@ -48,6 +49,7 @@ interface StorageContextType {
   setItem: typeof shroudApp.setItem;
   handleWalletDeletion: (walletID: string) => Promise<boolean>;
   confirmWalletDeletion: (wallet: any, onConfirmed: () => void) => void;
+  scanState: ScanStateInfo;
 }
 
 export enum WalletTransactionsStatus {
@@ -66,6 +68,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
     WalletTransactionsStatus.NONE,
   );
   const [walletsInitialized, setWalletsInitialized] = useState<boolean>(false);
+  const [scanState, setScanState] = useState<ScanStateInfo>(IDLE_SCAN_STATE);
 
   const selectedWalletID = useCallback((): string | undefined => {
     if (!navigationRef.current || !navigationRef.current.isReady()) return undefined;
@@ -189,6 +192,12 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       if ('setOnPersistCallback' in wallet && typeof wallet.setOnPersistCallback === 'function') {
         wallet.setOnPersistCallback(debouncedPersist);
       }
+      // NOTE: there is a single shared `scanState`. This assumes at most one scannable
+      // (silent-payments) wallet is active at a time; multiple would clobber each other here.
+      if (isScannable(wallet)) {
+        wallet.setOnScanStateChangeCallback(setScanState);
+        setScanState(wallet.getScanState());
+      }
 
       shroudApp.wallets.push(wallet);
       setWallets([...shroudApp.getWallets()]);
@@ -198,7 +207,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
   );
 
   const deleteWallet = useCallback((wallet: TWallet) => {
-    if ('cancelScan' in wallet && typeof wallet.cancelScan === 'function') {
+    if (isScannable(wallet)) {
       console.log('[StorageProvider] Cancelling active scan for wallet before deletion...');
       wallet.cancelScan();
     }
@@ -207,6 +216,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
 
     shroudApp.deleteWallet(wallet);
     setWallets([...shroudApp.getWallets()]);
+    setScanState(IDLE_SCAN_STATE);
   }, []);
 
   const handleWalletDeletion = useCallback(
@@ -277,6 +287,10 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
         }
         if ('setOnPersistCallback' in wallet && typeof wallet.setOnPersistCallback === 'function') {
           wallet.setOnPersistCallback(debouncedPersist);
+        }
+        if (isScannable(wallet)) {
+          wallet.setOnScanStateChangeCallback(setScanState);
+          setScanState(wallet.getScanState());
         }
       });
 
@@ -417,6 +431,9 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       });
 
       await w.fetchBalance();
+      if (isScannable(w) && !w.isScanActive()) {
+        w.fetchTransactions().catch((e: any) => console.warn('[addAndSaveWallet] scan error:', e));
+      }
     },
     [wallets, addWallet, saveToDisk],
   );
@@ -483,6 +500,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       setWalletTransactionUpdateStatus,
       handleWalletDeletion,
       confirmWalletDeletion,
+      scanState,
     }),
     [
       wallets,
@@ -498,6 +516,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       resetWallets,
       walletTransactionUpdateStatus,
       handleWalletDeletion,
+      scanState,
     ],
   );
 

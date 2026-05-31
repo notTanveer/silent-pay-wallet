@@ -2,7 +2,7 @@ import * as bip39 from 'bip39';
 import { Buffer } from 'buffer';
 import { ECPairFactory } from 'ecpair';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet.ts';
-import { disconnectIndexer, getDefaultIndexer } from '../../modules/SilentPaymentIndexer';
+import { getDefaultIndexer } from '../../modules/SilentPaymentIndexer';
 import ecc from '../../modules/noble_ecc';
 import {
   getSilentPaymentAddress,
@@ -16,6 +16,9 @@ import {
   type SilentPaymentUTXO,
   type SilentPaymentUTXOSerializable,
   type ScanProgressCallback,
+  type ScanStateInfo,
+  type ScanStatus,
+  IDLE_SCAN_STATE,
 } from '../../helpers/silent-payments';
 import { BIP352_ACTIVATION_HEIGHT } from '../../modules/constants';
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types.ts';
@@ -23,6 +26,11 @@ import * as bitcoin from 'bitcoinjs-lib';
 import { HDTaprootWallet } from './hd-taproot-wallet.ts';
 
 const ECPair = ECPairFactory(ecc);
+
+// Minimum gap between scan-progress state emissions, to avoid flooding React with re-renders.
+const SCAN_PROGRESS_THROTTLE_MS = 500;
+// Number of recent progress samples kept for the windowed ETA throughput estimate.
+const SCAN_ETA_ROLLING_WINDOW = 10;
 
 export class HDSilentPaymentsWallet extends HDTaprootWallet {
   static readonly type = 'HDSilentPaymentsWallet';
@@ -47,12 +55,63 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
   private _sp_spending_txs: Transaction[] = [];
   private _sp_pending_inputs: Set<string> = new Set(); // "txid:vout"
 
+  private _scanState: ScanStateInfo = IDLE_SCAN_STATE;
+  private _scanPaused: boolean = false;
+  private _scanResumeResolver: (() => void) | null = null;
+  private _scanResumePromise: Promise<void> | null = null;
+  private _lastProgressEmitTime: number = 0;
+  // rolling window of {wall-clock time, cumulative percentComplete} samples, used for ETA
+  private _scanSamples: { t: number; percent: number }[] = [];
+  private _scanStartTime: number = 0;
+  private _onScanStateChangeCallback: ((state: ScanStateInfo) => void) | null = null;
+
   setOnBalanceChangeCallback(callback: (() => void) | null): void {
     this.onBalanceChangeCallback = callback;
   }
 
   setOnPersistCallback(callback: (() => void) | null): void {
     this.onPersistCallback = callback;
+  }
+
+  setOnScanStateChangeCallback(callback: ((state: ScanStateInfo) => void) | null): void {
+    this._onScanStateChangeCallback = callback;
+  }
+
+  getScanState(): ScanStateInfo {
+    return { ...this._scanState, lastScannedBlock: this.lastScannedBlock };
+  }
+
+  pauseScan(): void {
+    if (!this._scanPaused && this.activeScanPromise !== null) {
+      this._scanPaused = true;
+      this._scanResumePromise = new Promise<void>(resolve => {
+        this._scanResumeResolver = resolve;
+      });
+      this._emitScanState('paused');
+    }
+  }
+
+  resumeScan(): void {
+    if (this._scanPaused) {
+      this._scanPaused = false;
+      this._scanResumeResolver?.();
+      this._scanResumeResolver = null;
+      this._scanResumePromise = null;
+      if (this.activeScanPromise !== null) {
+        this._emitScanState('scanning');
+      }
+    }
+  }
+
+  private _emitScanState(status: ScanStatus, overrides?: Partial<ScanStateInfo>): void {
+    this._scanState = { ...this._scanState, status, ...overrides, lastScannedBlock: this.lastScannedBlock };
+    this._onScanStateChangeCallback?.(this._scanState);
+  }
+
+  private async _waitIfPaused(): Promise<void> {
+    if (this._scanPaused && this._scanResumePromise) {
+      await this._scanResumePromise;
+    }
   }
 
   static fromJson(obj: string): HDSilentPaymentsWallet {
@@ -287,8 +346,20 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
   cancelScan(): void {
     this.cancelScanCallbackScan = true;
-    disconnectIndexer();
+    // unblock any pending pause so the scan loop can exit cleanly
+    if (this._scanPaused) {
+      this._scanPaused = false;
+      this._scanResumeResolver?.();
+      this._scanResumeResolver = null;
+      this._scanResumePromise = null;
+    }
+    // NOTE: intentionally do NOT call disconnectIndexer() here. The indexer is an app-wide
+    // singleton initialised once in App.tsx; nulling it on a per-wallet cancel/delete leaves
+    // the whole app without an indexer until restart (e.g. a subsequent wallet import throws
+    // "Silent Payment Indexer not initialized"). cancelScan stops the scan loop via the cancel
+    // flag below; it must not tear down the shared indexer.
     this.stopPolling();
+    this._emitScanState('idle', IDLE_SCAN_STATE);
   }
 
   isScanActive(): boolean {
@@ -359,6 +430,10 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
   }
 
   private async performScan(onProgress?: ScanProgressCallback, forceFullScan: boolean = false): Promise<number> {
+    this._scanStartTime = Date.now();
+    this._scanSamples = [];
+    this._lastProgressEmitTime = 0;
+
     try {
       const indexer = getDefaultIndexer();
       const latestHeightResponse = await indexer.getLatestBlockHeight();
@@ -386,7 +461,50 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
         return 0;
       }
 
+      this._emitScanState('scanning', { startedAt: this._scanStartTime, progress: null, eta: null, etaComputedAt: null, error: null });
+
       let totalUTXOsAdded = 0;
+
+      const wrappedProgress: ScanProgressCallback = async progress => {
+        await this._waitIfPaused();
+
+        this._scanSamples.push({ t: Date.now(), percent: progress.percentComplete });
+        if (this._scanSamples.length > SCAN_ETA_ROLLING_WINDOW) {
+          this._scanSamples.shift();
+        }
+
+        // Estimate ETA from the recent throughput (percent/ms) over the rolling window,
+        // not a raw batch count: time spanned vs. percent gained between the oldest and
+        // newest samples gives the current scan rate, which we extrapolate to 100%.
+        let eta: number | null = null;
+        let etaComputedAt: number | null = null;
+        if (this._scanSamples.length >= 2) {
+          const oldest = this._scanSamples[0];
+          const newest = this._scanSamples[this._scanSamples.length - 1];
+          const elapsedMs = newest.t - oldest.t;
+          const percentGained = newest.percent - oldest.percent;
+          if (elapsedMs > 0 && percentGained > 0) {
+            const msPerPercent = elapsedMs / percentGained;
+            const remainingPercent = 100 - progress.percentComplete;
+            eta = Math.round(msPerPercent * remainingPercent);
+            etaComputedAt = newest.t;
+          }
+        }
+
+        const now = Date.now();
+        const isComplete = progress.percentComplete >= 100;
+        const statusChanged = this._scanState.status !== 'scanning';
+        const throttleElapsed = now - this._lastProgressEmitTime >= SCAN_PROGRESS_THROTTLE_MS;
+
+        if (isComplete || statusChanged || throttleElapsed) {
+          this._lastProgressEmitTime = now;
+          this._emitScanState('scanning', { progress, eta, etaComputedAt });
+        }
+
+        if (onProgress) {
+          await onProgress(progress);
+        }
+      };
 
       await indexer.scanForwardWithCallback(
         startHeight,
@@ -396,15 +514,19 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
             throw new Error('SCAN_CANCELLED');
           }
 
+          await this._waitIfPaused();
+
           const result = await this.processTransactions(transactions);
           const addedCount = this.commitUTXOs(result.utxos, result.lastScannedBlock);
           totalUTXOsAdded += addedCount;
 
           return addedCount;
         },
-        onProgress,
+        wrappedProgress,
         () => this.cancelScanCallbackScan,
       );
+
+      this._emitScanState('idle', IDLE_SCAN_STATE);
 
       if (this.lastScannedBlock >= latestHeight && !this.isPollingActive && !this.cancelScanCallbackScan) {
         this.startPolling();
@@ -413,14 +535,17 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       return totalUTXOsAdded;
     } catch (error: any) {
       if (error.message === 'SCAN_CANCELLED') {
+        this._emitScanState('idle', IDLE_SCAN_STATE);
         return 0;
       }
 
       if (error.message?.includes('not initialized')) {
+        this._emitScanState('error', { error: 'Silent Payment Indexer not initialized.' });
         throw new Error('Silent Payment Indexer not initialized. Please configure the indexer first.');
       }
 
       console.error('[SP] Scan error:', error);
+      this._emitScanState('error', { error: error.message ?? 'Unknown scan error' });
       throw error;
     }
   }
@@ -992,5 +1117,11 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     this._sp_pending_inputs = new Set();
     this.onBalanceChangeCallback = null;
     this.onPersistCallback = null;
+    this._onScanStateChangeCallback = null;
+    this._scanState = IDLE_SCAN_STATE;
+    this._scanPaused = false;
+    this._scanResumeResolver = null;
+    this._scanResumePromise = null;
+    this._scanSamples = [];
   }
 }

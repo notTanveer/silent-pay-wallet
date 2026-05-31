@@ -56,12 +56,64 @@ export interface HealthResponse {
   message?: string;
 }
 
-interface ScanProgress {
+export interface ScanProgress {
   currentBlock: number;
+  tipHeight: number;
   totalBlocks: number;
   blocksScanned: number;
   percentComplete: number;
   utxosFound: number;
+}
+
+export type ScanStatus = 'idle' | 'scanning' | 'paused' | 'error';
+
+export interface ScanStateInfo {
+  status: ScanStatus;
+  progress: ScanProgress | null;
+  startedAt: number | null;
+  eta: number | null;
+  etaComputedAt: number | null;
+  error: string | null;
+  lastScannedBlock: number;
+}
+
+export const IDLE_SCAN_STATE: ScanStateInfo = {
+  status: 'idle',
+  progress: null,
+  startedAt: null,
+  eta: null,
+  etaComputedAt: null,
+  error: null,
+  lastScannedBlock: 0,
+};
+
+/**
+ * Structural contract for wallets that support background scanning with a
+ * progress/pause/resume/cancel surface (currently only HDSilentPaymentsWallet).
+ * Use the `isScannable` guard to narrow a TWallet before calling these.
+ */
+export interface IScannableWallet {
+  getScanState(): ScanStateInfo;
+  setOnScanStateChangeCallback(callback: ((state: ScanStateInfo) => void) | null): void;
+  pauseScan(): void;
+  resumeScan(): void;
+  cancelScan(): void;
+  isScanActive(): boolean;
+  fetchTransactions(): Promise<void>;
+}
+
+export function isScannable(wallet: unknown): wallet is IScannableWallet {
+  if (!wallet || typeof wallet !== 'object') return false;
+  const w = wallet as Record<string, unknown>;
+  return (
+    typeof w.getScanState === 'function' &&
+    typeof w.setOnScanStateChangeCallback === 'function' &&
+    typeof w.pauseScan === 'function' &&
+    typeof w.resumeScan === 'function' &&
+    typeof w.cancelScan === 'function' &&
+    typeof w.isScanActive === 'function' &&
+    typeof w.fetchTransactions === 'function'
+  );
 }
 
 export interface TransactionByTxidResponse {
