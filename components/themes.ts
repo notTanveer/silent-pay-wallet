@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, useTheme as useThemeBase } from '@react-navigation/native';
 import { Appearance } from 'react-native';
 
-export const BlueDefaultTheme = {
+export const ShroudDefaultTheme = {
   ...DefaultTheme,
   closeImage: require('../img/close.png'),
   barStyle: 'dark-content',
@@ -75,7 +75,7 @@ export const BlueDefaultTheme = {
     secondary: '#472EBF',
 
     // --- Revamp design tokens (Sync/scan UI) ---
-    // Light-only by design; dark mode inherits these light values via the spread in BlueDarkTheme.
+    // Light-only by design; dark mode inherits these light values via the spread in ShroudDarkTheme.
     // Dedicated keys (not the React Navigation reserved primary/text/border) so DarkTheme can't recolor them.
     brandPrimary: '#754CE8',
     statusPaused: '#9792A6',
@@ -103,14 +103,14 @@ export const BlueDefaultTheme = {
   },
 };
 
-export type Theme = typeof BlueDefaultTheme;
+export type Theme = typeof ShroudDefaultTheme;
 
-const BlueDarkTheme: Theme = {
+const ShroudDarkTheme: Theme = {
   ...DarkTheme,
   closeImage: require('../img/close-white.png'),
   barStyle: 'light-content',
   colors: {
-    ...BlueDefaultTheme.colors,
+    ...ShroudDefaultTheme.colors,
     ...DarkTheme.colors,
     customHeader: '#000000',
     brandingColor: '#000000',
@@ -169,8 +169,8 @@ export class BlueCurrentTheme {
 
   static updateColorScheme(): void {
     const isColorSchemeDark = Appearance.getColorScheme() === 'dark';
-    BlueCurrentTheme.colors = isColorSchemeDark ? BlueDarkTheme.colors : BlueDefaultTheme.colors;
-    BlueCurrentTheme.closeImage = isColorSchemeDark ? BlueDarkTheme.closeImage : BlueDefaultTheme.closeImage;
+    BlueCurrentTheme.colors = isColorSchemeDark ? ShroudDarkTheme.colors : ShroudDefaultTheme.colors;
+    BlueCurrentTheme.closeImage = isColorSchemeDark ? ShroudDarkTheme.closeImage : ShroudDefaultTheme.closeImage;
   }
 }
 

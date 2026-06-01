@@ -5,7 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { Header } from '../../components/Header';
 import SelfTest from '../../screen/settings/SelfTest';
 import Settings from '../../screen/settings/Settings';
-import { BlueDefaultTheme } from '../../components/themes';
+import { ShroudDefaultTheme } from '../../components/themes';
 
 jest.mock('../../modules/Electrum', () => {
   return {
@@ -13,7 +13,7 @@ jest.mock('../../modules/Electrum', () => {
   };
 });
 
-const Wrapper = ({ children }) => <NavigationContainer theme={BlueDefaultTheme}>{children}</NavigationContainer>;
+const Wrapper = ({ children }) => <NavigationContainer theme={ShroudDefaultTheme}>{children}</NavigationContainer>;
 
 it('Header works', () => {
   const { toJSON } = render(
