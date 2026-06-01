@@ -3,7 +3,7 @@ import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SizeClassProvider } from './components/Context/SizeClassProvider';
 import { SettingsProvider } from './components/Context/SettingsProvider';
-import { BlueDefaultTheme } from './components/themes';
+import { ShroudDefaultTheme } from './components/themes';
 import MasterView from './navigation/MasterView';
 import { navigationRef } from './NavigationService';
 import { useLogger } from '@react-navigation/devtools';
@@ -26,7 +26,7 @@ const App = () => {
 
   return (
     <SizeClassProvider>
-      <NavigationContainer ref={navigationRef} theme={BlueDefaultTheme}>
+      <NavigationContainer ref={navigationRef} theme={ShroudDefaultTheme}>
         <SafeAreaProvider>
           <StorageProvider>
             <SettingsProvider>
