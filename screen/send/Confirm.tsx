@@ -98,6 +98,8 @@ const Confirm: React.FC = () => {
   const wallet = wallets.find((w: TWallet) => w.getID() === walletID) as TWallet;
   const feeSatoshi = new BigNumber(fee).multipliedBy(100000000).toNumber();
   const { colors } = useTheme();
+  const [copiedAddr, setCopiedAddr] = React.useState(false);
+  const [copiedTxid, setCopiedTxid] = React.useState(false);
 
   const stylesHook = StyleSheet.create({
     root: { backgroundColor: colors.elevated },
@@ -109,6 +111,7 @@ const Confirm: React.FC = () => {
     totalLabel: { color: colors.textPrimary },
     totalValue: { color: colors.brandPrimary },
     sendNowButton: { backgroundColor: colors.brandPrimary },
+    sendNowButtonDisabled: { backgroundColor: colors.ctaDisabled },
     sendNowText: { color: colors.white },
   });
 
@@ -233,10 +236,14 @@ const Confirm: React.FC = () => {
 
   const recipient = recipients[0];
   const amountSats = recipient?.value ?? 0;
-  const txid = bitcoin.Transaction.fromHex(tx).getId();
+  const txid = useMemo(() => {
+    try {
+      return tx ? bitcoin.Transaction.fromHex(tx).getId() : '';
+    } catch {
+      return '';
+    }
+  }, [tx]);
   const totalSats = computeTotalSats(amountSats, feeSatoshi);
-  const [copiedAddr, setCopiedAddr] = React.useState(false);
-  const [copiedTxid, setCopiedTxid] = React.useState(false);
   const copy = (text: string, setFlag: (b: boolean) => void) => {
     Clipboard.setString(text);
     triggerHapticFeedback(HapticFeedbackTypes.Selection);
@@ -288,7 +295,11 @@ const Confirm: React.FC = () => {
             testID="sendNowButton"
             disabled={isElectrumDisabled || state.isButtonDisabled}
             onPress={handleSendTransaction}
-            style={[styles.sendNowButton, stylesHook.sendNowButton]}
+            style={[
+              styles.sendNowButton,
+              stylesHook.sendNowButton,
+              (isElectrumDisabled || state.isButtonDisabled) && stylesHook.sendNowButtonDisabled,
+            ]}
           >
             <SendIcon size={20} color={colors.white} />
             <Text style={[styles.sendNowText, stylesHook.sendNowText]}>{loc.send.confirm_sendNow}</Text>
