@@ -18,6 +18,8 @@ interface ButtonProps extends PressableProps {
   style?: StyleProp<ViewStyle>;
   onPress?: () => void;
   showActivityIndicator?: boolean;
+  disabledBackgroundColor?: string;
+  disabledTextColor?: string;
 }
 
 export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps>((props, ref) => {
@@ -26,8 +28,8 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
   let backgroundColor = props.backgroundColor ?? colors.mainColor;
   let fontColor = props.buttonTextColor ?? colors.buttonTextColor;
   if (props.disabled) {
-    backgroundColor = colors.buttonDisabledBackgroundColor;
-    fontColor = colors.buttonDisabledTextColor;
+    backgroundColor = props.disabledBackgroundColor ?? colors.buttonDisabledBackgroundColor;
+    fontColor = props.disabledTextColor ?? colors.buttonDisabledTextColor;
   }
 
   const buttonStyle = {
