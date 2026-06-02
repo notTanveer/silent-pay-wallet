@@ -56,6 +56,7 @@
     },
     "receive": {
         "details_share": "Share Address",
+        "tap_to_copy": "Tap to copy",
         "address_not_found": "Unable to generate receiving address.",
         "header": "Receive",
         "qrcode_for_the_address": "QR Code for the address"
@@ -274,7 +275,7 @@
         "add_wallet_seed_length_12": "12 words",
         "add_wallet_seed_length_24": "24 words",
         "clear_clipboard_on_import": "Clear clipboard on import",
-        "details_address": "Address",
+        "details_address": "Standard Address",
         "details_are_you_sure": "Are you sure?",
         "details_del_wb_err": "The provided balance amount does not match this wallet’s balance. Please try again.",
         "details_del_wb_q": "This wallet has a balance. Before proceeding, please be aware that you will not be able to recover the funds without this wallet’s seed phrase. In order to avoid accidental removal, please enter your wallet’s balance of {balance} satoshis.",
@@ -366,7 +367,7 @@
     "bip352": {
         "silent_payments": "Silent Payments",
         "not_supported": "Silent Payments not supported by this wallet",
-        "explanation": "Silent Payment addresses are reusable, allowing you to share a single address for multiple payments without compromising privacy."
+        "explanation": "Silent Payment addresses are reusable. Share one address for multiple payments without compromising privacy."
     },
     "onboarding": {
         "shroud": "Shroud",
