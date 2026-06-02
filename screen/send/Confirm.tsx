@@ -1,26 +1,30 @@
 import React, { useEffect, useMemo, useReducer } from 'react';
-import { ActivityIndicator, FlatList, TouchableOpacity, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@rneui/themed';
 import BigNumber from 'bignumber.js';
 import * as bitcoin from 'bitcoinjs-lib';
-import { ShroudText, ShroudCard } from '../../ShroudComponents';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
-import loc, { formatBalance, formatBalanceWithoutSuffix } from '../../loc';
+import loc, { formatBalanceWithoutSuffix } from '../../loc';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import presentAlert from '../../components/Alert';
 import { useTheme } from '../../components/themes';
-import Button from '../../components/Button';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import SafeArea from '../../components/SafeArea';
 import { satoshiToBTC, satoshiToLocalCurrency } from '../../modules/currency';
 import * as Electrum from '../../modules/Electrum';
 import { unlockWithBiometrics, useBiometrics } from '../../hooks/useBiometrics';
-import { TWallet, CreateTransactionTarget } from '../../class/wallets/types';
+import { TWallet } from '../../class/wallets/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SendDetailsStackParamList } from '../../navigation/SendDetailsStackParamList';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useSettings } from '../../hooks/context/useSettings';
+import AmountHero from '../../components/AmountHero';
+import CopyIcon from '../../components/icons/CopyIcon';
+import SendIcon from '../../components/icons/SendIcon';
+import { ClashFont } from '../../constants/fonts';
+import { computeTotalSats } from '../../helpers/send/format';
 
 enum ActionType {
   SET_LOADING = 'SET_LOADING',
@@ -53,6 +57,34 @@ const reducer = (state: State, action: Action): State => {
 type ConfirmRouteProp = RouteProp<SendDetailsStackParamList, 'Confirm'>;
 type ConfirmNavigationProp = NativeStackNavigationProp<SendDetailsStackParamList, 'Confirm'>;
 
+const ConfirmDetailRow: React.FC<{ label: string; value: string; mono?: boolean; onCopy?: () => void; copied?: boolean }> = ({
+  label,
+  value,
+  mono,
+  onCopy,
+  copied,
+}) => {
+  const { colors } = useTheme();
+  const stylesHook = StyleSheet.create({
+    label: { color: colors.textPrimary },
+    value: { color: colors.textPrimary },
+    copyBtn: { borderColor: colors.copyButtonBorder },
+  });
+  return (
+    <View style={styles.detailRow}>
+      <View style={styles.detailHead}>
+        <Text style={[styles.detailLabel, stylesHook.label]}>{label}</Text>
+        {onCopy && (
+          <Pressable accessibilityRole="button" onPress={onCopy} style={[styles.copyBtn, stylesHook.copyBtn]}>
+            <CopyIcon size={16} color={copied ? colors.brandPrimary : colors.chevron} />
+          </Pressable>
+        )}
+      </View>
+      <Text style={[mono ? styles.detailMono : styles.detailValue, stylesHook.value]}>{value}</Text>
+    </View>
+  );
+};
+
 const Confirm: React.FC = () => {
   const { wallets, fetchAndSaveWalletTransactions } = useStorage();
   const { isElectrumDisabled } = useSettings();
@@ -67,39 +99,28 @@ const Confirm: React.FC = () => {
   const feeSatoshi = new BigNumber(fee).multipliedBy(100000000).toNumber();
   const { colors } = useTheme();
 
+  const stylesHook = StyleSheet.create({
+    root: { backgroundColor: colors.elevated },
+    txDetails: { backgroundColor: colors.lightButton },
+    valueUnit: { color: colors.buttonTextColor },
+    divider: { backgroundColor: colors.divider },
+    summaryLabel: { color: colors.amountMeta },
+    summaryValue: { color: colors.black },
+    totalLabel: { color: colors.textPrimary },
+    totalValue: { color: colors.brandPrimary },
+    sendNowButton: { backgroundColor: colors.brandPrimary },
+    sendNowText: { color: colors.white },
+  });
+
   useEffect(() => {
     if (!wallet) {
       goBack();
     }
   }, [wallet, goBack]);
 
-  const stylesHook = StyleSheet.create({
-    transactionDetailsTitle: {
-      color: colors.foregroundColor,
-    },
-    transactionDetailsSubtitle: {
-      color: colors.feeText,
-    },
-    transactionAmountFiat: {
-      color: colors.feeText,
-    },
-    txDetails: {
-      backgroundColor: colors.lightButton,
-    },
-    valueValue: {
-      color: colors.alternativeTextColor2,
-    },
-    valueUnit: {
-      color: colors.buttonTextColor,
-    },
-    root: {
-      backgroundColor: colors.elevated,
-    },
-  });
-
   const HeaderRightButton = useMemo(
     () => (
-      <TouchableOpacity
+      <Pressable
         accessibilityRole="button"
         testID="TransactionDetailsButton"
         style={[styles.txDetails, stylesHook.txDetails]}
@@ -120,7 +141,7 @@ const Confirm: React.FC = () => {
         }}
       >
         <Text style={[styles.txText, stylesHook.valueUnit]}>{loc.send.create_details}</Text>
-      </TouchableOpacity>
+      </Pressable>
     ),
     [
       stylesHook.txDetails,
@@ -210,62 +231,69 @@ const Confirm: React.FC = () => {
     return result;
   };
 
-  const renderItem = ({ index, item }: { index: number; item: CreateTransactionTarget }) => {
-    return (
-      <>
-        <View style={styles.valueWrap}>
-          <Text testID="TransactionValue" style={[styles.valueValue, stylesHook.valueValue]}>
-            {item.value && satoshiToBTC(item.value)}
-          </Text>
-          <Text style={[styles.valueUnit, stylesHook.valueValue]}>{' ' + loc.units[BitcoinUnit.BTC]}</Text>
-        </View>
-        <Text style={[styles.transactionAmountFiat, stylesHook.transactionAmountFiat]}>
-          {item.value && satoshiToLocalCurrency(item.value)}
-        </Text>
-        <ShroudCard>
-          <Text style={[styles.transactionDetailsTitle, stylesHook.transactionDetailsTitle]}>{loc.send.create_to}</Text>
-          <Text testID="TransactionAddress" style={[styles.transactionDetailsSubtitle, stylesHook.transactionDetailsSubtitle]}>
-            {item.address}
-          </Text>
-        </ShroudCard>
-        {recipients.length > 1 && (
-          <ShroudText style={styles.valueOf}>{loc.formatString(loc._.of, { number: index + 1, total: recipients.length })}</ShroudText>
-        )}
-      </>
-    );
-  };
-
-  const renderSeparator = () => {
-    return <View style={styles.separator} />;
+  const recipient = recipients[0];
+  const amountSats = recipient?.value ?? 0;
+  const txid = bitcoin.Transaction.fromHex(tx).getId();
+  const totalSats = computeTotalSats(amountSats, feeSatoshi);
+  const [copiedAddr, setCopiedAddr] = React.useState(false);
+  const [copiedTxid, setCopiedTxid] = React.useState(false);
+  const copy = (text: string, setFlag: (b: boolean) => void) => {
+    Clipboard.setString(text);
+    triggerHapticFeedback(HapticFeedbackTypes.Selection);
+    setFlag(true);
+    setTimeout(() => setFlag(false), 1000);
   };
 
   return (
     <SafeArea style={[styles.root, stylesHook.root]}>
-      <View style={styles.cardTop}>
-        <FlatList<CreateTransactionTarget>
-          scrollEnabled={recipients.length > 1}
-          extraData={recipients}
-          data={recipients}
-          renderItem={renderItem}
-          keyExtractor={(_item, index) => `${index}`}
-          ItemSeparatorComponent={renderSeparator}
+      <View style={styles.content}>
+        <AmountHero amount={String(satoshiToBTC(amountSats))} fiat={`≈ ${satoshiToLocalCurrency(amountSats)}`} />
+
+        <View style={[styles.divider, stylesHook.divider]} />
+
+        <ConfirmDetailRow
+          label={loc.send.onchain_address_derived}
+          value={recipient?.address ?? ''}
+          mono
+          copied={copiedAddr}
+          onCopy={() => copy(recipient?.address ?? '', setCopiedAddr)}
         />
-      </View>
-      <View style={styles.cardBottom}>
-        <ShroudCard>
-          <Text style={styles.cardText} testID="TransactionFee">
-            {loc.send.create_fee}: {formatBalance(feeSatoshi, BitcoinUnit.BTC)} ({satoshiToLocalCurrency(feeSatoshi)})
+        <View style={[styles.divider, stylesHook.divider]} />
+
+        <ConfirmDetailRow label={loc.send.transaction_id} value={txid} mono copied={copiedTxid} onCopy={() => copy(txid, setCopiedTxid)} />
+        <View style={[styles.divider, stylesHook.divider]} />
+
+        <View style={styles.summaryRow}>
+          <Text style={[styles.summaryLabel, stylesHook.summaryLabel]}>{loc.send.create_fee}</Text>
+          <Text style={[styles.summaryValue, stylesHook.summaryValue]}>
+            {satoshiToBTC(feeSatoshi)} {loc.units[BitcoinUnit.BTC]} ({satoshiToLocalCurrency(feeSatoshi)})
           </Text>
-          {state.isLoading ? (
-            <ActivityIndicator />
-          ) : (
-            <Button
-              disabled={isElectrumDisabled || state.isButtonDisabled}
-              onPress={handleSendTransaction}
-              title={loc.send.confirm_sendNow}
-            />
-          )}
-        </ShroudCard>
+        </View>
+        <View style={[styles.divider, stylesHook.divider]} />
+
+        <View style={styles.summaryRow}>
+          <Text style={[styles.totalLabel, stylesHook.totalLabel]}>{loc.send.total}</Text>
+          <Text style={[styles.totalValue, stylesHook.totalValue]}>
+            {satoshiToBTC(totalSats)} {loc.units[BitcoinUnit.BTC]}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.bottom}>
+        {state.isLoading ? (
+          <ActivityIndicator />
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            testID="sendNowButton"
+            disabled={isElectrumDisabled || state.isButtonDisabled}
+            onPress={handleSendTransaction}
+            style={[styles.sendNowButton, stylesHook.sendNowButton]}
+          >
+            <SendIcon size={20} color={colors.white} />
+            <Text style={[styles.sendNowText, stylesHook.sendNowText]}>{loc.send.confirm_sendNow}</Text>
+          </Pressable>
+        )}
       </View>
     </SafeArea>
   );
@@ -274,70 +302,94 @@ const Confirm: React.FC = () => {
 export default Confirm;
 
 const styles = StyleSheet.create({
-  transactionDetailsTitle: {
-    fontWeight: '500',
-    fontSize: 17,
-    marginBottom: 2,
-  },
-  transactionDetailsSubtitle: {
-    fontWeight: '500',
-    fontSize: 15,
-    marginBottom: 20,
-  },
-  transactionAmountFiat: {
-    fontWeight: '500',
-    fontSize: 15,
-    marginVertical: 8,
-    textAlign: 'center',
-  },
-  valueWrap: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  valueValue: {
-    fontSize: 36,
-    fontWeight: '700',
-  },
-  valueUnit: {
-    fontSize: 16,
-    marginHorizontal: 4,
-    paddingBottom: 6,
-    fontWeight: '600',
-    alignSelf: 'flex-end',
-  },
-  valueOf: {
-    alignSelf: 'flex-end',
-    marginRight: 18,
-    marginVertical: 8,
-  },
-  separator: {
-    height: 0.5,
-    margin: 16,
-  },
   root: {
+    flex: 1,
     paddingTop: 19,
     justifyContent: 'space-between',
   },
-  cardTop: {
-    flexGrow: 8,
-    marginTop: 16,
-    alignItems: 'center',
-    maxHeight: '70%',
+  content: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    gap: 12,
   },
-  cardBottom: {
-    flexGrow: 2,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    width: '100%',
   },
-  cardText: {
+  detailRow: {
+    gap: 4,
+    paddingVertical: 8,
+  },
+  detailHead: {
     flexDirection: 'row',
-    color: '#37c0a1',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  detailLabel: {
+    fontFamily: ClashFont.medium,
     fontSize: 14,
-    marginVertical: 8,
-    marginHorizontal: 24,
-    paddingBottom: 6,
-    fontWeight: '500',
-    alignSelf: 'center',
+    lineHeight: 26,
+  },
+  detailValue: {
+    fontFamily: ClashFont.regular,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  detailMono: {
+    fontFamily: ClashFont.regular,
+    fontSize: 12,
+    lineHeight: 26,
+  },
+  copyBtn: {
+    width: 24,
+    height: 24,
+    borderWidth: 1,
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  summaryLabel: {
+    fontFamily: ClashFont.regular,
+    fontSize: 14,
+    lineHeight: 26,
+  },
+  summaryValue: {
+    fontFamily: ClashFont.medium,
+    fontSize: 14,
+    lineHeight: 26,
+  },
+  totalLabel: {
+    fontFamily: ClashFont.regular,
+    fontSize: 12,
+    lineHeight: 20,
+  },
+  totalValue: {
+    fontFamily: ClashFont.semibold,
+    fontSize: 14,
+    lineHeight: 26,
+  },
+  bottom: {
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+  },
+  sendNowButton: {
+    height: 56,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 9,
+  },
+  sendNowText: {
+    fontFamily: ClashFont.medium,
+    fontSize: 16,
+    lineHeight: 24,
   },
   txDetails: {
     alignItems: 'center',

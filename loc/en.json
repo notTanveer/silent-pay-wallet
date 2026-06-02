@@ -154,7 +154,10 @@
         "file_saved_at_path": "The file ({filePath}) has been saved.",
         "cant_send_to_silentpayment_adress": "This wallet cannot send to SilentPayment addresses",
         "tap_amount_to_edit": "Tap amount to edit",
-        "use_max": "Use Max"
+        "use_max": "Use Max",
+        "onchain_address_derived": "On-chain address (derived)",
+        "transaction_id": "Transaction ID",
+        "total": "Total"
     },
     "settings": {
         "about": "About",
