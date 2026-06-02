@@ -1,6 +1,6 @@
 import Clipboard from '@react-native-clipboard/clipboard';
 import React, { useCallback, useRef } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { ImageSourcePropType, Platform, StyleSheet, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import Share from 'react-native-share';
 
@@ -16,6 +16,10 @@ interface QRCodeComponentProps {
   size?: number;
   ecl?: 'H' | 'Q' | 'M' | 'L';
   onError?: () => void;
+  logo?: ImageSourcePropType;
+  logoSize?: number;
+  logoBackgroundColor?: string;
+  logoBorderRadius?: number;
 }
 
 const BORDER_WIDTH = 6;
@@ -58,6 +62,10 @@ const QRCodeComponent: React.FC<QRCodeComponentProps> = ({
   size = 300,
   ecl = 'H',
   onError = () => {},
+  logo,
+  logoSize,
+  logoBackgroundColor,
+  logoBorderRadius,
 }) => {
   const qrCode = useRef<any>();
   const { dark } = useTheme();
@@ -95,6 +103,7 @@ const QRCodeComponent: React.FC<QRCodeComponentProps> = ({
       ecl={ecl}
       getRef={(c: any) => (qrCode.current = c)}
       onError={onError}
+      {...(logo ? { logo, logoSize, logoBackgroundColor, logoBorderRadius } : {})}
     />
   );
 
