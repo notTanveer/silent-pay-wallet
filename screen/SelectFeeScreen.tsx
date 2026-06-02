@@ -64,15 +64,25 @@ const feeScreenReducer = (state: FeeScreenState, action: FeeScreenAction): FeeSc
       return { ...state, customFeeValue: '' };
     case FeeScreenActions.SET_OPTIONS: {
       const { options, currentFeeRate } = action.payload;
-      const matchesPresetOption = options.some(option => currentFeeRate === option.rate);
-      const updatedOptions = options.map(option => ({
-        ...option,
-        active: !state.isCustomFeeFocused && currentFeeRate === option.rate,
-      }));
+      const matchesPresetOption = options.some(option => !option.disabled && currentFeeRate === option.rate);
+      let updatedOptions;
+      if (matchesPresetOption) {
+        updatedOptions = options.map(option => ({
+          ...option,
+          active: !state.isCustomFeeFocused && currentFeeRate === option.rate,
+        }));
+      } else {
+        // Default to first enabled option (Fast) when nothing matches
+        const firstEnabled = options.find(opt => !opt.disabled);
+        updatedOptions = options.map(option => ({
+          ...option,
+          active: !state.isCustomFeeFocused && option === firstEnabled,
+        }));
+      }
       return {
         ...state,
         options: updatedOptions,
-        isCustomFeeSelected: state.isCustomFeeFocused || !matchesPresetOption,
+        isCustomFeeSelected: state.isCustomFeeFocused || (state.isCustomFeeSelected && !matchesPresetOption),
       };
     }
     case FeeScreenActions.SELECT_FEE: {
@@ -142,10 +152,11 @@ const SelectFeeScreen = () => {
     customFeeValue: customFee || '',
     isCustomFeeFocused: false,
     options: [],
-    isCustomFeeSelected: false,
+    isCustomFeeSelected: !!customFee,
   });
 
   const customFeeInputRef = useRef<TextInput>(null);
+  const focusCustomOnRenderRef = useRef(false);
   const nf = networkTransactionFees;
 
   const stylesHook = StyleSheet.create({
@@ -232,7 +243,22 @@ const SelectFeeScreen = () => {
   }, [state.customFeeValue]);
 
   const handleCustomFocus = useCallback(() => dispatch({ type: FeeScreenActions.SET_CUSTOM_FEE_FOCUSED }), []);
-  const handleCustomPress = useCallback(() => customFeeInputRef.current?.focus(), []);
+
+  const handleCustomPress = useCallback(() => {
+    if (state.isCustomFeeSelected) {
+      customFeeInputRef.current?.focus();
+    } else {
+      focusCustomOnRenderRef.current = true;
+      dispatch({ type: FeeScreenActions.SET_CUSTOM_FEE_FOCUSED });
+    }
+  }, [state.isCustomFeeSelected]);
+
+  useEffect(() => {
+    if (state.isCustomFeeSelected && focusCustomOnRenderRef.current) {
+      focusCustomOnRenderRef.current = false;
+      customFeeInputRef.current?.focus();
+    }
+  }, [state.isCustomFeeSelected]);
 
   useFocusEffect(
     useCallback(() => {
@@ -243,6 +269,10 @@ const SelectFeeScreen = () => {
 
   const subtitleFor = (fee: number | null, rate: number) =>
     fee != null ? formatFeeOptionSubtitle(String(satoshiToBTC(fee)), rate, loc.units.sat_vbyte) : `— ${loc.units.sat_vbyte}`;
+
+  const isNextDisabled = state.isCustomFeeSelected
+    ? !(state.customFeeValue && Number(state.customFeeValue.replace(',', '.')) > 0)
+    : !state.options.some(opt => opt.active);
 
   return (
     <View style={[stylesHook.container, styles.screenContainer]}>
@@ -307,6 +337,9 @@ const SelectFeeScreen = () => {
           testID="feeNextButton"
           title={loc.send.details_next}
           backgroundColor={colors.brandPrimary}
+          disabledBackgroundColor={colors.ctaDisabled}
+          disabledTextColor={colors.white}
+          disabled={isNextDisabled}
           onPress={handleCustomFeeSubmit}
         />
       </View>

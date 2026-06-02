@@ -5,7 +5,7 @@ import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { TOptions } from 'bip21';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Keyboard, LayoutAnimation, Platform, StyleSheet, Text, TextInput, Pressable, View } from 'react-native';
+import { ActivityIndicator, Keyboard, LayoutAnimation, StyleSheet, Text, TextInput, Pressable, View } from 'react-native';
 import { SilentPayment } from 'silent-payments';
 import { btcToSatoshi, satoshiToLocalCurrency } from '../../modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
@@ -18,10 +18,9 @@ import Button from '../../components/Button';
 import CoinsSelected from '../../components/CoinsSelected';
 import { DismissKeyboardInputAccessory } from '../../components/DismissKeyboardInputAccessory';
 import HeaderMenuButton from '../../components/HeaderMenuButton';
-import InputAccessoryAllFunds from '../../components/InputAccessoryAllFunds';
+import ScanQRIcon from '../../components/icons/ScanQRIcon';
 import LabeledField from '../../components/LabeledField';
 import SafeArea from '../../components/SafeArea';
-import ScanIcon from '../../components/ScanIcon';
 import { useTheme } from '../../components/themes';
 import { Action } from '../../components/types';
 import { ClashFont } from '../../constants/fonts';
@@ -815,7 +814,7 @@ const SendDetails = () => {
           label={loc.send.label_address}
           trailing={
             <Pressable accessibilityRole="button" onPress={navigateToQRCodeScanner} style={[styles.scanBtn, stylesHook.scanBtn]}>
-              <ScanIcon color={colors.brandPrimary} />
+              <ScanQRIcon color={colors.brandPrimary} size={20} />
             </Pressable>
           }
         >
@@ -873,12 +872,6 @@ const SendDetails = () => {
       </View>
 
       <DismissKeyboardInputAccessory />
-      {Platform.select({
-        ios: <InputAccessoryAllFunds canUseAll={balance > 0} onUseAllPressed={onUseAllPressed} balance={String(allBalance)} />,
-        android: isVisible && (
-          <InputAccessoryAllFunds canUseAll={balance > 0} onUseAllPressed={onUseAllPressed} balance={String(allBalance)} />
-        ),
-      })}
 
       {renderCoinsSelected()}
 

@@ -73,21 +73,18 @@ const AmountHero: React.FC<AmountHeroProps> = ({
 
       <ShroudText style={[styles.fiat, stylesHook.meta]}>{fiat}</ShroudText>
 
-      {(showHint || onUseMax) && (
-        <View style={styles.footerRow}>
-          {showHint && <ShroudText style={[styles.hint, stylesHook.hint]}>{loc.send.tap_amount_to_edit}</ShroudText>}
-          {onUseMax && (
-            <Pressable
-              accessibilityRole="button"
-              disabled={useMaxDisabled}
-              onPress={onUseMax}
-              style={[styles.useMax, stylesHook.useMax, useMaxDisabled && styles.useMaxDisabled]}
-              testID="UseMaxButton"
-            >
-              <ShroudText style={[styles.useMaxText, stylesHook.useMaxText]}>{loc.send.use_max}</ShroudText>
-            </Pressable>
-          )}
-        </View>
+      {showHint && <ShroudText style={[styles.hint, stylesHook.hint]}>{loc.send.tap_amount_to_edit}</ShroudText>}
+
+      {onUseMax && (
+        <Pressable
+          accessibilityRole="button"
+          disabled={useMaxDisabled}
+          onPress={onUseMax}
+          style={[styles.useMax, stylesHook.useMax, useMaxDisabled && styles.useMaxDisabled]}
+          testID="UseMaxButton"
+        >
+          <ShroudText style={[styles.useMaxText, stylesHook.useMaxText]}>{loc.send.use_max}</ShroudText>
+        </Pressable>
       )}
     </Pressable>
   );
@@ -97,7 +94,7 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     alignItems: 'center',
-    gap: 7,
+    gap: 3,
   },
   amountRow: {
     flexDirection: 'row',
@@ -117,6 +114,7 @@ const styles = StyleSheet.create({
     fontFamily: ClashFont.regular,
     fontSize: 20,
     lineHeight: 30,
+    marginBottom: 8,
   },
   fiat: {
     fontFamily: ClashFont.regular,
@@ -124,20 +122,16 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     textAlign: 'center',
   },
-  footerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   hint: {
     fontFamily: ClashFont.regular,
     fontSize: 12,
     lineHeight: 22,
+    textAlign: 'center',
   },
   useMax: {
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 23,
     paddingVertical: 4,
   },
   useMaxDisabled: {
