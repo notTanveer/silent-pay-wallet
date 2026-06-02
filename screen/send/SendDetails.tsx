@@ -8,38 +8,37 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   findNodeHandle,
   FlatList,
   Keyboard,
   LayoutAnimation,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   Platform,
   StyleSheet,
   Text,
   TextInput,
   Pressable,
   View,
-  TouchableOpacity,
 } from 'react-native';
 import { SilentPayment } from 'silent-payments';
-import { btcToSatoshi, fiatToBTC } from '../../modules/currency';
+import { btcToSatoshi, satoshiToLocalCurrency } from '../../modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
-import { ShroudText } from '../../ShroudComponents';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import { CreateTransactionTarget, CreateTransactionUtxo, TWallet } from '../../class/wallets/types';
-import AddressInput from '../../components/AddressInput';
 import presentAlert from '../../components/Alert';
-import * as AmountInput from '../../components/AmountInput';
+import AmountHero from '../../components/AmountHero';
+import Button from '../../components/Button';
 import CoinsSelected from '../../components/CoinsSelected';
-import { DismissKeyboardInputAccessory, DismissKeyboardInputAccessoryViewID } from '../../components/DismissKeyboardInputAccessory';
+import { DismissKeyboardInputAccessory } from '../../components/DismissKeyboardInputAccessory';
 import HeaderMenuButton from '../../components/HeaderMenuButton';
-import InputAccessoryAllFunds, { InputAccessoryAllFundsAccessoryViewID } from '../../components/InputAccessoryAllFunds';
+import InputAccessoryAllFunds from '../../components/InputAccessoryAllFunds';
+import LabeledField from '../../components/LabeledField';
 import SafeArea from '../../components/SafeArea';
+import ScanIcon from '../../components/ScanIcon';
 import { useTheme } from '../../components/themes';
 import { Action } from '../../components/types';
+import { ClashFont } from '../../constants/fonts';
+import { isAmountEmpty } from '../../helpers/send/format';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useKeyboard } from '../../hooks/useKeyboard';
@@ -85,7 +84,6 @@ const SendDetails = () => {
   const { colors } = useTheme();
 
   // state
-  const [dimensions, setDimensions] = useState({ width: Dimensions.get('window').width, height: 0 });
   const [isLoading, setIsLoading] = useState(false);
   const [wallet, setWallet] = useState<TWallet | null>(null);
   const { isVisible } = useKeyboard();
@@ -101,6 +99,38 @@ const SendDetails = () => {
   // if utxo is limited we use it to calculate available balance
   const balance: number = utxos ? utxos.reduce((prev, curr) => prev + curr.value, 0) : (wallet?.getBalance() ?? 0);
   const allBalance = formatBalanceWithoutSuffix(balance, BitcoinUnit.BTC, true);
+
+  // single-recipient helpers
+  const recipient = addresses[0];
+  const displayAmount = recipient?.amount === BitcoinUnit.MAX ? String(allBalance) : recipient?.amount ? String(recipient.amount) : '';
+  const amountSatsNum = Number(recipient?.amountSats) || 0;
+  const fiatEstimate = `≈ ${satoshiToLocalCurrency(amountSatsNum)}`;
+  const isFormValid = !!recipient?.address && !isAmountEmpty(recipient?.amount);
+
+  const onChangeAmount = (text: string) => {
+    setAddresses(addrs => {
+      const a = { ...addrs[0] };
+      a.amount = text;
+      a.amountSats = btcToSatoshi(text);
+      a.unit = BitcoinUnit.BTC;
+      return [a, ...addrs.slice(1)];
+    });
+  };
+
+  const onChangeAddress = (text: string) => {
+    const { address, amount, memo } = DeeplinkSchemaMatch.decodeBitcoinUri(text.trim());
+    setAddresses(addrs => {
+      const a = { ...addrs[0] };
+      a.address = address || text.trim();
+      if (amount) {
+        a.amount = String(amount);
+        a.amountSats = btcToSatoshi(String(amount));
+      }
+      return [a, ...addrs.slice(1)];
+    });
+    if (memo) setParams({ transactionMemo: memo });
+    setIsLoading(false);
+  };
 
   // if cutomFee is not set, we need to choose highest possible fee for wallet balance
   // if there are no funds for even Slow option, use 1 sat/vbyte fee
@@ -365,11 +395,6 @@ const SendDetails = () => {
       return () => {};
     }, []),
   );
-
-  const handleLayout = (event: any) => {
-    const { width, height } = event.nativeEvent.layout;
-    setDimensions({ width, height });
-  };
 
   const getChangeAddressAsync = async () => {
     if (changeAddress) return changeAddress; // cache
@@ -853,13 +878,6 @@ const SendDetails = () => {
     }
   }, [routeParams.selectedFeeRate, routeParams.selectedFeeType, networkTransactionFees, setParams, customFee, selectedPresetFeeRate]);
 
-  const handleRecipientsScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const contentOffset = e.nativeEvent.contentOffset;
-    const viewSize = e.nativeEvent.layoutMeasurement;
-    const index = Math.floor(contentOffset.x / viewSize.width);
-    scrollIndex.current = index;
-  };
-
   const formatFee = (fee: number) => formatBalance(fee, feeUnit!, true);
 
   const stylesHook = StyleSheet.create({
@@ -869,40 +887,12 @@ const SendDetails = () => {
     selectLabel: {
       color: colors.buttonTextColor,
     },
-    of: {
-      color: colors.feeText,
-    },
-    memo: {
-      borderColor: colors.formBorder,
-      borderBottomColor: colors.formBorder,
-      backgroundColor: colors.inputBackgroundColor,
-    },
-    feeLabel: {
-      color: colors.feeText,
-    },
-    feeRow: {
-      backgroundColor: colors.feeLabel,
-    },
-    feeValue: {
-      color: colors.feeValue,
-    },
-    warningContainer: {
-      backgroundColor: colors.changeBackground,
-    },
-    warningText: {
-      color: colors.changeText,
-    },
+    fieldInput: { color: colors.foregroundColor },
+    scanBtn: { backgroundColor: colors.white, shadowColor: colors.shadowColor, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
+    feeSummary: { borderColor: colors.summaryBorder },
+    feeSummaryLabel: { color: colors.textSecondary },
+    feeSummaryValue: { color: colors.placeholderTextColor },
   });
-
-  const renderCreateButton = () => {
-    return (
-      <View style={styles.bottom}>
-        <TouchableOpacity style={styles.button} onPress={createTransaction}>
-          <Text style={styles.buttonText}>{loc.send.details_next}</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  };
 
   const renderCoinsSelected = () => {
     if (isVisible) return null;
@@ -930,160 +920,52 @@ const SendDetails = () => {
     );
   };
 
-  const renderBitcoinTransactionInfoFields = (params: { item: IPaymentDestinations; index: number }) => {
-    const { item, index } = params;
-    return (
-      <View style={[styles.transactionItemContainer, { width: dimensions.width }]} testID={'Transaction' + index}>
-        <View style={styles.amountInputContainer}>
-          <AmountInput.AmountInput
-            isLoading={isLoading}
-            amount={item.amount ? item.amount.toString() : undefined}
-            onAmountUnitChange={(unit: BitcoinUnit) => {
-              setAddresses(addrs => {
-                const addr = addrs[index];
-
-                switch (unit) {
-                  case BitcoinUnit.SATS:
-                    addr.amountSats = parseInt(String(addr.amount), 10);
-                    break;
-                  case BitcoinUnit.BTC:
-                    addr.amountSats = btcToSatoshi(String(addr.amount));
-                    break;
-                  case BitcoinUnit.LOCAL_CURRENCY:
-                    // also accounting for cached fiat->sat conversion to avoid rounding error
-                    addr.amountSats = AmountInput.getCachedSatoshis(String(addr.amount)) || btcToSatoshi(fiatToBTC(Number(addr.amount)));
-                    break;
-                }
-
-                addrs[index] = addr;
-                return [...addrs];
-              });
-              setAddresses(addrs => {
-                addrs[index].unit = unit;
-                return [...addrs];
-              });
-            }}
-            onChangeText={(text: string) => {
-              setAddresses(addrs => {
-                item.amount = text;
-                switch (item.unit || amountUnit) {
-                  case BitcoinUnit.BTC:
-                    item.amountSats = btcToSatoshi(item.amount);
-                    break;
-                  case BitcoinUnit.LOCAL_CURRENCY:
-                    item.amountSats = btcToSatoshi(fiatToBTC(Number(item.amount)));
-                    break;
-                  case BitcoinUnit.SATS:
-                  default:
-                    item.amountSats = parseInt(text, 10);
-                    break;
-                }
-                addrs[index] = item;
-                return [...addrs];
-              });
-            }}
-            unit={item.unit || amountUnit}
-            editable={isEditable}
-            disabled={!isEditable}
-            inputAccessoryViewID={InputAccessoryAllFundsAccessoryViewID}
-          />
-        </View>
-
-        {frozenBalance > 0 && (
-          <Pressable
-            accessibilityRole="button"
-            style={({ pressed }) => [pressed && styles.pressed, styles.frozenContainer]}
-            onPress={handleCoinControl}
-          >
-            <ShroudText>
-              {loc.formatString(loc.send.details_frozen, { amount: formatBalanceWithoutSuffix(frozenBalance, BitcoinUnit.BTC, true) })}
-            </ShroudText>
-          </Pressable>
-        )}
-
-        <View style={styles.addressInputContainer}>
-          <AddressInput
-            onChangeText={text => {
-              const { address, amount, memo } = DeeplinkSchemaMatch.decodeBitcoinUri(text.trim());
-              setAddresses(addrs => {
-                item.address = address || text.trim();
-                item.amount = amount || item.amount;
-                addrs[index] = item;
-                return [...addrs];
-              });
-              if (memo) {
-                setParams({ transactionMemo: memo });
-              }
-              setIsLoading(false);
-            }}
-            address={item.address}
-            isLoading={isLoading}
-            inputAccessoryViewID={DismissKeyboardInputAccessoryViewID}
-            editable={isEditable}
-            style={styles.fullWidthInput}
-          />
-        </View>
-
-        {addresses.length > 1 && (
-          <Text style={[styles.of, stylesHook.of, styles.ofMargin]}>
-            {loc.formatString(loc._.of, { number: index + 1, total: addresses.length })}
-          </Text>
-        )}
-      </View>
-    );
-  };
-
-  const renderCustomFeeWarning = () => {
-    if (!customFee || Number(customFee) >= 1) return;
-
-    return (
-      <View style={[styles.warningContainer, stylesHook.warningContainer]}>
-        <Text style={[styles.warningHeader, stylesHook.warningText]}>{loc.transactions.custom_fee_warning_title}</Text>
-        <Text style={stylesHook.warningText}>{loc.transactions.custom_fee_warning_description}</Text>
-      </View>
-    );
-  };
-
-  const getItemLayout = (_: any, index: number) => ({
-    length: dimensions.width,
-    offset: dimensions.width * index,
-    index,
-  });
-
   return (
     <SafeArea style={[styles.root, stylesHook.root]}>
-      <View>
-        <FlatList
-          onLayout={handleLayout}
-          keyboardShouldPersistTaps="always"
-          scrollEnabled={addresses.length > 1}
-          data={addresses}
-          renderItem={renderBitcoinTransactionInfoFields}
-          horizontal
-          ref={scrollView}
-          automaticallyAdjustKeyboardInsets
-          pagingEnabled
-          removeClippedSubviews={false}
-          onMomentumScrollBegin={Keyboard.dismiss}
-          onScroll={handleRecipientsScroll}
-          scrollEventThrottle={16}
-          scrollIndicatorInsets={styles.scrollViewIndicator}
-          contentContainerStyle={styles.scrollViewContent}
-          getItemLayout={getItemLayout}
+      <View style={styles.body}>
+        <AmountHero
+          editable
+          amount={displayAmount}
+          fiat={fiatEstimate}
+          onChangeAmount={onChangeAmount}
+          showHint={isAmountEmpty(recipient?.amount)}
+          onUseMax={onUseAllPressed}
+          useMaxDisabled={balance <= 0}
         />
-        <View style={[styles.memo, stylesHook.memo]}>
+
+        <LabeledField
+          label={loc.send.label_address}
+          trailing={
+            <Pressable accessibilityRole="button" onPress={navigateToQRCodeScanner} style={[styles.scanBtn, stylesHook.scanBtn]}>
+              <ScanIcon color={colors.brandPrimary} />
+            </Pressable>
+          }
+        >
           <TextInput
-            onChangeText={setTransactionMemo}
-            placeholder={loc.send.details_note_placeholder}
-            placeholderTextColor="#81868e"
-            value={transactionMemo}
-            numberOfLines={1}
-            style={styles.memoText}
-            editable={!isLoading}
-            onSubmitEditing={Keyboard.dismiss}
-            inputAccessoryViewID={DismissKeyboardInputAccessoryViewID}
+            style={[styles.fieldInput, stylesHook.fieldInput]}
+            placeholder={loc.send.paste_or_scan}
+            placeholderTextColor={colors.placeholderTextColor}
+            value={recipient?.address}
+            onChangeText={onChangeAddress}
+            editable={isEditable}
+            autoCapitalize="none"
+            autoCorrect={false}
+            testID="AddressInput"
           />
-        </View>
+        </LabeledField>
+
+        <LabeledField label={loc.send.label_note}>
+          <TextInput
+            style={[styles.fieldInput, stylesHook.fieldInput]}
+            placeholder={loc.send.note_visible_to_you}
+            placeholderTextColor={colors.placeholderTextColor}
+            value={transactionMemo}
+            onChangeText={setTransactionMemo}
+            editable={!isLoading}
+            testID="NoteInput"
+          />
+        </LabeledField>
+
         <Pressable
           testID="chooseFee"
           accessibilityRole="button"
@@ -1099,22 +981,19 @@ const SendDetails = () => {
             });
           }}
           disabled={isLoading}
-          style={({ pressed }) => [pressed && styles.pressed, styles.fee]}
+          style={[styles.feeSummary, stylesHook.feeSummary]}
         >
-          <Text style={[styles.feeLabel, stylesHook.feeLabel]}>{loc.send.create_fee}</Text>
-
+          <Text style={[styles.feeSummaryLabel, stylesHook.feeSummaryLabel]}>{loc.send.network_fee}</Text>
           {networkTransactionFeesIsLoading ? (
             <ActivityIndicator />
           ) : (
-            <View style={[styles.feeRow, stylesHook.feeRow]}>
-              <Text style={stylesHook.feeValue}>
-                {feePrecalc.current ? formatFee(feePrecalc.current) : feeRate + ' ' + loc.units.sat_vbyte}
-              </Text>
-            </View>
+            <Text style={[styles.feeSummaryValue, stylesHook.feeSummaryValue]}>
+              {feePrecalc.current && amountSatsNum > 0 ? formatFee(feePrecalc.current) : loc.send.enter_amount_to_estimate}
+            </Text>
           )}
         </Pressable>
-        {renderCustomFeeWarning()}
       </View>
+
       <DismissKeyboardInputAccessory />
       {Platform.select({
         ios: <InputAccessoryAllFunds canUseAll={balance > 0} onUseAllPressed={onUseAllPressed} balance={String(allBalance)} />,
@@ -1124,7 +1003,18 @@ const SendDetails = () => {
       })}
 
       {renderCoinsSelected()}
-      {renderCreateButton()}
+
+      <View style={styles.bottom}>
+        <Button
+          testID="sendNextButton"
+          title={loc.send.details_next}
+          backgroundColor={colors.brandPrimary}
+          disabledBackgroundColor={colors.ctaDisabled}
+          disabledTextColor={colors.white}
+          disabled={!isFormValid || isLoading}
+          onPress={createTransaction}
+        />
+      </View>
     </SafeArea>
   );
 };
@@ -1135,15 +1025,6 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     justifyContent: 'space-between',
-  },
-  scrollViewContent: {
-    flexDirection: 'row',
-  },
-  scrollViewIndicator: {
-    top: 0,
-    left: 8,
-    bottom: 0,
-    right: 8,
   },
   select: {
     marginBottom: 24,
@@ -1158,95 +1039,44 @@ const styles = StyleSheet.create({
   selectLabel: {
     fontSize: 14,
   },
-  of: {
-    alignSelf: 'flex-end',
-    marginRight: 18,
-    marginVertical: 8,
-  },
-  ofMargin: {
-    marginTop: 4,
-  },
-  memo: {
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderBottomWidth: 0.5,
-    minHeight: 44,
-    height: 44,
-    marginHorizontal: 16,
-    alignItems: 'center',
-    marginVertical: 8,
-    borderRadius: 4,
-  },
-  memoText: {
+  body: {
     flex: 1,
-    marginHorizontal: 8,
-    minHeight: 33,
-    color: '#81868e',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    gap: 24,
   },
-  fee: {
+  fieldInput: {
+    flex: 1,
+    fontFamily: ClashFont.regular,
+    fontSize: 13,
+    padding: 0,
+  },
+  scanBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  feeSummary: {
     flexDirection: 'row',
-    marginHorizontal: 16,
     justifyContent: 'space-between',
     alignItems: 'center',
+    minHeight: 66,
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 16,
   },
-  feeLabel: {
+  feeSummaryLabel: {
+    fontFamily: ClashFont.regular,
     fontSize: 14,
   },
-  feeRow: {
-    minWidth: 40,
-    height: 25,
-    borderRadius: 4,
-    justifyContent: 'space-between',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-  },
-  frozenContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 4,
-  },
-  transactionItemContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  amountInputContainer: {
-    marginBottom: 8,
-  },
-  addressInputContainer: {
-    marginTop: 8,
-  },
-  fullWidthInput: {
-    width: '100%',
-  },
-  pressed: {
-    opacity: 0.6,
-  },
-  warningContainer: {
-    flexDirection: 'column',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginHorizontal: 16,
-    borderRadius: 4,
-    marginTop: 12,
-  },
-  warningHeader: {
-    fontWeight: 'bold',
+  feeSummaryValue: {
+    fontFamily: ClashFont.medium,
+    fontSize: 16,
   },
   bottom: {
-    padding: 16,
-  },
-  button: {
-    backgroundColor: '#754CE8',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '500',
-    textAlign: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: 24,
   },
 });
