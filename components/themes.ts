@@ -87,6 +87,8 @@ export const ShroudDefaultTheme = {
     segmentTrackBorder: '#EEEEEE', // pill toggle track border
     segmentSelectedBg: '#FFFFFF', // selected pill background
     segmentSelectedBorder: '#CFCFCF', // selected pill border
+    qrCardBg: '#F9FAFB', // QR code card background
+    copyHint: '#99A1AF', // "tap to copy" icon + label
     progressTrack: '#EAECF0',
     buttonBorder: '#EBEBEB',
     textPrimary: '#1A1A1A', // titles, primary copy
