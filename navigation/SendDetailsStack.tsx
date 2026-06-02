@@ -57,7 +57,7 @@ const SendDetailsStack = () => {
       <Stack.Screen
         name="Success"
         component={SuccessComponent}
-        options={navigationStyle({ headerShown: false, gestureEnabled: false })(theme)}
+        options={navigationStyle({ headerShown: false, gestureEnabled: false, presentation: 'transparentModal' })(theme)}
       />
       <Stack.Screen name="CoinControl" component={CoinControlComponent} options={navigationStyle({ title: loc.cc.header })(theme)} />
       <Stack.Screen

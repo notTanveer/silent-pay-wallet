@@ -144,6 +144,7 @@
         "qr_error_no_qrcode": "We were unable to find a valid QR Code in the selected image. Make sure the image contains only a QR Code and no additional content such as text or buttons.",
         "reset_amount": "Reset Amount",
         "reset_amount_confirm": "Would you like to reset the amount?",
+        "sent_successfully": "Sent successfully",
         "success_done": "Done",
         "txSaved": "The transaction file ({filePath}) has been saved.",
         "file_saved_at_path": "The file ({filePath}) has been saved.",
