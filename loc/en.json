@@ -70,7 +70,7 @@
         "broadcastNone": "Insert Transaction Hex",
         "broadcastPending": "Pending",
         "broadcastSuccess": "Success",
-        "confirm_header": "Confirm",
+        "confirm_header": "Confirm transaction",
         "confirm_sendNow": "Send now",
         "create_amount": "Amount",
         "create_broadcast": "Broadcast",
