@@ -5,41 +5,27 @@ import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { TOptions } from 'bip21';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  findNodeHandle,
-  FlatList,
-  Keyboard,
-  LayoutAnimation,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  Pressable,
-  View,
-  TouchableOpacity,
-} from 'react-native';
+import { ActivityIndicator, Keyboard, LayoutAnimation, Platform, StyleSheet, Text, TextInput, Pressable, View } from 'react-native';
 import { SilentPayment } from 'silent-payments';
-import { btcToSatoshi, fiatToBTC } from '../../modules/currency';
+import { btcToSatoshi, satoshiToLocalCurrency } from '../../modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
-import { ShroudText } from '../../ShroudComponents';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import { CreateTransactionTarget, CreateTransactionUtxo, TWallet } from '../../class/wallets/types';
-import AddressInput from '../../components/AddressInput';
 import presentAlert from '../../components/Alert';
-import * as AmountInput from '../../components/AmountInput';
+import AmountHero from '../../components/AmountHero';
+import Button from '../../components/Button';
 import CoinsSelected from '../../components/CoinsSelected';
-import { DismissKeyboardInputAccessory, DismissKeyboardInputAccessoryViewID } from '../../components/DismissKeyboardInputAccessory';
+import { DismissKeyboardInputAccessory } from '../../components/DismissKeyboardInputAccessory';
 import HeaderMenuButton from '../../components/HeaderMenuButton';
-import InputAccessoryAllFunds, { InputAccessoryAllFundsAccessoryViewID } from '../../components/InputAccessoryAllFunds';
+import InputAccessoryAllFunds from '../../components/InputAccessoryAllFunds';
+import LabeledField from '../../components/LabeledField';
 import SafeArea from '../../components/SafeArea';
+import ScanIcon from '../../components/ScanIcon';
 import { useTheme } from '../../components/themes';
 import { Action } from '../../components/types';
+import { ClashFont } from '../../constants/fonts';
+import { isAmountEmpty } from '../../helpers/send/format';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useKeyboard } from '../../hooks/useKeyboard';
@@ -80,12 +66,9 @@ const SendDetails = () => {
   const utxos = route.params?.utxos;
   const isTransactionReplaceable = route.params?.isTransactionReplaceable;
   const routeParams = route.params;
-  const scrollView = useRef<FlatList<any>>(null);
-  const scrollIndex = useRef(0);
   const { colors } = useTheme();
 
   // state
-  const [dimensions, setDimensions] = useState({ width: Dimensions.get('window').width, height: 0 });
   const [isLoading, setIsLoading] = useState(false);
   const [wallet, setWallet] = useState<TWallet | null>(null);
   const { isVisible } = useKeyboard();
@@ -101,6 +84,38 @@ const SendDetails = () => {
   // if utxo is limited we use it to calculate available balance
   const balance: number = utxos ? utxos.reduce((prev, curr) => prev + curr.value, 0) : (wallet?.getBalance() ?? 0);
   const allBalance = formatBalanceWithoutSuffix(balance, BitcoinUnit.BTC, true);
+
+  // single-recipient helpers
+  const recipient = addresses[0];
+  const displayAmount = recipient?.amount === BitcoinUnit.MAX ? String(allBalance) : recipient?.amount ? String(recipient.amount) : '';
+  const amountSatsNum = Number(recipient?.amountSats) || 0;
+  const fiatEstimate = `≈ ${satoshiToLocalCurrency(amountSatsNum)}`;
+  const isFormValid = !!recipient?.address && !isAmountEmpty(recipient?.amount);
+
+  const onChangeAmount = (text: string) => {
+    setAddresses(addrs => {
+      const a = { ...addrs[0] };
+      a.amount = text;
+      a.amountSats = btcToSatoshi(text);
+      a.unit = BitcoinUnit.BTC;
+      return [a, ...addrs.slice(1)];
+    });
+  };
+
+  const onChangeAddress = (text: string) => {
+    const { address, amount, memo } = DeeplinkSchemaMatch.decodeBitcoinUri(text.trim());
+    setAddresses(addrs => {
+      const a = { ...addrs[0] };
+      a.address = address || text.trim();
+      if (amount) {
+        a.amount = String(amount);
+        a.amountSats = btcToSatoshi(String(amount));
+      }
+      return [a, ...addrs.slice(1)];
+    });
+    if (memo) setParams({ transactionMemo: memo });
+    setIsLoading(false);
+  };
 
   // if cutomFee is not set, we need to choose highest possible fee for wallet balance
   // if there are no funds for even Slow option, use 1 sat/vbyte fee
@@ -145,13 +160,13 @@ const SendDetails = () => {
 
   useEffect(() => {
     // decode route params
-    const currentAddress = addresses[scrollIndex.current];
+    const currentAddress = addresses[0];
     if (routeParams.uri) {
       try {
         const { address, amount, memo } = DeeplinkSchemaMatch.decodeBitcoinUri(routeParams.uri);
 
         setAddresses(addrs => {
-          addrs[scrollIndex.current].unit = BitcoinUnit.BTC;
+          addrs[0].unit = BitcoinUnit.BTC;
           return [...addrs];
         });
 
@@ -162,7 +177,7 @@ const SendDetails = () => {
               currentAddress.amount = amount!;
               currentAddress.amountSats = btcToSatoshi(amount!);
             }
-            addrs[scrollIndex.current] = currentAddress;
+            addrs[0] = currentAddress;
             return [...addrs];
           } else {
             return [...addrs, { address, amount, amountSats: btcToSatoshi(amount!), key: String(Math.random()), unit: amountUnit }];
@@ -192,17 +207,16 @@ const SendDetails = () => {
       });
     } else if (routeParams.addRecipientParams) {
       // used to add a recipient, mainly from contacts aka paymentcodes screen
-      const index = addresses.length === 0 ? 0 : scrollIndex.current;
       const { address, amount } = routeParams.addRecipientParams;
 
       setAddresses(prevAddresses => {
         const updatedAddresses = [...prevAddresses];
         if (address) {
-          updatedAddresses[index] = {
-            ...updatedAddresses[index],
+          updatedAddresses[0] = {
+            ...updatedAddresses[0],
             address,
-            amount: amount ?? updatedAddresses[index].amount,
-            amountSats: amount ? btcToSatoshi(amount) : updatedAddresses[index].amountSats,
+            amount: amount ?? updatedAddresses[0].amount,
+            amountSats: amount ? btcToSatoshi(amount) : updatedAddresses[0].amountSats,
           };
         }
         return updatedAddresses;
@@ -211,7 +225,7 @@ const SendDetails = () => {
       // @ts-ignore: Fix later
       setParams(prevParams => ({ ...prevParams, addRecipientParams: undefined }));
     } else {
-      setAddresses([{ address: '', key: String(Math.random()), unit: amountUnit }]); // key is for the FlatList
+      setAddresses([{ address: '', key: String(Math.random()), unit: amountUnit }]);
     }
     // this effect only to run once when screen is mounted or params change
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -366,11 +380,6 @@ const SendDetails = () => {
     }, []),
   );
 
-  const handleLayout = (event: any) => {
-    const { width, height } = event.nativeEvent.layout;
-    setDimensions({ width, height });
-  };
-
   const getChangeAddressAsync = async () => {
     if (changeAddress) return changeAddress; // cache
 
@@ -401,7 +410,6 @@ const SendDetails = () => {
       if (typeof data !== 'string') {
         data = String(data.data);
       }
-      const currentIndex = scrollIndex.current;
       setIsLoading(true);
       if (!data.replace) {
         // user probably scanned PSBT and got an object instead of string..?
@@ -413,11 +421,10 @@ const SendDetails = () => {
       const dataWithoutSchema = data.replace('bitcoin:', '').replace('BITCOIN:', '');
       if (wallet.isAddressValid(dataWithoutSchema) || SilentPayment.isPaymentCodeValid(dataWithoutSchema)) {
         setAddresses(addrs => {
-          addrs[scrollIndex.current].address = dataWithoutSchema;
+          addrs[0].address = dataWithoutSchema;
           return [...addrs];
         });
         setIsLoading(false);
-        setTimeout(() => scrollView.current?.scrollToIndex({ index: currentIndex, animated: false }), 50);
         return;
       }
 
@@ -439,18 +446,16 @@ const SendDetails = () => {
       console.log('options', options);
       if (wallet.isAddressValid(address)) {
         setAddresses(addrs => {
-          addrs[scrollIndex.current].address = address;
-          addrs[scrollIndex.current].amount = options?.amount ?? 0;
-          addrs[scrollIndex.current].amountSats = new BigNumber(options?.amount ?? 0).multipliedBy(100000000).toNumber();
+          addrs[0].address = address;
+          addrs[0].amount = options?.amount ?? 0;
+          addrs[0].amountSats = new BigNumber(options?.amount ?? 0).multipliedBy(100000000).toNumber();
           return [...addrs];
         });
         setAddresses(addrs => {
-          addrs[scrollIndex.current].unit = BitcoinUnit.BTC;
+          addrs[0].unit = BitcoinUnit.BTC;
           return [...addrs];
         });
         setParams({ transactionMemo: options.label || '', amountUnit: BitcoinUnit.BTC }); // there used to be `options.message` here as well. bug?
-        // RN Bug: contentOffset gets reset to 0 when state changes. Remove code once this bug is resolved.
-        setTimeout(() => scrollView.current?.scrollToIndex({ index: currentIndex, animated: false }), 50);
       }
 
       setIsLoading(false);
@@ -497,8 +502,6 @@ const SendDetails = () => {
       }
 
       if (error) {
-        // Scroll to the recipient that caused the error with animation
-        scrollView.current?.scrollToIndex({ index, animated: true });
         setIsLoading(false);
         presentAlert({
           title:
@@ -616,71 +619,6 @@ const SendDetails = () => {
     setParams({ onBarScanned: undefined });
   }, [routeParams.onBarScanned, setParams, processAddressData]);
 
-  const handleAddRecipient = useCallback(() => {
-    // Check if any recipient is incomplete (missing address or amount)
-    const incompleteIndex = addresses.findIndex(item => !item.address || !item.amount);
-    if (incompleteIndex !== -1) {
-      scrollIndex.current = incompleteIndex;
-      scrollView.current?.scrollToIndex({ index: incompleteIndex, animated: true });
-      presentAlert({
-        title: loc.send.please_complete_recipient_title,
-        message: loc.formatString(loc.send.please_complete_recipient_details, { number: incompleteIndex + 1 }),
-      });
-      return;
-    }
-    // Add new recipient as usual if all recipients are complete
-    setAddresses(prevAddresses => [...prevAddresses, { address: '', key: String(Math.random()), unit: amountUnit }]);
-    // Wait for the state to update before scrolling
-    setTimeout(() => {
-      scrollIndex.current = addresses.length; // New index at the end
-      scrollView.current?.scrollToIndex({
-        index: scrollIndex.current,
-        animated: true,
-      });
-    }, 0);
-  }, [addresses, amountUnit]);
-
-  const onRemoveAllRecipientsConfirmed = useCallback(() => {
-    setAddresses([{ address: '', key: String(Math.random()), unit: amountUnit }]);
-  }, [amountUnit]);
-
-  const handleRemoveAllRecipients = useCallback(() => {
-    Alert.alert(loc.send.details_recipients_title, loc.send.details_add_recc_rem_all_alert_description, [
-      {
-        text: loc._.cancel,
-        onPress: () => {},
-        style: 'cancel',
-      },
-      {
-        text: loc._.ok,
-        onPress: onRemoveAllRecipientsConfirmed,
-      },
-    ]);
-  }, [onRemoveAllRecipientsConfirmed]);
-
-  const handleRemoveRecipient = useCallback(() => {
-    if (addresses.length > 1) {
-      const newAddresses = [...addresses];
-      newAddresses.splice(scrollIndex.current, 1);
-
-      // Adjust the current index if the last item was removed
-      const newIndex = scrollIndex.current >= newAddresses.length ? newAddresses.length - 1 : scrollIndex.current;
-
-      setAddresses(newAddresses);
-
-      // Wait for the state to update before scrolling
-      setTimeout(() => {
-        scrollView.current?.scrollToIndex({
-          index: newIndex,
-          animated: true,
-        });
-      }, 0);
-
-      // Update the scroll index reference
-      scrollIndex.current = newIndex;
-    }
-  }, [addresses]);
-
   const handleCoinControl = useCallback(() => {
     if (!wallet) return;
     navigation.navigate('CoinControl', {
@@ -699,25 +637,23 @@ const SendDetails = () => {
     triggerHapticFeedback(HapticFeedbackTypes.NotificationWarning);
     const message = frozenBalance > 0 ? loc.send.details_adv_full_sure_frozen : loc.send.details_adv_full_sure;
 
-    const anchor = findNodeHandle(scrollView.current);
     const options = {
       title: loc.send.details_adv_full,
       message,
       options: [loc._.cancel, loc._.ok],
       cancelButtonIndex: 0,
-      anchor: anchor ?? undefined,
     };
 
     ActionSheet.showActionSheetWithOptions(options, buttonIndex => {
       if (buttonIndex === 1) {
         Keyboard.dismiss();
         setAddresses(addrs => {
-          addrs[scrollIndex.current].amount = BitcoinUnit.MAX;
-          addrs[scrollIndex.current].amountSats = BitcoinUnit.MAX;
+          addrs[0].amount = BitcoinUnit.MAX;
+          addrs[0].amountSats = BitcoinUnit.MAX;
           return [...addrs];
         });
         setAddresses(addrs => {
-          addrs[scrollIndex.current].unit = BitcoinUnit.BTC;
+          addrs[0].unit = BitcoinUnit.BTC;
           return [...addrs];
         });
       }
@@ -728,11 +664,7 @@ const SendDetails = () => {
   const headerRightOnPress = useCallback(
     (id: string) => {
       Keyboard.dismiss();
-      if (id === CommonToolTipActions.AddRecipient.id) {
-        handleAddRecipient();
-      } else if (id === CommonToolTipActions.RemoveRecipient.id) {
-        handleRemoveRecipient();
-      } else if (id === CommonToolTipActions.SignPSBT.id) {
+      if (id === CommonToolTipActions.SignPSBT.id) {
         selectedDataProcessor.current = CommonToolTipActions.SignPSBT;
         navigateToQRCodeScanner();
       } else if (id === CommonToolTipActions.SendMax.id) {
@@ -741,39 +673,15 @@ const SendDetails = () => {
         onReplaceableFeeSwitchValueChanged(!isTransactionReplaceable);
       } else if (id === CommonToolTipActions.CoinControl.id) {
         handleCoinControl();
-      } else if (id === CommonToolTipActions.RemoveAllRecipients.id) {
-        handleRemoveAllRecipients();
       }
     },
-    [
-      handleAddRecipient,
-      handleRemoveRecipient,
-      navigateToQRCodeScanner,
-      onUseAllPressed,
-      onReplaceableFeeSwitchValueChanged,
-      isTransactionReplaceable,
-      handleCoinControl,
-      handleRemoveAllRecipients,
-    ],
+    [navigateToQRCodeScanner, onUseAllPressed, onReplaceableFeeSwitchValueChanged, isTransactionReplaceable, handleCoinControl],
   );
 
   const headerRightActions = useCallback(() => {
     if (!wallet) return [];
 
     const walletActions: Action[][] = [];
-
-    const recipientActions: Action[] = [
-      CommonToolTipActions.AddRecipient,
-      {
-        ...CommonToolTipActions.RemoveRecipient,
-        hidden: addresses.length <= 1,
-      },
-      {
-        ...CommonToolTipActions.RemoveAllRecipients,
-        hidden: !(addresses.length > 1),
-      },
-    ];
-    walletActions.push(recipientActions);
 
     const isSendMaxUsed = addresses.some(element => element.amount === BitcoinUnit.MAX);
     const sendMaxAction: Action[] = [
@@ -785,14 +693,9 @@ const SendDetails = () => {
     ];
     walletActions.push(sendMaxAction);
 
-    // const rbfAction: Action[] = [
-    //   {
-    //     ...CommonToolTipActions.AllowRBF,
-    //     menuState: isTransactionReplaceable,
-    //     hidden: !(wallet.type === HDSegwitBech32Wallet.type && isTransactionReplaceable !== undefined),
-    //   },
-    // ];
-    // walletActions.push(rbfAction);
+    walletActions.push([CommonToolTipActions.CoinControl]);
+
+    walletActions.push([CommonToolTipActions.SignPSBT]);
 
     return walletActions;
   }, [addresses, isEditable, wallet]);
@@ -853,13 +756,6 @@ const SendDetails = () => {
     }
   }, [routeParams.selectedFeeRate, routeParams.selectedFeeType, networkTransactionFees, setParams, customFee, selectedPresetFeeRate]);
 
-  const handleRecipientsScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const contentOffset = e.nativeEvent.contentOffset;
-    const viewSize = e.nativeEvent.layoutMeasurement;
-    const index = Math.floor(contentOffset.x / viewSize.width);
-    scrollIndex.current = index;
-  };
-
   const formatFee = (fee: number) => formatBalance(fee, feeUnit!, true);
 
   const stylesHook = StyleSheet.create({
@@ -869,40 +765,12 @@ const SendDetails = () => {
     selectLabel: {
       color: colors.buttonTextColor,
     },
-    of: {
-      color: colors.feeText,
-    },
-    memo: {
-      borderColor: colors.formBorder,
-      borderBottomColor: colors.formBorder,
-      backgroundColor: colors.inputBackgroundColor,
-    },
-    feeLabel: {
-      color: colors.feeText,
-    },
-    feeRow: {
-      backgroundColor: colors.feeLabel,
-    },
-    feeValue: {
-      color: colors.feeValue,
-    },
-    warningContainer: {
-      backgroundColor: colors.changeBackground,
-    },
-    warningText: {
-      color: colors.changeText,
-    },
+    fieldInput: { color: colors.foregroundColor },
+    scanBtn: { backgroundColor: colors.white, shadowColor: colors.shadowColor, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
+    feeSummary: { borderColor: colors.summaryBorder },
+    feeSummaryLabel: { color: colors.textSecondary },
+    feeSummaryValue: { color: colors.placeholderTextColor },
   });
-
-  const renderCreateButton = () => {
-    return (
-      <View style={styles.bottom}>
-        <TouchableOpacity style={styles.button} onPress={createTransaction}>
-          <Text style={styles.buttonText}>{loc.send.details_next}</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  };
 
   const renderCoinsSelected = () => {
     if (isVisible) return null;
@@ -930,160 +798,52 @@ const SendDetails = () => {
     );
   };
 
-  const renderBitcoinTransactionInfoFields = (params: { item: IPaymentDestinations; index: number }) => {
-    const { item, index } = params;
-    return (
-      <View style={[styles.transactionItemContainer, { width: dimensions.width }]} testID={'Transaction' + index}>
-        <View style={styles.amountInputContainer}>
-          <AmountInput.AmountInput
-            isLoading={isLoading}
-            amount={item.amount ? item.amount.toString() : undefined}
-            onAmountUnitChange={(unit: BitcoinUnit) => {
-              setAddresses(addrs => {
-                const addr = addrs[index];
-
-                switch (unit) {
-                  case BitcoinUnit.SATS:
-                    addr.amountSats = parseInt(String(addr.amount), 10);
-                    break;
-                  case BitcoinUnit.BTC:
-                    addr.amountSats = btcToSatoshi(String(addr.amount));
-                    break;
-                  case BitcoinUnit.LOCAL_CURRENCY:
-                    // also accounting for cached fiat->sat conversion to avoid rounding error
-                    addr.amountSats = AmountInput.getCachedSatoshis(String(addr.amount)) || btcToSatoshi(fiatToBTC(Number(addr.amount)));
-                    break;
-                }
-
-                addrs[index] = addr;
-                return [...addrs];
-              });
-              setAddresses(addrs => {
-                addrs[index].unit = unit;
-                return [...addrs];
-              });
-            }}
-            onChangeText={(text: string) => {
-              setAddresses(addrs => {
-                item.amount = text;
-                switch (item.unit || amountUnit) {
-                  case BitcoinUnit.BTC:
-                    item.amountSats = btcToSatoshi(item.amount);
-                    break;
-                  case BitcoinUnit.LOCAL_CURRENCY:
-                    item.amountSats = btcToSatoshi(fiatToBTC(Number(item.amount)));
-                    break;
-                  case BitcoinUnit.SATS:
-                  default:
-                    item.amountSats = parseInt(text, 10);
-                    break;
-                }
-                addrs[index] = item;
-                return [...addrs];
-              });
-            }}
-            unit={item.unit || amountUnit}
-            editable={isEditable}
-            disabled={!isEditable}
-            inputAccessoryViewID={InputAccessoryAllFundsAccessoryViewID}
-          />
-        </View>
-
-        {frozenBalance > 0 && (
-          <Pressable
-            accessibilityRole="button"
-            style={({ pressed }) => [pressed && styles.pressed, styles.frozenContainer]}
-            onPress={handleCoinControl}
-          >
-            <ShroudText>
-              {loc.formatString(loc.send.details_frozen, { amount: formatBalanceWithoutSuffix(frozenBalance, BitcoinUnit.BTC, true) })}
-            </ShroudText>
-          </Pressable>
-        )}
-
-        <View style={styles.addressInputContainer}>
-          <AddressInput
-            onChangeText={text => {
-              const { address, amount, memo } = DeeplinkSchemaMatch.decodeBitcoinUri(text.trim());
-              setAddresses(addrs => {
-                item.address = address || text.trim();
-                item.amount = amount || item.amount;
-                addrs[index] = item;
-                return [...addrs];
-              });
-              if (memo) {
-                setParams({ transactionMemo: memo });
-              }
-              setIsLoading(false);
-            }}
-            address={item.address}
-            isLoading={isLoading}
-            inputAccessoryViewID={DismissKeyboardInputAccessoryViewID}
-            editable={isEditable}
-            style={styles.fullWidthInput}
-          />
-        </View>
-
-        {addresses.length > 1 && (
-          <Text style={[styles.of, stylesHook.of, styles.ofMargin]}>
-            {loc.formatString(loc._.of, { number: index + 1, total: addresses.length })}
-          </Text>
-        )}
-      </View>
-    );
-  };
-
-  const renderCustomFeeWarning = () => {
-    if (!customFee || Number(customFee) >= 1) return;
-
-    return (
-      <View style={[styles.warningContainer, stylesHook.warningContainer]}>
-        <Text style={[styles.warningHeader, stylesHook.warningText]}>{loc.transactions.custom_fee_warning_title}</Text>
-        <Text style={stylesHook.warningText}>{loc.transactions.custom_fee_warning_description}</Text>
-      </View>
-    );
-  };
-
-  const getItemLayout = (_: any, index: number) => ({
-    length: dimensions.width,
-    offset: dimensions.width * index,
-    index,
-  });
-
   return (
     <SafeArea style={[styles.root, stylesHook.root]}>
-      <View>
-        <FlatList
-          onLayout={handleLayout}
-          keyboardShouldPersistTaps="always"
-          scrollEnabled={addresses.length > 1}
-          data={addresses}
-          renderItem={renderBitcoinTransactionInfoFields}
-          horizontal
-          ref={scrollView}
-          automaticallyAdjustKeyboardInsets
-          pagingEnabled
-          removeClippedSubviews={false}
-          onMomentumScrollBegin={Keyboard.dismiss}
-          onScroll={handleRecipientsScroll}
-          scrollEventThrottle={16}
-          scrollIndicatorInsets={styles.scrollViewIndicator}
-          contentContainerStyle={styles.scrollViewContent}
-          getItemLayout={getItemLayout}
+      <View style={styles.body}>
+        <AmountHero
+          editable
+          amount={displayAmount}
+          fiat={fiatEstimate}
+          onChangeAmount={onChangeAmount}
+          showHint={isAmountEmpty(recipient?.amount)}
+          onUseMax={onUseAllPressed}
+          useMaxDisabled={balance <= 0}
         />
-        <View style={[styles.memo, stylesHook.memo]}>
+
+        <LabeledField
+          label={loc.send.label_address}
+          trailing={
+            <Pressable accessibilityRole="button" onPress={navigateToQRCodeScanner} style={[styles.scanBtn, stylesHook.scanBtn]}>
+              <ScanIcon color={colors.brandPrimary} />
+            </Pressable>
+          }
+        >
           <TextInput
-            onChangeText={setTransactionMemo}
-            placeholder={loc.send.details_note_placeholder}
-            placeholderTextColor="#81868e"
-            value={transactionMemo}
-            numberOfLines={1}
-            style={styles.memoText}
-            editable={!isLoading}
-            onSubmitEditing={Keyboard.dismiss}
-            inputAccessoryViewID={DismissKeyboardInputAccessoryViewID}
+            style={[styles.fieldInput, stylesHook.fieldInput]}
+            placeholder={loc.send.paste_or_scan}
+            placeholderTextColor={colors.placeholderTextColor}
+            value={recipient?.address}
+            onChangeText={onChangeAddress}
+            editable={isEditable}
+            autoCapitalize="none"
+            autoCorrect={false}
+            testID="AddressInput"
           />
-        </View>
+        </LabeledField>
+
+        <LabeledField label={loc.send.label_note}>
+          <TextInput
+            style={[styles.fieldInput, stylesHook.fieldInput]}
+            placeholder={loc.send.note_visible_to_you}
+            placeholderTextColor={colors.placeholderTextColor}
+            value={transactionMemo}
+            onChangeText={setTransactionMemo}
+            editable={!isLoading}
+            testID="NoteInput"
+          />
+        </LabeledField>
+
         <Pressable
           testID="chooseFee"
           accessibilityRole="button"
@@ -1099,22 +859,19 @@ const SendDetails = () => {
             });
           }}
           disabled={isLoading}
-          style={({ pressed }) => [pressed && styles.pressed, styles.fee]}
+          style={[styles.feeSummary, stylesHook.feeSummary]}
         >
-          <Text style={[styles.feeLabel, stylesHook.feeLabel]}>{loc.send.create_fee}</Text>
-
+          <Text style={[styles.feeSummaryLabel, stylesHook.feeSummaryLabel]}>{loc.send.network_fee}</Text>
           {networkTransactionFeesIsLoading ? (
             <ActivityIndicator />
           ) : (
-            <View style={[styles.feeRow, stylesHook.feeRow]}>
-              <Text style={stylesHook.feeValue}>
-                {feePrecalc.current ? formatFee(feePrecalc.current) : feeRate + ' ' + loc.units.sat_vbyte}
-              </Text>
-            </View>
+            <Text style={[styles.feeSummaryValue, stylesHook.feeSummaryValue]}>
+              {feePrecalc.current && amountSatsNum > 0 ? formatFee(feePrecalc.current) : loc.send.enter_amount_to_estimate}
+            </Text>
           )}
         </Pressable>
-        {renderCustomFeeWarning()}
       </View>
+
       <DismissKeyboardInputAccessory />
       {Platform.select({
         ios: <InputAccessoryAllFunds canUseAll={balance > 0} onUseAllPressed={onUseAllPressed} balance={String(allBalance)} />,
@@ -1124,7 +881,18 @@ const SendDetails = () => {
       })}
 
       {renderCoinsSelected()}
-      {renderCreateButton()}
+
+      <View style={styles.bottom}>
+        <Button
+          testID="sendNextButton"
+          title={loc.send.details_next}
+          backgroundColor={colors.brandPrimary}
+          disabledBackgroundColor={colors.ctaDisabled}
+          disabledTextColor={colors.white}
+          disabled={!isFormValid || isLoading}
+          onPress={createTransaction}
+        />
+      </View>
     </SafeArea>
   );
 };
@@ -1135,15 +903,6 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     justifyContent: 'space-between',
-  },
-  scrollViewContent: {
-    flexDirection: 'row',
-  },
-  scrollViewIndicator: {
-    top: 0,
-    left: 8,
-    bottom: 0,
-    right: 8,
   },
   select: {
     marginBottom: 24,
@@ -1158,95 +917,44 @@ const styles = StyleSheet.create({
   selectLabel: {
     fontSize: 14,
   },
-  of: {
-    alignSelf: 'flex-end',
-    marginRight: 18,
-    marginVertical: 8,
-  },
-  ofMargin: {
-    marginTop: 4,
-  },
-  memo: {
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderBottomWidth: 0.5,
-    minHeight: 44,
-    height: 44,
-    marginHorizontal: 16,
-    alignItems: 'center',
-    marginVertical: 8,
-    borderRadius: 4,
-  },
-  memoText: {
+  body: {
     flex: 1,
-    marginHorizontal: 8,
-    minHeight: 33,
-    color: '#81868e',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    gap: 24,
   },
-  fee: {
+  fieldInput: {
+    flex: 1,
+    fontFamily: ClashFont.regular,
+    fontSize: 13,
+    padding: 0,
+  },
+  scanBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  feeSummary: {
     flexDirection: 'row',
-    marginHorizontal: 16,
     justifyContent: 'space-between',
     alignItems: 'center',
+    minHeight: 66,
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 16,
   },
-  feeLabel: {
+  feeSummaryLabel: {
+    fontFamily: ClashFont.regular,
     fontSize: 14,
   },
-  feeRow: {
-    minWidth: 40,
-    height: 25,
-    borderRadius: 4,
-    justifyContent: 'space-between',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-  },
-  frozenContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 4,
-  },
-  transactionItemContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  amountInputContainer: {
-    marginBottom: 8,
-  },
-  addressInputContainer: {
-    marginTop: 8,
-  },
-  fullWidthInput: {
-    width: '100%',
-  },
-  pressed: {
-    opacity: 0.6,
-  },
-  warningContainer: {
-    flexDirection: 'column',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginHorizontal: 16,
-    borderRadius: 4,
-    marginTop: 12,
-  },
-  warningHeader: {
-    fontWeight: 'bold',
+  feeSummaryValue: {
+    fontFamily: ClashFont.medium,
+    fontSize: 16,
   },
   bottom: {
-    padding: 16,
-  },
-  button: {
-    backgroundColor: '#754CE8',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '500',
-    textAlign: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: 24,
   },
 });
