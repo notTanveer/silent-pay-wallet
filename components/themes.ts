@@ -108,6 +108,18 @@ export const ShroudDefaultTheme = {
     syncFillDone: '#D2F9DC',
     syncRingError: '#FDF1F2',
     syncFillError: '#FBE9EB',
+
+    // --- Send redesign tokens (light-only; dark inherits via spread) ---
+    fieldBackground: '#F5F5F7', // Address / Note field background
+    amountMeta: '#9B9BA5', // BTC unit, fiat estimate, slow/medium ETA
+    ctaDisabled: '#99A1AF', // disabled primary button background
+    feeCardBorder: '#E6E6E8', // unselected fee card border
+    feeCardSelectedBorder: '#B9BAF9', // selected fee card border
+    useMaxBorder: '#E8E4FA', // "Use Max" pill border
+    useMaxText: '#6E55E0', // "Use Max" pill text
+    copyButtonBorder: '#E6E4E4', // Confirm copy-button border
+    divider: '#E6E4E4', // Confirm section dividers
+    summaryBorder: 'rgba(230,228,228,0.72)', // SendDetails fee summary card border
   },
 };
 
