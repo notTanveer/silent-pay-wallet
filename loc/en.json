@@ -121,6 +121,8 @@
         "fee_replace_minvb": "The total fee rate (satoshi per vByte) you want to pay should be higher than {min} sat/vByte.",
         "fee_satvbyte": "in sat/vByte",
         "fee_slow": "Slow",
+        "network_fee_header": "Network Fee",
+        "set_your_own_fee_rate": "Set your own fee rate",
         "header": "Send",
         "input_clear": "Clear",
         "input_done": "Done",

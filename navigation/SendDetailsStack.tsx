@@ -16,7 +16,6 @@ import HeaderRightButton from '../components/HeaderRightButton';
 import { BitcoinUnit } from '../models/bitcoinUnits';
 import { ScanQRCodeComponent } from './LazyLoadScanQRCodeStack';
 import SelectFeeScreen from '../screen/SelectFeeScreen';
-import { Platform } from 'react-native';
 
 const Stack = createNativeStackNavigator<SendDetailsStackParamList>();
 
@@ -39,16 +38,7 @@ const SendDetailsStack = () => {
         })(theme)}
         initialParams={{ isEditable: true, feeUnit: BitcoinUnit.BTC, amountUnit: BitcoinUnit.BTC }} // Correctly typed now
       />
-      <Stack.Screen
-        name="SelectFee"
-        component={SelectFeeScreen}
-        options={navigationStyle({
-          sheetAllowedDetents: Platform.OS === 'ios' ? 'fitToContents' : [0.9],
-          presentation: 'formSheet',
-          headerTitle: '',
-          sheetGrabberVisible: true,
-        })(theme)}
-      />
+      <Stack.Screen name="SelectFee" component={SelectFeeScreen} options={navigationStyle({ title: loc.send.network_fee_header })(theme)} />
       <Stack.Screen
         name="Confirm"
         component={ConfirmComponent}
