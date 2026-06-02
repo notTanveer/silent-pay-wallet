@@ -16,13 +16,15 @@ const HeaderMenuButton: React.FC<HeaderMenuButtonProps> = ({ onPressMenuItem, ac
   const { colors } = useTheme();
   const styleProps = Platform.OS === 'android' ? { iconStyle: { transform: [{ rotate: '90deg' }] } } : {};
 
+  const iconOpacity = disabled ? 0.35 : 1;
+
   if (!actions || actions.length === 0) {
     return (
       <Pressable
         testID="HeaderMenuButton"
         disabled={disabled}
         android_ripple={{ color: colors.lightButton }}
-        style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
+        style={({ pressed }) => [{ opacity: pressed ? 0.5 : iconOpacity }]}
       >
         <Icon size={22} name="more-horiz" type="material" color={colors.foregroundColor} {...styleProps} />
       </Pressable>
@@ -40,6 +42,7 @@ const HeaderMenuButton: React.FC<HeaderMenuButtonProps> = ({ onPressMenuItem, ac
       onPressMenuItem={onPressMenuItem}
       actions={menuActions}
       title={title}
+      buttonStyle={{ opacity: iconOpacity }}
     >
       <Icon size={22} name="more-horiz" type="material" color={colors.foregroundColor} {...styleProps} />
     </ToolTipMenu>

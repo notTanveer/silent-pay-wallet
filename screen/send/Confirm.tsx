@@ -68,7 +68,7 @@ const ConfirmDetailRow: React.FC<{ label: string; value: string; mono?: boolean;
   const stylesHook = StyleSheet.create({
     label: { color: colors.textPrimary },
     value: { color: colors.textPrimary },
-    copyBtn: { borderColor: colors.copyButtonBorder },
+    copyBtn: { backgroundColor: colors.white, borderColor: colors.copyButtonBorder },
   });
   return (
     <View style={styles.detailRow}>
@@ -90,11 +90,11 @@ const Confirm: React.FC = () => {
   const { isElectrumDisabled } = useSettings();
   const { isBiometricUseCapableAndEnabled } = useBiometrics();
   const navigation = useExtendedNavigation<ConfirmNavigationProp>();
-  const route = useRoute<ConfirmRouteProp>(); // Get the route and its params
-  const { recipients, walletID, fee, memo, tx, satoshiPerByte } = route.params;
+  const route = useRoute<ConfirmRouteProp>();
+  const { recipients, walletID, fee, tx } = route.params;
 
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { navigate, setOptions, goBack } = navigation;
+  const { navigate, goBack } = navigation;
   const wallet = wallets.find((w: TWallet) => w.getID() === walletID) as TWallet;
   const feeSatoshi = new BigNumber(fee).multipliedBy(100000000).toNumber();
   const { colors } = useTheme();
@@ -103,11 +103,11 @@ const Confirm: React.FC = () => {
 
   const stylesHook = StyleSheet.create({
     root: { backgroundColor: colors.elevated },
-    txDetails: { backgroundColor: colors.lightButton },
-    valueUnit: { color: colors.buttonTextColor },
     divider: { backgroundColor: colors.divider },
     summaryLabel: { color: colors.amountMeta },
     summaryValue: { color: colors.black },
+    summaryFiat: { color: colors.chevron },
+    totalRow: { backgroundColor: colors.white },
     totalLabel: { color: colors.textPrimary },
     totalValue: { color: colors.brandPrimary },
     sendNowButton: { backgroundColor: colors.brandPrimary },
@@ -121,64 +121,12 @@ const Confirm: React.FC = () => {
     }
   }, [wallet, goBack]);
 
-  const HeaderRightButton = useMemo(
-    () => (
-      <Pressable
-        accessibilityRole="button"
-        testID="TransactionDetailsButton"
-        style={[styles.txDetails, stylesHook.txDetails]}
-        onPress={async () => {
-          if (await isBiometricUseCapableAndEnabled()) {
-            if (!(await unlockWithBiometrics())) {
-              return;
-            }
-          }
-          navigate('CreateTransaction', {
-            fee,
-            recipients,
-            memo,
-            tx,
-            satoshiPerByte,
-            feeSatoshi,
-          });
-        }}
-      >
-        <Text style={[styles.txText, stylesHook.valueUnit]}>{loc.send.create_details}</Text>
-      </Pressable>
-    ),
-    [
-      stylesHook.txDetails,
-      stylesHook.valueUnit,
-      isBiometricUseCapableAndEnabled,
-      navigate,
-      fee,
-      recipients,
-      memo,
-      tx,
-      satoshiPerByte,
-      feeSatoshi,
-    ],
-  );
-
-  useEffect(() => {
-    console.log('send/confirm - useEffect');
-    console.log('address = ', recipients);
-  }, [recipients]);
-
-  useEffect(() => {
-    setOptions({
-      headerRight: () => HeaderRightButton,
-    });
-  }, [HeaderRightButton, colors, fee, feeSatoshi, memo, recipients, satoshiPerByte, setOptions, tx, wallet]);
-
   const handleSendTransaction = async () => {
     dispatch({ type: ActionType.SET_BUTTON_DISABLED, payload: true });
     dispatch({ type: ActionType.SET_LOADING, payload: true });
     try {
-      // Perform biometric authentication first
       if (await isBiometricUseCapableAndEnabled()) {
         if (!(await unlockWithBiometrics())) {
-          // Stop execution if biometric unlock fails
           dispatch({ type: ActionType.SET_LOADING, payload: false });
           dispatch({ type: ActionType.SET_BUTTON_DISABLED, payload: false });
           return;
@@ -254,35 +202,48 @@ const Confirm: React.FC = () => {
   return (
     <SafeArea style={[styles.root, stylesHook.root]}>
       <View style={styles.content}>
-        <AmountHero amount={String(satoshiToBTC(amountSats))} fiat={`≈ ${satoshiToLocalCurrency(amountSats)}`} />
+        <AmountHero amount={satoshiToBTC(amountSats)} fiat={`≈ ${satoshiToLocalCurrency(amountSats)}`} />
 
         <View style={[styles.divider, stylesHook.divider]} />
 
-        <ConfirmDetailRow
-          label={loc.send.onchain_address_derived}
-          value={recipient?.address ?? ''}
-          mono
-          copied={copiedAddr}
-          onCopy={() => copy(recipient?.address ?? '', setCopiedAddr)}
-        />
-        <View style={[styles.divider, stylesHook.divider]} />
+        <View style={styles.detailsGroup}>
+          <View>
+            <ConfirmDetailRow
+              label={loc.send.onchain_address_derived}
+              value={recipient?.address ?? ''}
+              mono
+              copied={copiedAddr}
+              onCopy={() => copy(recipient?.address ?? '', setCopiedAddr)}
+            />
+            <View style={styles.lightDivider} />
 
-        <ConfirmDetailRow label={loc.send.transaction_id} value={txid} mono copied={copiedTxid} onCopy={() => copy(txid, setCopiedTxid)} />
-        <View style={[styles.divider, stylesHook.divider]} />
+            <ConfirmDetailRow
+              label={loc.send.transaction_id}
+              value={txid}
+              mono
+              copied={copiedTxid}
+              onCopy={() => copy(txid, setCopiedTxid)}
+            />
+            <View style={styles.lightDivider} />
+          </View>
 
-        <View style={styles.summaryRow}>
-          <Text style={[styles.summaryLabel, stylesHook.summaryLabel]}>{loc.send.create_fee}</Text>
-          <Text style={[styles.summaryValue, stylesHook.summaryValue]}>
-            {satoshiToBTC(feeSatoshi)} {loc.units[BitcoinUnit.BTC]} ({satoshiToLocalCurrency(feeSatoshi)})
-          </Text>
-        </View>
-        <View style={[styles.divider, stylesHook.divider]} />
+          <View>
+            <View style={styles.summaryRow}>
+              <Text style={[styles.summaryLabel, stylesHook.summaryLabel]}>{loc.send.network_fee}</Text>
+              <Text style={[styles.summaryValue, stylesHook.summaryValue]}>
+                {satoshiToBTC(feeSatoshi)} {loc.units[BitcoinUnit.BTC]}
+                <Text style={[styles.summaryFiat, stylesHook.summaryFiat]}> ({satoshiToLocalCurrency(feeSatoshi)})</Text>
+              </Text>
+            </View>
+            <View style={styles.lightDivider} />
 
-        <View style={styles.summaryRow}>
-          <Text style={[styles.totalLabel, stylesHook.totalLabel]}>{loc.send.total}</Text>
-          <Text style={[styles.totalValue, stylesHook.totalValue]}>
-            {satoshiToBTC(totalSats)} {loc.units[BitcoinUnit.BTC]}
-          </Text>
+            <View style={[styles.totalRow, stylesHook.totalRow]}>
+              <Text style={[styles.totalLabel, stylesHook.totalLabel]}>{loc.send.total}</Text>
+              <Text style={[styles.totalValue, stylesHook.totalValue]}>
+                {satoshiToBTC(totalSats)} {loc.units[BitcoinUnit.BTC]}
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
 
@@ -327,6 +288,14 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     width: '100%',
   },
+  lightDivider: {
+    height: StyleSheet.hairlineWidth,
+    width: '100%',
+    backgroundColor: 'rgba(230, 228, 228, 0.6)',
+  },
+  detailsGroup: {
+    marginTop: -10,
+  },
   detailRow: {
     gap: 4,
     paddingVertical: 8,
@@ -348,14 +317,12 @@ const styles = StyleSheet.create({
   },
   detailMono: {
     fontFamily: ClashFont.regular,
-    fontSize: 12,
+    fontSize: 14,
     lineHeight: 26,
   },
   copyBtn: {
     width: 24,
     height: 24,
-    borderWidth: 1,
-    borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -373,7 +340,20 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontFamily: ClashFont.medium,
     fontSize: 14,
-    lineHeight: 26,
+    lineHeight: 17,
+    letterSpacing: -0.104281,
+  },
+  summaryFiat: {
+    fontFamily: ClashFont.regular,
+    fontSize: 14,
+    lineHeight: 17,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderRadius: 12,
   },
   totalLabel: {
     fontFamily: ClashFont.regular,
@@ -401,16 +381,5 @@ const styles = StyleSheet.create({
     fontFamily: ClashFont.medium,
     fontSize: 16,
     lineHeight: 24,
-  },
-  txDetails: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 80,
-    borderRadius: 8,
-    height: 38,
-  },
-  txText: {
-    fontSize: 15,
-    fontWeight: '600',
   },
 });

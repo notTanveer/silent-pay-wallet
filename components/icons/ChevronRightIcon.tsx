@@ -1,6 +1,6 @@
 import React from 'react';
 import Svg, { Path } from 'react-native-svg';
-import type { IconProps } from './types';
+import { IconProps } from './types';
 
 const ChevronRightIcon: React.FC<IconProps> = ({ size = 20, color = '#9AA0AA' }) => (
   <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">

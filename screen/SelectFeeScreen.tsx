@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useReducer, useEffect, FC } from 'react';
+import React, { useRef, useCallback, useReducer, useEffect, useMemo, FC } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Keyboard } from 'react-native';
 import { useTheme, Theme } from '../components/themes';
 import loc from '../loc';
@@ -8,7 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NetworkTransactionFeeType } from '../models/networkTransactionFees';
 import { ClashFont } from '../constants/fonts';
 import { satoshiToBTC } from '../modules/currency';
-import { formatFeeOptionSubtitle } from '../helpers/send/format';
+import { formatFeeOptionSubtitle, feeSpeedTierForRate, estimateFeeForRate } from '../helpers/send/format';
 import LightningIcon from '../components/icons/LightningIcon';
 import ClockIcon from '../components/icons/ClockIcon';
 import Button from '../components/Button';
@@ -65,15 +65,27 @@ const feeScreenReducer = (state: FeeScreenState, action: FeeScreenAction): FeeSc
       return { ...state, customFeeValue: '' };
     case FeeScreenActions.SET_OPTIONS: {
       const { options, currentFeeRate } = action.payload;
-      const matchesPresetOption = options.some(option => currentFeeRate === option.rate);
-      const updatedOptions = options.map(option => ({
-        ...option,
-        active: !state.isCustomFeeFocused && currentFeeRate === option.rate,
-      }));
+      const matchesPresetOption = options.some(option => !option.disabled && currentFeeRate === option.rate);
+      const keepCustom = state.isCustomFeeFocused || (state.isCustomFeeSelected && !matchesPresetOption);
+      let updatedOptions;
+      if (keepCustom) {
+        updatedOptions = options.map(option => ({ ...option, active: false }));
+      } else if (matchesPresetOption) {
+        updatedOptions = options.map(option => ({
+          ...option,
+          active: currentFeeRate === option.rate,
+        }));
+      } else {
+        const firstEnabled = options.find(opt => !opt.disabled);
+        updatedOptions = options.map(option => ({
+          ...option,
+          active: option === firstEnabled,
+        }));
+      }
       return {
         ...state,
         options: updatedOptions,
-        isCustomFeeSelected: state.isCustomFeeFocused || !matchesPresetOption,
+        isCustomFeeSelected: keepCustom,
       };
     }
     case FeeScreenActions.SELECT_FEE: {
@@ -108,7 +120,7 @@ const FeeCard: FC<FeeCardProps> = ({ label, subtitle, eta, icon, selected, disab
     },
     iconCircle: { backgroundColor: selected ? colors.white : colors.surfaceSubtle },
     label: { color: colors.black },
-    subtitle: { color: colors.textPrimary },
+    subtitle: { color: colors.textSecondary },
     eta: { color: selected ? colors.brandPrimary : colors.amountMeta },
   });
 
@@ -143,10 +155,11 @@ const SelectFeeScreen = () => {
     customFeeValue: customFee || '',
     isCustomFeeFocused: false,
     options: [],
-    isCustomFeeSelected: false,
+    isCustomFeeSelected: !!customFee,
   });
 
   const customFeeInputRef = useRef<TextInput>(null);
+  const focusCustomOnRenderRef = useRef(false);
   const nf = networkTransactionFees;
 
   const stylesHook = StyleSheet.create({
@@ -157,8 +170,12 @@ const SelectFeeScreen = () => {
     customCardSelected: { backgroundColor: colors.surfaceSubtle, borderColor: colors.feeCardSelectedBorder },
     customLabel: { color: colors.black },
     customSubtitle: { color: colors.textSecondary },
-    satVbyteText: { color: colors.feeValue },
-    customFeeInputColors: { color: colors.feeValue, borderColor: colors.formBorder },
+    customInputRow: { backgroundColor: colors.white },
+    satVbyteText: { color: colors.textSecondary },
+    customFeeInputColors: { color: colors.feeValue },
+    customEstimateText: { color: colors.textPrimary },
+    customEstimateRate: { color: colors.textSecondary },
+    customEstimateEta: { color: colors.brandPrimary },
   });
 
   useEffect(() => {
@@ -226,13 +243,28 @@ const SelectFeeScreen = () => {
   const handleCustomFeeBlur = useCallback(() => {
     dispatch({ type: FeeScreenActions.SET_CUSTOM_FEE_BLURRED });
     const numericValue = Number(state.customFeeValue.replace(',', '.'));
-    if (!state.customFeeValue || numericValue < 0) {
+    if (!state.customFeeValue || !Number.isFinite(numericValue) || numericValue <= 0) {
       dispatch({ type: FeeScreenActions.CLEAR_CUSTOM_FEE });
     }
   }, [state.customFeeValue]);
 
   const handleCustomFocus = useCallback(() => dispatch({ type: FeeScreenActions.SET_CUSTOM_FEE_FOCUSED }), []);
-  const handleCustomPress = useCallback(() => customFeeInputRef.current?.focus(), []);
+
+  const handleCustomPress = useCallback(() => {
+    if (state.isCustomFeeSelected) {
+      customFeeInputRef.current?.focus();
+    } else {
+      focusCustomOnRenderRef.current = true;
+      dispatch({ type: FeeScreenActions.SET_CUSTOM_FEE_FOCUSED });
+    }
+  }, [state.isCustomFeeSelected]);
+
+  useEffect(() => {
+    if (state.isCustomFeeSelected && focusCustomOnRenderRef.current) {
+      focusCustomOnRenderRef.current = false;
+      customFeeInputRef.current?.focus();
+    }
+  }, [state.isCustomFeeSelected]);
 
   useFocusEffect(
     useCallback(() => {
@@ -244,46 +276,76 @@ const SelectFeeScreen = () => {
   const subtitleFor = (fee: number | null, rate: number) =>
     fee != null ? formatFeeOptionSubtitle(String(satoshiToBTC(fee)), rate, loc.units.sat_vbyte) : `— ${loc.units.sat_vbyte}`;
 
+  const isNextDisabled = state.isCustomFeeSelected
+    ? !(state.customFeeValue && Number(state.customFeeValue.replace(',', '.')) > 0)
+    : !state.options.some(opt => opt.active);
+
+  const knownFeeRatePair = useMemo(() => {
+    if (feePrecalc.fastestFee != null && nf.fastestFee > 0) return { fee: feePrecalc.fastestFee, rate: nf.fastestFee };
+    if (feePrecalc.mediumFee != null && nf.mediumFee > 0) return { fee: feePrecalc.mediumFee, rate: nf.mediumFee };
+    if (feePrecalc.slowFee != null && nf.slowFee > 0) return { fee: feePrecalc.slowFee, rate: nf.slowFee };
+    return null;
+  }, [feePrecalc, nf]);
+
+  const customRateNum = Number(state.customFeeValue.replace(',', '.'));
+  const customEstimate =
+    knownFeeRatePair && customRateNum > 0
+      ? {
+          fee: estimateFeeForRate(customRateNum, knownFeeRatePair.fee, knownFeeRatePair.rate),
+          eta: { fast: loc.send.fee_10m, medium: loc.send.fee_3h, slow: loc.send.fee_1d }[
+            feeSpeedTierForRate(customRateNum, nf.fastestFee, nf.mediumFee)
+          ],
+        }
+      : null;
+
   return (
     <SafeArea style={[stylesHook.container, styles.screenContainer]}>
       <View style={styles.contentContainer}>
-        {state.options.map(({ label, time, fee, rate, active, disabled, feeType }) => (
-          <FeeCard
-            key={label}
-            label={label}
-            subtitle={subtitleFor(fee, rate)}
-            eta={`~${time}`}
-            icon={
-              feeType === NetworkTransactionFeeType.FAST ? (
-                <LightningIcon size={24} color={colors.brandPrimary} />
-              ) : (
-                <ClockIcon size={24} color={colors.brandPrimary} />
-              )
-            }
-            selected={active}
-            disabled={disabled}
-            onPress={() => handleFeeOptionPress(rate, feeType)}
-            colors={colors}
-          />
-        ))}
+        <Text style={[styles.subtitle, stylesHook.customSubtitle]}>{loc.send.network_fee_subtitle}</Text>
 
-        <TouchableOpacity
-          accessibilityRole="button"
-          testID="feeCustomContainerButton"
-          onPress={handleCustomPress}
-          style={[styles.card, stylesHook.customCard, state.isCustomFeeSelected && stylesHook.customCardSelected]}
-        >
-          <View style={styles.cardBody}>
-            <Text style={[styles.cardLabel, stylesHook.customLabel]}>{loc.send.fee_custom}</Text>
-            {state.isCustomFeeSelected ? (
-              <View style={styles.customFeeContainer}>
+        <View style={styles.optionsList}>
+          {state.options.map(({ label, time, fee, rate, active, disabled, feeType }) => (
+            <FeeCard
+              key={label}
+              label={label}
+              subtitle={subtitleFor(fee, rate)}
+              eta={`~${time}`}
+              icon={
+                feeType === NetworkTransactionFeeType.FAST ? (
+                  <LightningIcon size={24} color={colors.brandPrimary} />
+                ) : (
+                  <ClockIcon size={24} color={colors.brandPrimary} />
+                )
+              }
+              selected={active}
+              disabled={disabled}
+              onPress={() => handleFeeOptionPress(rate, feeType)}
+              colors={colors}
+            />
+          ))}
+
+          <TouchableOpacity
+            accessibilityRole="button"
+            testID="feeCustomContainerButton"
+            onPress={handleCustomPress}
+            style={[styles.customCardContainer, state.isCustomFeeSelected ? stylesHook.customCardSelected : stylesHook.customCard]}
+          >
+            <View style={styles.customHeaderRow}>
+              <View style={styles.cardBody}>
+                <Text style={[styles.cardLabel, stylesHook.customLabel]}>{loc.send.fee_custom}</Text>
+                <Text style={[styles.customCardSubtitle, stylesHook.customSubtitle]}>{loc.send.set_your_own_fee_rate}</Text>
+              </View>
+            </View>
+
+            {state.isCustomFeeSelected && (
+              <View style={[styles.customInputRow, stylesHook.customInputRow]}>
                 <TextInput
                   ref={customFeeInputRef}
                   style={[styles.customFeeInput, stylesHook.customFeeInputColors]}
                   keyboardType="numeric"
                   placeholder={loc.send.insert_custom_fee}
                   value={state.customFeeValue}
-                  placeholderTextColor={colors.placeholderTextColor}
+                  placeholderTextColor={colors.textSecondary}
                   onChangeText={handleCustomFeeChange}
                   onSubmitEditing={handleCustomFeeSubmit}
                   onFocus={handleCustomFocus}
@@ -291,15 +353,24 @@ const SelectFeeScreen = () => {
                   enablesReturnKeyAutomatically
                   returnKeyType="done"
                   accessibilityLabel={loc.send.create_fee}
+                  underlineColorAndroid="transparent"
                   testID="feeCustom"
                 />
-                {!!state.customFeeValue && <Text style={stylesHook.satVbyteText}>{loc.units.sat_vbyte}</Text>}
+                <Text style={[styles.satVbyteText, stylesHook.satVbyteText]}>{loc.units.sat_vbyte}</Text>
               </View>
-            ) : (
-              <Text style={[styles.cardSubtitle, stylesHook.customSubtitle]}>{loc.send.set_your_own_fee_rate}</Text>
             )}
-          </View>
-        </TouchableOpacity>
+
+            {state.isCustomFeeSelected && customEstimate && (
+              <View style={styles.customEstimateRow}>
+                <Text style={[styles.customEstimateText, stylesHook.customEstimateText]}>
+                  {`${satoshiToBTC(customEstimate.fee)} BTC · `}
+                  <Text style={stylesHook.customEstimateRate}>{`${customRateNum} ${loc.units.sat_vbyte}`}</Text>
+                </Text>
+                <Text style={[styles.customEstimateEta, stylesHook.customEstimateEta]}>{`~${customEstimate.eta}`}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.bottom}>
@@ -307,7 +378,13 @@ const SelectFeeScreen = () => {
           testID="feeNextButton"
           title={loc.send.details_next}
           backgroundColor={colors.brandPrimary}
+          disabledBackgroundColor={colors.ctaDisabled}
+          disabledTextColor={colors.white}
+          disabled={isNextDisabled}
           onPress={handleCustomFeeSubmit}
+          borderRadius={16}
+          style={styles.nextButton}
+          textStyle={styles.nextButtonText}
         />
       </View>
     </SafeArea>
@@ -323,8 +400,16 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingTop: 16,
-    gap: 16,
+    gap: 24,
     paddingHorizontal: 24,
+  },
+  optionsList: {
+    gap: 16,
+  },
+  subtitle: {
+    fontFamily: ClashFont.regular,
+    fontSize: 14,
+    lineHeight: 20,
   },
   card: {
     flexDirection: 'row',
@@ -366,20 +451,74 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlign: 'right',
   },
-  customFeeContainer: {
+  customCardContainer: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+  },
+  customHeaderRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  customCardSubtitle: {
+    fontFamily: ClashFont.regular,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  customInputRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    height: 48,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
   },
   customFeeInput: {
-    fontSize: 16,
-    height: 36,
+    flex: 1,
+    fontFamily: ClashFont.regular,
+    fontSize: 14,
+    height: 32,
     padding: 0,
-    minWidth: 70,
-    marginRight: 4,
+    marginRight: 8,
+  },
+  satVbyteText: {
+    fontFamily: ClashFont.regular,
+    fontSize: 16,
+    lineHeight: 26,
+  },
+  customEstimateRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  customEstimateText: {
+    fontFamily: ClashFont.medium,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  customEstimateEta: {
+    fontFamily: ClashFont.medium,
+    fontSize: 14,
+    lineHeight: 20,
   },
   bottom: {
-    paddingHorizontal: 24,
     paddingBottom: 24,
     paddingHorizontal: 24,
+  },
+  nextButton: {
+    height: 56,
+    minHeight: 56,
+    maxHeight: 56,
+    borderWidth: 0,
+    paddingHorizontal: 0,
+  },
+  nextButtonText: {
+    fontFamily: ClashFont.medium,
+    fontSize: 16,
+    lineHeight: 26,
+    marginHorizontal: 0,
   },
 });

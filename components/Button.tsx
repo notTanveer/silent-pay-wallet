@@ -1,7 +1,8 @@
 import React, { forwardRef } from 'react';
-import { ActivityIndicator, StyleProp, StyleSheet, Text, Pressable, PressableProps, View, ViewStyle, Platform } from 'react-native';
+import { ActivityIndicator, StyleProp, StyleSheet, Text, TextStyle, Pressable, PressableProps, View, ViewStyle, Platform } from 'react-native';
 import { Icon } from '@rneui/themed';
 
+import { ClashFont } from '../constants/fonts';
 import { useTheme } from './themes';
 
 interface ButtonProps extends PressableProps {
@@ -16,6 +17,8 @@ interface ButtonProps extends PressableProps {
   };
   title?: string;
   style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
+  borderRadius?: number;
   onPress?: () => void;
   showActivityIndicator?: boolean;
   disabledBackgroundColor?: string;
@@ -32,19 +35,19 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
     fontColor = props.disabledTextColor ?? colors.buttonDisabledTextColor;
   }
 
+  const borderRadius = props.borderRadius ?? styles.button.borderRadius;
+
   const buttonStyle = {
     ...styles.button,
     backgroundColor,
     borderColor: props.disabled ? colors.buttonDisabledBackgroundColor : 'transparent',
+    borderRadius,
   };
 
-  const textStyle = {
-    ...styles.text,
-    color: fontColor,
-  };
+  const textStyle = [styles.text, { color: fontColor }, props.textStyle];
 
   const buttonView = props.showActivityIndicator ? (
-    <ActivityIndicator size="small" color={textStyle.color} />
+    <ActivityIndicator size="small" color={fontColor} />
   ) : (
     <>
       {props.icon && <Icon name={props.icon.name} type={props.icon.type} color={props.icon.color} />}
@@ -53,8 +56,9 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
   );
 
   return props.onPress ? (
-    <View style={styles.pressableWrapper}>
+    <View style={[styles.pressableWrapper, { borderRadius }]}>
       <Pressable
+        {...props}
         ref={ref}
         testID={props.testID}
         android_ripple={{ color: colors.androidRippleColor }}
@@ -62,7 +66,6 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
         accessibilityRole="button"
         onPress={props.onPress}
         disabled={props.disabled}
-        {...props}
       >
         {buttonView}
       </Pressable>
@@ -91,8 +94,8 @@ const styles = StyleSheet.create({
   },
   text: {
     marginHorizontal: 8,
+    fontFamily: ClashFont.semibold,
     fontSize: 16,
-    fontWeight: '600',
   },
   pressableWrapper: {
     overflow: 'hidden',

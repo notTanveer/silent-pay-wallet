@@ -5,6 +5,7 @@ import { ShroudText } from '../ShroudComponents';
 import { ClashFont } from '../constants/fonts';
 import loc from '../loc';
 import { isAmountEmpty } from '../helpers/send/format';
+import CheckmarkIcon from './icons/CheckmarkIcon';
 import { useTheme } from './themes';
 
 interface AmountHeroProps {
@@ -16,9 +17,11 @@ interface AmountHeroProps {
   onChangeAmount?: (text: string) => void;
   /** Shown beneath the fiat line in editable mode (e.g. "Tap amount to edit"). */
   showHint?: boolean;
-  /** When provided (editable mode), renders the "Use Max" pill. */
+  /** When provided (editable mode), renders the "Max" pill. */
   onUseMax?: () => void;
   useMaxDisabled?: boolean;
+  /** When true, the Max pill shows a tick and the "Sending Max" hint replaces the edit hint. */
+  isMax?: boolean;
 }
 
 const AmountHero: React.FC<AmountHeroProps> = ({
@@ -29,6 +32,7 @@ const AmountHero: React.FC<AmountHeroProps> = ({
   showHint = false,
   onUseMax,
   useMaxDisabled = false,
+  isMax = false,
 }) => {
   const { colors } = useTheme();
   const inputRef = useRef<TextInput>(null);
@@ -36,9 +40,10 @@ const AmountHero: React.FC<AmountHeroProps> = ({
 
   const stylesHook = StyleSheet.create({
     amountFilled: { color: colors.black },
-    amountEmpty: { color: 'rgba(0,0,0,0.32)' },
+    amountEmpty: { color: colors.amountPlaceholder },
     meta: { color: colors.amountMeta },
     hint: { color: colors.brandPrimary },
+    sendingMax: { color: colors.brandPrimary },
     useMax: { backgroundColor: colors.surfaceSubtle, borderColor: colors.useMaxBorder },
     useMaxText: { color: colors.useMaxText },
   });
@@ -59,7 +64,7 @@ const AmountHero: React.FC<AmountHeroProps> = ({
             value={amount}
             onChangeText={onChangeAmount}
             placeholder="0"
-            placeholderTextColor="rgba(0,0,0,0.32)"
+            placeholderTextColor={colors.amountPlaceholder}
             keyboardType="decimal-pad"
             testID="AmountHeroInput"
           />
@@ -73,21 +78,23 @@ const AmountHero: React.FC<AmountHeroProps> = ({
 
       <ShroudText style={[styles.fiat, stylesHook.meta]}>{fiat}</ShroudText>
 
-      {(showHint || onUseMax) && (
-        <View style={styles.footerRow}>
-          {showHint && <ShroudText style={[styles.hint, stylesHook.hint]}>{loc.send.tap_amount_to_edit}</ShroudText>}
-          {onUseMax && (
-            <Pressable
-              accessibilityRole="button"
-              disabled={useMaxDisabled}
-              onPress={onUseMax}
-              style={[styles.useMax, stylesHook.useMax, useMaxDisabled && styles.useMaxDisabled]}
-              testID="UseMaxButton"
-            >
-              <ShroudText style={[styles.useMaxText, stylesHook.useMaxText]}>{loc.send.use_max}</ShroudText>
-            </Pressable>
-          )}
-        </View>
+      {isMax ? (
+        <ShroudText style={[styles.hint, stylesHook.sendingMax]}>{loc.send.sending_max}</ShroudText>
+      ) : (
+        showHint && <ShroudText style={[styles.hint, stylesHook.hint]}>{loc.send.tap_amount_to_edit}</ShroudText>
+      )}
+
+      {onUseMax && (
+        <Pressable
+          accessibilityRole="button"
+          disabled={useMaxDisabled}
+          onPress={onUseMax}
+          style={[styles.useMax, stylesHook.useMax, useMaxDisabled && styles.useMaxDisabled]}
+          testID="UseMaxButton"
+        >
+          {isMax && <CheckmarkIcon color={colors.brandPrimary} size={16} />}
+          <ShroudText style={[styles.useMaxText, stylesHook.useMaxText]}>{loc.send.max}</ShroudText>
+        </Pressable>
       )}
     </Pressable>
   );
@@ -97,7 +104,7 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     alignItems: 'center',
-    gap: 7,
+    gap: 3,
   },
   amountRow: {
     flexDirection: 'row',
@@ -117,6 +124,7 @@ const styles = StyleSheet.create({
     fontFamily: ClashFont.regular,
     fontSize: 20,
     lineHeight: 30,
+    marginBottom: 8,
   },
   fiat: {
     fontFamily: ClashFont.regular,
@@ -124,21 +132,21 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     textAlign: 'center',
   },
-  footerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   hint: {
     fontFamily: ClashFont.regular,
     fontSize: 12,
     lineHeight: 22,
+    textAlign: 'center',
   },
   useMax: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    height: 32,
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 16,
-    paddingVertical: 4,
   },
   useMaxDisabled: {
     opacity: 0.5,
