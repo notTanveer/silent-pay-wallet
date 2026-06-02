@@ -5,20 +5,7 @@ import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { TOptions } from 'bip21';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  findNodeHandle,
-  FlatList,
-  Keyboard,
-  LayoutAnimation,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  Pressable,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Keyboard, LayoutAnimation, Platform, StyleSheet, Text, TextInput, Pressable, View } from 'react-native';
 import { SilentPayment } from 'silent-payments';
 import { btcToSatoshi, satoshiToLocalCurrency } from '../../modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
@@ -79,8 +66,6 @@ const SendDetails = () => {
   const utxos = route.params?.utxos;
   const isTransactionReplaceable = route.params?.isTransactionReplaceable;
   const routeParams = route.params;
-  const scrollView = useRef<FlatList<any>>(null);
-  const scrollIndex = useRef(0);
   const { colors } = useTheme();
 
   // state
@@ -175,13 +160,13 @@ const SendDetails = () => {
 
   useEffect(() => {
     // decode route params
-    const currentAddress = addresses[scrollIndex.current];
+    const currentAddress = addresses[0];
     if (routeParams.uri) {
       try {
         const { address, amount, memo } = DeeplinkSchemaMatch.decodeBitcoinUri(routeParams.uri);
 
         setAddresses(addrs => {
-          addrs[scrollIndex.current].unit = BitcoinUnit.BTC;
+          addrs[0].unit = BitcoinUnit.BTC;
           return [...addrs];
         });
 
@@ -192,7 +177,7 @@ const SendDetails = () => {
               currentAddress.amount = amount!;
               currentAddress.amountSats = btcToSatoshi(amount!);
             }
-            addrs[scrollIndex.current] = currentAddress;
+            addrs[0] = currentAddress;
             return [...addrs];
           } else {
             return [...addrs, { address, amount, amountSats: btcToSatoshi(amount!), key: String(Math.random()), unit: amountUnit }];
@@ -222,17 +207,16 @@ const SendDetails = () => {
       });
     } else if (routeParams.addRecipientParams) {
       // used to add a recipient, mainly from contacts aka paymentcodes screen
-      const index = addresses.length === 0 ? 0 : scrollIndex.current;
       const { address, amount } = routeParams.addRecipientParams;
 
       setAddresses(prevAddresses => {
         const updatedAddresses = [...prevAddresses];
         if (address) {
-          updatedAddresses[index] = {
-            ...updatedAddresses[index],
+          updatedAddresses[0] = {
+            ...updatedAddresses[0],
             address,
-            amount: amount ?? updatedAddresses[index].amount,
-            amountSats: amount ? btcToSatoshi(amount) : updatedAddresses[index].amountSats,
+            amount: amount ?? updatedAddresses[0].amount,
+            amountSats: amount ? btcToSatoshi(amount) : updatedAddresses[0].amountSats,
           };
         }
         return updatedAddresses;
@@ -241,7 +225,7 @@ const SendDetails = () => {
       // @ts-ignore: Fix later
       setParams(prevParams => ({ ...prevParams, addRecipientParams: undefined }));
     } else {
-      setAddresses([{ address: '', key: String(Math.random()), unit: amountUnit }]); // key is for the FlatList
+      setAddresses([{ address: '', key: String(Math.random()), unit: amountUnit }]);
     }
     // this effect only to run once when screen is mounted or params change
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -426,7 +410,6 @@ const SendDetails = () => {
       if (typeof data !== 'string') {
         data = String(data.data);
       }
-      const currentIndex = scrollIndex.current;
       setIsLoading(true);
       if (!data.replace) {
         // user probably scanned PSBT and got an object instead of string..?
@@ -438,11 +421,10 @@ const SendDetails = () => {
       const dataWithoutSchema = data.replace('bitcoin:', '').replace('BITCOIN:', '');
       if (wallet.isAddressValid(dataWithoutSchema) || SilentPayment.isPaymentCodeValid(dataWithoutSchema)) {
         setAddresses(addrs => {
-          addrs[scrollIndex.current].address = dataWithoutSchema;
+          addrs[0].address = dataWithoutSchema;
           return [...addrs];
         });
         setIsLoading(false);
-        setTimeout(() => scrollView.current?.scrollToIndex({ index: currentIndex, animated: false }), 50);
         return;
       }
 
@@ -464,18 +446,16 @@ const SendDetails = () => {
       console.log('options', options);
       if (wallet.isAddressValid(address)) {
         setAddresses(addrs => {
-          addrs[scrollIndex.current].address = address;
-          addrs[scrollIndex.current].amount = options?.amount ?? 0;
-          addrs[scrollIndex.current].amountSats = new BigNumber(options?.amount ?? 0).multipliedBy(100000000).toNumber();
+          addrs[0].address = address;
+          addrs[0].amount = options?.amount ?? 0;
+          addrs[0].amountSats = new BigNumber(options?.amount ?? 0).multipliedBy(100000000).toNumber();
           return [...addrs];
         });
         setAddresses(addrs => {
-          addrs[scrollIndex.current].unit = BitcoinUnit.BTC;
+          addrs[0].unit = BitcoinUnit.BTC;
           return [...addrs];
         });
         setParams({ transactionMemo: options.label || '', amountUnit: BitcoinUnit.BTC }); // there used to be `options.message` here as well. bug?
-        // RN Bug: contentOffset gets reset to 0 when state changes. Remove code once this bug is resolved.
-        setTimeout(() => scrollView.current?.scrollToIndex({ index: currentIndex, animated: false }), 50);
       }
 
       setIsLoading(false);
@@ -522,8 +502,6 @@ const SendDetails = () => {
       }
 
       if (error) {
-        // Scroll to the recipient that caused the error with animation
-        scrollView.current?.scrollToIndex({ index, animated: true });
         setIsLoading(false);
         presentAlert({
           title:
@@ -641,71 +619,6 @@ const SendDetails = () => {
     setParams({ onBarScanned: undefined });
   }, [routeParams.onBarScanned, setParams, processAddressData]);
 
-  const handleAddRecipient = useCallback(() => {
-    // Check if any recipient is incomplete (missing address or amount)
-    const incompleteIndex = addresses.findIndex(item => !item.address || !item.amount);
-    if (incompleteIndex !== -1) {
-      scrollIndex.current = incompleteIndex;
-      scrollView.current?.scrollToIndex({ index: incompleteIndex, animated: true });
-      presentAlert({
-        title: loc.send.please_complete_recipient_title,
-        message: loc.formatString(loc.send.please_complete_recipient_details, { number: incompleteIndex + 1 }),
-      });
-      return;
-    }
-    // Add new recipient as usual if all recipients are complete
-    setAddresses(prevAddresses => [...prevAddresses, { address: '', key: String(Math.random()), unit: amountUnit }]);
-    // Wait for the state to update before scrolling
-    setTimeout(() => {
-      scrollIndex.current = addresses.length; // New index at the end
-      scrollView.current?.scrollToIndex({
-        index: scrollIndex.current,
-        animated: true,
-      });
-    }, 0);
-  }, [addresses, amountUnit]);
-
-  const onRemoveAllRecipientsConfirmed = useCallback(() => {
-    setAddresses([{ address: '', key: String(Math.random()), unit: amountUnit }]);
-  }, [amountUnit]);
-
-  const handleRemoveAllRecipients = useCallback(() => {
-    Alert.alert(loc.send.details_recipients_title, loc.send.details_add_recc_rem_all_alert_description, [
-      {
-        text: loc._.cancel,
-        onPress: () => {},
-        style: 'cancel',
-      },
-      {
-        text: loc._.ok,
-        onPress: onRemoveAllRecipientsConfirmed,
-      },
-    ]);
-  }, [onRemoveAllRecipientsConfirmed]);
-
-  const handleRemoveRecipient = useCallback(() => {
-    if (addresses.length > 1) {
-      const newAddresses = [...addresses];
-      newAddresses.splice(scrollIndex.current, 1);
-
-      // Adjust the current index if the last item was removed
-      const newIndex = scrollIndex.current >= newAddresses.length ? newAddresses.length - 1 : scrollIndex.current;
-
-      setAddresses(newAddresses);
-
-      // Wait for the state to update before scrolling
-      setTimeout(() => {
-        scrollView.current?.scrollToIndex({
-          index: newIndex,
-          animated: true,
-        });
-      }, 0);
-
-      // Update the scroll index reference
-      scrollIndex.current = newIndex;
-    }
-  }, [addresses]);
-
   const handleCoinControl = useCallback(() => {
     if (!wallet) return;
     navigation.navigate('CoinControl', {
@@ -724,25 +637,23 @@ const SendDetails = () => {
     triggerHapticFeedback(HapticFeedbackTypes.NotificationWarning);
     const message = frozenBalance > 0 ? loc.send.details_adv_full_sure_frozen : loc.send.details_adv_full_sure;
 
-    const anchor = findNodeHandle(scrollView.current);
     const options = {
       title: loc.send.details_adv_full,
       message,
       options: [loc._.cancel, loc._.ok],
       cancelButtonIndex: 0,
-      anchor: anchor ?? undefined,
     };
 
     ActionSheet.showActionSheetWithOptions(options, buttonIndex => {
       if (buttonIndex === 1) {
         Keyboard.dismiss();
         setAddresses(addrs => {
-          addrs[scrollIndex.current].amount = BitcoinUnit.MAX;
-          addrs[scrollIndex.current].amountSats = BitcoinUnit.MAX;
+          addrs[0].amount = BitcoinUnit.MAX;
+          addrs[0].amountSats = BitcoinUnit.MAX;
           return [...addrs];
         });
         setAddresses(addrs => {
-          addrs[scrollIndex.current].unit = BitcoinUnit.BTC;
+          addrs[0].unit = BitcoinUnit.BTC;
           return [...addrs];
         });
       }
@@ -753,11 +664,7 @@ const SendDetails = () => {
   const headerRightOnPress = useCallback(
     (id: string) => {
       Keyboard.dismiss();
-      if (id === CommonToolTipActions.AddRecipient.id) {
-        handleAddRecipient();
-      } else if (id === CommonToolTipActions.RemoveRecipient.id) {
-        handleRemoveRecipient();
-      } else if (id === CommonToolTipActions.SignPSBT.id) {
+      if (id === CommonToolTipActions.SignPSBT.id) {
         selectedDataProcessor.current = CommonToolTipActions.SignPSBT;
         navigateToQRCodeScanner();
       } else if (id === CommonToolTipActions.SendMax.id) {
@@ -766,39 +673,15 @@ const SendDetails = () => {
         onReplaceableFeeSwitchValueChanged(!isTransactionReplaceable);
       } else if (id === CommonToolTipActions.CoinControl.id) {
         handleCoinControl();
-      } else if (id === CommonToolTipActions.RemoveAllRecipients.id) {
-        handleRemoveAllRecipients();
       }
     },
-    [
-      handleAddRecipient,
-      handleRemoveRecipient,
-      navigateToQRCodeScanner,
-      onUseAllPressed,
-      onReplaceableFeeSwitchValueChanged,
-      isTransactionReplaceable,
-      handleCoinControl,
-      handleRemoveAllRecipients,
-    ],
+    [navigateToQRCodeScanner, onUseAllPressed, onReplaceableFeeSwitchValueChanged, isTransactionReplaceable, handleCoinControl],
   );
 
   const headerRightActions = useCallback(() => {
     if (!wallet) return [];
 
     const walletActions: Action[][] = [];
-
-    const recipientActions: Action[] = [
-      CommonToolTipActions.AddRecipient,
-      {
-        ...CommonToolTipActions.RemoveRecipient,
-        hidden: addresses.length <= 1,
-      },
-      {
-        ...CommonToolTipActions.RemoveAllRecipients,
-        hidden: !(addresses.length > 1),
-      },
-    ];
-    walletActions.push(recipientActions);
 
     const isSendMaxUsed = addresses.some(element => element.amount === BitcoinUnit.MAX);
     const sendMaxAction: Action[] = [
@@ -810,14 +693,9 @@ const SendDetails = () => {
     ];
     walletActions.push(sendMaxAction);
 
-    // const rbfAction: Action[] = [
-    //   {
-    //     ...CommonToolTipActions.AllowRBF,
-    //     menuState: isTransactionReplaceable,
-    //     hidden: !(wallet.type === HDSegwitBech32Wallet.type && isTransactionReplaceable !== undefined),
-    //   },
-    // ];
-    // walletActions.push(rbfAction);
+    walletActions.push([CommonToolTipActions.CoinControl]);
+
+    walletActions.push([CommonToolTipActions.SignPSBT]);
 
     return walletActions;
   }, [addresses, isEditable, wallet]);
