@@ -1,19 +1,19 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { BackHandler, InteractionManager, Platform, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, InteractionManager, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Share from 'react-native-share';
 import * as Electrum from '../../modules/Electrum';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
-import { ShroudCard, ShroudText } from '../../ShroudComponents';
+import { ShroudText } from '../../ShroudComponents';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
+import AddressCopyCard from '../../components/AddressCopyCard';
 import presentAlert from '../../components/Alert';
-import Button from '../../components/Button';
-import CopyTextToClipboard from '../../components/CopyTextToClipboard';
-import QRCodeComponent from '../../components/QRCodeComponent';
-import SegmentedControl from '../../components/SegmentControl';
+import ShareIcon from '../../components/icons/ShareIcon';
+import InfoBanner from '../../components/InfoBanner';
+import PillSegmentedControl from '../../components/PillSegmentedControl';
+import QRCard from '../../components/QRCard';
 import { useTheme } from '../../components/themes';
-import TipBox from '../../components/TipBox';
 import { TransactionPendingIconBig } from '../../components/TransactionPendingIconBig';
 import { useSettings } from '../../hooks/context/useSettings';
 import { useStorage } from '../../hooks/context/useStorage';
@@ -25,9 +25,10 @@ import { SuccessView } from '../send/success';
 import { Spacing40 } from '../../components/Spacing';
 import { Loading } from '../../components/Loading';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
+import { ClashFont } from '../../constants/fonts';
 
 const segmentControlValues = [loc.bip352.silent_payments, loc.wallets.details_address];
-const HORIZONTAL_PADDING = 20;
+const HORIZONTAL_PADDING = 24;
 
 type StickyHeaderProps = {
   wallet: any;
@@ -42,7 +43,7 @@ const StickyHeader = React.memo(({ wallet, tabValues, currentTab, setCurrentTab,
 
   return (
     <View style={[styles.tabsContainer, { backgroundColor }]}>
-      <SegmentedControl
+      <PillSegmentedControl
         values={tabValues}
         selectedIndex={tabValues.findIndex(tab => tab === currentTab)}
         onChange={index => {
@@ -284,11 +285,9 @@ const ReceiveDetails = () => {
       return (
         <View style={styles.container}>
           {address && (
-            <View style={styles.scrollBody}>
-              <View style={styles.qrCodeContainer}>
-                <QRCodeComponent value={bip21encoded} size={qrCodeSize} />
-              </View>
-              <CopyTextToClipboard text={address} />
+            <View style={styles.addressBody}>
+              <QRCard value={bip21encoded} size={qrCodeSize} />
+              <AddressCopyCard text={address} />
             </View>
           )}
         </View>
@@ -301,15 +300,13 @@ const ReceiveDetails = () => {
       return (
         <View style={styles.container}>
           {qrValue ? (
-            <>
-              <TipBox description={loc.bip352.explanation} containerStyle={styles.tip} />
-              <View style={styles.qrCodeContainer}>
-                <QRCodeComponent value={qrValue} size={qrCodeSize} />
-              </View>
-              <CopyTextToClipboard text={qrValue} truncated={false} />
-            </>
+            <View style={styles.addressBody}>
+              <InfoBanner text={loc.bip352.explanation} emphasis="without compromising privacy" />
+              <QRCard value={qrValue} size={qrCodeSize} />
+              <AddressCopyCard text={qrValue} />
+            </View>
           ) : (
-            <Text>{loc.bip352.not_supported}</Text>
+            <ShroudText>{loc.bip352.not_supported}</ShroudText>
           )}
         </View>
       );
@@ -356,6 +353,18 @@ const ReceiveDetails = () => {
     Share.open({ message }).catch(error => console.debug('Error sharing:', error));
   };
 
+  const shareDisabled =
+    !bip21encoded &&
+    !(
+      currentTab === segmentControlValues[0] &&
+      !(
+        wallet &&
+        'getSilentPaymentAddress' in wallet &&
+        typeof wallet.getSilentPaymentAddress === 'function' &&
+        wallet.getSilentPaymentAddress()
+      )
+    );
+
   return (
     <View style={[styles.flex, stylesHook.root]}>
       <SafeAreaScrollView
@@ -390,24 +399,22 @@ const ReceiveDetails = () => {
         )}
 
         <View style={styles.share}>
-          <ShroudCard>
-            <Button
-              onPress={handleShareButtonPressed}
-              title={loc.receive.details_share}
-              disabled={
-                !bip21encoded &&
-                !(
-                  currentTab === segmentControlValues[0] &&
-                  !(
-                    wallet &&
-                    'getSilentPaymentAddress' in wallet &&
-                    typeof wallet.getSilentPaymentAddress === 'function' &&
-                    wallet.getSilentPaymentAddress()
-                  )
-                )
-              }
-            />
-          </ShroudCard>
+          <Pressable
+            onPress={handleShareButtonPressed}
+            disabled={shareDisabled}
+            accessibilityRole="button"
+            android_ripple={{ color: colors.androidRippleColor }}
+            style={({ pressed }) => [
+              styles.shareButton,
+              { backgroundColor: shareDisabled ? colors.buttonDisabledBackgroundColor : colors.brandPrimary },
+              pressed && !shareDisabled ? styles.sharePressed : null,
+            ]}
+          >
+            <ShareIcon size={19} color={shareDisabled ? colors.buttonDisabledTextColor : colors.white} />
+            <ShroudText style={[styles.shareLabel, { color: shareDisabled ? colors.buttonDisabledTextColor : colors.white }]}>
+              {loc.receive.details_share}
+            </ShroudText>
+          </Pressable>
         </View>
       </SafeAreaScrollView>
     </View>
@@ -425,7 +432,7 @@ const styles = StyleSheet.create({
   tabsContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: HORIZONTAL_PADDING,
     paddingVertical: 8,
     backgroundColor: Platform.OS === 'ios' ? 'transparent' : undefined,
   },
@@ -436,8 +443,30 @@ const styles = StyleSheet.create({
   },
   share: {
     width: '100%',
-    paddingHorizontal: 32,
-    marginBottom: 16,
+    paddingHorizontal: HORIZONTAL_PADDING,
+    marginBottom: 24,
+  },
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 9,
+    height: 56,
+    borderRadius: 16,
+  },
+  shareLabel: {
+    fontFamily: ClashFont.medium,
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  sharePressed: {
+    opacity: 0.85,
+  },
+  addressBody: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: HORIZONTAL_PADDING,
   },
   label: {
     fontWeight: '600',
@@ -447,17 +476,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tip: {
-    marginHorizontal: 16,
-    borderRadius: 12,
-    padding: 16,
-  },
-  qrCodeContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
+    justifyContent: 'flex-start',
+    paddingTop: 4,
   },
   loadingContainer: {
     flex: 1,
