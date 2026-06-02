@@ -2,6 +2,7 @@ import React, { forwardRef } from 'react';
 import { ActivityIndicator, StyleProp, StyleSheet, Text, Pressable, PressableProps, View, ViewStyle, Platform } from 'react-native';
 import { Icon } from '@rneui/themed';
 
+import { ClashFont } from '../constants/fonts';
 import { useTheme } from './themes';
 
 interface ButtonProps extends PressableProps {
@@ -91,8 +92,8 @@ const styles = StyleSheet.create({
   },
   text: {
     marginHorizontal: 8,
+    fontFamily: ClashFont.semibold,
     fontSize: 16,
-    fontWeight: '600',
   },
   pressableWrapper: {
     overflow: 'hidden',

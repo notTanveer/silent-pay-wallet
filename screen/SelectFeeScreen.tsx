@@ -64,15 +64,25 @@ const feeScreenReducer = (state: FeeScreenState, action: FeeScreenAction): FeeSc
       return { ...state, customFeeValue: '' };
     case FeeScreenActions.SET_OPTIONS: {
       const { options, currentFeeRate } = action.payload;
-      const matchesPresetOption = options.some(option => currentFeeRate === option.rate);
-      const updatedOptions = options.map(option => ({
-        ...option,
-        active: !state.isCustomFeeFocused && currentFeeRate === option.rate,
-      }));
+      const matchesPresetOption = options.some(option => !option.disabled && currentFeeRate === option.rate);
+      let updatedOptions;
+      if (matchesPresetOption) {
+        updatedOptions = options.map(option => ({
+          ...option,
+          active: !state.isCustomFeeFocused && currentFeeRate === option.rate,
+        }));
+      } else {
+        // Default to first enabled option (Fast) when nothing matches
+        const firstEnabled = options.find(opt => !opt.disabled);
+        updatedOptions = options.map(option => ({
+          ...option,
+          active: !state.isCustomFeeFocused && option === firstEnabled,
+        }));
+      }
       return {
         ...state,
         options: updatedOptions,
-        isCustomFeeSelected: state.isCustomFeeFocused || !matchesPresetOption,
+        isCustomFeeSelected: state.isCustomFeeFocused || (state.isCustomFeeSelected && !matchesPresetOption),
       };
     }
     case FeeScreenActions.SELECT_FEE: {
@@ -142,10 +152,11 @@ const SelectFeeScreen = () => {
     customFeeValue: customFee || '',
     isCustomFeeFocused: false,
     options: [],
-    isCustomFeeSelected: false,
+    isCustomFeeSelected: !!customFee,
   });
 
   const customFeeInputRef = useRef<TextInput>(null);
+  const focusCustomOnRenderRef = useRef(false);
   const nf = networkTransactionFees;
 
   const stylesHook = StyleSheet.create({
@@ -157,8 +168,9 @@ const SelectFeeScreen = () => {
     customCardSelected: { backgroundColor: colors.surfaceSubtle, borderColor: colors.feeCardSelectedBorder },
     customLabel: { color: colors.black },
     customSubtitle: { color: colors.textSecondary },
-    satVbyteText: { color: colors.feeValue },
-    customFeeInputColors: { color: colors.feeValue, borderColor: colors.formBorder },
+    customInputRow: { backgroundColor: colors.white },
+    satVbyteText: { color: colors.textSecondary },
+    customFeeInputColors: { color: colors.feeValue },
   });
 
   useEffect(() => {
@@ -232,7 +244,22 @@ const SelectFeeScreen = () => {
   }, [state.customFeeValue]);
 
   const handleCustomFocus = useCallback(() => dispatch({ type: FeeScreenActions.SET_CUSTOM_FEE_FOCUSED }), []);
-  const handleCustomPress = useCallback(() => customFeeInputRef.current?.focus(), []);
+
+  const handleCustomPress = useCallback(() => {
+    if (state.isCustomFeeSelected) {
+      customFeeInputRef.current?.focus();
+    } else {
+      focusCustomOnRenderRef.current = true;
+      dispatch({ type: FeeScreenActions.SET_CUSTOM_FEE_FOCUSED });
+    }
+  }, [state.isCustomFeeSelected]);
+
+  useEffect(() => {
+    if (state.isCustomFeeSelected && focusCustomOnRenderRef.current) {
+      focusCustomOnRenderRef.current = false;
+      customFeeInputRef.current?.focus();
+    }
+  }, [state.isCustomFeeSelected]);
 
   useFocusEffect(
     useCallback(() => {
@@ -243,6 +270,10 @@ const SelectFeeScreen = () => {
 
   const subtitleFor = (fee: number | null, rate: number) =>
     fee != null ? formatFeeOptionSubtitle(String(satoshiToBTC(fee)), rate, loc.units.sat_vbyte) : `— ${loc.units.sat_vbyte}`;
+
+  const isNextDisabled = state.isCustomFeeSelected
+    ? !(state.customFeeValue && Number(state.customFeeValue.replace(',', '.')) > 0)
+    : !state.options.some(opt => opt.active);
 
   return (
     <View style={[stylesHook.container, styles.screenContainer]}>
@@ -271,34 +302,36 @@ const SelectFeeScreen = () => {
           accessibilityRole="button"
           testID="feeCustomContainerButton"
           onPress={handleCustomPress}
-          style={[styles.card, stylesHook.customCard, state.isCustomFeeSelected && stylesHook.customCardSelected]}
+          style={[styles.customCardContainer, state.isCustomFeeSelected ? stylesHook.customCardSelected : stylesHook.customCard]}
         >
-          <View style={styles.cardBody}>
-            <Text style={[styles.cardLabel, stylesHook.customLabel]}>{loc.send.fee_custom}</Text>
-            {state.isCustomFeeSelected ? (
-              <View style={styles.customFeeContainer}>
-                <TextInput
-                  ref={customFeeInputRef}
-                  style={[styles.customFeeInput, stylesHook.customFeeInputColors]}
-                  keyboardType="numeric"
-                  placeholder={loc.send.insert_custom_fee}
-                  value={state.customFeeValue}
-                  placeholderTextColor={colors.placeholderTextColor}
-                  onChangeText={handleCustomFeeChange}
-                  onSubmitEditing={handleCustomFeeSubmit}
-                  onFocus={handleCustomFocus}
-                  onBlur={handleCustomFeeBlur}
-                  enablesReturnKeyAutomatically
-                  returnKeyType="done"
-                  accessibilityLabel={loc.send.create_fee}
-                  testID="feeCustom"
-                />
-                {!!state.customFeeValue && <Text style={stylesHook.satVbyteText}>{loc.units.sat_vbyte}</Text>}
-              </View>
-            ) : (
-              <Text style={[styles.cardSubtitle, stylesHook.customSubtitle]}>{loc.send.set_your_own_fee_rate}</Text>
-            )}
+          <View style={styles.customHeaderRow}>
+            <View style={styles.cardBody}>
+              <Text style={[styles.cardLabel, stylesHook.customLabel]}>{loc.send.fee_custom}</Text>
+              <Text style={[styles.customCardSubtitle, stylesHook.customSubtitle]}>{loc.send.set_your_own_fee_rate}</Text>
+            </View>
           </View>
+
+          {state.isCustomFeeSelected && (
+            <View style={[styles.customInputRow, stylesHook.customInputRow]}>
+              <TextInput
+                ref={customFeeInputRef}
+                style={[styles.customFeeInput, stylesHook.customFeeInputColors]}
+                keyboardType="numeric"
+                placeholder={loc.send.insert_custom_fee}
+                value={state.customFeeValue}
+                placeholderTextColor={colors.textSecondary}
+                onChangeText={handleCustomFeeChange}
+                onSubmitEditing={handleCustomFeeSubmit}
+                onFocus={handleCustomFocus}
+                onBlur={handleCustomFeeBlur}
+                enablesReturnKeyAutomatically
+                returnKeyType="done"
+                accessibilityLabel={loc.send.create_fee}
+                testID="feeCustom"
+              />
+              <Text style={[styles.satVbyteText, stylesHook.satVbyteText]}>{loc.units.sat_vbyte}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -307,6 +340,9 @@ const SelectFeeScreen = () => {
           testID="feeNextButton"
           title={loc.send.details_next}
           backgroundColor={colors.brandPrimary}
+          disabledBackgroundColor={colors.ctaDisabled}
+          disabledTextColor={colors.white}
+          disabled={isNextDisabled}
           onPress={handleCustomFeeSubmit}
         />
       </View>
@@ -365,16 +401,43 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlign: 'right',
   },
-  customFeeContainer: {
+  customCardContainer: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+  },
+  customHeaderRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  customCardSubtitle: {
+    fontFamily: ClashFont.regular,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  customInputRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    height: 48,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
   },
   customFeeInput: {
-    fontSize: 16,
-    height: 36,
+    flex: 1,
+    fontFamily: ClashFont.regular,
+    fontSize: 14,
+    height: 32,
     padding: 0,
-    minWidth: 70,
-    marginRight: 4,
+    marginRight: 8,
+  },
+  satVbyteText: {
+    fontFamily: ClashFont.regular,
+    fontSize: 16,
+    lineHeight: 26,
   },
   bottom: {
     paddingHorizontal: 24,
