@@ -18,6 +18,7 @@ interface ButtonProps extends PressableProps {
   style?: StyleProp<ViewStyle>;
   onPress?: () => void;
   showActivityIndicator?: boolean;
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
 export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps>((props, ref) => {
@@ -51,7 +52,7 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
   );
 
   return props.onPress ? (
-    <View style={styles.pressableWrapper}>
+    <View style={[styles.pressableWrapper, props.containerStyle]}>
       <Pressable
         ref={ref}
         testID={props.testID}
