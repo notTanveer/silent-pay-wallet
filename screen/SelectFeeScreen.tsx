@@ -45,7 +45,7 @@ type FeeScreenAction =
   | { type: FeeScreenActions.SET_CUSTOM_FEE_BLURRED }
   | { type: FeeScreenActions.CLEAR_CUSTOM_FEE }
   | { type: FeeScreenActions.SET_OPTIONS; payload: { options: FeeOption[]; currentFeeRate: number } }
-  | { type: FeeScreenActions.SELECT_FEE; payload: { rate: number } };
+  | { type: FeeScreenActions.SELECT_FEE; payload: { feeType: NetworkTransactionFeeType } };
 
 const feeScreenReducer = (state: FeeScreenState, action: FeeScreenAction): FeeScreenState => {
   switch (action.type) {
@@ -76,11 +76,11 @@ const feeScreenReducer = (state: FeeScreenState, action: FeeScreenAction): FeeSc
       };
     }
     case FeeScreenActions.SELECT_FEE: {
-      const { rate } = action.payload;
+      const { feeType } = action.payload;
       return {
         ...state,
         isCustomFeeSelected: false,
-        options: state.options.map(opt => ({ ...opt, active: opt.rate === rate })),
+        options: state.options.map(opt => ({ ...opt, active: opt.feeType === feeType })),
       };
     }
     default:
@@ -200,8 +200,8 @@ const SelectFeeScreen = () => {
     [navigation, walletID],
   );
 
-  const handleFeeOptionPress = useCallback((rate: number, _feeType: NetworkTransactionFeeType) => {
-    dispatch({ type: FeeScreenActions.SELECT_FEE, payload: { rate } });
+  const handleFeeOptionPress = useCallback((_rate: number, feeType: NetworkTransactionFeeType) => {
+    dispatch({ type: FeeScreenActions.SELECT_FEE, payload: { feeType } });
   }, []);
 
   const handleCustomFeeChange = useCallback((value: string) => {
@@ -212,7 +212,7 @@ const SelectFeeScreen = () => {
   const handleCustomFeeSubmit = useCallback(() => {
     if (state.isCustomFeeSelected) {
       const numericValue = state.customFeeValue.replace(',', '.');
-      if (numericValue && Number(numericValue) >= 0) {
+      if (numericValue && Number(numericValue) > 0) {
         navigateWithFee(numericValue, NetworkTransactionFeeType.CUSTOM);
       }
     } else {
