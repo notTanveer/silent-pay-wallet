@@ -8,5 +8,5 @@ import { isScannable, type IScannableWallet } from '../helpers/silent-payments';
  */
 export const useScannableWallet = (): IScannableWallet | null => {
   const { wallets } = useStorage();
-  return useMemo(() => wallets.find(isScannable) ?? null, [wallets]);
+  return useMemo<IScannableWallet | null>(() => wallets.find(isScannable) ?? null, [wallets]);
 };

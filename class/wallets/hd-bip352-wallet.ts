@@ -92,6 +92,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
   resumeScan(): void {
     if (this._scanPaused) {
       this._scanPaused = false;
+      this._scanSamples = [];
       this._scanResumeResolver?.();
       this._scanResumeResolver = null;
       this._scanResumePromise = null;
@@ -447,6 +448,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
       const wrappedProgress: ScanProgressCallback = async progress => {
         await this._waitIfPaused();
+        if (this.activeScanPromise === null || this.cancelScanCallbackScan) return;
 
         this._scanSamples.push({ t: Date.now(), percent: progress.percentComplete });
         if (this._scanSamples.length > SCAN_ETA_ROLLING_WINDOW) {
