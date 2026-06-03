@@ -156,7 +156,8 @@
         "network_fee": "Network fee",
         "enter_amount_to_estimate": "Enter amount to estimate",
         "tap_amount_to_edit": "Tap amount to edit",
-        "use_max": "Use Max",
+        "max": "Max",
+        "sending_max": "Sending Max",
         "onchain_address_derived": "On-chain address (derived)",
         "transaction_id": "Transaction ID",
         "total": "Total"

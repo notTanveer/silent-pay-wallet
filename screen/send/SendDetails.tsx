@@ -18,6 +18,7 @@ import Button from '../../components/Button';
 import CoinsSelected from '../../components/CoinsSelected';
 import { DismissKeyboardInputAccessory } from '../../components/DismissKeyboardInputAccessory';
 import HeaderMenuButton from '../../components/HeaderMenuButton';
+import ChevronRightIcon from '../../components/icons/ChevronRightIcon';
 import ScanQRIcon from '../../components/icons/ScanQRIcon';
 import LabeledField from '../../components/LabeledField';
 import SafeArea from '../../components/SafeArea';
@@ -86,16 +87,20 @@ const SendDetails = () => {
 
   // single-recipient helpers
   const recipient = addresses[0];
-  const displayAmount = recipient?.amount === BitcoinUnit.MAX ? String(allBalance) : recipient?.amount ? String(recipient.amount) : '';
-  const amountSatsNum = Number(recipient?.amountSats) || 0;
+  const isMaxActive = recipient?.amount === BitcoinUnit.MAX;
+  const displayAmount = isMaxActive ? String(allBalance) : recipient?.amount ? String(recipient.amount) : '';
+  // when sending max, amountSats holds the 'MAX' sentinel, so derive the fiat estimate from the full balance
+  const amountSatsNum = isMaxActive ? balance : Number(recipient?.amountSats) || 0;
   const fiatEstimate = `≈ ${satoshiToLocalCurrency(amountSatsNum)}`;
   const isFormValid = !!recipient?.address && !isAmountEmpty(recipient?.amount);
 
   const onChangeAmount = (text: string) => {
+    // keep digits and a single decimal point; BigNumber (btcToSatoshi) rejects commas / stray chars
+    const sanitized = text.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
     setAddresses(addrs => {
       const a = { ...addrs[0] };
-      a.amount = text;
-      a.amountSats = btcToSatoshi(text);
+      a.amount = sanitized;
+      a.amountSats = btcToSatoshi(sanitized);
       a.unit = BitcoinUnit.BTC;
       return [a, ...addrs.slice(1)];
     });
@@ -633,31 +638,42 @@ const SendDetails = () => {
   );
 
   const onUseAllPressed = useCallback(() => {
-    triggerHapticFeedback(HapticFeedbackTypes.NotificationWarning);
-    const message = frozenBalance > 0 ? loc.send.details_adv_full_sure_frozen : loc.send.details_adv_full_sure;
+    // toggle off if we're already sending max
+    if (recipient?.amount === BitcoinUnit.MAX) {
+      setAddresses(addrs => {
+        const a = { ...addrs[0], amount: '', amountSats: 0, unit: BitcoinUnit.BTC };
+        return [a, ...addrs.slice(1)];
+      });
+      return;
+    }
 
-    const options = {
-      title: loc.send.details_adv_full,
-      message,
-      options: [loc._.cancel, loc._.ok],
-      cancelButtonIndex: 0,
+    const applyMax = () => {
+      Keyboard.dismiss();
+      setAddresses(addrs => {
+        const a = { ...addrs[0], amount: BitcoinUnit.MAX, amountSats: BitcoinUnit.MAX, unit: BitcoinUnit.BTC };
+        return [a, ...addrs.slice(1)];
+      });
     };
 
-    ActionSheet.showActionSheetWithOptions(options, buttonIndex => {
-      if (buttonIndex === 1) {
-        Keyboard.dismiss();
-        setAddresses(addrs => {
-          addrs[0].amount = BitcoinUnit.MAX;
-          addrs[0].amountSats = BitcoinUnit.MAX;
-          return [...addrs];
-        });
-        setAddresses(addrs => {
-          addrs[0].unit = BitcoinUnit.BTC;
-          return [...addrs];
-        });
-      }
-    });
-  }, [frozenBalance]);
+    // keep a confirmation only when frozen coins are present, otherwise apply max instantly
+    if (frozenBalance > 0) {
+      triggerHapticFeedback(HapticFeedbackTypes.NotificationWarning);
+      ActionSheet.showActionSheetWithOptions(
+        {
+          title: loc.send.details_adv_full,
+          message: loc.send.details_adv_full_sure_frozen,
+          options: [loc._.cancel, loc._.ok],
+          cancelButtonIndex: 0,
+        },
+        buttonIndex => {
+          if (buttonIndex === 1) applyMax();
+        },
+      );
+      return;
+    }
+
+    applyMax();
+  }, [recipient?.amount, frozenBalance]);
   // Header Right Button
 
   const headerRightOnPress = useCallback(
@@ -768,7 +784,7 @@ const SendDetails = () => {
     scanBtn: { backgroundColor: colors.white, shadowColor: colors.shadowColor, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
     feeSummary: { borderColor: colors.summaryBorder },
     feeSummaryLabel: { color: colors.textSecondary },
-    feeSummaryValue: { color: colors.placeholderTextColor },
+    feeSummaryValue: { color: colors.black },
   });
 
   const renderCoinsSelected = () => {
@@ -808,6 +824,7 @@ const SendDetails = () => {
           showHint={isAmountEmpty(recipient?.amount)}
           onUseMax={onUseAllPressed}
           useMaxDisabled={balance <= 0}
+          isMax={isMaxActive}
         />
 
         <LabeledField
@@ -860,14 +877,19 @@ const SendDetails = () => {
           disabled={isLoading}
           style={[styles.feeSummary, stylesHook.feeSummary]}
         >
-          <Text style={[styles.feeSummaryLabel, stylesHook.feeSummaryLabel]}>{loc.send.network_fee}</Text>
-          {networkTransactionFeesIsLoading ? (
-            <ActivityIndicator />
-          ) : (
-            <Text style={[styles.feeSummaryValue, stylesHook.feeSummaryValue]}>
-              {feePrecalc.current && amountSatsNum > 0 ? formatFee(feePrecalc.current) : loc.send.enter_amount_to_estimate}
-            </Text>
-          )}
+          <View style={styles.feeSummaryTexts}>
+            <Text style={[styles.feeSummaryLabel, stylesHook.feeSummaryLabel]}>{loc.send.network_fee}</Text>
+            {networkTransactionFeesIsLoading ? (
+              <ActivityIndicator style={styles.feeSummaryLoader} />
+            ) : (
+              <Text style={[styles.feeSummaryValue, stylesHook.feeSummaryValue]}>
+                {feePrecalc.current && amountSatsNum > 0
+                  ? `${formatFee(feePrecalc.current)} · ${feeRate} ${loc.units.sat_vbyte}`
+                  : loc.send.enter_amount_to_estimate}
+              </Text>
+            )}
+          </View>
+          <ChevronRightIcon />
         </Pressable>
       </View>
 
@@ -908,6 +930,7 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   selectLabel: {
+    fontFamily: ClashFont.regular,
     fontSize: 14,
   },
   body: {
@@ -931,20 +954,29 @@ const styles = StyleSheet.create({
   },
   feeSummary: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     minHeight: 66,
     borderWidth: 1,
     borderRadius: 16,
     paddingHorizontal: 16,
+    gap: 12,
+  },
+  feeSummaryTexts: {
+    flex: 1,
+    gap: 2,
+  },
+  feeSummaryLoader: {
+    alignSelf: 'flex-start',
   },
   feeSummaryLabel: {
     fontFamily: ClashFont.regular,
     fontSize: 14,
+    lineHeight: 20,
   },
   feeSummaryValue: {
     fontFamily: ClashFont.medium,
     fontSize: 16,
+    lineHeight: 26,
   },
   bottom: {
     paddingHorizontal: 24,
