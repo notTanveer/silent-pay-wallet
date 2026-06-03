@@ -101,7 +101,7 @@ const SyncScreen: React.FC<SyncScreenProps> = () => {
   const handleCheckAgain = useCallback(async () => {
     if (scanWallet) {
       setShowDone(false);
-      await scanWallet.fetchTransactions();
+      await scanWallet.fetchTransactions().catch((e: any) => console.warn('[SyncScreen] check again scan error:', e));
     }
   }, [scanWallet]);
 
@@ -181,7 +181,7 @@ const SyncScreen: React.FC<SyncScreenProps> = () => {
 
   return (
     <SafeArea>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} alwaysBounceVertical={false}>
         {renderIcon()}
 
         {renderTitle()}
@@ -221,7 +221,7 @@ const SyncScreen: React.FC<SyncScreenProps> = () => {
             <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>{loc.sync.update_progress}</Text>
             <View style={styles.cardRow}>
               <Text style={[styles.cardLabel, { color: colors.textMuted }]}>{loc.sync.block_label}</Text>
-              {effectiveProgress && effectiveProgress.tipHeight != null ? (
+              {effectiveProgress ? (
                 <View style={styles.blockHeightRow}>
                   <Text style={[styles.cardValue, styles.cardValueSemibold, { color: colors.textPrimary }]} numberOfLines={1}>
                     {effectiveProgress.currentBlock.toLocaleString()}

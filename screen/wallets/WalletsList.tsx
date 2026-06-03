@@ -221,6 +221,10 @@ const WalletsList: React.FC = () => {
     } else if (!isBackground && wasAutoPausedRef.current && scanState.status === 'paused') {
       wasAutoPausedRef.current = false;
       scanWallet.resumeScan();
+    } else if (scanState.status !== 'paused' && scanState.status !== 'scanning') {
+      // scan ended via another path (cancel/error/completion) — drop the stale flag so a
+      // later manual pause isn't auto-resumed
+      wasAutoPausedRef.current = false;
     }
   }, [currentAppState, scanState.status, scanWallet]);
 
