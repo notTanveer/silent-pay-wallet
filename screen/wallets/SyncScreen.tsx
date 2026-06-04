@@ -193,12 +193,10 @@ const SyncScreen: React.FC<SyncScreenProps> = () => {
           </View>
         )}
 
-        {effectiveStatus !== 'error' && (
+        {(effectiveStatus === 'scanning' || effectiveStatus === 'paused') && (
           <View style={styles.etaRow}>
             <Icon name="schedule" type="material" size={18} color={colors.textMeta} />
-            <Text style={[styles.etaText, { color: colors.textMeta }]}>
-              {formatEtaAbout(liveEta) ?? (effectiveStatus === 'done' ? loc.formatString(loc.sync.eta_about, { time: '0s' }) : '--')}
-            </Text>
+            <Text style={[styles.etaText, { color: colors.textMeta }]}>{formatEtaAbout(liveEta) ?? '--'}</Text>
           </View>
         )}
 
