@@ -10,7 +10,7 @@ import presentAlert from '../../components/Alert';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import { useStorage } from '../../hooks/context/useStorage';
 
-type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'WalletTransactions'>;
+type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'WalletsList'>;
 
 const CreateWalletScreen = () => {
   const { navigate, dispatch } = useExtendedNavigation<NavigationProps>();
