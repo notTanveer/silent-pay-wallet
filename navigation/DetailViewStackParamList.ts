@@ -21,7 +21,6 @@ export type DetailViewStackParamList = {
   DrawerRoot: undefined;
   UnlockWithScreen: undefined;
   WalletsList: { onBarScanned?: string };
-  WalletTransactions: { isLoading?: boolean; walletID: string; walletType: string; onBarScanned?: string };
   WalletDetails: { walletID: string };
   TransactionDetails: { tx: Transaction; hash: string; walletID: string };
   TransactionStatus: { hash: string; walletID?: string };

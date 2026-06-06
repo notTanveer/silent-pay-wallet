@@ -229,7 +229,6 @@
         "cpfp_no_bump": "This transaction is not bumpable.",
         "cpfp_title": "Bump Fee (CPFP)",
         "details_balance_hide": "Hide Balance",
-        "details_balance_show": "Show Balance",
         "details_copy": "Copy",
         "details_copy_note": "Copy Note",
         "details_copy_txid": "Copy Transaction ID",
