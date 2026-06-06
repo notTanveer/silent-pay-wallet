@@ -19,7 +19,7 @@ import { useSettings } from '../../hooks/context/useSettings';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import loc, { formatBalance } from '../../loc';
-import { BitcoinUnit, Chain } from '../../models/bitcoinUnits';
+import { BitcoinUnit } from '../../models/bitcoinUnits';
 import { ReceiveDetailsStackParamList } from '../../navigation/ReceiveDetailsStackParamList';
 import { SuccessView } from '../send/success';
 import { Spacing40 } from '../../components/Spacing';
@@ -113,30 +113,15 @@ const ReceiveDetails = () => {
     }
 
     let newAddress;
-    if (wallet.chain === Chain.ONCHAIN) {
-      try {
-        if (!isElectrumDisabled) newAddress = await Promise.race([wallet.getAddressAsync(), sleep(1000)]);
-      } catch (error) {
-        console.warn('Error fetching wallet address (ONCHAIN):', error);
-      }
-      if (newAddress === undefined) {
-        newAddress = wallet._getExternalAddressByIndex(wallet.getNextFreeAddressIndex());
-      } else {
-        saveToDisk(); // caching whatever getAddressAsync() generated internally
-      }
+    try {
+      if (!isElectrumDisabled) newAddress = await Promise.race([wallet.getAddressAsync(), sleep(1000)]);
+    } catch (error) {
+      console.warn('Error fetching wallet address:', error);
+    }
+    if (newAddress === undefined) {
+      newAddress = wallet._getExternalAddressByIndex(wallet.getNextFreeAddressIndex());
     } else {
-      try {
-        await Promise.race([wallet.getAddressAsync(), sleep(1000)]);
-        newAddress = wallet.getAddress();
-      } catch (error) {
-        console.warn('Error fetching wallet address (OFFCHAIN):', error);
-      }
-      if (newAddress === undefined) {
-        console.warn('either sleep expired or getAddressAsync threw an exception');
-        newAddress = wallet.getAddress();
-      } else {
-        saveToDisk(); // caching whatever getAddressAsync() generated internally
-      }
+      saveToDisk(); // caching whatever getAddressAsync() generated internally
     }
 
     if (!newAddress) {

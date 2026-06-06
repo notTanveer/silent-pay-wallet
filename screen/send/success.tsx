@@ -19,7 +19,7 @@ const Success = () => {
   const navigation = useExtendedNavigation();
   const { colors } = useTheme();
   const route = useRoute<RouteProps>();
-  const { amount, fee, amountUnit = BitcoinUnit.BTC, invoiceDescription = '' } = route.params || {};
+  const { amount, fee, amountUnit = BitcoinUnit.BTC } = route.params || {};
   const stylesHook = StyleSheet.create({
     root: {
       backgroundColor: colors.elevated,
@@ -43,7 +43,7 @@ const Success = () => {
 
   return (
     <SafeArea style={[styles.root, stylesHook.root]}>
-      <SuccessView amount={amount} amountUnit={amountUnit} fee={fee} invoiceDescription={invoiceDescription} />
+      <SuccessView amount={amount} amountUnit={amountUnit} fee={fee} />
       <View style={styles.buttonContainer}>
         <Button onPress={onDonePressed} title={loc.send.success_done} />
       </View>
@@ -57,11 +57,10 @@ interface SuccessViewParam {
   amount?: number;
   amountUnit?: BitcoinUnit;
   fee?: number;
-  invoiceDescription?: string;
   shouldAnimate?: boolean;
 }
 
-export const SuccessView = ({ amount, amountUnit, fee, invoiceDescription, shouldAnimate = true }: SuccessViewParam) => {
+export const SuccessView = ({ amount, amountUnit, fee, shouldAnimate = true }: SuccessViewParam) => {
   const { colors } = useTheme();
 
   let unit: string = '';
@@ -98,9 +97,6 @@ export const SuccessView = ({ amount, amountUnit, fee, invoiceDescription, shoul
               {loc.send.create_fee}: {new BigNumber(fee ?? 0).toFixed(8)} {loc.units[BitcoinUnit.BTC]}
             </Text>
           )}
-          <Text numberOfLines={0} style={styles.feeText}>
-            {invoiceDescription}
-          </Text>
         </ShroudCard>
       ) : null}
 
