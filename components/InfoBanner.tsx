@@ -10,17 +10,20 @@ import { useTheme } from './themes';
 interface InfoBannerProps {
   text: string;
   emphasis?: string;
+  variant?: 'info' | 'caution';
   containerStyle?: ViewStyle;
 }
 
-const InfoBanner: React.FC<InfoBannerProps> = ({ text, emphasis, containerStyle }) => {
+const InfoBanner: React.FC<InfoBannerProps> = ({ text, emphasis, variant = 'info', containerStyle }) => {
   const { colors } = useTheme();
   const [before, match, after] = splitForEmphasis(text, emphasis);
+  const backgroundColor = variant === 'caution' ? colors.surfaceCaution : colors.surfaceSubtle;
+  const iconColor = variant === 'caution' ? colors.iconCaution : colors.brandPrimary;
 
   return (
-    <View style={[styles.banner, { backgroundColor: colors.surfaceSubtle }, containerStyle]}>
+    <View style={[styles.banner, { backgroundColor }, containerStyle]}>
       <View style={styles.icon}>
-        <InfoIcon size={20} color={colors.brandPrimary} />
+        <InfoIcon size={20} color={iconColor} />
       </View>
       <ShroudText style={[styles.text, { color: colors.textSecondary }]}>
         {before}
