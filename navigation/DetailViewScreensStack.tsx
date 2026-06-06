@@ -11,8 +11,6 @@ import TransactionDetails from '../screen/transactions/TransactionDetails';
 import RBFBumpFee from '../screen/transactions/RBFBumpFee';
 import RBFCancel from '../screen/transactions/RBFCancel';
 import TransactionStatus from '../screen/transactions/TransactionStatus';
-import WalletAddresses from '../screen/wallets/WalletAddresses';
-import WalletDetails from '../screen/wallets/WalletDetails';
 import WalletsList from '../screen/wallets/WalletsList';
 import { DetailViewStack } from './index';
 import SettingsButton from '../components/icons/SettingsButton';
@@ -72,14 +70,6 @@ const DetailViewStackScreensStack = () => {
       />
       <DetailViewStack.Screen name="WalletsList" component={WalletsList} options={navigationStyle(walletListScreenOptions)(theme)} />
       <DetailViewStack.Screen
-        name="WalletDetails"
-        component={WalletDetails}
-        options={navigationStyle({
-          headerTitle: loc.wallets.details_title,
-          statusBarStyle: 'auto',
-        })(theme)}
-      />
-      <DetailViewStack.Screen
         name="TransactionDetails"
         component={TransactionDetails}
         options={navigationStyle({
@@ -131,12 +121,6 @@ const DetailViewStackScreensStack = () => {
           gestureEnabled: false,
         }}
       />
-      <DetailViewStack.Screen
-        name="WalletAddresses"
-        component={WalletAddresses}
-        options={navigationStyle({ title: loc.addresses.addresses_title, statusBarStyle: 'auto' })(theme)}
-      />
-
       <DetailViewStack.Screen
         name="Settings"
         component={Settings}

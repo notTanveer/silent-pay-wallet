@@ -7,10 +7,10 @@ import { requestCameraAuthorization } from '../helpers/scan-qr';
 import { useCallback, useMemo } from 'react';
 
 // List of screens that require biometrics
-const requiresBiometrics = ['WalletExportRoot', 'WalletXpubRoot'];
+const requiresBiometrics = ['WalletExportRoot'];
 
 // List of screens that require wallet export to be saved
-const requiresWalletExportIsSaved = ['ReceiveDetails', 'WalletAddresses'];
+const requiresWalletExportIsSaved = ['ReceiveDetails'];
 
 export const useExtendedNavigation = <T extends NavigationProp<ParamListBase>>(): T & {
   navigateToWalletsList: () => void;
