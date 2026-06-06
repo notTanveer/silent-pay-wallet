@@ -17,7 +17,6 @@ import WalletsList from '../screen/wallets/WalletsList';
 import { DetailViewStack } from './index';
 import SettingsButton from '../components/icons/SettingsButton';
 import { ShroudApp } from '../class';
-import WalletTransactions from '../screen/wallets/WalletTransactions';
 import Settings from '../screen/settings/Settings';
 import Currency from '../screen/settings/Currency';
 import PlausibleDeniability from '../screen/PlausibleDeniability';
@@ -27,7 +26,6 @@ import ElectrumSettings from '../screen/settings/ElectrumSettings';
 import EncryptStorage from '../screen/settings/EncryptStorage';
 import SelfTest from '../screen/settings/SelfTest';
 
-import getWalletTransactionsOptions from './helpers/getWalletTransactionsOptions';
 import { useSizeClass, SizeClass } from '../modules/sizeClass';
 import { isDesktop } from '../modules/environment';
 import ReceiveDetails from '../screen/receive/ReceiveDetails';
@@ -73,7 +71,6 @@ const DetailViewStackScreensStack = () => {
         options={{ headerShown: false, gestureEnabled: false, headerBackVisible: false }}
       />
       <DetailViewStack.Screen name="WalletsList" component={WalletsList} options={navigationStyle(walletListScreenOptions)(theme)} />
-      <DetailViewStack.Screen name="WalletTransactions" component={WalletTransactions} options={getWalletTransactionsOptions} />
       <DetailViewStack.Screen
         name="WalletDetails"
         component={WalletDetails}
