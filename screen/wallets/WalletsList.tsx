@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useReducer, useRef, useMemo } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import useAppState from '../../hooks/useAppState';
+import ScanProgressBar from '../../components/ScanProgressBar';
+import { useScannableWallet } from '../../hooks/useScannableWallet';
 import { Alert, findNodeHandle, InteractionManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import A from '../../modules/analytics';
 import { getClipboardContent } from '../../modules/clipboard';
@@ -96,8 +99,10 @@ const WalletsList: React.FC = () => {
   const [state, dispatch] = useReducer<React.Reducer<WalletListState, WalletListAction>>(reducer, initialState);
   const { isLoading } = state;
   const { sizeClass, isLarge } = useSizeClass();
-  const { wallets, getTransactions, getBalance, refreshAllWalletTransactions, saveToDisk } = useStorage();
+  const { wallets, getTransactions, getBalance, refreshAllWalletTransactions, saveToDisk, scanState } = useStorage();
   const { isElectrumDisabled } = useSettings();
+  const { currentAppState } = useAppState();
+  const wasAutoPausedRef = useRef(false);
   const { colors } = useTheme();
   const navigation = useExtendedNavigation<NavigationProps>();
   const dataSource = getTransactions(undefined, Infinity);
@@ -205,6 +210,24 @@ const WalletsList: React.FC = () => {
     }
   }, [isLarge, wallets]);
 
+  const scanWallet = useScannableWallet();
+
+  useEffect(() => {
+    if (!scanWallet) return;
+    const isBackground = currentAppState === 'background' || currentAppState === 'inactive';
+    if (isBackground && scanState.status === 'scanning') {
+      wasAutoPausedRef.current = true;
+      scanWallet.pauseScan();
+    } else if (!isBackground && wasAutoPausedRef.current && scanState.status === 'paused') {
+      wasAutoPausedRef.current = false;
+      scanWallet.resumeScan();
+    } else if (scanState.status !== 'paused' && scanState.status !== 'scanning') {
+      // scan ended via another path (cancel/error/completion) — drop the stale flag so a
+      // later manual pause isn't auto-resumed
+      wasAutoPausedRef.current = false;
+    }
+  }, [currentAppState, scanState.status, scanWallet]);
+
   const onBarScanned = useCallback(
     (value: any) => {
       if (!value) return;
@@ -296,13 +319,16 @@ const WalletsList: React.FC = () => {
     const balanceText = formatBalance(wallet.getBalance(), wallet.getPreferredBalanceUnit(), true);
 
     return (
-      <View style={[styles.balanceHeader, stylesHook.walletContainer]}>
-        <TouchableOpacity onPress={changeWalletBalanceUnit}>
-          <Text style={[styles.balanceAmount, stylesHook.balanceAmountText]}>{balanceText}</Text>
-        </TouchableOpacity>
-      </View>
+      <>
+        <View style={[styles.balanceHeader, stylesHook.walletContainer]}>
+          <TouchableOpacity onPress={changeWalletBalanceUnit}>
+            <Text style={[styles.balanceAmount, stylesHook.balanceAmountText]}>{balanceText}</Text>
+          </TouchableOpacity>
+        </View>
+        {scanWallet && <ScanProgressBar scanState={scanState} onResume={() => scanWallet.resumeScan()} />}
+      </>
     );
-  }, [wallets, stylesHook, changeWalletBalanceUnit]);
+  }, [wallets, stylesHook, changeWalletBalanceUnit, scanWallet, scanState]);
 
   const renderSectionItem = useCallback(
     (item: { section: any; item: ExtendedTransaction }) => {
@@ -478,6 +504,12 @@ const WalletsList: React.FC = () => {
   const SECTION_HEADER_HEIGHT = 56; // Base height
   const LARGE_TITLE_EXTRA_HEIGHT = 20; // Additional height for large titles
   const TRACK_PAYMENT_BANNER_HEIGHT = 90;
+  const SCAN_BANNER_HEIGHT = 66; // ScanProgressBar: 50 height + 8+8 vertical margins
+
+  // The scan banner renders inside the WALLET section (below the balance) only while a scan is
+  // active, so factor its height into the wallet section height to keep getItemLayout offsets correct.
+  const isScanBannerVisible = !!scanWallet && (scanState.status !== 'idle' || scanState.lastScannedBlock > 0);
+  const walletSectionHeight = WALLET_HEIGHT + (isScanBannerVisible ? SCAN_BANNER_HEIGHT : 0);
 
   const getSectionHeaderHeight = useCallback(() => {
     const hasBanner = wallets.length > 0;
@@ -502,7 +534,7 @@ const WalletsList: React.FC = () => {
         // First section: Wallet
         if (index === 0) {
           return {
-            length: WALLET_HEIGHT,
+            length: walletSectionHeight,
             offset: 0,
             index,
           };
@@ -510,18 +542,18 @@ const WalletsList: React.FC = () => {
 
         // Second section: Transactions
         // Need to account for:
-        // 1. Wallet height
+        // 1. Wallet height (incl. scan banner when active)
         // 2. Section header height for transactions section
         // 3. Transaction items
         const transactionIndex = index - 1; // Adjust index to account for wallet
         return {
           length: TRANSACTION_ITEM_HEIGHT,
-          offset: WALLET_HEIGHT + headerHeight + TRANSACTION_ITEM_HEIGHT * transactionIndex,
+          offset: walletSectionHeight + headerHeight + TRANSACTION_ITEM_HEIGHT * transactionIndex,
           index,
         };
       }
     },
-    [sizeClass, getSectionHeaderHeight],
+    [sizeClass, getSectionHeaderHeight, walletSectionHeight],
   );
 
   return (

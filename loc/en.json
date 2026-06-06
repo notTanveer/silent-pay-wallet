@@ -420,5 +420,28 @@
         "tip_label": "Tip:",
         "tip": "Double-check with the sender that they used your Silent Payment address.",
         "copy_my_address": "Copy My Address"
+    },
+    "sync": {
+        "title": "Sync",
+        "updating": "Updating your wallet",
+        "paused": "Paused",
+        "done": "You're all caught up",
+        "error_title": "Can't connect right now",
+        "error_description": "Shroud can't update right now, but your Bitcoin is secure.",
+        "subtitle_recent": "Checking recent activity for your payments",
+        "subtitle_watching": "Watching for new payments",
+        "update_progress": "Update Progress",
+        "block_label": "Block",
+        "btn_pause": "Pause",
+        "btn_continue": "Continue",
+        "btn_check_again": "Check again",
+        "btn_retry": "Retry",
+        "privacy_info": "Shroud checks for your payments on your device, so the server never sees your address. Tor hides your connection.",
+        "banner_scanning": "Checking pending payments.....",
+        "banner_paused_at": "Sync paused at {blockHeight}",
+        "banner_synced": "Synced to block {blockHeight}",
+        "banner_error": "Can't connect right now",
+        "banner_resume": "Resume",
+        "eta_about": "about {time} left"
     }
 }

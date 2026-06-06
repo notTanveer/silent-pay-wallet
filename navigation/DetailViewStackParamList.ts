@@ -59,4 +59,5 @@ export type DetailViewStackParamList = {
   TrackPayment: undefined;
   PaymentFound: { txid: string; blockHeight: number; tipHeight: number };
   NoPaymentFound: undefined;
+  SyncScreen: undefined;
 };

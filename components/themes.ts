@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, useTheme as useThemeBase } from '@react-navigation/native';
 import { Appearance } from 'react-native';
 
-export const BlueDefaultTheme = {
+export const ShroudDefaultTheme = {
   ...DefaultTheme,
   closeImage: require('../img/close.png'),
   barStyle: 'dark-content',
@@ -73,17 +73,44 @@ export const BlueDefaultTheme = {
     androidRippleColor: '#CCCCCC',
     primary: '#754CE8',
     secondary: '#472EBF',
+
+    // --- Revamp design tokens (Sync/scan UI) ---
+    // Light-only by design; dark mode inherits these light values via the spread in ShroudDarkTheme.
+    // Dedicated keys (not the React Navigation reserved primary/text/border) so DarkTheme can't recolor them.
+    brandPrimary: '#754CE8',
+    statusPaused: '#9792A6',
+    statusSuccess: '#55B685',
+    statusError: '#D0021B',
+    surfaceSubtle: '#F6F5FD', // banner / card background
+    accentSubtle: '#E6E2FA', // banner & card border, "check again" button bg, scanning icon ring
+    progressTrack: '#EAECF0',
+    buttonBorder: '#EBEBEB',
+    textPrimary: '#1A1A1A', // titles, primary copy
+    textSecondary: '#8E8E93', // subtitles, privacy copy
+    textMeta: '#92929B', // ETA / "%" meta text
+    textMuted: '#7B7A7E', // card row labels
+    chevron: '#C7C7CC', // disclosure chevron
+    white: '#FFFFFF',
+    black: '#000000', // large emphasis numerals
+    // SyncStatusIcon per-status ring/fill tints (glyph color = brandPrimary / status* above)
+    syncFillScanning: '#DCD2F9',
+    syncRingPaused: '#EEEEF1',
+    syncFillPaused: '#E4E2E8',
+    syncRingDone: '#E2FAEA',
+    syncFillDone: '#D2F9DC',
+    syncRingError: '#FDF1F2',
+    syncFillError: '#FBE9EB',
   },
 };
 
-export type Theme = typeof BlueDefaultTheme;
+export type Theme = typeof ShroudDefaultTheme;
 
-const BlueDarkTheme: Theme = {
+const ShroudDarkTheme: Theme = {
   ...DarkTheme,
   closeImage: require('../img/close-white.png'),
   barStyle: 'light-content',
   colors: {
-    ...BlueDefaultTheme.colors,
+    ...ShroudDefaultTheme.colors,
     ...DarkTheme.colors,
     customHeader: '#000000',
     brandingColor: '#000000',
@@ -142,8 +169,8 @@ export class BlueCurrentTheme {
 
   static updateColorScheme(): void {
     const isColorSchemeDark = Appearance.getColorScheme() === 'dark';
-    BlueCurrentTheme.colors = isColorSchemeDark ? BlueDarkTheme.colors : BlueDefaultTheme.colors;
-    BlueCurrentTheme.closeImage = isColorSchemeDark ? BlueDarkTheme.closeImage : BlueDefaultTheme.closeImage;
+    BlueCurrentTheme.colors = isColorSchemeDark ? ShroudDarkTheme.colors : ShroudDefaultTheme.colors;
+    BlueCurrentTheme.closeImage = isColorSchemeDark ? ShroudDarkTheme.closeImage : ShroudDefaultTheme.closeImage;
   }
 }
 

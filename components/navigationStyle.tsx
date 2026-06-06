@@ -2,6 +2,7 @@ import { NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import React from 'react';
 import { Image, Keyboard, Platform, StyleSheet, TouchableOpacity } from 'react-native';
 
+import { ClashFont } from '../constants/fonts';
 import loc from '../loc';
 import { Theme } from './themes';
 
@@ -113,8 +114,10 @@ const navigationStyle = (
       }
       const baseHeaderStyle = {
         headerShadowVisible: false,
+        headerTitleAlign: 'center' as const,
         headerTitleStyle: {
-          fontWeight: '600' as const,
+          fontFamily: ClashFont.medium,
+          fontSize: 17,
           color: theme.colors.foregroundColor,
         },
         headerTintColor: theme.colors.foregroundColor,

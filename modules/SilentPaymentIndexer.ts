@@ -107,8 +107,9 @@ class SilentPaymentIndexer {
         blocksScanned += rangeSize;
 
         if (onProgress) {
-          onProgress({
+          await onProgress({
             currentBlock: rangeEnd,
+            tipHeight: endHeight,
             totalBlocks,
             blocksScanned,
             percentComplete: (blocksScanned / totalBlocks) * 100,
