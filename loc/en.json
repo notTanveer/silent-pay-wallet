@@ -59,7 +59,9 @@
         "tap_to_copy": "Tap to copy",
         "address_not_found": "Unable to generate receiving address.",
         "header": "Receive",
-        "qrcode_for_the_address": "QR Code for the address"
+        "qrcode_for_the_address": "QR Code for the address",
+        "address_reuse_warning": "For better privacy, use a new address for each payment. Reusing this one can link your transactions together.",
+        "address_reuse_warning_emphasis": "use a new address for each payment"
     },
     "send": {
         "broadcastButton": "Broadcast",

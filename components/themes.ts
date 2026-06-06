@@ -83,6 +83,8 @@ export const ShroudDefaultTheme = {
     statusError: '#D0021B',
     surfaceSubtle: '#F6F5FD', // banner / card background
     accentSubtle: '#E6E2FA', // banner & card border, "check again" button bg, scanning icon ring
+    surfaceCaution: '#FDFBF5', // caution banner background (address-reuse warning)
+    iconCaution: '#F1AF63', // caution banner icon (warm amber)
     segmentTrack: '#F8F8FA', // pill toggle track background
     segmentTrackBorder: '#EEEEEE', // pill toggle track border
     segmentSelectedBg: '#FFFFFF', // selected pill background

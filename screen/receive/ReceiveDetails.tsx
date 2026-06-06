@@ -286,6 +286,7 @@ const ReceiveDetails = () => {
         <View style={styles.container}>
           {address && (
             <View style={styles.addressBody}>
+              <InfoBanner text={loc.receive.address_reuse_warning} emphasis={loc.receive.address_reuse_warning_emphasis} variant="caution" />
               <QRCard value={bip21encoded} size={qrCodeSize} />
               <AddressCopyCard text={address} />
             </View>
