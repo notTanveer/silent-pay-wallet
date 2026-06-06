@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
 
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../modules/hapticFeedback';
+import { ShroudText } from '../ShroudComponents';
 import { ClashFont } from '../constants/fonts';
 import { useTheme } from './themes';
 
@@ -67,7 +68,7 @@ const PillSegmentedControl: React.FC<PillSegmentedControlProps> = ({ values, sel
           accessibilityState={{ selected: index === selectedIndex }}
           onPress={() => handlePress(index)}
         >
-          <Text
+          <ShroudText
             numberOfLines={1}
             style={[
               styles.label,
@@ -78,7 +79,7 @@ const PillSegmentedControl: React.FC<PillSegmentedControlProps> = ({ values, sel
             ]}
           >
             {value}
-          </Text>
+          </ShroudText>
         </Pressable>
       ))}
     </View>
