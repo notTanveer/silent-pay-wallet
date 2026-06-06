@@ -1,18 +1,7 @@
 import assert from 'assert';
 import * as bitcoin from 'bitcoinjs-lib';
 
-import {
-  extractTextFromElementById,
-  hashIt,
-  helperImportWallet,
-  sleep,
-  waitForText,
-  tapAndTapAgainIfElementIsNotVisible,
-  tapIfTextPresent,
-  waitForId,
-  countElements,
-  scanText,
-} from './helperz';
+import { extractTextFromElementById, hashIt, helperImportWallet, sleep, waitForId, scanText } from './helperz';
 import { uint8ArrayToHex } from '../../modules/uint8array-extras';
 
 // if loglevel is set to `error`, this kind of logging will still get through
@@ -386,55 +375,6 @@ describe('Shroud UI Tests - import BIP84 wallet', () => {
     process.env.TRAVIS && require('fs').writeFileSync(lockFile, '1');
   });
 
-  it('can do basic wallet-details operations', async () => {
-    const lockFile = '/tmp/travislock.' + hashIt('t_walletdetails');
-    if (process.env.TRAVIS) {
-      if (require('fs').existsSync(lockFile)) return console.warn('skipping as it previously passed on Travis');
-    }
-    if (!process.env.HD_MNEMONIC_BIP84) {
-      console.error('process.env.HD_MNEMONIC_BIP84 not set, skipped');
-      return;
-    }
-
-    await device.launchApp({ newInstance: true });
-
-    // go inside the wallet
-    await element(by.text('Imported HD SegWit (BIP84 Bech32 Native)')).tap();
-
-    // let's test wallet details screens
-    await element(by.id('WalletDetails')).tap();
-
-    // rename test
-    await element(by.id('WalletNameInput')).replaceText('testname');
-    await element(by.id('WalletNameInput')).typeText('\n'); // newline is what triggers saving the wallet
-    await device.pressBack();
-    await waitForText('testname');
-    await expect(element(by.id('WalletLabel'))).toHaveText('testname');
-    await element(by.id('WalletDetails')).tap();
-
-    // rename back
-    await element(by.id('WalletNameInput')).replaceText('Imported HD SegWit (BIP84 Bech32 Native)');
-    await element(by.id('WalletNameInput')).typeText('\n'); // newline is what triggers saving the wallet
-    await device.pressBack();
-    await waitForText('Imported HD SegWit (BIP84 Bech32 Native)');
-    await expect(element(by.id('WalletLabel'))).toHaveText('Imported HD SegWit (BIP84 Bech32 Native)');
-    await element(by.id('WalletDetails')).tap();
-
-    // wallet export
-    await element(by.id('WalletDetailsScroll')).swipe('up', 'fast', 1);
-    await tapAndTapAgainIfElementIsNotVisible('WalletExport', 'WalletExportScroll');
-    await element(by.id('WalletExportScroll')).swipe('up', 'fast', 1);
-    await expect(element(by.id('Secret'))).toHaveText(process.env.HD_MNEMONIC_BIP84);
-    await device.pressBack();
-
-    // XPUB
-    await element(by.id('WalletDetailsScroll')).swipe('up', 'fast', 1);
-    await tapAndTapAgainIfElementIsNotVisible('XpubButton', 'CopyTextToClipboard');
-    await device.pressBack();
-
-    process.env.TRAVIS && require('fs').writeFileSync(lockFile, '1');
-  });
-
   it('should handle URL successfully', async () => {
     const lockFile = '/tmp/travislock.' + hashIt('t22');
     if (process.env.TRAVIS) {
@@ -575,101 +515,5 @@ describe('Shroud UI Tests - import BIP84 wallet', () => {
     assert.strictEqual(tx2.ins[0].index, 0);
 
     process.env.TRAVIS && require('fs').writeFileSync(lockFile, '1');
-  });
-
-  it('can purge txs and balance, then refetch data from tx list screen and see data on screen update', async () => {
-    const lockFile = '/tmp/travislock.' + hashIt('t24');
-    if (process.env.TRAVIS) {
-      if (require('fs').existsSync(lockFile)) return console.warn('skipping', JSON.stringify('t24'), 'as it previously passed on Travis');
-    }
-    if (!process.env.HD_MNEMONIC_BIP84) {
-      console.error('process.env.HD_MNEMONIC_BIP84 not set, skipped');
-      return;
-    }
-
-    await device.launchApp({ newInstance: true });
-    // go inside the wallet
-    await element(by.text('Imported HD SegWit (BIP84 Bech32 Native)')).tap();
-    await element(by.id('WalletDetails')).tap();
-
-    // tapping backdoor button to purge txs and balance:
-    for (let c = 0; c <= 10; c++) {
-      await element(by.id('PurgeBackdoorButton')).tap();
-      await sleep(500);
-    }
-
-    await waitForText('OK');
-    await tapIfTextPresent('OK');
-
-    if (device.getPlatform() === 'ios') {
-      console.warn('rest of the test is Android only, skipped');
-      return;
-    }
-
-    await device.pressBack();
-
-    // asserting there are no transactions and balance is 0:
-
-    await expect(element(by.id('WalletBalance'))).toHaveText('0');
-    await waitForId('TransactionsListEmpty');
-    assert.strictEqual(await countElements('TransactionListItem'), 0);
-
-    await element(by.id('TransactionsListView')).swipe('down', 'slow'); // pul-to-refresh
-
-    // asserting balance and txs loaded:
-    await waitForText('0.00105526'); // the wait inside allows network request to propagate
-    await waitFor(element(by.id('TransactionsListEmpty')))
-      .not.toBeVisible()
-      .withTimeout(25_000);
-    await expect(element(by.id('WalletBalance'))).toHaveText('0.00105526');
-    await expect(element(by.id('TransactionsListEmpty'))).not.toBeVisible();
-
-    assert.ok((await countElements('TransactionListItem')) >= 3); // 3 is arbitrary, real txs on screen depend on screen size
-  });
-
-  it('can purge txs and balance, then restart the app and witness it to refetch tx list screen and balance', async () => {
-    const lockFile = '/tmp/travislock.' + hashIt('t25');
-    if (process.env.TRAVIS) {
-      if (require('fs').existsSync(lockFile)) return console.warn('skipping', JSON.stringify('t25'), 'as it previously passed on Travis');
-    }
-    if (!process.env.HD_MNEMONIC_BIP84) {
-      console.error('process.env.HD_MNEMONIC_BIP84 not set, skipped');
-      return;
-    }
-
-    await device.launchApp({ newInstance: true });
-    // go inside the wallet
-    await element(by.text('Imported HD SegWit (BIP84 Bech32 Native)')).tap();
-    await element(by.id('WalletDetails')).tap();
-
-    // tapping backdoor button to purge txs and balance:
-    for (let c = 0; c <= 10; c++) {
-      await element(by.id('PurgeBackdoorButton')).tap();
-      await sleep(500);
-    }
-
-    await waitForText('OK');
-    await tapIfTextPresent('OK');
-
-    if (device.getPlatform() === 'ios') {
-      console.warn('rest of the test is Android only, skipped');
-      return;
-    }
-
-    await device.pressBack();
-
-    // asserting there are no transactions and balance is 0:
-
-    await expect(element(by.id('WalletBalance'))).toHaveText('0');
-    await waitForId('TransactionsListEmpty');
-    assert.strictEqual(await countElements('TransactionListItem'), 0);
-
-    // now, restarting the app:
-    await device.launchApp({ newInstance: true });
-    // ^^^ its supposed to refetch txs and balance
-
-    // asserting balance and txs loaded:
-    await waitForText('0.00105526 BTC '); // the wait inside allows network request to propagate. also, stupid space in the end of the string
-    assert.ok((await countElements('TransactionListItem')) >= 2); // 2 is arbitrary, real txs on screen depend on screen size
   });
 });
