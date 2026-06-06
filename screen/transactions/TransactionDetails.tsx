@@ -134,11 +134,8 @@ const TransactionDetails = () => {
     return null;
   };
 
-  const navigateToWallet = (wallet: TWallet) => {
-    navigate('WalletTransactions', {
-      walletID: wallet.getID(),
-      walletType: wallet.type,
-    });
+  const navigateToWallet = (_wallet: TWallet) => {
+    navigate('WalletsList', {});
   };
 
   const onPressMenuItem = (key: string) => {
