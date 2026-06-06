@@ -73,7 +73,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
   const selectedWalletID = useCallback((): string | undefined => {
     if (!navigationRef.current || !navigationRef.current.isReady()) return undefined;
 
-    const screensToCheck = ['LNDCreateInvoice', 'SendDetails', 'WalletTransactions', 'TransactionStatus'];
+    const screensToCheck = ['LNDCreateInvoice', 'SendDetails', 'TransactionStatus'];
 
     const currentRoute = navigationRef.current.getCurrentRoute();
     console.debug('[StorageProvider] Current route:', currentRoute?.name);

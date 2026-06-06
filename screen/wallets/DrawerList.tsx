@@ -24,12 +24,9 @@ const DrawerList: React.FC<DrawerContentComponentProps> = memo((props: DrawerCon
   const handleClick = useCallback(
     (item?: TWallet) => {
       if (item?.getID) {
-        const walletID = item.getID();
-        const walletType = item.type;
         InteractionManager.runAfterInteractions(() => {
           drawerNavigation.navigate('DetailViewStackScreensStack', {
-            screen: 'WalletTransactions',
-            params: { walletID, walletType },
+            screen: 'WalletsList',
           });
           drawerNavigation.closeDrawer();
         });
