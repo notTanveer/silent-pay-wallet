@@ -76,7 +76,6 @@ export type SendDetailsStackParamList = {
     amount: number;
     amountUnit?: BitcoinUnit;
     txid?: string;
-    invoiceDescription?: string;
   };
   CoinControl: {
     walletID: string;
