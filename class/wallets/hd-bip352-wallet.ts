@@ -517,6 +517,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
           }
 
           await this._waitIfPaused();
+          if (this.cancelScanCallbackScan) throw new Error('SCAN_CANCELLED');
 
           const result = await this.processTransactions(transactions);
           const addedCount = this.commitUTXOs(result.utxos, result.lastScannedBlock);
