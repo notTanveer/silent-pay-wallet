@@ -76,6 +76,10 @@ const ReceiveDetails = () => {
   const [qrCodeSize, setQRCodeSize] = useState(90);
 
   const wallet = walletID ? wallets.find(w => w.getID() === walletID) : undefined;
+  const spAddress =
+    wallet && 'getSilentPaymentAddress' in wallet && typeof wallet.getSilentPaymentAddress === 'function'
+      ? wallet.getSilentPaymentAddress()
+      : undefined;
 
   const stylesHook = StyleSheet.create({
     root: {
@@ -286,7 +290,11 @@ const ReceiveDetails = () => {
         <View style={styles.container}>
           {address && (
             <View style={styles.addressBody}>
-              <InfoBanner text={loc.receive.address_reuse_warning} emphasis={loc.receive.address_reuse_warning_emphasis} variant="caution" />
+              <InfoBanner
+                text={loc.receive.address_reuse_warning}
+                emphasis={loc.receive.address_reuse_warning_emphasis}
+                variant="caution"
+              />
               <QRCard value={bip21encoded} size={qrCodeSize} />
               <AddressCopyCard text={address} />
             </View>
@@ -294,17 +302,13 @@ const ReceiveDetails = () => {
         </View>
       );
     } else if (currentTab === segmentControlValues[0] && wallet) {
-      const qrValue =
-        'getSilentPaymentAddress' in wallet && typeof wallet.getSilentPaymentAddress === 'function'
-          ? wallet.getSilentPaymentAddress()
-          : undefined;
       return (
         <View style={styles.container}>
-          {qrValue ? (
+          {spAddress ? (
             <View style={styles.addressBody}>
               <InfoBanner text={loc.bip352.explanation} emphasis="without compromising privacy" />
-              <QRCard value={qrValue} size={qrCodeSize} />
-              <AddressCopyCard text={qrValue} />
+              <QRCard value={spAddress} size={qrCodeSize} />
+              <AddressCopyCard text={spAddress} />
             </View>
           ) : (
             <ShroudText>{loc.bip352.not_supported}</ShroudText>
@@ -339,11 +343,8 @@ const ReceiveDetails = () => {
     let message: string | false = false;
     if (currentTab === segmentControlValues[1]) {
       message = bip21encoded;
-    } else if (currentTab === segmentControlValues[0] && wallet) {
-      message =
-        (wallet && 'getSilentPaymentAddress' in wallet && typeof wallet.getSilentPaymentAddress === 'function'
-          ? wallet.getSilentPaymentAddress()
-          : false) ?? false;
+    } else if (currentTab === segmentControlValues[0]) {
+      message = spAddress ?? false;
     }
 
     if (!message) {
@@ -354,17 +355,7 @@ const ReceiveDetails = () => {
     Share.open({ message }).catch(error => console.debug('Error sharing:', error));
   };
 
-  const shareDisabled =
-    !bip21encoded &&
-    !(
-      currentTab === segmentControlValues[0] &&
-      !(
-        wallet &&
-        'getSilentPaymentAddress' in wallet &&
-        typeof wallet.getSilentPaymentAddress === 'function' &&
-        wallet.getSilentPaymentAddress()
-      )
-    );
+  const shareDisabled = currentTab === segmentControlValues[0] ? !spAddress : !bip21encoded;
 
   return (
     <View style={[styles.flex, stylesHook.root]}>
@@ -454,6 +445,7 @@ const styles = StyleSheet.create({
     gap: 9,
     height: 56,
     borderRadius: 16,
+    overflow: 'hidden',
   },
   shareLabel: {
     fontFamily: ClashFont.medium,

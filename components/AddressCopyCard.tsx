@@ -49,7 +49,7 @@ const AddressCopyCard: React.FC<AddressCopyCardProps> = ({ text }) => {
       <View style={styles.copyRow}>
         <CopyIcon size={16} color={colors.copyHint} />
         <ShroudText style={[styles.copyLabel, { color: colors.copyHint }]}>
-          {copied ? loc.wallets.xpub_copiedToClipboard : loc.receive.tap_to_copy}
+          {copied ? loc.receive.copied : loc.receive.tap_to_copy}
         </ShroudText>
       </View>
     </Pressable>
