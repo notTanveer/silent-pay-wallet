@@ -328,10 +328,6 @@ class AppDelegate: RCTAppDelegate, UNUserNotificationCenterDelegate {
         UserDefaults.standard.removeObserver(self, forKeyPath: "deviceUID")
     }
 
-    override func application(_ application: UIApplication, performActionFor shortcutItem: UIApplicationShortcutItem, completionHandler: @escaping (Bool) -> Void) {
-        RNQuickActionManager.onQuickActionPress(shortcutItem, completionHandler: completionHandler)
-    }
-
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         completionHandler([.sound, .list, .banner, .badge])
     }
@@ -352,7 +348,6 @@ class AppDelegate: RCTAppDelegate, UNUserNotificationCenterDelegate {
             }
         }
 
-        RNCPushNotificationIOS.didReceive(response)
         completionHandler()
     }
     
