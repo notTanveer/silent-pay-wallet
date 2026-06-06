@@ -21,7 +21,6 @@ export type DetailViewStackParamList = {
   DrawerRoot: undefined;
   UnlockWithScreen: undefined;
   WalletsList: { onBarScanned?: string };
-  WalletDetails: { walletID: string };
   TransactionDetails: { tx: Transaction; hash: string; walletID: string };
   TransactionStatus: { hash: string; walletID?: string };
   CPFP: {
@@ -32,7 +31,6 @@ export type DetailViewStackParamList = {
   RBFCancel: { txid: string; wallet: TWallet | null };
   Broadcast: object;
   Success: undefined;
-  WalletAddresses: { walletID: string };
   AddWalletRoot?: {
     screen?: keyof AddWalletStackParamList;
     params?: AddWalletStackParamList[keyof AddWalletStackParamList];
@@ -47,7 +45,6 @@ export type DetailViewStackParamList = {
   ElectrumSettings: { server?: ElectrumServerItem; onBarScanned?: string };
   EncryptStorage: undefined;
   SelfTest: undefined;
-  WalletXpubRoot: undefined;
   ReceiveDetails: {
     walletID?: string;
     address: string;

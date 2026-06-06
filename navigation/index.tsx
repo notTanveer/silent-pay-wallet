@@ -10,7 +10,6 @@ const DrawerRoot = lazy(() => import('./DrawerRoot'));
 const AddWalletStack = lazy(() => import('./AddWalletStack'));
 const SendDetailsStack = lazy(() => import('./SendDetailsStack'));
 const WalletExportStack = lazy(() => import('./WalletExportStack'));
-const WalletXpubStackRoot = lazy(() => import('./WalletXpubStack'));
 const ScanQRCode = lazy(() => import('../screen/send/ScanQRCode'));
 
 const NavigationDefaultOptions: NativeStackNavigationOptions = {
@@ -53,12 +52,6 @@ const LazyWalletExportStack = () => (
   </Suspense>
 );
 
-const LazyWalletXpubStackRoot = () => (
-  <Suspense fallback={<LazyLoadingIndicator />}>
-    <WalletXpubStackRoot />
-  </Suspense>
-);
-
 const LazyScanQRCodeComponent = () => (
   <Suspense fallback={<LazyLoadingIndicator />}>
     <ScanQRCode />
@@ -91,11 +84,6 @@ const MainRoot = () => {
           <DetailViewStack.Screen
             name="WalletExportRoot"
             component={LazyWalletExportStack}
-            options={{ ...NavigationDefaultOptions, ...StatusBarLightOptions }}
-          />
-          <DetailViewStack.Screen
-            name="WalletXpubRoot"
-            component={LazyWalletXpubStackRoot}
             options={{ ...NavigationDefaultOptions, ...StatusBarLightOptions }}
           />
 
