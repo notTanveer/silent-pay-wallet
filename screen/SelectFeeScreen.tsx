@@ -168,8 +168,9 @@ const SelectFeeScreen = () => {
     customCardSelected: { backgroundColor: colors.surfaceSubtle, borderColor: colors.feeCardSelectedBorder },
     customLabel: { color: colors.black },
     customSubtitle: { color: colors.textSecondary },
-    satVbyteText: { color: colors.feeValue },
-    customFeeInputColors: { color: colors.feeValue, borderColor: colors.formBorder },
+    customInputRow: { backgroundColor: colors.white },
+    satVbyteText: { color: colors.textSecondary },
+    customFeeInputColors: { color: colors.feeValue },
   });
 
   useEffect(() => {
@@ -301,34 +302,36 @@ const SelectFeeScreen = () => {
           accessibilityRole="button"
           testID="feeCustomContainerButton"
           onPress={handleCustomPress}
-          style={[styles.card, stylesHook.customCard, state.isCustomFeeSelected && stylesHook.customCardSelected]}
+          style={[styles.customCardContainer, state.isCustomFeeSelected ? stylesHook.customCardSelected : stylesHook.customCard]}
         >
-          <View style={styles.cardBody}>
-            <Text style={[styles.cardLabel, stylesHook.customLabel]}>{loc.send.fee_custom}</Text>
-            {state.isCustomFeeSelected ? (
-              <View style={styles.customFeeContainer}>
-                <TextInput
-                  ref={customFeeInputRef}
-                  style={[styles.customFeeInput, stylesHook.customFeeInputColors]}
-                  keyboardType="numeric"
-                  placeholder={loc.send.insert_custom_fee}
-                  value={state.customFeeValue}
-                  placeholderTextColor={colors.placeholderTextColor}
-                  onChangeText={handleCustomFeeChange}
-                  onSubmitEditing={handleCustomFeeSubmit}
-                  onFocus={handleCustomFocus}
-                  onBlur={handleCustomFeeBlur}
-                  enablesReturnKeyAutomatically
-                  returnKeyType="done"
-                  accessibilityLabel={loc.send.create_fee}
-                  testID="feeCustom"
-                />
-                {!!state.customFeeValue && <Text style={stylesHook.satVbyteText}>{loc.units.sat_vbyte}</Text>}
-              </View>
-            ) : (
-              <Text style={[styles.cardSubtitle, stylesHook.customSubtitle]}>{loc.send.set_your_own_fee_rate}</Text>
-            )}
+          <View style={styles.customHeaderRow}>
+            <View style={styles.cardBody}>
+              <Text style={[styles.cardLabel, stylesHook.customLabel]}>{loc.send.fee_custom}</Text>
+              <Text style={[styles.customCardSubtitle, stylesHook.customSubtitle]}>{loc.send.set_your_own_fee_rate}</Text>
+            </View>
           </View>
+
+          {state.isCustomFeeSelected && (
+            <View style={[styles.customInputRow, stylesHook.customInputRow]}>
+              <TextInput
+                ref={customFeeInputRef}
+                style={[styles.customFeeInput, stylesHook.customFeeInputColors]}
+                keyboardType="numeric"
+                placeholder={loc.send.insert_custom_fee}
+                value={state.customFeeValue}
+                placeholderTextColor={colors.textSecondary}
+                onChangeText={handleCustomFeeChange}
+                onSubmitEditing={handleCustomFeeSubmit}
+                onFocus={handleCustomFocus}
+                onBlur={handleCustomFeeBlur}
+                enablesReturnKeyAutomatically
+                returnKeyType="done"
+                accessibilityLabel={loc.send.create_fee}
+                testID="feeCustom"
+              />
+              <Text style={[styles.satVbyteText, stylesHook.satVbyteText]}>{loc.units.sat_vbyte}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -398,16 +401,43 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlign: 'right',
   },
-  customFeeContainer: {
+  customCardContainer: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+  },
+  customHeaderRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  customCardSubtitle: {
+    fontFamily: ClashFont.regular,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  customInputRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    height: 48,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
   },
   customFeeInput: {
-    fontSize: 16,
-    height: 36,
+    flex: 1,
+    fontFamily: ClashFont.regular,
+    fontSize: 14,
+    height: 32,
     padding: 0,
-    minWidth: 70,
-    marginRight: 4,
+    marginRight: 8,
+  },
+  satVbyteText: {
+    fontFamily: ClashFont.regular,
+    fontSize: 16,
+    lineHeight: 26,
   },
   bottom: {
     paddingHorizontal: 24,

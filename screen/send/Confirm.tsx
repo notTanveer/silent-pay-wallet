@@ -167,7 +167,7 @@ const Confirm: React.FC = () => {
 
   useEffect(() => {
     setOptions({
-      headerRight: () => HeaderRightButton,
+      headerRight: () => null,
     });
   }, [HeaderRightButton, colors, fee, feeSatoshi, memo, recipients, satoshiPerByte, setOptions, tx, wallet]);
 
