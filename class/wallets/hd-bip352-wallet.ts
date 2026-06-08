@@ -79,6 +79,14 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     return { ...this._scanState, lastScannedBlock: this.lastScannedBlock };
   }
 
+  /**
+   * Whether a forward scan is currently in flight. Used to avoid starting a second scan while
+   * one is already running (see StorageProvider.addAndSaveWallet).
+   */
+  isScanActive(): boolean {
+    return this.activeScanPromise !== null;
+  }
+
   pauseScan(): void {
     if (!this._scanPaused && this.activeScanPromise !== null) {
       this._scanPaused = true;
