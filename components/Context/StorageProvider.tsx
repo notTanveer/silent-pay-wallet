@@ -10,7 +10,7 @@ import * as Electrum from '../../modules/Electrum';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import { startAndDecrypt } from '../../modules/start-and-decrypt';
 import { navigationRef } from '../../NavigationService';
-import { type ScanStateInfo, IDLE_SCAN_STATE, isScannable } from '../../helpers/silent-payments';
+import { type ScanStateInfo, IDLE_SCAN_STATE } from '../../helpers/silent-payments';
 
 const shroudApp = ShroudApp.getInstance();
 
@@ -190,12 +190,10 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       if ('setOnPersistCallback' in wallet && typeof wallet.setOnPersistCallback === 'function') {
         wallet.setOnPersistCallback(debouncedPersist);
       }
-      // NOTE: there is a single shared `scanState`. This assumes at most one scannable
-      // (silent-payments) wallet is active at a time; multiple would clobber each other here.
-      if (isScannable(wallet)) {
-        wallet.setOnScanStateChangeCallback(setScanState);
-        setScanState(wallet.getScanState());
-      }
+      // NOTE: there is a single shared `scanState`. This assumes at most one silent-payments
+      // wallet is active at a time; multiple would clobber each other here.
+      wallet.setOnScanStateChangeCallback(setScanState);
+      setScanState(wallet.getScanState());
 
       shroudApp.wallets.push(wallet);
       setWallets([...shroudApp.getWallets()]);
@@ -205,12 +203,12 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
   );
 
   const deleteWallet = useCallback((wallet: TWallet) => {
-    if (isScannable(wallet)) {
-      console.log('[StorageProvider] Cancelling active scan for wallet before deletion...');
-      wallet.cancelScan();
-    }
+    // Stop any active scan (and its polling timer) before deletion so we never leak an orphaned
+    // scan loop. cancelScan() is a direct method on the wallet, so this is compile-checked.
+    console.log('[StorageProvider] Cancelling active scan for wallet before deletion...');
+    wallet.cancelScan();
 
-    if ('clearCache' in wallet && typeof wallet.clearCache === 'function') wallet.clearCache();
+    wallet.clearCache();
 
     shroudApp.deleteWallet(wallet);
     setWallets([...shroudApp.getWallets()]);
@@ -286,10 +284,8 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
         if ('setOnPersistCallback' in wallet && typeof wallet.setOnPersistCallback === 'function') {
           wallet.setOnPersistCallback(debouncedPersist);
         }
-        if (isScannable(wallet)) {
-          wallet.setOnScanStateChangeCallback(setScanState);
-          setScanState(wallet.getScanState());
-        }
+        wallet.setOnScanStateChangeCallback(setScanState);
+        setScanState(wallet.getScanState());
       });
 
       setWallets(currentWallets);
@@ -429,7 +425,7 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       });
 
       await w.fetchBalance();
-      if (isScannable(w) && !w.isScanActive()) {
+      if (!w.isScanActive()) {
         w.fetchTransactions().catch((e: any) => console.warn('[addAndSaveWallet] scan error:', e));
       }
     },

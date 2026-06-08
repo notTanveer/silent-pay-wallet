@@ -13,7 +13,6 @@ export type {
   ScanProgress,
   ScanStatus,
   ScanStateInfo,
-  IScannableWallet,
 } from './types';
-export { IDLE_SCAN_STATE, isScannable } from './types';
+export { IDLE_SCAN_STATE } from './types';
 export { RustTransactionProcessor, createTransactionProcessor } from './RustTransactionProcessor';

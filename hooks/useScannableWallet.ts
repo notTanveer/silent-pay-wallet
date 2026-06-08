@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
 import { useStorage } from './context/useStorage';
-import { isScannable, type IScannableWallet } from '../helpers/silent-payments';
+import { TWallet } from '../class/wallets/types';
 
 /**
- * Returns the first wallet that supports background scanning (silent payments), or null.
- * Centralises the `wallets.find(isScannable)` lookup shared across the scan UI.
+ * Returns the active silent-payments wallet (the app is single-wallet), or null.
+ * Centralises the lookup shared across the scan UI (WalletsList, SyncScreen).
  */
-export const useScannableWallet = (): IScannableWallet | null => {
+export const useScannableWallet = (): TWallet | null => {
   const { wallets } = useStorage();
-  return useMemo(() => (wallets.find(isScannable) ?? null) as IScannableWallet | null, [wallets]);
+  return useMemo(() => wallets[0] ?? null, [wallets]);
 };
