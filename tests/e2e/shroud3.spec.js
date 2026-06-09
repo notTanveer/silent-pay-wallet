@@ -100,7 +100,7 @@ describe('Shroud UI Tests - import Watch-only wallet (zpub)', () => {
     await device.pressBack();
     await device.pressBack();
     await device.pressBack();
-    await helperDeleteWallet('Imported Watch-only', '10000');
+    await helperDeleteWallet();
 
     process.env.TRAVIS && require('fs').writeFileSync(lockFile, '1');
   });

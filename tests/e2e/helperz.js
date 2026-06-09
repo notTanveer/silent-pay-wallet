@@ -78,19 +78,14 @@ export function hashIt(s) {
   return Buffer.from(sha256(s)).toString('hex');
 }
 
-export async function helperDeleteWallet(label, remainingBalanceSat = false) {
-  await element(by.text(label)).tap();
-  await element(by.id('WalletDetails')).tap();
-  await element(by.id('WalletDetailsScroll')).swipe('up', 'fast', 1);
-  await element(by.id('HeaderMenuButton')).tap();
-  await element(by.text('Delete')).tap();
+export async function helperDeleteWallet() {
+  // deletion now lives in Settings → Delete Wallet (single-wallet app)
+  await element(by.id('SettingsButton')).tap();
+  await element(by.id('DeleteWalletButton')).tap();
   await waitForText('Yes, delete');
   await element(by.text('Yes, delete')).tap();
-  if (remainingBalanceSat) {
-    await element(by.type('android.widget.EditText')).typeText(remainingBalanceSat);
-    await element(by.text('Delete')).tap();
-  }
-  await waitForId('NoTransactionsMessage');
+  // after deletion the app resets to the Onboarding screen
+  await waitForId('ImportWallet');
 }
 
 /*
