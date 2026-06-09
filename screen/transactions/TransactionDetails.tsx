@@ -134,17 +134,13 @@ const TransactionDetails = () => {
     return null;
   };
 
-  const navigateToWallet = (_wallet: TWallet) => {
-    navigate('WalletsList', {});
-  };
-
   const onPressMenuItem = (key: string) => {
     if (key === actionKeys.CopyToClipboard) {
       handleCopyPress(key);
     } else if (key === actionKeys.GoToWallet) {
       const wallet = weOwnAddress(key);
       if (wallet) {
-        navigateToWallet(wallet);
+        navigate('WalletsList', {});
       }
     }
   };
