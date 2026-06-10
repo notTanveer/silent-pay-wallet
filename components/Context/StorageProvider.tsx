@@ -1,15 +1,14 @@
 import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { InteractionManager, LayoutAnimation } from 'react-native';
+import { InteractionManager } from 'react-native';
 import A from '../../modules/analytics';
 import { ShroudApp, TTXMetadata } from '../../class';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import type { TWallet } from '../../class/wallets/types';
 import presentAlert from '../../components/Alert';
-import loc, { formatBalanceWithoutSuffix } from '../../loc';
+import loc from '../../loc';
 import * as Electrum from '../../modules/Electrum';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import { startAndDecrypt } from '../../modules/start-and-decrypt';
-import { BitcoinUnit } from '../../models/bitcoinUnits';
 import { navigationRef } from '../../NavigationService';
 import { type ScanStateInfo, IDLE_SCAN_STATE, isScannable } from '../../helpers/silent-payments';
 
@@ -48,7 +47,6 @@ interface StorageContextType {
   getItem: typeof shroudApp.getItem;
   setItem: typeof shroudApp.setItem;
   handleWalletDeletion: (walletID: string) => Promise<boolean>;
-  confirmWalletDeletion: (wallet: any, onConfirmed: () => void) => void;
   scanState: ScanStateInfo;
 }
 
@@ -438,36 +436,6 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
     [wallets, addWallet, saveToDisk],
   );
 
-  function confirmWalletDeletion(wallet: any, onConfirmed: () => void) {
-    triggerHapticFeedback(HapticFeedbackTypes.NotificationWarning);
-    try {
-      const balance = formatBalanceWithoutSuffix(wallet.getBalance(), BitcoinUnit.SATS, true);
-      presentAlert({
-        title: loc.wallets.details_delete_wallet,
-        message: loc.formatString(loc.wallets.details_del_wb_q, { balance }),
-        buttons: [
-          {
-            text: loc.wallets.details_delete,
-            onPress: () => {
-              triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
-              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-              onConfirmed();
-            },
-            style: 'destructive',
-          },
-          {
-            text: loc._.cancel,
-            onPress: () => {},
-            style: 'cancel',
-          },
-        ],
-        options: { cancelable: false },
-      });
-    } catch (error) {
-      // Handle error silently if needed
-    }
-  }
-
   const value: StorageContextType = useMemo(
     () => ({
       wallets,
@@ -499,7 +467,6 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       walletTransactionUpdateStatus,
       setWalletTransactionUpdateStatus,
       handleWalletDeletion,
-      confirmWalletDeletion,
       scanState,
     }),
     [
