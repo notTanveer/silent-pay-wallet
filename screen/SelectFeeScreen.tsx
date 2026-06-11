@@ -442,7 +442,6 @@ const styles = StyleSheet.create({
     lineHeight: 26,
   },
   bottom: {
-    paddingHorizontal: 24,
     paddingBottom: 24,
   },
 });
