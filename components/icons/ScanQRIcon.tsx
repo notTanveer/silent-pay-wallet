@@ -2,11 +2,11 @@ import React from 'react';
 import Svg, { Path } from 'react-native-svg';
 
 interface IconProps {
-  color?: string;
+  color: string;
   size?: number;
 }
 
-const ScanQRIcon: React.FC<IconProps> = ({ color = '#754CE8', size = 20 }) => (
+const ScanQRIcon: React.FC<IconProps> = ({ color, size = 20 }) => (
   <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">
     <Path
       d="M2.49902 5.8313V4.16522C2.49902 3.72335 2.67456 3.29958 2.98701 2.98713C3.29946 2.67468 3.72323 2.49915 4.1651 2.49915H5.83117"

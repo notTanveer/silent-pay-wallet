@@ -13,5 +13,5 @@ export const isAmountEmpty = (amount?: string | number): boolean => {
   if (amount === undefined || amount === null) return true;
   if (amount === 'MAX') return false;
   const n = Number(amount);
-  return Number.isNaN(n) ? String(amount).trim() === '' : n === 0;
+  return Number.isNaN(n) || n === 0;
 };

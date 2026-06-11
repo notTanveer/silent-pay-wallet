@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import navigationStyle, { CloseButtonPosition } from '../components/navigationStyle';
 import { useTheme } from '../components/themes';
@@ -12,7 +12,6 @@ import {
   SuccessComponent,
 } from './LazyLoadSendDetailsStack';
 import { SendDetailsStackParamList } from './SendDetailsStackParamList';
-import HeaderRightButton from '../components/HeaderRightButton';
 import { BitcoinUnit } from '../models/bitcoinUnits';
 import { ScanQRCodeComponent } from './LazyLoadScanQRCodeStack';
 import SelectFeeScreen from '../screen/SelectFeeScreen';
@@ -21,10 +20,6 @@ const Stack = createNativeStackNavigator<SendDetailsStackParamList>();
 
 const SendDetailsStack = () => {
   const theme = useTheme();
-  const DetailsButton = useMemo(
-    () => <HeaderRightButton testID="TransactionDetailsButton" disabled={true} title={loc.send.create_details} />,
-    [],
-  );
 
   return (
     <Stack.Navigator initialRouteName="SendDetails" screenOptions={{ headerShadowVisible: false, fullScreenGestureEnabled: false }}>
@@ -39,11 +34,7 @@ const SendDetailsStack = () => {
         initialParams={{ isEditable: true, feeUnit: BitcoinUnit.BTC, amountUnit: BitcoinUnit.BTC }} // Correctly typed now
       />
       <Stack.Screen name="SelectFee" component={SelectFeeScreen} options={navigationStyle({ title: loc.send.network_fee_header })(theme)} />
-      <Stack.Screen
-        name="Confirm"
-        component={ConfirmComponent}
-        options={navigationStyle({ title: loc.send.confirm_header, headerRight: () => DetailsButton })(theme)}
-      />
+      <Stack.Screen name="Confirm" component={ConfirmComponent} options={navigationStyle({ title: loc.send.confirm_header })(theme)} />
       <Stack.Screen
         name="PsbtWithHardwareWallet"
         component={PsbtWithHardwareWalletComponent}

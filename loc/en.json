@@ -80,7 +80,6 @@
         "details_add_rec_add": "Add Recipient",
         "details_add_rec_rem": "Remove Recipient",
         "details_add_rec_rem_all": "Remove All Recipients",
-        "details_recipient_title": "Recipient #{number} of #{total}",
         "details_address": "Address",
         "details_address_field_is_not_valid": "The address is not valid.",
         "details_adv_fee_bump": "Allow Fee Bump",
