@@ -18,11 +18,13 @@ describe('send/format', () => {
   });
 
   describe('isAmountEmpty', () => {
-    it('is true for undefined, empty, and zero', () => {
+    it('is true for undefined, empty, zero, and non-numeric strings', () => {
       expect(isAmountEmpty(undefined)).toBe(true);
       expect(isAmountEmpty('')).toBe(true);
       expect(isAmountEmpty('0')).toBe(true);
       expect(isAmountEmpty(0)).toBe(true);
+      expect(isAmountEmpty('.')).toBe(true);
+      expect(isAmountEmpty(',')).toBe(true);
     });
     it('is false for a positive amount and for MAX', () => {
       expect(isAmountEmpty('0.0001')).toBe(false);

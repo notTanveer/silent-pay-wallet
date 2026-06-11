@@ -92,8 +92,7 @@ const SendDetails = () => {
   const fiatEstimate = `≈ ${satoshiToLocalCurrency(amountSatsNum)}`;
   const isFormValid = !!recipient?.address && !isAmountEmpty(recipient?.amount);
 
-  const onChangeAmount = (text: string) => {
-    // keep digits and a single decimal point; BigNumber (btcToSatoshi) rejects commas / stray chars
+  const onChangeAmount = useCallback((text: string) => {
     const sanitized = text.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
     setAddresses(addrs => {
       const a = { ...addrs[0] };
@@ -102,22 +101,35 @@ const SendDetails = () => {
       a.unit = BitcoinUnit.BTC;
       return [a, ...addrs.slice(1)];
     });
-  };
+  }, []);
 
-  const onChangeAddress = (text: string) => {
-    const { address, amount, memo } = DeeplinkSchemaMatch.decodeBitcoinUri(text.trim());
-    setAddresses(addrs => {
-      const a = { ...addrs[0] };
-      a.address = address || text.trim();
-      if (amount) {
-        a.amount = String(amount);
-        a.amountSats = btcToSatoshi(String(amount));
+  const onChangeAddress = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      const looksLikeUri = trimmed.includes(':') || trimmed.includes('?');
+      if (looksLikeUri) {
+        const { address, amount, memo } = DeeplinkSchemaMatch.decodeBitcoinUri(trimmed);
+        setAddresses(addrs => {
+          const a = { ...addrs[0] };
+          a.address = address || trimmed;
+          if (amount) {
+            a.amount = String(amount);
+            a.amountSats = btcToSatoshi(String(amount));
+          }
+          return [a, ...addrs.slice(1)];
+        });
+        if (memo) setParams({ transactionMemo: memo });
+      } else {
+        setAddresses(addrs => {
+          const a = { ...addrs[0] };
+          a.address = trimmed;
+          return [a, ...addrs.slice(1)];
+        });
       }
-      return [a, ...addrs.slice(1)];
-    });
-    if (memo) setParams({ transactionMemo: memo });
-    setIsLoading(false);
-  };
+      setIsLoading(false);
+    },
+    [setParams],
+  );
 
   // if cutomFee is not set, we need to choose highest possible fee for wallet balance
   // if there are no funds for even Slow option, use 1 sat/vbyte fee

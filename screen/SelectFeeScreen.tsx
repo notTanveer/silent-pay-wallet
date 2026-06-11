@@ -65,24 +65,26 @@ const feeScreenReducer = (state: FeeScreenState, action: FeeScreenAction): FeeSc
     case FeeScreenActions.SET_OPTIONS: {
       const { options, currentFeeRate } = action.payload;
       const matchesPresetOption = options.some(option => !option.disabled && currentFeeRate === option.rate);
+      const keepCustom = state.isCustomFeeFocused || (state.isCustomFeeSelected && !matchesPresetOption);
       let updatedOptions;
-      if (matchesPresetOption) {
+      if (keepCustom) {
+        updatedOptions = options.map(option => ({ ...option, active: false }));
+      } else if (matchesPresetOption) {
         updatedOptions = options.map(option => ({
           ...option,
-          active: !state.isCustomFeeFocused && currentFeeRate === option.rate,
+          active: currentFeeRate === option.rate,
         }));
       } else {
-        // Default to first enabled option (Fast) when nothing matches
         const firstEnabled = options.find(opt => !opt.disabled);
         updatedOptions = options.map(option => ({
           ...option,
-          active: !state.isCustomFeeFocused && option === firstEnabled,
+          active: option === firstEnabled,
         }));
       }
       return {
         ...state,
         options: updatedOptions,
-        isCustomFeeSelected: state.isCustomFeeFocused || (state.isCustomFeeSelected && !matchesPresetOption),
+        isCustomFeeSelected: keepCustom,
       };
     }
     case FeeScreenActions.SELECT_FEE: {
@@ -238,7 +240,7 @@ const SelectFeeScreen = () => {
   const handleCustomFeeBlur = useCallback(() => {
     dispatch({ type: FeeScreenActions.SET_CUSTOM_FEE_BLURRED });
     const numericValue = Number(state.customFeeValue.replace(',', '.'));
-    if (!state.customFeeValue || numericValue < 0) {
+    if (!state.customFeeValue || !Number.isFinite(numericValue) || numericValue <= 0) {
       dispatch({ type: FeeScreenActions.CLEAR_CUSTOM_FEE });
     }
   }, [state.customFeeValue]);

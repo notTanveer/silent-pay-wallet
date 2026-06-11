@@ -30,8 +30,8 @@ const Success = () => {
   const fiat = `≈ ${satoshiToLocalCurrency(amountSats)}`;
 
   const onDonePressed = () => {
-    // @ts-ignore idk
-    navigation?.getParent().pop();
+    // @ts-ignore getParent() typing doesn't expose pop()
+    navigation?.getParent()?.pop();
   };
 
   const stylesHook = StyleSheet.create({
