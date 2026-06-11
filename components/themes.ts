@@ -109,7 +109,7 @@ export const ShroudDefaultTheme = {
     syncRingError: '#FDF1F2',
     syncFillError: '#FBE9EB',
 
-    // --- Send redesign tokens (light-only; dark inherits via spread) ---
+    // --- Send redesign tokens (light-only; dark mode is not yet wired up in NavigationContainer) ---
     fieldBackground: '#F5F5F7', // Address / Note field background
     amountMeta: '#9B9BA5', // BTC unit, fiat estimate, slow/medium ETA
     amountPlaceholder: 'rgba(0,0,0,0.32)', // AmountHero empty/placeholder digits

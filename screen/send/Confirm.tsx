@@ -90,11 +90,11 @@ const Confirm: React.FC = () => {
   const { isElectrumDisabled } = useSettings();
   const { isBiometricUseCapableAndEnabled } = useBiometrics();
   const navigation = useExtendedNavigation<ConfirmNavigationProp>();
-  const route = useRoute<ConfirmRouteProp>(); // Get the route and its params
-  const { recipients, walletID, fee, memo, tx, satoshiPerByte } = route.params;
+  const route = useRoute<ConfirmRouteProp>();
+  const { recipients, walletID, fee, tx } = route.params;
 
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { navigate, setOptions, goBack } = navigation;
+  const { navigate, goBack } = navigation;
   const wallet = wallets.find((w: TWallet) => w.getID() === walletID) as TWallet;
   const feeSatoshi = new BigNumber(fee).multipliedBy(100000000).toNumber();
   const { colors } = useTheme();
@@ -103,8 +103,6 @@ const Confirm: React.FC = () => {
 
   const stylesHook = StyleSheet.create({
     root: { backgroundColor: colors.elevated },
-    txDetails: { backgroundColor: colors.lightButton },
-    valueUnit: { color: colors.buttonTextColor },
     divider: { backgroundColor: colors.divider },
     summaryLabel: { color: colors.amountMeta },
     summaryValue: { color: colors.black },
@@ -121,64 +119,12 @@ const Confirm: React.FC = () => {
     }
   }, [wallet, goBack]);
 
-  const HeaderRightButton = useMemo(
-    () => (
-      <Pressable
-        accessibilityRole="button"
-        testID="TransactionDetailsButton"
-        style={[styles.txDetails, stylesHook.txDetails]}
-        onPress={async () => {
-          if (await isBiometricUseCapableAndEnabled()) {
-            if (!(await unlockWithBiometrics())) {
-              return;
-            }
-          }
-          navigate('CreateTransaction', {
-            fee,
-            recipients,
-            memo,
-            tx,
-            satoshiPerByte,
-            feeSatoshi,
-          });
-        }}
-      >
-        <Text style={[styles.txText, stylesHook.valueUnit]}>{loc.send.create_details}</Text>
-      </Pressable>
-    ),
-    [
-      stylesHook.txDetails,
-      stylesHook.valueUnit,
-      isBiometricUseCapableAndEnabled,
-      navigate,
-      fee,
-      recipients,
-      memo,
-      tx,
-      satoshiPerByte,
-      feeSatoshi,
-    ],
-  );
-
-  useEffect(() => {
-    console.log('send/confirm - useEffect');
-    console.log('address = ', recipients);
-  }, [recipients]);
-
-  useEffect(() => {
-    setOptions({
-      headerRight: () => null,
-    });
-  }, [HeaderRightButton, colors, fee, feeSatoshi, memo, recipients, satoshiPerByte, setOptions, tx, wallet]);
-
   const handleSendTransaction = async () => {
     dispatch({ type: ActionType.SET_BUTTON_DISABLED, payload: true });
     dispatch({ type: ActionType.SET_LOADING, payload: true });
     try {
-      // Perform biometric authentication first
       if (await isBiometricUseCapableAndEnabled()) {
         if (!(await unlockWithBiometrics())) {
-          // Stop execution if biometric unlock fails
           dispatch({ type: ActionType.SET_LOADING, payload: false });
           dispatch({ type: ActionType.SET_BUTTON_DISABLED, payload: false });
           return;
@@ -254,7 +200,7 @@ const Confirm: React.FC = () => {
   return (
     <SafeArea style={[styles.root, stylesHook.root]}>
       <View style={styles.content}>
-        <AmountHero amount={String(satoshiToBTC(amountSats))} fiat={`≈ ${satoshiToLocalCurrency(amountSats)}`} />
+        <AmountHero amount={satoshiToBTC(amountSats)} fiat={`≈ ${satoshiToLocalCurrency(amountSats)}`} />
 
         <View style={[styles.divider, stylesHook.divider]} />
 
@@ -401,16 +347,5 @@ const styles = StyleSheet.create({
     fontFamily: ClashFont.medium,
     fontSize: 16,
     lineHeight: 24,
-  },
-  txDetails: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 80,
-    borderRadius: 8,
-    height: 38,
-  },
-  txText: {
-    fontSize: 15,
-    fontWeight: '600',
   },
 });

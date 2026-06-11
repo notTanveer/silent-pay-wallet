@@ -2,11 +2,11 @@ import React from 'react';
 import Svg, { Path, Rect } from 'react-native-svg';
 
 interface CopyIconProps {
-  color?: string;
+  color: string;
   size?: number;
 }
 
-const CopyIcon: React.FC<CopyIconProps> = ({ color = '#8E8E93', size = 16 }) => (
+const CopyIcon: React.FC<CopyIconProps> = ({ color, size = 16 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Rect x="9" y="9" width="13" height="13" rx="2" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
     <Path

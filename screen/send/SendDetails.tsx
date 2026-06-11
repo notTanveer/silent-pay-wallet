@@ -29,7 +29,7 @@ import { isAmountEmpty } from '../../helpers/send/format';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useKeyboard } from '../../hooks/useKeyboard';
-import loc, { formatBalance, formatBalanceWithoutSuffix } from '../../loc';
+import loc, { formatBalance } from '../../loc';
 import { BitcoinUnit, Chain } from '../../models/bitcoinUnits';
 import NetworkTransactionFees, { NetworkTransactionFee, NetworkTransactionFeeType } from '../../models/networkTransactionFees';
 import { SendDetailsStackParamList } from '../../navigation/SendDetailsStackParamList';
@@ -83,12 +83,10 @@ const SendDetails = () => {
   const { isEditable } = routeParams;
   // if utxo is limited we use it to calculate available balance
   const balance: number = utxos ? utxos.reduce((prev, curr) => prev + curr.value, 0) : (wallet?.getBalance() ?? 0);
-  const allBalance = formatBalanceWithoutSuffix(balance, BitcoinUnit.BTC, true);
-
   // single-recipient helpers
   const recipient = addresses[0];
   const isMaxActive = recipient?.amount === BitcoinUnit.MAX;
-  const displayAmount = isMaxActive ? String(allBalance) : recipient?.amount ? String(recipient.amount) : '';
+  const displayAmount = isMaxActive ? '' : recipient?.amount ? String(recipient.amount) : '';
   // when sending max, amountSats holds the 'MAX' sentinel, so derive the fiat estimate from the full balance
   const amountSatsNum = isMaxActive ? balance : Number(recipient?.amountSats) || 0;
   const fiatEstimate = `≈ ${satoshiToLocalCurrency(amountSatsNum)}`;
@@ -472,7 +470,7 @@ const SendDetails = () => {
     Keyboard.dismiss();
     setIsLoading(true);
     const requestedSatPerByte = feeRate;
-    for (const [index, transaction] of addresses.entries()) {
+    for (const transaction of addresses) {
       let error;
       if (!transaction.amount || Number(transaction.amount) < 0 || parseFloat(String(transaction.amount)) === 0) {
         error = loc.send.details_amount_field_is_not_valid;
@@ -507,13 +505,7 @@ const SendDetails = () => {
 
       if (error) {
         setIsLoading(false);
-        presentAlert({
-          title:
-            addresses.length > 1
-              ? loc.formatString(loc.send.details_recipient_title, { number: index + 1, total: addresses.length })
-              : undefined,
-          message: error,
-        });
+        presentAlert({ message: error });
         triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
         return;
       }
@@ -889,7 +881,7 @@ const SendDetails = () => {
               </Text>
             )}
           </View>
-          <ChevronRightIcon />
+          <ChevronRightIcon color={colors.chevron} />
         </Pressable>
       </View>
 
