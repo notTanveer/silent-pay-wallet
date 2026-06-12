@@ -46,6 +46,8 @@ interface RustErrorResult {
 interface RustJsiBridgeGlobal {
   spScanTransactions: (scanPrivkeyHex: string, spendPubkeyHex: string, transactionsJson: string) => string;
   spScanSingleTransaction: (scanPrivkeyHex: string, spendPubkeyHex: string, transactionJson: string) => string;
+  // arg 3 is now an ArrayBuffer — no base64 string on this path.
+  spScanSilentBlockRange: (scanPrivkeyHex: string, spendPubkeyHex: string, framesBuffer: ArrayBuffer) => string;
 }
 
 let isInstalled = false;
@@ -121,4 +123,32 @@ export function spScanSingleTransaction<
   }
 
   return result as RustMatchedUTXO[];
+}
+
+/**
+ * Scan a range of binary silent-block frames fetched from the indexer's
+ * `/silent-block/range` endpoint. Passes the raw `ArrayBuffer` directly to
+ * Rust via the JSI ArrayBuffer API — no base64 encoding/decoding occurs on
+ * either side of the bridge.
+ *
+ * Matches carry no isSpent/blockHash/blockTime (the binary format omits them)
+ * — the caller resolves those per matched txid afterwards.
+ */
+export function spScanSilentBlockRange(
+  scanPrivkeyHex: string,
+  spendPubkeyHex: string,
+  framesBuffer: ArrayBuffer,
+): RustBatchScanResult {
+  if (!isInstalled) {
+    throw new Error('RustJsiBridge not installed. Call initializeRustJsiBridge() first.');
+  }
+
+  const resultJson = getGlobal().spScanSilentBlockRange(scanPrivkeyHex, spendPubkeyHex, framesBuffer);
+  const result: RustBatchScanResult | RustErrorResult = JSON.parse(resultJson);
+
+  if ('error' in result) {
+    throw new Error(`Rust scan error: ${(result as RustErrorResult).error}`);
+  }
+
+  return result as RustBatchScanResult;
 }
