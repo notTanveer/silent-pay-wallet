@@ -148,6 +148,8 @@
         "txSaved": "The transaction file ({filePath}) has been saved.",
         "file_saved_at_path": "The file ({filePath}) has been saved.",
         "cant_send_to_silentpayment_adress": "This wallet cannot send to SilentPayment addresses",
+        "split_payment": "Split payment",
+        "split_payment_outputs": "{{count}} outputs",
         "label_address": "Address",
         "label_note": "Note",
         "paste_or_scan": "Paste or Scan address",
