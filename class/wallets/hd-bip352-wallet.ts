@@ -1,6 +1,7 @@
 import * as bip39 from 'bip39';
 import { Buffer } from 'buffer';
 import { ECPairFactory } from 'ecpair';
+import { SilentPayment, UTXOType as SPUTXOType, UTXO as SPLibUTXO } from 'silent-payments';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet.ts';
 import { getDefaultIndexer } from '../../modules/SilentPaymentIndexer';
 import ecc from '../../modules/noble_ecc';
@@ -801,8 +802,25 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
   ): CreateTransactionResult {
     if (targets.length === 0) throw new Error('No destination provided');
 
-    const { inputs, outputs, fee } = this.coinselect(spUtxos as CreateTransactionUtxo[], targets, feeRate);
+    const { inputs, outputs: rawOutputs, fee } = this.coinselect(spUtxos as CreateTransactionUtxo[], targets, feeRate);
     const utxoMap = new Map(spUtxos.map(u => [`${u.txid}:${u.vout}`, u]));
+
+    // Resolve sp1 targets to real Taproot addresses via sender-side BIP-352 derivation.
+    // The library groups targets by recipient and increments k for each output in the group.
+    let outputs = rawOutputs;
+    const hasSPOutput = rawOutputs.some(o => o.address?.startsWith('sp1'));
+    if (hasSPOutput) {
+      const spendPrivKey = this.getSpendPrivateKey();
+      const libUtxos: SPLibUTXO[] = inputs.map(input => {
+        const spUtxo = utxoMap.get(`${input.txid}:${input.vout}`)!;
+        const tweakedPrivKey = ecc.privateAdd(spendPrivKey, spUtxo.tweak);
+        if (!tweakedPrivKey) throw new Error(`Failed to tweak privkey for ${input.txid}:${input.vout}`);
+        const wif = ECPair.fromPrivateKey(Buffer.from(tweakedPrivKey), { compressed: true }).toWIF();
+        return { txid: input.txid, vout: input.vout, wif, utxoType: 'p2tr' as SPUTXOType };
+      });
+      const sp = new SilentPayment();
+      outputs = sp.createTransaction(libUtxos, rawOutputs) as typeof rawOutputs;
+    }
 
     this.ensurePendingInputsInitialized();
 
