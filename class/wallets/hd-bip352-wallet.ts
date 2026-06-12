@@ -805,22 +805,8 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     const { inputs, outputs: rawOutputs, fee } = this.coinselect(spUtxos as CreateTransactionUtxo[], targets, feeRate);
     const utxoMap = new Map(spUtxos.map(u => [`${u.txid}:${u.vout}`, u]));
 
-    // Resolve sp1 targets to real Taproot addresses via sender-side BIP-352 derivation.
-    // The library groups targets by recipient and increments k for each output in the group.
     let outputs = rawOutputs;
     const hasSPOutput = rawOutputs.some(o => o.address?.startsWith('sp1'));
-    if (hasSPOutput) {
-      const spendPrivKey = this.getSpendPrivateKey();
-      const libUtxos: SPLibUTXO[] = inputs.map(input => {
-        const spUtxo = utxoMap.get(`${input.txid}:${input.vout}`)!;
-        const tweakedPrivKey = ecc.privateAdd(spendPrivKey, spUtxo.tweak);
-        if (!tweakedPrivKey) throw new Error(`Failed to tweak privkey for ${input.txid}:${input.vout}`);
-        const wif = ECPair.fromPrivateKey(Buffer.from(tweakedPrivKey), { compressed: true }).toWIF();
-        return { txid: input.txid, vout: input.vout, wif, utxoType: 'p2tr' as SPUTXOType };
-      });
-      const sp = new SilentPayment();
-      outputs = sp.createTransaction(libUtxos, rawOutputs) as typeof rawOutputs;
-    }
 
     this.ensurePendingInputsInitialized();
 
@@ -830,6 +816,25 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
     try {
       const spendPrivKey = this.getSpendPrivateKey();
+
+      // Resolve sp1 targets to real Taproot addresses via sender-side BIP-352 derivation.
+      // The library groups targets by recipient and increments k for each output in the group.
+      if (hasSPOutput) {
+        // For SP UTXOs the private key controlling the output is (spendPriv + tweak).
+        // BIP-352 sender-side derivation sums the actual input private keys, so we supply
+        // the tweaked key — not the bare spend key — as each UTXO's wif.
+        const libUtxos: SPLibUTXO[] = inputs.map(input => {
+          const spUtxo = utxoMap.get(`${input.txid}:${input.vout}`);
+          if (!spUtxo) throw new Error(`Coinselected input not found in SP UTXO map: ${input.txid}:${input.vout}`);
+          const tweakedPrivKey = ecc.privateAdd(spendPrivKey, spUtxo.tweak);
+          if (!tweakedPrivKey) throw new Error(`Failed to tweak privkey for ${input.txid}:${input.vout}`);
+          const wif = ECPair.fromPrivateKey(Buffer.from(tweakedPrivKey), { compressed: true }).toWIF();
+          return { txid: input.txid, vout: input.vout, wif, utxoType: 'p2tr' as SPUTXOType };
+        });
+        const sp = new SilentPayment();
+        const resolved = sp.createTransaction(libUtxos, rawOutputs);
+        outputs = resolved.map((t, i) => ({ ...rawOutputs[i], address: t.address ?? rawOutputs[i].address }));
+      }
       const spendPubKey = this.getSpendPublicKey();
 
       const psbt = new bitcoin.Psbt();
