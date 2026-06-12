@@ -92,3 +92,16 @@ export interface TransactionByTxidResponse {
 }
 
 export type ScanProgressCallback = (progress: ScanProgress) => void | Promise<void>;
+
+/**
+ * Per-range processing callbacks invoked by the scan loop. The loop picks the
+ * binary handler by default and switches to the JSON handler for the rest of the
+ * scan if the binary `/silent-block/range` endpoint is unavailable (404). Each
+ * handler returns the number of new UTXOs added for that range. `rangeEnd` is the
+ * highest block height covered by the range — handlers use it to advance scan
+ * progress (binary frames cover every height, so this is always safe).
+ */
+export interface ScanRangeHandlers {
+  processBinaryRange: (frames: Uint8Array, rangeEnd: number) => Promise<number>;
+  processJsonRange: (transactions: IndexerTransaction[], rangeEnd: number) => Promise<number>;
+}

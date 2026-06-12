@@ -293,25 +293,75 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     return this.cachedSeed;
   }
 
-  private async processTransactions(transactions: IndexerTransaction[]): Promise<{ utxos: SilentPaymentUTXO[]; lastScannedBlock: number }> {
+  /** Scan JSON transactions (legacy / fallback path, and single-txid lookups). */
+  private async processTransactions(transactions: IndexerTransaction[]): Promise<SilentPaymentUTXO[]> {
     this.ensureTransactionProcessor();
 
     const silentPaymentAddress = this.getSilentPaymentAddress()!;
     const validTransactions = transactions.filter(tx => tx.scanTweak && tx.outputs && tx.outputs.length > 0);
 
-    // Derive the highest block height from transactions
-    const maxBlockHeight = validTransactions.reduce((max, tx) => Math.max(max, tx.blockHeight), this.lastScannedBlock);
+    return this.transactionProcessor!.processBatch(validTransactions, silentPaymentAddress, () => this.cancelScanCallbackScan);
+  }
 
-    const newUTXOs = await this.transactionProcessor!.processBatch(
-      validTransactions,
+  /**
+   * Scan a range of binary silent blocks (primary path). The binary format omits
+   * isSpent/blockHash/blockTime, so matches are resolved against the txid endpoint
+   * before being returned. Matches are rare, so this costs ~nothing.
+   */
+  private async processSilentBlockFrames(frames: Uint8Array): Promise<SilentPaymentUTXO[]> {
+    this.ensureTransactionProcessor();
+
+    const silentPaymentAddress = this.getSilentPaymentAddress()!;
+    const matches = await this.transactionProcessor!.processSilentBlockFrames(
+      frames,
       silentPaymentAddress,
       () => this.cancelScanCallbackScan,
     );
 
-    return {
-      utxos: newUTXOs,
-      lastScannedBlock: maxBlockHeight,
-    };
+    return this.resolveMatchMetadata(matches);
+  }
+
+  /**
+   * Fill in isSpent/blockHash/blockTime for matched UTXOs from the binary scan by
+   * fetching each unique matched transaction. A 404 means the tx was reorged out,
+   * so its matches are dropped.
+   */
+  private async resolveMatchMetadata(matches: SilentPaymentUTXO[]): Promise<SilentPaymentUTXO[]> {
+    if (matches.length === 0) {
+      return [];
+    }
+
+    const indexer = getDefaultIndexer();
+    const uniqueTxids = [...new Set(matches.map(m => m.txid))];
+    const txByTxid = new Map<string, IndexerTransaction>();
+
+    for (const txid of uniqueTxids) {
+      try {
+        const { transaction } = await indexer.getTransactionByTxid(txid);
+        txByTxid.set(txid, transaction);
+      } catch (error) {
+        // 404 (or any failure): the tx was likely reorged out — drop its matches.
+        console.warn(`[SP] Could not resolve matched tx ${txid}; dropping match:`, error);
+      }
+    }
+
+    const resolved: SilentPaymentUTXO[] = [];
+    for (const match of matches) {
+      const tx = txByTxid.get(match.txid);
+      if (!tx) {
+        continue;
+      }
+
+      const output = tx.outputs.find(o => o.vout === match.vout);
+      resolved.push({
+        ...match,
+        blockHash: tx.blockHash,
+        blockTime: tx.blockTime,
+        isSpent: output ? Boolean(output.isSpent) : match.isSpent,
+      });
+    }
+
+    return resolved;
   }
 
   private commitUTXOs(utxos: SilentPaymentUTXO[], newLastScannedBlock: number): number {
@@ -499,19 +549,35 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       await indexer.scanForwardWithCallback(
         startHeight,
         endHeight,
-        async transactions => {
-          if (this.cancelScanCallbackScan) {
-            throw new Error('SCAN_CANCELLED');
-          }
+        {
+          // Frames cover every height in the range, so advance lastScannedBlock to
+          // rangeEnd even when a range contains no matches (fixes trailing empty
+          // blocks being rescanned forever).
+          processBinaryRange: async (frames, rangeEnd) => {
+            if (this.cancelScanCallbackScan) {
+              throw new Error('SCAN_CANCELLED');
+            }
 
-          await this._waitIfPaused();
-          if (this.cancelScanCallbackScan) throw new Error('SCAN_CANCELLED');
+            await this._waitIfPaused();
+            if (this.cancelScanCallbackScan) throw new Error('SCAN_CANCELLED');
 
-          const result = await this.processTransactions(transactions);
-          const addedCount = this.commitUTXOs(result.utxos, result.lastScannedBlock);
-          totalUTXOsAdded += addedCount;
+            const utxos = await this.processSilentBlockFrames(frames);
+            const addedCount = this.commitUTXOs(utxos, rangeEnd);
+            totalUTXOsAdded += addedCount;
 
-          return addedCount;
+            return addedCount;
+          },
+          processJsonRange: async (transactions, rangeEnd) => {
+            if (this.cancelScanCallbackScan) {
+              throw new Error('SCAN_CANCELLED');
+            }
+
+            const utxos = await this.processTransactions(transactions);
+            const addedCount = this.commitUTXOs(utxos, rangeEnd);
+            totalUTXOsAdded += addedCount;
+
+            return addedCount;
+          },
         },
         wrappedProgress,
         () => this.cancelScanCallbackScan,
@@ -546,10 +612,10 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     const [response, tipResponse] = await Promise.all([indexer.getTransactionByTxid(txid), indexer.getLatestBlockHeight()]);
     const tx = response.transaction;
 
-    const result = await this.processTransactions([tx]);
+    const utxos = await this.processTransactions([tx]);
 
     let newlyAdded = false;
-    for (const utxo of result.utxos) {
+    for (const utxo of utxos) {
       if (this.addUTXO(utxo)) {
         newlyAdded = true;
       }
@@ -561,8 +627,8 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     }
 
     return {
-      found: result.utxos.length > 0,
-      utxosFound: result.utxos.length,
+      found: utxos.length > 0,
+      utxosFound: utxos.length,
       blockHeight: tx.blockHeight,
       tipHeight: tipResponse.height,
     };
