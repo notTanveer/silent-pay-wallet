@@ -30,6 +30,11 @@ describe('computeSplitCount', () => {
   it('feasibility clamp: 60k sats → 2 outputs', () => {
     expect(computeSplitCount(60_000)).toBe(2);
   });
+
+  it('returns 4 at 350k sats (half-up rounding)', () => {
+    // Math.round(3.5) = 4 in JS; pins this behaviour
+    expect(computeSplitCount(350_000)).toBe(4);
+  });
 });
 
 describe('splitAmount', () => {
@@ -60,5 +65,9 @@ describe('splitAmount', () => {
     for (const p of parts) {
       expect(Number.isInteger(p)).toBe(true);
     }
+  });
+
+  it('throws when totalSats is too small for n outputs', async () => {
+    await expect(splitAmount(30_000, 2)).rejects.toThrow('totalSats too small');
   });
 });
