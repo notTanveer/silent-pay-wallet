@@ -37,16 +37,6 @@ jobs:
       - name: Install node modules
         run: npm ci
 
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: 3.1.6
-          bundler-cache: true
-
-      - name: Install and update Ruby Gems
-        run: |
-          bundle install
-
       - name: Install CocoaPods Dependencies
         run: |
           cd ios
