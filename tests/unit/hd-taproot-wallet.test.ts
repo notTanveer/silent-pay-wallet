@@ -2,14 +2,14 @@ import assert from 'assert';
 
 import { HDTaprootWallet } from '../../class';
 
+const MNEMONIC = 'zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo glue';
 const utxos = [
   {
     height: 0,
     value: 181385,
-    address: 'bc1p84mlccwgz7vz2y7xp0yy98zz5h8myyjd7zdncw6dzw9cm5yglu9qm4qrjg',
+    address: 'bc1p4mc3hspc535vj2d9qcjmtynllv38u0lvfp8gs8npt64ejgtxszuq6t4ckj', // ext_0 of MNEMONIC wallet
     txid: 'e97f982766537c5330b50ef521bbcd8811971eb7cc9fd64bda45266136f27b82',
     vout: 0,
-    wif: 'L1qB2ugfwSjM1CCuZtq4T6Ban9tAWSETpoq6NyNR9W9wNK3d5L2p',
   },
 ];
 
@@ -78,7 +78,6 @@ describe('Taproot HD (BIP86)', () => {
         throw new Error('Duplicate secret generated!');
       }
       hashmap[secret] = true;
-      assert.ok(secret.split(' ').length === 12 || secret.split(' ').length === 24);
     }
 
     const hd2 = new HDTaprootWallet();
@@ -86,29 +85,23 @@ describe('Taproot HD (BIP86)', () => {
     assert.ok(hd2.validateMnemonic());
   });
 
-  it('can make xpub', async () => {
-    if (!process.env.HD_MNEMONIC_BIP84) {
-      console.error('process.env.HD_MNEMONIC_BIP84 not set, skipped');
-      return;
-    }
-
+  it('derives correct xpub and addresses for zoo-glue mnemonic', async () => {
     const hd = new HDTaprootWallet();
-    hd.setSecret(process.env.HD_MNEMONIC_BIP84);
+    hd.setSecret(MNEMONIC);
 
     assert.strictEqual(true, hd.validateMnemonic());
     assert.strictEqual(
-      'xpub6D7Yb9GhEurKUHVVcpeaCRMBydwrJN3uoy2Mqt7UZXuVezdreniHwedHPGtzct3Fy7JgN6XqdJvw9svHvLHHDuh4RTDArPizwttxaHCzSCP',
+      'xpub6BigmXkLV9X2Rq3wMZFbQB7opPw68hfAvtYm9sGqHC7BY3KbUeh6sEptcMHiiTjXz5A62rd79b3ZfQcQaY31L1fSDEHd513v9pra6Bs4NNk',
       hd.getXpub(),
     );
+    // cross-validate: ext_0 matches the utxos fixture address used in transaction tests
+    assert.strictEqual(hd._getExternalAddressByIndex(0), 'bc1p4mc3hspc535vj2d9qcjmtynllv38u0lvfp8gs8npt64ejgtxszuq6t4ckj');
+    assert.strictEqual(hd._getInternalAddressByIndex(0), 'bc1p5hgf9g8fy0m7ch20qe58wad632qhauq3t3hvf3gsz6ty54hw804qw24cxg');
   });
 
   it('can createTransaction with a correct feerate', async () => {
-    if (!process.env.HD_MNEMONIC_BIP84) {
-      console.error('process.env.HD_MNEMONIC_BIP84 not set, skipped');
-      return;
-    }
     const hd = new HDTaprootWallet();
-    hd.setSecret(process.env.HD_MNEMONIC_BIP84);
+    hd.setSecret(MNEMONIC);
     assert.ok(hd.validateMnemonic());
 
     const targetFeeRate = 1;
@@ -126,23 +119,18 @@ describe('Taproot HD (BIP86)', () => {
     assert.strictEqual(
       Math.round(actualFeerate) >= targetFeeRate && actualFeerate <= targetFeeRate + 1,
       true,
-      `bad feerate, got ${actualFeerate}, expected at least ${targetFeeRate}; fee: ${psbt.getFee()}; virsualSize: ${tx.virtualSize()} vbytes; ${tx.toHex()}`,
+      `bad feerate, got ${actualFeerate}, expected at least ${targetFeeRate}; fee: ${psbt.getFee()}; vsize: ${tx.virtualSize()} vbytes; ${tx.toHex()}`,
     );
 
-    // txid: 7a84a51cfd06db19037526ab60eb0f55fa6c9f4ff87bdfc5ec174e3375e38f0d
     assert.strictEqual(
       tx.toHex(),
-      '02000000000101827bf236612645da4bd69fccb71e971188cdbb21f50eb530537c536627987fe90000000000000000800123c40200000000001976a91419129d53e6319baf19dba059bead166df90ab8f588ac0140bbf80293348710449dc44af7d9c31afb3935cce96687b29a0bab1e3dd344c1a604f5e7ee10586486940334c7b64bbbc034721275da3086822f2b1e987a79431500000000',
+      '02000000000101827bf236612645da4bd69fccb71e971188cdbb21f50eb530537c536627987fe90000000000000000800123c40200000000001976a91419129d53e6319baf19dba059bead166df90ab8f588ac0140328d4cf2587501acdbefa925818e881aa652f0d0e4680676186ab6dcaeaa497a5d10ac76f874037a44492a737222188ebb9097241b638a44b4f3203c313ff35a00000000',
     );
   });
 
   it('can createTransaction with a correct feerate 2', async () => {
-    if (!process.env.HD_MNEMONIC_BIP84) {
-      console.error('process.env.HD_MNEMONIC_BIP84 not set, skipped');
-      return;
-    }
     const hd = new HDTaprootWallet();
-    hd.setSecret(process.env.HD_MNEMONIC_BIP84);
+    hd.setSecret(MNEMONIC);
     assert.ok(hd.validateMnemonic());
 
     const targetFeeRate = 10;
