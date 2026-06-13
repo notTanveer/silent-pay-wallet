@@ -102,6 +102,11 @@ const SendDetails = () => {
     Number(recipient?.amountSats) >= 2 * SPLIT_MIN_OUTPUT_SATS;
   const splitCount = isSplitEligible ? computeSplitCount(Number(recipient?.amountSats)) : 0;
 
+  // Reset split when the recipient no longer qualifies (amount dropped, address changed to non-SP, etc.)
+  useEffect(() => {
+    if (!isSplitEligible) setIsSplitEnabled(false);
+  }, [isSplitEligible]);
+
   const onChangeAmount = useCallback(
     (text: string) => {
       const sanitized = sanitizeAmountInput(text, displayUnit);
