@@ -1,3 +1,5 @@
+import { BitcoinUnit } from '../../models/bitcoinUnits';
+
 /** Pure formatting/derivation helpers for the send flow. No React, no I/O. */
 
 /** "0.00000714 BTC · 7 sat/vByte" */
@@ -14,4 +16,15 @@ export const isAmountEmpty = (amount?: string | number): boolean => {
   if (amount === 'MAX') return false;
   const n = Number(amount);
   return Number.isNaN(n) || n === 0;
+};
+
+/**
+ * Strips a raw amount input to the valid character set for the given unit.
+ * BTC: digits plus a single leading-group decimal point. SATS: digits only.
+ */
+export const sanitizeAmountInput = (text: string, unit: BitcoinUnit): string => {
+  if (unit === BitcoinUnit.SATS) {
+    return text.replace(/[^0-9]/g, '');
+  }
+  return text.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
 };
