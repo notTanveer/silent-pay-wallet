@@ -5,6 +5,7 @@ import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { TOptions } from 'bip21';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Svg, { Path } from 'react-native-svg';
 import { ActivityIndicator, Keyboard, LayoutAnimation, StyleSheet, Text, TextInput, Pressable, View } from 'react-native';
 import { SilentPayment } from 'silent-payments';
 import { btcToSatoshi, satoshiToBTC, satoshiToLocalCurrency } from '../../modules/currency';
@@ -19,6 +20,7 @@ import CoinsSelected from '../../components/CoinsSelected';
 import { DismissKeyboardInputAccessory } from '../../components/DismissKeyboardInputAccessory';
 import HeaderMenuButton from '../../components/HeaderMenuButton';
 import ChevronRightIcon from '../../components/icons/ChevronRightIcon';
+import InfoIcon from '../../components/icons/InfoIcon';
 import ScanQRIcon from '../../components/icons/ScanQRIcon';
 import LabeledField from '../../components/LabeledField';
 import SafeArea from '../../components/SafeArea';
@@ -636,6 +638,7 @@ const SendDetails = () => {
       recipients,
       satoshiPerByte: requestedSatPerByte,
       splitOutputCount: isSplitEnabled ? recipients.length : undefined,
+      spRecipientAddress: isSplitEnabled ? addresses[0].address : undefined,
     });
     setIsLoading(false);
   };
@@ -822,11 +825,18 @@ const SendDetails = () => {
     feeSummary: { borderColor: colors.summaryBorder },
     feeSummaryLabel: { color: colors.textSecondary },
     feeSummaryValue: { color: colors.black },
-    splitCheckbox: {
-      borderColor: isSplitEnabled ? colors.brandPrimary : colors.chevron,
-      backgroundColor: isSplitEnabled ? colors.brandPrimary : 'transparent',
-    },
-    splitCheckMark: { color: colors.white },
+    splitCard: { borderColor: isSplitEnabled ? colors.brandPrimary : colors.summaryBorder },
+    splitToggleTrack: { backgroundColor: isSplitEnabled ? colors.brandPrimary : colors.chevron },
+    splitCardSubtitle: { color: colors.textSecondary },
+    splitInfoBox: { backgroundColor: colors.surfaceCaution, borderColor: colors.divider },
+    splitInfoText: { color: colors.textPrimary },
+    splitPreviewSection: { backgroundColor: colors.elevated },
+    splitPreviewLabel: { color: colors.textSecondary },
+    splitPreviewAmount: { color: colors.textPrimary },
+    splitPreviewDivider: { backgroundColor: colors.divider },
+    splitFeeIncreaseRow: { backgroundColor: colors.elevated },
+    splitFeeIncreaseLabel: { color: colors.textPrimary },
+    splitFeeIncreaseValue: { color: colors.brandPrimary },
   });
 
   const renderCoinsSelected = () => {
@@ -938,25 +948,57 @@ const SendDetails = () => {
       </View>
 
       {isSplitEligible && (
-        <View style={styles.splitToggleWrap}>
-          <Pressable
-            accessibilityRole="button"
-            testID="splitPaymentToggle"
-            onPress={() => setIsSplitEnabled(v => !v)}
-            style={[styles.feeSummary, stylesHook.feeSummary]}
-          >
-            <View style={styles.feeSummaryTexts}>
-              <Text style={[styles.feeSummaryLabel, stylesHook.feeSummaryLabel]}>{loc.send.split_payment}</Text>
-              {isSplitEnabled && (
-                <Text style={[styles.feeSummaryValue, stylesHook.feeSummaryValue]}>
-                  {loc.formatString(loc.send.split_payment_outputs, { count: splitCount })}
-                </Text>
-              )}
+        <View style={styles.splitCardWrap}>
+          <View style={[styles.splitCard, stylesHook.splitCard]}>
+            <View style={styles.splitCardHeader}>
+              <View style={styles.splitIconCircle}>
+                <Svg width={19} height={19} viewBox="0 0 24 24" fill="none">
+                  <Path d="M12 4v7m0 0l-5 9m5-9l5 9" stroke="#754CE8" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                </Svg>
+              </View>
+              <View style={styles.splitCardContent}>
+                <View style={styles.splitTitleRow}>
+                  <Text style={styles.splitCardTitle}>{loc.send.split_payment}</Text>
+                  <Pressable
+                    accessibilityRole="switch"
+                    testID="splitPaymentToggle"
+                    onPress={() => setIsSplitEnabled(v => !v)}
+                    style={[styles.splitToggleTrack, stylesHook.splitToggleTrack]}
+                  >
+                    <View style={[styles.splitToggleThumb, isSplitEnabled && styles.splitToggleThumbOn]} />
+                  </Pressable>
+                </View>
+                <Text style={[styles.splitCardSubtitle, stylesHook.splitCardSubtitle]}>{loc.send.split_payment_subtitle}</Text>
+              </View>
             </View>
-            <View style={[styles.splitCheckboxBase, stylesHook.splitCheckbox]}>
-              {isSplitEnabled && <Text style={[styles.splitCheckboxCheck, stylesHook.splitCheckMark]}>✓</Text>}
+
+            {isSplitEnabled && splitCount > 1 && (
+              <View style={[styles.splitPreviewSection, stylesHook.splitPreviewSection]}>
+                {Array.from({ length: splitCount }, (_, i) => (
+                  <React.Fragment key={i}>
+                    {i > 0 && <View style={[styles.splitPreviewDivider, stylesHook.splitPreviewDivider]} />}
+                    <View style={styles.splitPreviewRow}>
+                      <Text style={[styles.splitPreviewLabel, stylesHook.splitPreviewLabel]}>{`Output ${i + 1}`}</Text>
+                      <Text style={[styles.splitPreviewAmount, stylesHook.splitPreviewAmount]}>
+                        {`${satoshiToBTC(Math.floor(Number(recipient?.amountSats) / splitCount))} ${loc.units[BitcoinUnit.BTC]}`}
+                      </Text>
+                    </View>
+                  </React.Fragment>
+                ))}
+                <View style={[styles.splitFeeIncreaseRow, stylesHook.splitFeeIncreaseRow]}>
+                  <Text style={[styles.splitFeeIncreaseLabel, stylesHook.splitFeeIncreaseLabel]}>{loc.send.fee_increase}</Text>
+                  <Text style={[styles.splitFeeIncreaseValue, stylesHook.splitFeeIncreaseValue]}>
+                    {`+${satoshiToBTC(Math.round(Number(feeRate) * 43 * (splitCount - 1)))} ${loc.units[BitcoinUnit.BTC]}`}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            <View style={[styles.splitInfoBox, stylesHook.splitInfoBox]}>
+              <InfoIcon color={colors.iconCaution} size={20} />
+              <Text style={[styles.splitInfoText, stylesHook.splitInfoText]}>{loc.send.split_payment_info}</Text>
             </View>
-          </Pressable>
+          </View>
         </View>
       )}
 
@@ -1049,18 +1091,124 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 24,
   },
-  splitToggleWrap: {
+  splitCardWrap: {
     paddingHorizontal: 24,
   },
-  splitCheckboxBase: {
-    width: 24,
-    height: 24,
-    borderRadius: 4,
+  splitCard: {
+    borderRadius: 12,
     borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+    backgroundColor: '#F9F9FB',
+  },
+  splitCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  splitIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#D9CDF9',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  splitCheckboxCheck: {
+  splitCardContent: {
+    flex: 1,
+    gap: 4,
+  },
+  splitTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  splitCardTitle: {
+    fontFamily: ClashFont.medium,
+    fontSize: 16,
+    lineHeight: 20,
+    color: '#000000',
+  },
+  splitToggleTrack: {
+    width: 46,
+    height: 26,
+    borderRadius: 13,
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  splitToggleThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+  },
+  splitToggleThumbOn: {
+    alignSelf: 'flex-end',
+  },
+  splitCardSubtitle: {
+    fontFamily: ClashFont.regular,
+    fontSize: 12,
+    lineHeight: 20,
+  },
+  splitInfoBox: {
+    flexDirection: 'row',
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 18,
+    gap: 10,
+    alignItems: 'flex-start',
+  },
+  splitInfoText: {
+    flex: 1,
+    fontFamily: ClashFont.regular,
+    fontSize: 12,
+    lineHeight: 20,
+  },
+  splitPreviewSection: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    gap: 8,
+    padding: 8,
+  },
+  splitPreviewRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  splitPreviewLabel: {
+    fontFamily: ClashFont.regular,
+    fontSize: 12,
+    lineHeight: 26,
+  },
+  splitPreviewAmount: {
+    fontFamily: ClashFont.medium,
+    fontSize: 12,
+    lineHeight: 26,
+  },
+  splitPreviewDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: 8,
+  },
+  splitFeeIncreaseRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginTop: 4,
+  },
+  splitFeeIncreaseLabel: {
+    fontFamily: ClashFont.regular,
+    fontSize: 12,
+    lineHeight: 20,
+  },
+  splitFeeIncreaseValue: {
+    fontFamily: ClashFont.semibold,
     fontSize: 14,
+    lineHeight: 26,
   },
 });
