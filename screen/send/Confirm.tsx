@@ -91,7 +91,7 @@ const Confirm: React.FC = () => {
   const { isBiometricUseCapableAndEnabled } = useBiometrics();
   const navigation = useExtendedNavigation<ConfirmNavigationProp>();
   const route = useRoute<ConfirmRouteProp>();
-  const { recipients, walletID, fee, tx } = route.params;
+  const { recipients, walletID, fee, tx, splitOutputCount } = route.params;
 
   const [state, dispatch] = useReducer(reducer, initialState);
   const { navigate, goBack } = navigation;
@@ -215,6 +215,16 @@ const Confirm: React.FC = () => {
 
         <ConfirmDetailRow label={loc.send.transaction_id} value={txid} mono copied={copiedTxid} onCopy={() => copy(txid, setCopiedTxid)} />
         <View style={[styles.divider, stylesHook.divider]} />
+
+        {splitOutputCount !== undefined && splitOutputCount > 1 && (
+          <>
+            <ConfirmDetailRow
+              label={loc.send.split_payment}
+              value={loc.send.split_payment_outputs.replace('{{count}}', String(splitOutputCount))}
+            />
+            <View style={[styles.divider, stylesHook.divider]} />
+          </>
+        )}
 
         <View style={styles.summaryRow}>
           <Text style={[styles.summaryLabel, stylesHook.summaryLabel]}>{loc.send.create_fee}</Text>

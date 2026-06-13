@@ -36,10 +36,13 @@ describe('SilentPayment.createTransaction sender derivation', () => {
 
   it('produces two distinct Taproot addresses for two targets with the same sp1 address', () => {
     const sp = new SilentPayment();
-    const result = sp.createTransaction([UTXO_1, UTXO_2], [
-      { address: SP_ADDRESS, value: 10_000 },
-      { address: SP_ADDRESS, value: 20_000 },
-    ]);
+    const result = sp.createTransaction(
+      [UTXO_1, UTXO_2],
+      [
+        { address: SP_ADDRESS, value: 10_000 },
+        { address: SP_ADDRESS, value: 20_000 },
+      ],
+    );
 
     expect(result).toHaveLength(2);
     const addr0 = result[0].address!;

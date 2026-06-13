@@ -635,6 +635,7 @@ const SendDetails = () => {
       tx: tx.toHex(),
       recipients,
       satoshiPerByte: requestedSatPerByte,
+      splitOutputCount: isSplitEnabled ? recipients.length : undefined,
     });
     setIsLoading(false);
   };
