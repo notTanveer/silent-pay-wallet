@@ -11,7 +11,6 @@ const keys = {
   ViewInBitcoin: 'viewInBitcoin',
   ViewInSats: 'viewInSats',
   ViewInFiat: 'viewInFiat',
-  Entropy: 'entropy',
   SearchAccount: 'searchAccount',
   Passphrase: 'passphrase',
   MoreInfo: 'moreInfo',
@@ -53,7 +52,6 @@ const icons = {
   ImportWallet: { iconValue: 'square.and.arrow.down.on.square' },
   ViewInBitcoin: { iconValue: 'bitcoinsign.circle' },
   ViewInFiat: { iconValue: 'coloncurrencysign.circle' },
-  Entropy: { iconValue: 'dice' },
   SearchAccount: { iconValue: 'magnifyingglass' },
   Passphrase: { iconValue: 'rectangle.and.pencil.and.ellipsis' },
   MoreInfo: { iconValue: 'info.circle' },
@@ -155,11 +153,6 @@ export const CommonToolTipActions: Record<string, ToolTipAction> = {
     text: loc.total_balance_view.display_in_bitcoin,
     icon: icons.ViewInBitcoin,
     hidden: false,
-  },
-  Entropy: {
-    id: keys.Entropy,
-    text: loc.wallets.add_entropy_provide,
-    icon: icons.Entropy,
   },
   RemoveAllRecipients: {
     id: keys.RemoveAllRecipients,

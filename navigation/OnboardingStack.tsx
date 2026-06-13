@@ -1,13 +1,11 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import OnboardingScreen from '../screen/wallets/OnboardingScreen';
-import CreateWalletScreen from '../screen/wallets/CreateWalletScreen';
 import PleaseBackup from '../screen/wallets/PleaseBackup';
 import { RouteProp } from '@react-navigation/native';
 
 type OnboardingStackParamList = {
   OnboardingMain: undefined;
-  CreateWalletScreen: undefined;
   PleaseBackup: { walletID: string };
 };
 
@@ -22,8 +20,7 @@ const OnboardingStack = ({ route }: { route?: RouteProp<any, any> }) => {
       initialRouteName={initialRouteName}
     >
       <Stack.Screen name="OnboardingMain" component={OnboardingScreen} />
-      <Stack.Screen name="CreateWalletScreen" component={CreateWalletScreen} initialParams={initialParams} />
-      <Stack.Screen name="PleaseBackup" component={PleaseBackup} />
+      <Stack.Screen name="PleaseBackup" component={PleaseBackup} initialParams={initialParams} />
     </Stack.Navigator>
   );
 };

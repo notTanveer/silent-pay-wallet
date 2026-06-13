@@ -1,34 +1,26 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, LayoutAnimation, Platform, TextInput, useColorScheme, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, TextInput, View } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RouteProp, useRoute } from '@react-navigation/native';
 
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import { ShroudButtonLink, ShroudFormLabel, ShroudText } from '../../ShroudComponents';
 import presentAlert from '../../components/Alert';
 import Button from '../../components/Button';
-import HeaderMenuButton from '../../components/HeaderMenuButton';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 import { Spacing20, Spacing40 } from '../../components/Spacing';
 import { useTheme } from '../../components/themes';
-import { Action } from '../../components/types';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import loc from '../../loc';
 import { AddWalletStackParamList } from '../../navigation/AddWalletStack';
-import { CommonToolTipActions } from '../../typings/CommonToolTipActions';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 
 type NavigationProps = NativeStackNavigationProp<AddWalletStackParamList, 'AddWallet'>;
-type RouteProps = RouteProp<AddWalletStackParamList, 'AddWallet'>;
 
 const WalletsAdd: React.FC = () => {
   const { colors } = useTheme();
-  const colorScheme = useColorScheme();
   const { addWallet, saveToDisk } = useStorage();
-  const { entropy: entropyHex, words } = useRoute<RouteProps>().params || {};
-  const entropy = entropyHex ? Buffer.from(entropyHex, 'hex') : undefined;
-  const { navigate, setOptions, setParams } = useExtendedNavigation<NavigationProps>();
+  const { navigate } = useExtendedNavigation<NavigationProps>();
 
   const [isLoading, setIsLoading] = useState(false);
   const [label, setLabel] = useState('');
@@ -46,104 +38,13 @@ const WalletsAdd: React.FC = () => {
     },
   };
 
-  const entropyButtonText = useMemo(() => {
-    if (!entropy) {
-      return loc.wallets.add_entropy_provide;
-    }
-
-    return loc.formatString(loc.wallets.add_entropy_bytes, {
-      bytes: entropy.length,
-    });
-  }, [entropy]);
-
-  const confirmResetEntropy = useCallback(() => {
-    if (entropy || words) {
-      Alert.alert(
-        loc.wallets.add_entropy_reset_title,
-        loc.wallets.add_entropy_reset_message,
-        [
-          {
-            text: loc._.cancel,
-            style: 'cancel',
-          },
-          {
-            text: loc._.ok,
-            style: 'destructive',
-            onPress: () => {
-              setParams({ entropy: undefined, words: undefined });
-            },
-          },
-        ],
-        { cancelable: true },
-      );
-    } else {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setParams({ entropy: undefined, words: undefined });
-    }
-  }, [entropy, setParams, words]);
-
-  const toolTipActions = useMemo<Action[]>(() => {
-    return [
-      {
-        ...CommonToolTipActions.Entropy,
-        text: entropyButtonText,
-        subactions: [
-          {
-            id: '12_words',
-            text: loc.wallets.add_wallet_seed_length_12,
-            subtitle: loc.wallets.add_wallet_seed_length,
-            menuState: words === 12,
-          },
-          {
-            id: '24_words',
-            text: loc.wallets.add_wallet_seed_length_24,
-            subtitle: loc.wallets.add_wallet_seed_length,
-            menuState: words === 24,
-          },
-          { ...CommonToolTipActions.ResetToDefault, hidden: !entropy },
-        ],
-      },
-    ];
-  }, [entropy, entropyButtonText, words]);
-
-  const headerRight = useMemo(
-    () => (
-      <HeaderMenuButton
-        onPressMenuItem={(id: string) => {
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          if (id === '12_words') {
-            navigate('ProvideEntropy', { words: 12, entropy: entropy?.toString('hex') });
-          } else if (id === '24_words') {
-            navigate('ProvideEntropy', { words: 24, entropy: entropy?.toString('hex') });
-          } else if (id === CommonToolTipActions.ResetToDefault.id) {
-            confirmResetEntropy();
-          }
-        }}
-        actions={toolTipActions}
-      />
-    ),
-    [confirmResetEntropy, entropy, navigate, toolTipActions],
-  );
-
-  useEffect(() => {
-    setOptions({
-      headerRight: () => headerRight,
-      statusBarStyle: Platform.select({ ios: 'light', default: colorScheme === 'dark' ? 'light' : 'dark' }),
-    });
-  }, [colorScheme, headerRight, setOptions]);
-
   const createWallet = async () => {
     setIsLoading(true);
 
     try {
       const wallet = new HDSilentPaymentsWallet();
       wallet.setLabel(label || loc.wallets.details_title);
-
-      if (entropy) {
-        await wallet.generateFromEntropy(entropy);
-      } else {
-        await wallet.generate();
-      }
+      await wallet.generate();
 
       addWallet(wallet);
       await saveToDisk();
