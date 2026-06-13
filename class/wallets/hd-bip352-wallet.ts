@@ -756,6 +756,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     return true;
   }
 
+  // @ts-ignore base class returns sync CreateTransactionResult; this wallet's override is intentionally async
   async createTransaction(
     utxos: CreateTransactionUtxo[],
     targets: CreateTransactionTarget[],

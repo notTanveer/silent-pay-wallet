@@ -26,6 +26,7 @@ import { useTheme } from '../../components/themes';
 import { Action } from '../../components/types';
 import { ClashFont } from '../../constants/fonts';
 import { isAmountEmpty, sanitizeAmountInput, displayAmountForUnit } from '../../helpers/send/format';
+import { computeSplitCount, SPLIT_MIN_OUTPUT_SATS } from '../../helpers/silent-payments/splitPayment';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useKeyboard } from '../../hooks/useKeyboard';
@@ -81,6 +82,7 @@ const SendDetails = () => {
   const [changeAddress, setChangeAddress] = useState<string | null>(null);
   const [dumb, setDumb] = useState(false);
   const [displayUnit, setDisplayUnit] = useState<BitcoinUnit>(BitcoinUnit.BTC);
+  const [isSplitEnabled, setIsSplitEnabled] = useState(false);
   const { isEditable } = routeParams;
   // if utxo is limited we use it to calculate available balance
   const balance: number = utxos ? utxos.reduce((prev, curr) => prev + curr.value, 0) : (wallet?.getBalance() ?? 0);
@@ -94,6 +96,11 @@ const SendDetails = () => {
   const amountSatsNum = isMaxActive ? balance : Number(recipient?.amountSats) || 0;
   const fiatEstimate = `≈ ${satoshiToLocalCurrency(amountSatsNum)}`;
   const isFormValid = !!recipient?.address && !isAmountEmpty(recipient?.amount);
+  const isSplitEligible =
+    !isMaxActive &&
+    SilentPayment.isPaymentCodeValid(recipient?.address ?? '') &&
+    Number(recipient?.amountSats) >= 2 * SPLIT_MIN_OUTPUT_SATS;
+  const splitCount = isSplitEligible ? computeSplitCount(Number(recipient?.amountSats)) : 0;
 
   const onChangeAmount = useCallback(
     (text: string) => {
@@ -144,6 +151,7 @@ const SendDetails = () => {
           return [a, ...addrs.slice(1)];
         });
       }
+      setIsSplitEnabled(false);
       setIsLoading(false);
     },
     [setParams],
@@ -581,7 +589,7 @@ const SendDetails = () => {
     }
 
     // without forcing `HDSegwitBech32Wallet` i had a weird ts error, complaining about last argument (fp)
-    const { tx, outputs, psbt, fee } = (wallet as HDSilentPaymentsWallet)?.createTransaction(
+    const { tx, outputs, psbt, fee } = await (wallet as HDSilentPaymentsWallet)?.createTransaction(
       lutxo,
       targets,
       requestedSatPerByte,
@@ -589,6 +597,7 @@ const SendDetails = () => {
       isTransactionReplaceable ? HDSilentPaymentsWallet.defaultRBFSequence : HDSilentPaymentsWallet.finalRBFSequence,
       false,
       0,
+      isSplitEnabled,
     );
 
     if (tx && routeParams.launchedBy && psbt) {
@@ -807,6 +816,11 @@ const SendDetails = () => {
     feeSummary: { borderColor: colors.summaryBorder },
     feeSummaryLabel: { color: colors.textSecondary },
     feeSummaryValue: { color: colors.black },
+    splitCheckbox: {
+      borderColor: isSplitEnabled ? colors.brandPrimary : colors.chevron,
+      backgroundColor: isSplitEnabled ? colors.brandPrimary : 'transparent',
+    },
+    splitCheckMark: { color: colors.white },
   });
 
   const renderCoinsSelected = () => {
@@ -917,6 +931,29 @@ const SendDetails = () => {
         </Pressable>
       </View>
 
+      {isSplitEligible && (
+        <View style={styles.splitToggleWrap}>
+          <Pressable
+            accessibilityRole="button"
+            testID="splitPaymentToggle"
+            onPress={() => setIsSplitEnabled(v => !v)}
+            style={[styles.feeSummary, stylesHook.feeSummary]}
+          >
+            <View style={styles.feeSummaryTexts}>
+              <Text style={[styles.feeSummaryLabel, stylesHook.feeSummaryLabel]}>{loc.send.split_payment}</Text>
+              {isSplitEnabled && (
+                <Text style={[styles.feeSummaryValue, stylesHook.feeSummaryValue]}>
+                  {loc.formatString(loc.send.split_payment_outputs, { count: splitCount })}
+                </Text>
+              )}
+            </View>
+            <View style={[styles.splitCheckboxBase, stylesHook.splitCheckbox]}>
+              {isSplitEnabled && <Text style={[styles.splitCheckboxCheck, stylesHook.splitCheckMark]}>✓</Text>}
+            </View>
+          </Pressable>
+        </View>
+      )}
+
       <DismissKeyboardInputAccessory />
 
       {renderCoinsSelected()}
@@ -1005,5 +1042,19 @@ const styles = StyleSheet.create({
   bottom: {
     paddingHorizontal: 24,
     paddingBottom: 24,
+  },
+  splitToggleWrap: {
+    paddingHorizontal: 24,
+  },
+  splitCheckboxBase: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  splitCheckboxCheck: {
+    fontSize: 14,
   },
 });

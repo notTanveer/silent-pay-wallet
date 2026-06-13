@@ -30,7 +30,7 @@ describe('BIP-352 Silent Payments', () => {
         expectedParity: 0x02,
       },
       { label: 'odd-Y (0x03)', seed: 'all all all all all all all all all all all all', expectedParity: 0x03 },
-    ])('signs a key-path Taproot input for $label spend pubkey', ({ seed, expectedParity }) => {
+    ])('signs a key-path Taproot input for $label spend pubkey', async ({ seed, expectedParity }) => {
       const wallet = new HDSilentPaymentsWallet();
       wallet.setSecret(seed);
 
@@ -59,7 +59,7 @@ describe('BIP-352 Silent Payments', () => {
       };
 
       const targetAddress = 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr';
-      const result = wallet.createTransaction(
+      const result = await wallet.createTransaction(
         [utxo as never],
         [{ address: targetAddress, value: 50_000 }],
         2,
