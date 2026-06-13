@@ -1,4 +1,11 @@
-import { formatFeeOptionSubtitle, computeTotalSats, isAmountEmpty } from '../../helpers/send/format';
+import {
+  formatFeeOptionSubtitle,
+  computeTotalSats,
+  isAmountEmpty,
+  sanitizeAmountInput,
+  displayAmountForUnit,
+} from '../../helpers/send/format';
+import { BitcoinUnit } from '../../models/bitcoinUnits';
 
 describe('send/format', () => {
   describe('formatFeeOptionSubtitle', () => {
@@ -29,6 +36,43 @@ describe('send/format', () => {
     it('is false for a positive amount and for MAX', () => {
       expect(isAmountEmpty('0.0001')).toBe(false);
       expect(isAmountEmpty('MAX')).toBe(false);
+    });
+  });
+
+  describe('sanitizeAmountInput', () => {
+    it('keeps digits and a single dot in BTC mode, dropping extras', () => {
+      expect(sanitizeAmountInput('0.0000344', BitcoinUnit.BTC)).toBe('0.0000344');
+      expect(sanitizeAmountInput('abc1.2.3', BitcoinUnit.BTC)).toBe('1.23');
+      expect(sanitizeAmountInput('1,000.5', BitcoinUnit.BTC)).toBe('1000.5');
+      expect(sanitizeAmountInput('1.2.3.4', BitcoinUnit.BTC)).toBe('1.234');
+    });
+    it('keeps digits only in sats mode, dropping dots and separators', () => {
+      expect(sanitizeAmountInput('3440', BitcoinUnit.SATS)).toBe('3440');
+      expect(sanitizeAmountInput('3,440 sats', BitcoinUnit.SATS)).toBe('3440');
+      expect(sanitizeAmountInput('0.5', BitcoinUnit.SATS)).toBe('05');
+    });
+    it('returns empty string for empty input in either unit', () => {
+      expect(sanitizeAmountInput('', BitcoinUnit.BTC)).toBe('');
+      expect(sanitizeAmountInput('', BitcoinUnit.SATS)).toBe('');
+    });
+  });
+
+  describe('displayAmountForUnit', () => {
+    it('shows the BTC string in BTC mode', () => {
+      expect(displayAmountForUnit('0.0000344', 3440, BitcoinUnit.BTC)).toBe('0.0000344');
+    });
+    it('shows the integer sats string in sats mode', () => {
+      expect(displayAmountForUnit('0.0000344', 3440, BitcoinUnit.SATS)).toBe('3440');
+    });
+    it('returns empty string when the amount is empty, in either unit', () => {
+      expect(displayAmountForUnit('', 0, BitcoinUnit.BTC)).toBe('');
+      expect(displayAmountForUnit('', 0, BitcoinUnit.SATS)).toBe('');
+    });
+    it('preserves in-progress BTC typing like "0."', () => {
+      expect(displayAmountForUnit('0.', 0, BitcoinUnit.BTC)).toBe('0.');
+    });
+    it('returns empty string in sats mode when sats is not finite', () => {
+      expect(displayAmountForUnit('.', NaN, BitcoinUnit.SATS)).toBe('');
     });
   });
 });

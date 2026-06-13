@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { ShroudText } from '../ShroudComponents';
 import { ClashFont } from '../constants/fonts';
 import loc from '../loc';
+import { BitcoinUnit } from '../models/bitcoinUnits';
 import { isAmountEmpty } from '../helpers/send/format';
 import CheckmarkIcon from './icons/CheckmarkIcon';
 import { useTheme } from './themes';
@@ -22,6 +23,10 @@ interface AmountHeroProps {
   useMaxDisabled?: boolean;
   /** When true, the Max pill shows a tick and the "Sending Max" hint replaces the edit hint. */
   isMax?: boolean;
+  /** Unit shown next to the amount. Defaults to BTC. */
+  unit?: BitcoinUnit;
+  /** When provided, the unit label becomes a button that toggles BTC <-> sats. */
+  onToggleUnit?: () => void;
 }
 
 const AmountHero: React.FC<AmountHeroProps> = ({
@@ -33,6 +38,8 @@ const AmountHero: React.FC<AmountHeroProps> = ({
   onUseMax,
   useMaxDisabled = false,
   isMax = false,
+  unit = BitcoinUnit.BTC,
+  onToggleUnit,
 }) => {
   const { colors } = useTheme();
   const inputRef = useRef<TextInput>(null);
@@ -49,12 +56,14 @@ const AmountHero: React.FC<AmountHeroProps> = ({
   });
 
   const amountColor = empty ? stylesHook.amountEmpty : stylesHook.amountFilled;
+  const unitLabel = unit === BitcoinUnit.SATS ? loc.units[BitcoinUnit.SATS] : loc.units[BitcoinUnit.BTC];
+  const keyboardType = unit === BitcoinUnit.SATS ? 'number-pad' : 'decimal-pad';
 
   return (
     <Pressable
       style={styles.container}
-      accessibilityRole={editable ? 'button' : undefined}
-      onPress={editable ? () => inputRef.current?.focus() : undefined}
+      accessibilityRole={editable && !isMax ? 'button' : undefined}
+      onPress={editable && !isMax ? () => inputRef.current?.focus() : undefined}
     >
       <View style={styles.amountRow}>
         {editable ? (
@@ -65,7 +74,8 @@ const AmountHero: React.FC<AmountHeroProps> = ({
             onChangeText={onChangeAmount}
             placeholder="0"
             placeholderTextColor={colors.amountPlaceholder}
-            keyboardType="decimal-pad"
+            keyboardType={keyboardType}
+            editable={!isMax}
             testID="AmountHeroInput"
           />
         ) : (
@@ -73,7 +83,13 @@ const AmountHero: React.FC<AmountHeroProps> = ({
             {empty ? '0' : amount}
           </ShroudText>
         )}
-        <ShroudText style={[styles.unit, stylesHook.meta]}>BTC</ShroudText>
+        {onToggleUnit ? (
+          <Pressable accessibilityRole="button" onPress={onToggleUnit} hitSlop={8} testID="AmountUnitToggle">
+            <ShroudText style={[styles.unit, stylesHook.meta]}>{unitLabel}</ShroudText>
+          </Pressable>
+        ) : (
+          <ShroudText style={[styles.unit, stylesHook.meta]}>{unitLabel}</ShroudText>
+        )}
       </View>
 
       <ShroudText style={[styles.fiat, stylesHook.meta]}>{fiat}</ShroudText>
