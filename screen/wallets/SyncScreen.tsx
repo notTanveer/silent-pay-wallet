@@ -59,13 +59,13 @@ const SyncScreen: React.FC<SyncScreenProps> = () => {
   }, [scanState.status, scanState.progress]);
 
   useEffect(() => {
-    const pct = showDone ? 100 : (scanState.progress?.percentComplete ?? 0);
+    const pct = showDone || scanState.status === 'idle' ? 100 : (scanState.progress?.percentComplete ?? 0);
     Animated.timing(progressAnim, {
       toValue: pct,
       duration: 400,
       useNativeDriver: false,
     }).start();
-  }, [scanState.progress?.percentComplete, showDone, progressAnim]);
+  }, [scanState.progress?.percentComplete, showDone, scanState.status, progressAnim]);
 
   // Sync liveEta whenever a new ETA arrives from the wallet
   useEffect(() => {

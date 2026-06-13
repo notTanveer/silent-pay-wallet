@@ -88,7 +88,7 @@ const SendDetails = () => {
   const recipient = addresses[0];
   const isMaxActive = recipient?.amount === BitcoinUnit.MAX;
   const displayAmount = isMaxActive
-    ? ''
+    ? displayAmountForUnit(String(satoshiToBTC(balance)), balance, displayUnit)
     : displayAmountForUnit(recipient?.amount ? String(recipient.amount) : '', Number(recipient?.amountSats), displayUnit);
   // when sending max, amountSats holds the 'MAX' sentinel, so derive the fiat estimate from the full balance
   const amountSatsNum = isMaxActive ? balance : Number(recipient?.amountSats) || 0;

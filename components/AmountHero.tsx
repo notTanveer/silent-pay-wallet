@@ -62,8 +62,8 @@ const AmountHero: React.FC<AmountHeroProps> = ({
   return (
     <Pressable
       style={styles.container}
-      accessibilityRole={editable ? 'button' : undefined}
-      onPress={editable ? () => inputRef.current?.focus() : undefined}
+      accessibilityRole={editable && !isMax ? 'button' : undefined}
+      onPress={editable && !isMax ? () => inputRef.current?.focus() : undefined}
     >
       <View style={styles.amountRow}>
         {editable ? (
@@ -75,6 +75,7 @@ const AmountHero: React.FC<AmountHeroProps> = ({
             placeholder="0"
             placeholderTextColor={colors.amountPlaceholder}
             keyboardType={keyboardType}
+            editable={!isMax}
             testID="AmountHeroInput"
           />
         ) : (
