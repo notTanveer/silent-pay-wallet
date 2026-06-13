@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { ShroudText } from '../ShroudComponents';
 import { ClashFont } from '../constants/fonts';
 import loc from '../loc';
+import { BitcoinUnit } from '../models/bitcoinUnits';
 import { isAmountEmpty } from '../helpers/send/format';
 import CheckmarkIcon from './icons/CheckmarkIcon';
 import { useTheme } from './themes';
@@ -22,6 +23,12 @@ interface AmountHeroProps {
   useMaxDisabled?: boolean;
   /** When true, the Max pill shows a tick and the "Sending Max" hint replaces the edit hint. */
   isMax?: boolean;
+  /** Unit shown next to the amount. Defaults to BTC. */
+  unit?: BitcoinUnit;
+  /** When provided, the unit label becomes a button that toggles BTC <-> sats. */
+  onToggleUnit?: () => void;
+  /** Extra space below the unit label, pulling it up off the amount's baseline. Defaults to 0 (flush baseline, matches Confirm). Send's editable layout wants 8. */
+  unitMarginBottom?: number;
 }
 
 const AmountHero: React.FC<AmountHeroProps> = ({
@@ -33,6 +40,9 @@ const AmountHero: React.FC<AmountHeroProps> = ({
   onUseMax,
   useMaxDisabled = false,
   isMax = false,
+  unit = BitcoinUnit.BTC,
+  onToggleUnit,
+  unitMarginBottom = 0,
 }) => {
   const { colors } = useTheme();
   const inputRef = useRef<TextInput>(null);
@@ -46,15 +56,18 @@ const AmountHero: React.FC<AmountHeroProps> = ({
     sendingMax: { color: colors.brandPrimary },
     useMax: { backgroundColor: colors.surfaceSubtle, borderColor: colors.useMaxBorder },
     useMaxText: { color: colors.useMaxText },
+    unit: { marginBottom: unitMarginBottom },
   });
 
   const amountColor = empty ? stylesHook.amountEmpty : stylesHook.amountFilled;
+  const unitLabel = unit === BitcoinUnit.SATS ? loc.units[BitcoinUnit.SATS] : loc.units[BitcoinUnit.BTC];
+  const keyboardType = unit === BitcoinUnit.SATS ? 'number-pad' : 'decimal-pad';
 
   return (
     <Pressable
       style={styles.container}
-      accessibilityRole={editable ? 'button' : undefined}
-      onPress={editable ? () => inputRef.current?.focus() : undefined}
+      accessibilityRole={editable && !isMax ? 'button' : undefined}
+      onPress={editable && !isMax ? () => inputRef.current?.focus() : undefined}
     >
       <View style={styles.amountRow}>
         {editable ? (
@@ -65,7 +78,8 @@ const AmountHero: React.FC<AmountHeroProps> = ({
             onChangeText={onChangeAmount}
             placeholder="0"
             placeholderTextColor={colors.amountPlaceholder}
-            keyboardType="decimal-pad"
+            keyboardType={keyboardType}
+            editable={!isMax}
             testID="AmountHeroInput"
           />
         ) : (
@@ -73,7 +87,13 @@ const AmountHero: React.FC<AmountHeroProps> = ({
             {empty ? '0' : amount}
           </ShroudText>
         )}
-        <ShroudText style={[styles.unit, stylesHook.meta]}>BTC</ShroudText>
+        {onToggleUnit ? (
+          <Pressable accessibilityRole="button" onPress={onToggleUnit} hitSlop={8} testID="AmountUnitToggle">
+            <ShroudText style={[styles.unit, stylesHook.meta, stylesHook.unit]}>{unitLabel}</ShroudText>
+          </Pressable>
+        ) : (
+          <ShroudText style={[styles.unit, stylesHook.meta, stylesHook.unit]}>{unitLabel}</ShroudText>
+        )}
       </View>
 
       <ShroudText style={[styles.fiat, stylesHook.meta]}>{fiat}</ShroudText>
@@ -93,7 +113,7 @@ const AmountHero: React.FC<AmountHeroProps> = ({
           testID="UseMaxButton"
         >
           {isMax && <CheckmarkIcon color={colors.brandPrimary} size={16} />}
-          <ShroudText style={[styles.useMaxText, stylesHook.useMaxText]}>{loc.send.max}</ShroudText>
+          <ShroudText style={[styles.useMaxText, stylesHook.useMaxText]}>{isMax ? loc.send.max_active : loc.send.max}</ShroudText>
         </Pressable>
       )}
     </Pressable>
@@ -124,7 +144,6 @@ const styles = StyleSheet.create({
     fontFamily: ClashFont.regular,
     fontSize: 20,
     lineHeight: 30,
-    marginBottom: 8,
   },
   fiat: {
     fontFamily: ClashFont.regular,

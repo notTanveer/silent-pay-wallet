@@ -7,8 +7,8 @@ import { TOptions } from 'bip21';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Keyboard, LayoutAnimation, StyleSheet, Text, TextInput, Pressable, View } from 'react-native';
 import { SilentPayment } from 'silent-payments';
-import { btcToSatoshi, satoshiToLocalCurrency } from '../../modules/currency';
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
+import { btcToSatoshi, satoshiToBTC, satoshiToLocalCurrency } from '../../modules/currency';
+import triggerHapticFeedback, { HapticFeedbackTypes, triggerSelectionHapticFeedback } from '../../modules/hapticFeedback';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import { CreateTransactionTarget, CreateTransactionUtxo, TWallet } from '../../class/wallets/types';
@@ -25,11 +25,11 @@ import SafeArea from '../../components/SafeArea';
 import { useTheme } from '../../components/themes';
 import { Action } from '../../components/types';
 import { ClashFont } from '../../constants/fonts';
-import { isAmountEmpty } from '../../helpers/send/format';
+import { isAmountEmpty, sanitizeAmountInput, displayAmountForUnit } from '../../helpers/send/format';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useKeyboard } from '../../hooks/useKeyboard';
-import loc, { formatBalance, formatBalanceWithoutSuffix } from '../../loc';
+import loc, { formatBalance } from '../../loc';
 import { BitcoinUnit, Chain } from '../../models/bitcoinUnits';
 import NetworkTransactionFees, { NetworkTransactionFee, NetworkTransactionFeeType } from '../../models/networkTransactionFees';
 import { SendDetailsStackParamList } from '../../navigation/SendDetailsStackParamList';
@@ -80,46 +80,74 @@ const SendDetails = () => {
   const [feePrecalc, setFeePrecalc] = useState<IFee>({ current: null, slowFee: null, mediumFee: null, fastestFee: null });
   const [changeAddress, setChangeAddress] = useState<string | null>(null);
   const [dumb, setDumb] = useState(false);
+  const [displayUnit, setDisplayUnit] = useState<BitcoinUnit>(BitcoinUnit.BTC);
   const { isEditable } = routeParams;
   // if utxo is limited we use it to calculate available balance
   const balance: number = utxos ? utxos.reduce((prev, curr) => prev + curr.value, 0) : (wallet?.getBalance() ?? 0);
-  const allBalance = formatBalanceWithoutSuffix(balance, BitcoinUnit.BTC, true);
-
   // single-recipient helpers
   const recipient = addresses[0];
   const isMaxActive = recipient?.amount === BitcoinUnit.MAX;
-  const displayAmount = isMaxActive ? String(allBalance) : recipient?.amount ? String(recipient.amount) : '';
+  const displayAmount = isMaxActive
+    ? displayAmountForUnit(String(satoshiToBTC(balance)), balance, displayUnit)
+    : displayAmountForUnit(recipient?.amount ? String(recipient.amount) : '', Number(recipient?.amountSats), displayUnit);
   // when sending max, amountSats holds the 'MAX' sentinel, so derive the fiat estimate from the full balance
   const amountSatsNum = isMaxActive ? balance : Number(recipient?.amountSats) || 0;
   const fiatEstimate = `≈ ${satoshiToLocalCurrency(amountSatsNum)}`;
   const isFormValid = !!recipient?.address && !isAmountEmpty(recipient?.amount);
 
-  const onChangeAmount = (text: string) => {
-    // keep digits and a single decimal point; BigNumber (btcToSatoshi) rejects commas / stray chars
-    const sanitized = text.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
-    setAddresses(addrs => {
-      const a = { ...addrs[0] };
-      a.amount = sanitized;
-      a.amountSats = btcToSatoshi(sanitized);
-      a.unit = BitcoinUnit.BTC;
-      return [a, ...addrs.slice(1)];
-    });
-  };
+  const onChangeAmount = useCallback(
+    (text: string) => {
+      const sanitized = sanitizeAmountInput(text, displayUnit);
+      setAddresses(addrs => {
+        const a = { ...addrs[0] };
+        if (displayUnit === BitcoinUnit.SATS) {
+          const sats = sanitized === '' ? 0 : Number(sanitized);
+          a.amountSats = sats;
+          a.amount = sanitized === '' ? '' : satoshiToBTC(sats);
+        } else {
+          a.amount = sanitized;
+          a.amountSats = btcToSatoshi(sanitized);
+        }
+        // canonical storage is always BTC; displayUnit is a view concern only
+        a.unit = BitcoinUnit.BTC;
+        return [a, ...addrs.slice(1)];
+      });
+    },
+    [displayUnit],
+  );
 
-  const onChangeAddress = (text: string) => {
-    const { address, amount, memo } = DeeplinkSchemaMatch.decodeBitcoinUri(text.trim());
-    setAddresses(addrs => {
-      const a = { ...addrs[0] };
-      a.address = address || text.trim();
-      if (amount) {
-        a.amount = String(amount);
-        a.amountSats = btcToSatoshi(String(amount));
+  const onToggleUnit = useCallback(() => {
+    triggerSelectionHapticFeedback();
+    setDisplayUnit(u => (u === BitcoinUnit.SATS ? BitcoinUnit.BTC : BitcoinUnit.SATS));
+  }, []);
+
+  const onChangeAddress = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      const looksLikeUri = trimmed.includes(':') || trimmed.includes('?');
+      if (looksLikeUri) {
+        const { address, amount, memo } = DeeplinkSchemaMatch.decodeBitcoinUri(trimmed);
+        setAddresses(addrs => {
+          const a = { ...addrs[0] };
+          a.address = address || trimmed;
+          if (amount) {
+            a.amount = String(amount);
+            a.amountSats = btcToSatoshi(String(amount));
+          }
+          return [a, ...addrs.slice(1)];
+        });
+        if (memo) setParams({ transactionMemo: memo });
+      } else {
+        setAddresses(addrs => {
+          const a = { ...addrs[0] };
+          a.address = trimmed;
+          return [a, ...addrs.slice(1)];
+        });
       }
-      return [a, ...addrs.slice(1)];
-    });
-    if (memo) setParams({ transactionMemo: memo });
-    setIsLoading(false);
-  };
+      setIsLoading(false);
+    },
+    [setParams],
+  );
 
   // if cutomFee is not set, we need to choose highest possible fee for wallet balance
   // if there are no funds for even Slow option, use 1 sat/vbyte fee
@@ -472,7 +500,7 @@ const SendDetails = () => {
     Keyboard.dismiss();
     setIsLoading(true);
     const requestedSatPerByte = feeRate;
-    for (const [index, transaction] of addresses.entries()) {
+    for (const transaction of addresses) {
       let error;
       if (!transaction.amount || Number(transaction.amount) < 0 || parseFloat(String(transaction.amount)) === 0) {
         error = loc.send.details_amount_field_is_not_valid;
@@ -507,13 +535,7 @@ const SendDetails = () => {
 
       if (error) {
         setIsLoading(false);
-        presentAlert({
-          title:
-            addresses.length > 1
-              ? loc.formatString(loc.send.details_recipient_title, { number: index + 1, total: addresses.length })
-              : undefined,
-          message: error,
-        });
+        presentAlert({ message: error });
         triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
         return;
       }
@@ -820,6 +842,8 @@ const SendDetails = () => {
           editable
           amount={displayAmount}
           fiat={fiatEstimate}
+          unit={displayUnit}
+          onToggleUnit={onToggleUnit}
           onChangeAmount={onChangeAmount}
           showHint={isAmountEmpty(recipient?.amount)}
           onUseMax={onUseAllPressed}
@@ -889,7 +913,7 @@ const SendDetails = () => {
               </Text>
             )}
           </View>
-          <ChevronRightIcon />
+          <ChevronRightIcon color={colors.chevron} />
         </Pressable>
       </View>
 
