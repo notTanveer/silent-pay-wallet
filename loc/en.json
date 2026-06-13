@@ -22,12 +22,6 @@
         "ssl_port": "SSL Port",
         "suggested": "Suggested"
     },
-    "entropy": {
-        "save": "Save",
-        "title": "Entropy",
-        "undo": "Undo",
-        "amountOfEntropy": "{bits} of {limit} bits"
-    },
     "errors": {
         "broadcast": "Broadcast failed.",
         "error": "Error",
@@ -262,9 +256,7 @@
         "add_entropy_reset_message": "Changing the wallet type will reset the current entropy. Do you want to proceed?",
         "add_entropy": "Entropy",
         "add_entropy_bytes": "{bytes} bytes of entropy",
-        "add_entropy_generated": "{gen} bytes of generated entropy",
         "add_entropy_provide": "Provide entropy via dice rolls",
-        "add_entropy_remain": "{gen} bytes of generated entropy. Remaining {rem} bytes will be obtained from the System random number generator.",
         "add_import_wallet": "Import wallet",
         "add_create": "Create",
         "add_placeholder": "my first wallet",
