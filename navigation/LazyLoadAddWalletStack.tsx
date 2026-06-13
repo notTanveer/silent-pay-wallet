@@ -7,7 +7,6 @@ const WalletsAdd = lazy(() => import('../screen/wallets/Add'));
 const ImportSpeed = lazy(() => import('../screen/wallets/ImportSpeed'));
 const ImportWallet = lazy(() => import('../screen/wallets/ImportWallet'));
 const PleaseBackup = lazy(() => import('../screen/wallets/PleaseBackup'));
-const ProvideEntropy = lazy(() => import('../screen/wallets/ProvideEntropy'));
 
 export const AddComponent: React.FC = () => (
   <Suspense fallback={<LazyLoadingIndicator />}>
@@ -30,11 +29,5 @@ export const ImportSpeedComponent = () => (
 export const PleaseBackupComponent = () => (
   <Suspense fallback={<LazyLoadingIndicator />}>
     <PleaseBackup />
-  </Suspense>
-);
-
-export const ProvideEntropyComponent = () => (
-  <Suspense fallback={<LazyLoadingIndicator />}>
-    <ProvideEntropy />
   </Suspense>
 );

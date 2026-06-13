@@ -4,13 +4,7 @@ import React from 'react';
 import navigationStyle, { CloseButtonPosition } from '../components/navigationStyle';
 import { useTheme } from '../components/themes';
 import loc from '../loc';
-import {
-  AddComponent,
-  ImportSpeedComponent,
-  ImportWalletComponent,
-  PleaseBackupComponent,
-  ProvideEntropyComponent,
-} from './LazyLoadAddWalletStack';
+import { AddComponent, ImportSpeedComponent, ImportWalletComponent, PleaseBackupComponent } from './LazyLoadAddWalletStack';
 import { ScanQRCodeComponent } from './LazyLoadScanQRCodeStack';
 import { ScanQRCodeParamList } from './DetailViewStackParamList';
 
@@ -71,11 +65,6 @@ const AddWalletStack = () => {
           headerBackVisible: false,
           title: loc.pleasebackup.null,
         })(theme)}
-      />
-      <Stack.Screen
-        name="ProvideEntropy"
-        component={ProvideEntropyComponent}
-        options={navigationStyle({ title: loc.entropy.title })(theme)}
       />
       <Stack.Screen
         name="ScanQRCode"
