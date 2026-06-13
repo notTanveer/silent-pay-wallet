@@ -7,8 +7,8 @@ import { TOptions } from 'bip21';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Keyboard, LayoutAnimation, StyleSheet, Text, TextInput, Pressable, View } from 'react-native';
 import { SilentPayment } from 'silent-payments';
-import { btcToSatoshi, satoshiToLocalCurrency } from '../../modules/currency';
-import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
+import { btcToSatoshi, satoshiToBTC, satoshiToLocalCurrency } from '../../modules/currency';
+import triggerHapticFeedback, { HapticFeedbackTypes, triggerSelectionHapticFeedback } from '../../modules/hapticFeedback';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import { CreateTransactionTarget, CreateTransactionUtxo, TWallet } from '../../class/wallets/types';
@@ -25,7 +25,7 @@ import SafeArea from '../../components/SafeArea';
 import { useTheme } from '../../components/themes';
 import { Action } from '../../components/types';
 import { ClashFont } from '../../constants/fonts';
-import { isAmountEmpty } from '../../helpers/send/format';
+import { isAmountEmpty, sanitizeAmountInput, displayAmountForUnit } from '../../helpers/send/format';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useKeyboard } from '../../hooks/useKeyboard';
@@ -80,27 +80,45 @@ const SendDetails = () => {
   const [feePrecalc, setFeePrecalc] = useState<IFee>({ current: null, slowFee: null, mediumFee: null, fastestFee: null });
   const [changeAddress, setChangeAddress] = useState<string | null>(null);
   const [dumb, setDumb] = useState(false);
+  const [displayUnit, setDisplayUnit] = useState<BitcoinUnit>(BitcoinUnit.BTC);
   const { isEditable } = routeParams;
   // if utxo is limited we use it to calculate available balance
   const balance: number = utxos ? utxos.reduce((prev, curr) => prev + curr.value, 0) : (wallet?.getBalance() ?? 0);
   // single-recipient helpers
   const recipient = addresses[0];
   const isMaxActive = recipient?.amount === BitcoinUnit.MAX;
-  const displayAmount = isMaxActive ? '' : recipient?.amount ? String(recipient.amount) : '';
+  const displayAmount = isMaxActive
+    ? ''
+    : displayAmountForUnit(recipient?.amount ? String(recipient.amount) : '', Number(recipient?.amountSats), displayUnit);
   // when sending max, amountSats holds the 'MAX' sentinel, so derive the fiat estimate from the full balance
   const amountSatsNum = isMaxActive ? balance : Number(recipient?.amountSats) || 0;
   const fiatEstimate = `≈ ${satoshiToLocalCurrency(amountSatsNum)}`;
   const isFormValid = !!recipient?.address && !isAmountEmpty(recipient?.amount);
 
-  const onChangeAmount = useCallback((text: string) => {
-    const sanitized = text.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
-    setAddresses(addrs => {
-      const a = { ...addrs[0] };
-      a.amount = sanitized;
-      a.amountSats = btcToSatoshi(sanitized);
-      a.unit = BitcoinUnit.BTC;
-      return [a, ...addrs.slice(1)];
-    });
+  const onChangeAmount = useCallback(
+    (text: string) => {
+      const sanitized = sanitizeAmountInput(text, displayUnit);
+      setAddresses(addrs => {
+        const a = { ...addrs[0] };
+        if (displayUnit === BitcoinUnit.SATS) {
+          const sats = sanitized === '' ? 0 : Number(sanitized);
+          a.amountSats = sats;
+          a.amount = sanitized === '' ? '' : satoshiToBTC(sats);
+        } else {
+          a.amount = sanitized;
+          a.amountSats = btcToSatoshi(sanitized);
+        }
+        // canonical storage is always BTC; displayUnit is a view concern only
+        a.unit = BitcoinUnit.BTC;
+        return [a, ...addrs.slice(1)];
+      });
+    },
+    [displayUnit],
+  );
+
+  const onToggleUnit = useCallback(() => {
+    triggerSelectionHapticFeedback();
+    setDisplayUnit(u => (u === BitcoinUnit.SATS ? BitcoinUnit.BTC : BitcoinUnit.SATS));
   }, []);
 
   const onChangeAddress = useCallback(
@@ -824,6 +842,8 @@ const SendDetails = () => {
           editable
           amount={displayAmount}
           fiat={fiatEstimate}
+          unit={displayUnit}
+          onToggleUnit={onToggleUnit}
           onChangeAmount={onChangeAmount}
           showHint={isAmountEmpty(recipient?.amount)}
           onUseMax={onUseAllPressed}
