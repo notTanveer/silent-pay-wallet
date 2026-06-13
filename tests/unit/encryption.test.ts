@@ -13,19 +13,9 @@ describe('unit - encryption', function () {
     assert.strictEqual(decrypted, data2encrypt);
     assert.ok(crypted !== data2encrypt);
 
-    let decryptedWithBadPassword;
-    try {
-      decryptedWithBadPassword = c.decrypt(crypted, 'passwordBad');
-    } catch (e) {}
-    assert.ok(!decryptedWithBadPassword);
+    assert.ok(!c.decrypt(crypted, 'passwordBad'));
 
-    let exceptionRaised = false;
-    try {
-      c.encrypt('yolo', 'password');
-    } catch (_) {
-      exceptionRaised = true;
-    }
-    assert.ok(exceptionRaised);
+    assert.throws(() => c.encrypt('yolo', 'password'));
   });
 
   it('handles ok malformed data', function () {
