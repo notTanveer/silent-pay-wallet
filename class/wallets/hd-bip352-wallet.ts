@@ -20,6 +20,7 @@ import {
   IDLE_SCAN_STATE,
 } from '../../helpers/silent-payments';
 import { BIP352_ACTIVATION_HEIGHT } from '../../modules/constants';
+import { computeSplitCount, splitAmount } from '../../helpers/silent-payments/splitPayment';
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types.ts';
 import * as bitcoin from 'bitcoinjs-lib';
 import { HDTaprootWallet } from './hd-taproot-wallet.ts';
@@ -755,7 +756,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     return true;
   }
 
-  createTransaction(
+  async createTransaction(
     utxos: CreateTransactionUtxo[],
     targets: CreateTransactionTarget[],
     feeRate: number,
@@ -763,7 +764,8 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     sequence: number = AbstractHDElectrumWallet.finalRBFSequence,
     skipSigning = false,
     masterFingerprint: number = 0,
-  ): CreateTransactionResult {
+    splitPayment = false,
+  ): Promise<CreateTransactionResult> {
     if (targets.length === 0) throw new Error('No destination provided');
     if (utxos.length === 0) throw new Error('No UTXOs provided');
 
@@ -780,7 +782,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
     // Case 1: Only SP UTXOs - use SP builder exclusively
     if (spUtxos.length > 0 && regularUtxos.length === 0) {
-      return this.createSPTransaction(spUtxos, targets, feeRate, changeAddress, sequence, skipSigning);
+      return this.createSPTransaction(spUtxos, targets, feeRate, changeAddress, sequence, skipSigning, splitPayment);
     }
 
     // Case 2: Only regular UTXOs - delegate to parent
@@ -792,17 +794,29 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     throw new Error('Mixed UTXO spending (SP + regular) is not yet implemented. Please select only SP UTXOs or only regular UTXOs.');
   }
 
-  private createSPTransaction(
+  private async createSPTransaction(
     spUtxos: SilentPaymentUTXO[],
     targets: CreateTransactionTarget[],
     feeRate: number,
     changeAddress: string,
     sequence: number,
     skipSigning: boolean,
-  ): CreateTransactionResult {
+    splitPayment = false,
+  ): Promise<CreateTransactionResult> {
     if (targets.length === 0) throw new Error('No destination provided');
 
-    const { inputs, outputs: rawOutputs, fee } = this.coinselect(spUtxos as CreateTransactionUtxo[], targets, feeRate);
+    // Pre-coinselect split expansion: replace the single sp1 target with N same-address targets.
+    // Running before coinselect ensures the fee accounts for all N outputs.
+    let expandedTargets = targets;
+    if (splitPayment && targets.length === 1 && targets[0].address?.startsWith('sp1') && targets[0].value) {
+      const n = computeSplitCount(targets[0].value);
+      if (n > 1) {
+        const amounts = await splitAmount(targets[0].value, n);
+        expandedTargets = amounts.map(amt => ({ address: targets[0].address!, value: amt }));
+      }
+    }
+
+    const { inputs, outputs: rawOutputs, fee } = this.coinselect(spUtxos as CreateTransactionUtxo[], expandedTargets, feeRate);
     const utxoMap = new Map(spUtxos.map(u => [`${u.txid}:${u.vout}`, u]));
 
     let outputs = rawOutputs;
