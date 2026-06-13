@@ -20,11 +20,13 @@ export const isAmountEmpty = (amount?: string | number): boolean => {
 
 /**
  * Strips a raw amount input to the valid character set for the given unit.
- * BTC: digits plus a single leading-group decimal point. SATS: digits only.
+ * BTC: digits plus at most one decimal point. SATS: digits only.
  */
 export const sanitizeAmountInput = (text: string, unit: BitcoinUnit): string => {
   if (unit === BitcoinUnit.SATS) {
     return text.replace(/[^0-9]/g, '');
   }
-  return text.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+  const cleaned = text.replace(/[^0-9.]/g, '');
+  const [intPart, ...rest] = cleaned.split('.');
+  return rest.length ? `${intPart}.${rest.join('')}` : intPart;
 };
