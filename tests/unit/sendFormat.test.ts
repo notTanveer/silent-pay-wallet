@@ -1,4 +1,10 @@
-import { formatFeeOptionSubtitle, computeTotalSats, isAmountEmpty, sanitizeAmountInput } from '../../helpers/send/format';
+import {
+  formatFeeOptionSubtitle,
+  computeTotalSats,
+  isAmountEmpty,
+  sanitizeAmountInput,
+  displayAmountForUnit,
+} from '../../helpers/send/format';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
 
 describe('send/format', () => {
@@ -48,6 +54,25 @@ describe('send/format', () => {
     it('returns empty string for empty input in either unit', () => {
       expect(sanitizeAmountInput('', BitcoinUnit.BTC)).toBe('');
       expect(sanitizeAmountInput('', BitcoinUnit.SATS)).toBe('');
+    });
+  });
+
+  describe('displayAmountForUnit', () => {
+    it('shows the BTC string in BTC mode', () => {
+      expect(displayAmountForUnit('0.0000344', 3440, BitcoinUnit.BTC)).toBe('0.0000344');
+    });
+    it('shows the integer sats string in sats mode', () => {
+      expect(displayAmountForUnit('0.0000344', 3440, BitcoinUnit.SATS)).toBe('3440');
+    });
+    it('returns empty string when the amount is empty, in either unit', () => {
+      expect(displayAmountForUnit('', 0, BitcoinUnit.BTC)).toBe('');
+      expect(displayAmountForUnit('', 0, BitcoinUnit.SATS)).toBe('');
+    });
+    it('preserves in-progress BTC typing like "0."', () => {
+      expect(displayAmountForUnit('0.', 0, BitcoinUnit.BTC)).toBe('0.');
+    });
+    it('returns empty string in sats mode when sats is not finite', () => {
+      expect(displayAmountForUnit('.', NaN, BitcoinUnit.SATS)).toBe('');
     });
   });
 });

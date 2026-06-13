@@ -30,3 +30,16 @@ export const sanitizeAmountInput = (text: string, unit: BitcoinUnit): string => 
   const [intPart, ...rest] = cleaned.split('.');
   return rest.length ? `${intPart}.${rest.join('')}` : intPart;
 };
+
+/**
+ * Picks the string to display for the active unit, given the canonical BTC
+ * string and sats number. Empty canonical amount -> ''. In sats mode, a
+ * non-finite sats value renders as '' (never 'NaN').
+ */
+export const displayAmountForUnit = (amountBtc: string, amountSats: number, unit: BitcoinUnit): string => {
+  if (!amountBtc) return '';
+  if (unit === BitcoinUnit.SATS) {
+    return Number.isFinite(amountSats) ? String(amountSats) : '';
+  }
+  return amountBtc;
+};
