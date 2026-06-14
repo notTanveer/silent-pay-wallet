@@ -167,42 +167,25 @@ const SendDetails = () => {
   // if cutomFee is not set, we need to choose highest possible fee for wallet balance
   // if there are no funds for even Slow option, use 1 sat/vbyte fee
   const feeRate = useMemo(() => {
-    console.log('SendDetails: feeRate useMemo - customFee:', customFee);
-    console.log('SendDetails: feeRate useMemo - selectedPresetFeeRate:', selectedPresetFeeRate);
-    console.log('SendDetails: feeRate useMemo - feePrecalc:', feePrecalc);
-    console.log('SendDetails: feeRate useMemo - networkTransactionFees:', networkTransactionFees);
-
     if (customFee) {
-      console.log('SendDetails: Using customFee:', customFee);
       return customFee;
     }
 
     if (selectedPresetFeeRate) {
-      console.log('SendDetails: Using selectedPresetFeeRate:', selectedPresetFeeRate);
       return selectedPresetFeeRate;
     }
 
-    // If we have precalculated fees, use them to determine the default fee
     if (feePrecalc.slowFee !== null) {
-      let initialFee;
       if (feePrecalc.fastestFee !== null) {
-        initialFee = String(networkTransactionFees.fastestFee);
-        console.log('SendDetails: Using fastestFee:', initialFee);
+        return String(networkTransactionFees.fastestFee);
       } else if (feePrecalc.mediumFee !== null) {
-        initialFee = String(networkTransactionFees.mediumFee);
-        console.log('SendDetails: Using mediumFee:', initialFee);
+        return String(networkTransactionFees.mediumFee);
       } else {
-        initialFee = String(networkTransactionFees.slowFee);
-        console.log('SendDetails: Using slowFee:', initialFee);
+        return String(networkTransactionFees.slowFee);
       }
-      console.log('SendDetails: Final feeRate:', initialFee);
-      return initialFee;
     }
 
-    // If no precalc fees yet, default to fastestFee from network fees
-    const defaultFee = String(networkTransactionFees.fastestFee);
-    console.log('SendDetails: No precalc fees yet, using default networkTransactionFees.fastestFee:', defaultFee);
-    return defaultFee;
+    return String(networkTransactionFees.fastestFee);
   }, [customFee, selectedPresetFeeRate, feePrecalc, networkTransactionFees]);
 
   useEffect(() => {
@@ -235,8 +218,7 @@ const SendDetails = () => {
           setParams({ transactionMemo: memo });
         }
         setParams({ amountUnit: BitcoinUnit.BTC });
-      } catch (error) {
-        console.log(error);
+      } catch {
         triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
         presentAlert({ title: loc.errors.error, message: loc.send.details_error_decode });
       }
@@ -302,7 +284,7 @@ const SendDetails = () => {
         if (!fees?.fastestFee) return;
         setNetworkTransactionFees(fees);
       })
-      .catch(e => console.log('loading cached recommendedFees error', e));
+      .catch(() => {});
 
     // load fresh fees from servers
 
@@ -313,7 +295,7 @@ const SendDetails = () => {
         setNetworkTransactionFees(fees);
         await AsyncStorage.setItem(NetworkTransactionFee.StorageKey, JSON.stringify(fees));
       })
-      .catch(e => console.log('loading recommendedFees error', e))
+      .catch(() => {})
       .finally(() => {
         setNetworkTransactionFeesIsLoading(false);
       });
@@ -336,7 +318,7 @@ const SendDetails = () => {
         // we need to re-calculate fees
         setDumb(v => !v);
       })
-      .catch(e => console.log('fetchUtxo error', e));
+      .catch(() => {});
   }, [wallet]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // recalc fees in effect so we don't block render
@@ -490,7 +472,6 @@ const SendDetails = () => {
         options = decoded.options;
       }
 
-      console.log('options', options);
       if (wallet.isAddressValid(address)) {
         setAddresses(addrs => {
           addrs[0].address = address;
@@ -519,20 +500,14 @@ const SendDetails = () => {
       let error;
       if (!transaction.amount || Number(transaction.amount) < 0 || parseFloat(String(transaction.amount)) === 0) {
         error = loc.send.details_amount_field_is_not_valid;
-        console.log('validation error');
       } else if (parseFloat(String(transaction.amountSats)) <= 500) {
         error = loc.send.details_amount_field_is_less_than_minimum_amount_sat;
-        console.log('validation error');
       } else if (!requestedSatPerByte || parseFloat(requestedSatPerByte) < 0) {
         error = loc.send.details_fee_field_is_not_valid;
-        console.log('validation error');
       } else if (!transaction.address) {
         error = loc.send.details_address_field_is_not_valid;
-        console.log('validation error');
       } else if (balance - Number(transaction.amountSats) < 0) {
-        // first sanity check is that sending amount is not bigger than available balance
         error = frozenBalance > 0 ? loc.send.details_total_exceeds_balance_frozen : loc.send.details_total_exceeds_balance;
-        console.log('validation error');
       } else if (transaction.address) {
         // address validation handled below
       }
@@ -540,10 +515,8 @@ const SendDetails = () => {
       if (!error) {
         const isSilentPayment = SilentPayment.isPaymentCodeValid(transaction.address);
         if (!wallet.isAddressValid(transaction.address) && !isSilentPayment) {
-          console.log('validation error');
           error = loc.send.details_address_field_is_not_valid;
         } else if (isSilentPayment && !wallet.allowSilentPaymentSend()) {
-          console.log('validation error');
           error = loc.send.cant_send_to_silentpayment_adress;
         }
       }
@@ -576,7 +549,6 @@ const SendDetails = () => {
     assert(change, 'Could not get change address');
     const requestedSatPerByte = Number(feeRate);
     const lutxo: CreateTransactionUtxo[] = (utxos || (wallet?.getUtxo() ?? [])) as CreateTransactionUtxo[];
-    console.log({ requestedSatPerByte, lutxo: lutxo.length });
 
     const targets: CreateTransactionTarget[] = [];
     for (const transaction of addresses) {
@@ -767,7 +739,6 @@ const SendDetails = () => {
   }, [HeaderRight, navigation]);
 
   useEffect(() => {
-    console.log('send/details - useEffect');
     if (wallet) {
       setHeaderRightOptions();
     }
@@ -778,19 +749,8 @@ const SendDetails = () => {
     const selectedFeeRate = routeParams.selectedFeeRate;
     const selectedFeeType = routeParams.selectedFeeType;
 
-    console.log('SendDetails: Fee selection useEffect triggered');
-    console.log('SendDetails: selectedFeeRate:', selectedFeeRate);
-    console.log('SendDetails: selectedFeeType:', selectedFeeType);
-    console.log('SendDetails: current customFee:', customFee);
-    console.log('SendDetails: current selectedPresetFeeRate:', selectedPresetFeeRate);
-    console.log('SendDetails: networkTransactionFees:', networkTransactionFees);
-
     if (selectedFeeRate !== undefined || selectedFeeType !== undefined) {
-      console.log('SendDetails: Processing fee selection...');
-
       if (selectedFeeType === NetworkTransactionFeeType.CUSTOM) {
-        console.log('SendDetails: CUSTOM fee selected, setting customFee to:', selectedFeeRate);
-        // Custom fee was selected - set the custom fee rate and clear preset
         setCustomFee(selectedFeeRate || null);
         setSelectedPresetFeeRate(null);
       } else if (
@@ -798,15 +758,10 @@ const SendDetails = () => {
         selectedFeeType === NetworkTransactionFeeType.MEDIUM ||
         selectedFeeType === NetworkTransactionFeeType.SLOW
       ) {
-        console.log('SendDetails: Preset fee selected:', selectedFeeType);
-        console.log('SendDetails: Setting selectedPresetFeeRate to:', selectedFeeRate);
-        // Preset fee was selected - set the preset fee rate and clear custom fee
         setSelectedPresetFeeRate(selectedFeeRate || null);
         setCustomFee(null);
       }
 
-      console.log('SendDetails: Clearing route params...');
-      // Clear the parameters to prevent re-processing
       setParams({ selectedFeeRate: undefined, selectedFeeType: undefined });
     }
   }, [routeParams.selectedFeeRate, routeParams.selectedFeeType, networkTransactionFees, setParams, customFee, selectedPresetFeeRate]);
@@ -980,7 +935,7 @@ const SendDetails = () => {
                     <View style={styles.splitPreviewRow}>
                       <Text style={[styles.splitPreviewLabel, stylesHook.splitPreviewLabel]}>{`Output ${i + 1}`}</Text>
                       <Text style={[styles.splitPreviewAmount, stylesHook.splitPreviewAmount]}>
-                        {`${satoshiToBTC(Math.floor(Number(recipient?.amountSats) / splitCount))} ${loc.units[BitcoinUnit.BTC]}`}
+                        {`≈ ${satoshiToBTC(Math.floor(Number(recipient?.amountSats) / splitCount))} ${loc.units[BitcoinUnit.BTC]}`}
                       </Text>
                     </View>
                   </React.Fragment>
@@ -988,7 +943,7 @@ const SendDetails = () => {
                 <View style={[styles.splitFeeIncreaseRow, stylesHook.splitFeeIncreaseRow]}>
                   <Text style={[styles.splitFeeIncreaseLabel, stylesHook.splitFeeIncreaseLabel]}>{loc.send.fee_increase}</Text>
                   <Text style={[styles.splitFeeIncreaseValue, stylesHook.splitFeeIncreaseValue]}>
-                    {`+${satoshiToBTC(Math.round(Number(feeRate) * 43 * (splitCount - 1)))} ${loc.units[BitcoinUnit.BTC]}`}
+                    {`≈ +${satoshiToBTC(Math.round(Number(feeRate) * 43 * (splitCount - 1)))} ${loc.units[BitcoinUnit.BTC]}`}
                   </Text>
                 </View>
               </View>

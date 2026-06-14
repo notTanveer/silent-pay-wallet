@@ -282,21 +282,7 @@ const Confirm: React.FC = () => {
               )}
             </View>
 
-            <View style={styles.splitFeeSection}>
-              <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, stylesHook.summaryLabel]}>{loc.send.create_fee}</Text>
-                <Text style={[styles.summaryValue, stylesHook.summaryValue]}>
-                  {satoshiToBTC(feeSatoshi)} {loc.units[BitcoinUnit.BTC]} ({satoshiToLocalCurrency(feeSatoshi)})
-                </Text>
-              </View>
-              <View style={[styles.divider, stylesHook.divider]} />
-              <View style={styles.summaryRow}>
-                <Text style={[styles.totalLabel, stylesHook.totalLabel]}>{loc.send.total}</Text>
-                <Text style={[styles.totalValue, stylesHook.totalValue]}>
-                  {satoshiToBTC(totalSats)} {loc.units[BitcoinUnit.BTC]}
-                </Text>
-              </View>
-            </View>
+            <View style={styles.splitFeeSection} />
           </>
         ) : (
           <>
@@ -317,23 +303,23 @@ const Confirm: React.FC = () => {
               onCopy={() => copy(txid, setCopiedTxid)}
             />
             <View style={[styles.divider, stylesHook.divider]} />
-
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, stylesHook.summaryLabel]}>{loc.send.create_fee}</Text>
-              <Text style={[styles.summaryValue, stylesHook.summaryValue]}>
-                {satoshiToBTC(feeSatoshi)} {loc.units[BitcoinUnit.BTC]} ({satoshiToLocalCurrency(feeSatoshi)})
-              </Text>
-            </View>
-            <View style={[styles.divider, stylesHook.divider]} />
-
-            <View style={styles.summaryRow}>
-              <Text style={[styles.totalLabel, stylesHook.totalLabel]}>{loc.send.total}</Text>
-              <Text style={[styles.totalValue, stylesHook.totalValue]}>
-                {satoshiToBTC(totalSats)} {loc.units[BitcoinUnit.BTC]}
-              </Text>
-            </View>
           </>
         )}
+
+        <View style={styles.summaryRow}>
+          <Text style={[styles.summaryLabel, stylesHook.summaryLabel]}>{loc.send.create_fee}</Text>
+          <Text style={[styles.summaryValue, stylesHook.summaryValue]}>
+            {satoshiToBTC(feeSatoshi)} {loc.units[BitcoinUnit.BTC]} ({satoshiToLocalCurrency(feeSatoshi)})
+          </Text>
+        </View>
+        <View style={[styles.divider, stylesHook.divider]} />
+
+        <View style={styles.summaryRow}>
+          <Text style={[styles.totalLabel, stylesHook.totalLabel]}>{loc.send.total}</Text>
+          <Text style={[styles.totalValue, stylesHook.totalValue]}>
+            {satoshiToBTC(totalSats)} {loc.units[BitcoinUnit.BTC]}
+          </Text>
+        </View>
       </ScrollView>
 
       <View style={styles.bottom}>

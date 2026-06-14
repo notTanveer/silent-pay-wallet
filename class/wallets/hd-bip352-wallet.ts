@@ -770,6 +770,16 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     if (targets.length === 0) throw new Error('No destination provided');
     if (utxos.length === 0) throw new Error('No UTXOs provided');
 
+    // Split expansion runs before UTXO categorization so it applies regardless of which case handles the tx.
+    let expandedTargets = targets;
+    if (splitPayment && targets.length === 1 && targets[0].address?.startsWith('sp1') && targets[0].value) {
+      const n = computeSplitCount(targets[0].value);
+      if (n > 1) {
+        const amounts = await splitAmount(targets[0].value, n);
+        expandedTargets = amounts.map(amt => ({ address: targets[0].address!, value: amt }));
+      }
+    }
+
     const spUtxos: SilentPaymentUTXO[] = [];
     const regularUtxos: CreateTransactionUtxo[] = [];
 
@@ -783,12 +793,12 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
     // Case 1: Only SP UTXOs - use SP builder exclusively
     if (spUtxos.length > 0 && regularUtxos.length === 0) {
-      return this.createSPTransaction(spUtxos, targets, feeRate, changeAddress, sequence, skipSigning, splitPayment);
+      return this.createSPTransaction(spUtxos, expandedTargets, feeRate, changeAddress, sequence, skipSigning);
     }
 
     // Case 2: Only regular UTXOs - delegate to parent
     if (spUtxos.length === 0 && regularUtxos.length > 0) {
-      return super.createTransaction(regularUtxos, targets, feeRate, changeAddress, sequence, skipSigning, masterFingerprint);
+      return super.createTransaction(regularUtxos, expandedTargets, feeRate, changeAddress, sequence, skipSigning, masterFingerprint);
     }
 
     // Case 3: Mixed UTXOs - not yet implemented
@@ -802,22 +812,10 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     changeAddress: string,
     sequence: number,
     skipSigning: boolean,
-    splitPayment = false,
   ): Promise<CreateTransactionResult> {
     if (targets.length === 0) throw new Error('No destination provided');
 
-    // Pre-coinselect split expansion: replace the single sp1 target with N same-address targets.
-    // Running before coinselect ensures the fee accounts for all N outputs.
-    let expandedTargets = targets;
-    if (splitPayment && targets.length === 1 && targets[0].address?.startsWith('sp1') && targets[0].value) {
-      const n = computeSplitCount(targets[0].value);
-      if (n > 1) {
-        const amounts = await splitAmount(targets[0].value, n);
-        expandedTargets = amounts.map(amt => ({ address: targets[0].address!, value: amt }));
-      }
-    }
-
-    const { inputs, outputs: rawOutputs, fee } = this.coinselect(spUtxos as CreateTransactionUtxo[], expandedTargets, feeRate);
+    const { inputs, outputs: rawOutputs, fee } = this.coinselect(spUtxos as CreateTransactionUtxo[], targets, feeRate);
     const utxoMap = new Map(spUtxos.map(u => [`${u.txid}:${u.vout}`, u]));
 
     let outputs = rawOutputs;
@@ -831,26 +829,31 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
     try {
       const spendPrivKey = this.getSpendPrivateKey();
+      const spendPubKey = ecc.pointFromScalar(spendPrivKey, true)!;
+
+      // Pre-compute tweaked private keys per input — reused for both SP derivation and signing.
+      const tweakedPrivKeys = new Map<string, Uint8Array>();
+      for (const input of inputs) {
+        const key = `${input.txid}:${input.vout}`;
+        const spUtxo = utxoMap.get(key);
+        if (!spUtxo) throw new Error(`Coinselected input not found in SP UTXO map: ${key}`);
+        const tweaked = ecc.privateAdd(spendPrivKey, spUtxo.tweak);
+        if (!tweaked) throw new Error(`Failed to tweak privkey for ${key}`);
+        tweakedPrivKeys.set(key, tweaked);
+      }
 
       // Resolve sp1 targets to real Taproot addresses via sender-side BIP-352 derivation.
       // The library groups targets by recipient and increments k for each output in the group.
       if (hasSPOutput) {
-        // For SP UTXOs the private key controlling the output is (spendPriv + tweak).
-        // BIP-352 sender-side derivation sums the actual input private keys, so we supply
-        // the tweaked key — not the bare spend key — as each UTXO's wif.
         const libUtxos: SPLibUTXO[] = inputs.map(input => {
-          const spUtxo = utxoMap.get(`${input.txid}:${input.vout}`);
-          if (!spUtxo) throw new Error(`Coinselected input not found in SP UTXO map: ${input.txid}:${input.vout}`);
-          const tweakedPrivKey = ecc.privateAdd(spendPrivKey, spUtxo.tweak);
-          if (!tweakedPrivKey) throw new Error(`Failed to tweak privkey for ${input.txid}:${input.vout}`);
-          const wif = ECPair.fromPrivateKey(Buffer.from(tweakedPrivKey), { compressed: true }).toWIF();
+          const key = `${input.txid}:${input.vout}`;
+          const wif = ECPair.fromPrivateKey(Buffer.from(tweakedPrivKeys.get(key)!), { compressed: true }).toWIF();
           return { txid: input.txid, vout: input.vout, wif, utxoType: 'p2tr' as SPUTXOType };
         });
         const sp = new SilentPayment();
         const resolved = sp.createTransaction(libUtxos, rawOutputs);
         outputs = resolved.map((t, i) => ({ ...rawOutputs[i], address: t.address ?? rawOutputs[i].address }));
       }
-      const spendPubKey = this.getSpendPublicKey();
 
       const psbt = new bitcoin.Psbt();
       const xOnlySpendPub = spendPubKey.subarray(1, 33);
@@ -902,19 +905,9 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       let tx: bitcoin.Transaction | undefined;
 
       if (!skipSigning) {
-        // sign each input with its tweaked key pair
         inputs.forEach((input, idx) => {
-          const spUtxo = utxoMap.get(`${input.txid}:${input.vout}`);
-          if (!spUtxo) {
-            throw new Error(`UTXO not found: ${input.txid}:${input.vout}`);
-          }
-
-          const tweakedPrivKey = ecc.privateAdd(spendPrivKey, spUtxo.tweak);
-          if (!tweakedPrivKey) {
-            throw new Error('Failed to compute tweaked private key');
-          }
-
-          const tweakedKeyPair = ECPair.fromPrivateKey(Buffer.from(tweakedPrivKey), { compressed: true });
+          const key = `${input.txid}:${input.vout}`;
+          const tweakedKeyPair = ECPair.fromPrivateKey(Buffer.from(tweakedPrivKeys.get(key)!), { compressed: true });
           psbt.signTaprootInput(idx, tweakedKeyPair);
         });
 
