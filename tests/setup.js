@@ -41,11 +41,11 @@ jest.mock('react-native-secure-key-store', () => {
 
 jest.mock('react-native-launch-arguments', () => ({
   LaunchArguments: { value: () => ({}) },
-}));
+}), { virtual: true });
 
 jest.mock('@react-native-community/push-notification-ios', () => {
   return {};
-});
+}, { virtual: true });
 
 jest.mock('react-native-permissions', () => require('react-native-permissions/mock'));
 
