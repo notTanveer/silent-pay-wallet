@@ -5,7 +5,7 @@ import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { TOptions } from 'bip21';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Keyboard, LayoutAnimation, StyleSheet, Text, TextInput, Pressable, View } from 'react-native';
+import { ActivityIndicator, Keyboard, LayoutAnimation, ScrollView, StyleSheet, Text, TextInput, Pressable, View } from 'react-native';
 import { SilentPayment } from 'silent-payments';
 import { btcToSatoshi, satoshiToBTC, satoshiToLocalCurrency } from '../../modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes, triggerSelectionHapticFeedback } from '../../modules/hapticFeedback';
@@ -25,7 +25,7 @@ import SafeArea from '../../components/SafeArea';
 import { useTheme } from '../../components/themes';
 import { Action } from '../../components/types';
 import { ClashFont } from '../../constants/fonts';
-import { isAmountEmpty, sanitizeAmountInput, displayAmountForUnit } from '../../helpers/send/format';
+import { isAmountEmpty, sanitizeAmountInput, displayAmountForUnit, feeSpeedTierForRate } from '../../helpers/send/format';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useKeyboard } from '../../hooks/useKeyboard';
@@ -93,7 +93,8 @@ const SendDetails = () => {
   // when sending max, amountSats holds the 'MAX' sentinel, so derive the fiat estimate from the full balance
   const amountSatsNum = isMaxActive ? balance : Number(recipient?.amountSats) || 0;
   const fiatEstimate = `≈ ${satoshiToLocalCurrency(amountSatsNum)}`;
-  const isFormValid = !!recipient?.address && !isAmountEmpty(recipient?.amount);
+  const isFormValid = !!recipient?.address && amountSatsNum > 0;
+  const hasFeeEstimate = !!feePrecalc.current && amountSatsNum > 0;
 
   const onChangeAmount = useCallback(
     (text: string) => {
@@ -738,8 +739,8 @@ const SendDetails = () => {
   }, [addresses, isEditable, wallet]);
 
   const HeaderRight = useCallback(
-    () => <HeaderMenuButton disabled={isLoading} onPressMenuItem={headerRightOnPress} actions={headerRightActions()} />,
-    [headerRightOnPress, isLoading, headerRightActions],
+    () => <HeaderMenuButton disabled onPressMenuItem={headerRightOnPress} actions={headerRightActions()} />,
+    [headerRightOnPress, headerRightActions],
   );
 
   const setHeaderRightOptions = useCallback(() => {
@@ -795,6 +796,12 @@ const SendDetails = () => {
 
   const formatFee = (fee: number) => formatBalance(fee, feeUnit!, true);
 
+  const feeEtaLabel = {
+    fast: loc.send.fee_10m,
+    medium: loc.send.fee_3h,
+    slow: loc.send.fee_1d,
+  }[feeSpeedTierForRate(Number(feeRate), networkTransactionFees.fastestFee, networkTransactionFees.mediumFee)];
+
   const stylesHook = StyleSheet.create({
     root: {
       backgroundColor: colors.elevated,
@@ -802,11 +809,12 @@ const SendDetails = () => {
     selectLabel: {
       color: colors.buttonTextColor,
     },
-    fieldInput: { color: colors.foregroundColor },
+    fieldInput: { color: colors.textPrimary },
     scanBtn: { backgroundColor: colors.white, shadowColor: colors.shadowColor, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
     feeSummary: { borderColor: colors.summaryBorder },
     feeSummaryLabel: { color: colors.textSecondary },
     feeSummaryValue: { color: colors.black },
+    feeSummaryValueMeta: { color: colors.amountMeta },
   });
 
   const renderCoinsSelected = () => {
@@ -837,12 +845,13 @@ const SendDetails = () => {
 
   return (
     <SafeArea style={[styles.root, stylesHook.root]}>
-      <View style={styles.body}>
+      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} keyboardShouldPersistTaps="handled">
         <AmountHero
           editable
           amount={displayAmount}
           fiat={fiatEstimate}
           unit={displayUnit}
+          unitMarginBottom={8}
           onToggleUnit={onToggleUnit}
           onChangeAmount={onChangeAmount}
           showHint={isAmountEmpty(recipient?.amount)}
@@ -853,14 +862,17 @@ const SendDetails = () => {
 
         <LabeledField
           label={loc.send.label_address}
+          tinted={!!recipient?.address}
           trailing={
-            <Pressable accessibilityRole="button" onPress={navigateToQRCodeScanner} style={[styles.scanBtn, stylesHook.scanBtn]}>
-              <ScanQRIcon color={colors.brandPrimary} size={20} />
-            </Pressable>
+            !recipient?.address ? (
+              <Pressable accessibilityRole="button" onPress={navigateToQRCodeScanner} style={[styles.scanBtn, stylesHook.scanBtn]}>
+                <ScanQRIcon color={colors.brandPrimary} size={20} />
+              </Pressable>
+            ) : undefined
           }
         >
           <TextInput
-            style={[styles.fieldInput, stylesHook.fieldInput]}
+            style={[styles.fieldInput, stylesHook.fieldInput, styles.addressFieldInput]}
             placeholder={loc.send.paste_or_scan}
             placeholderTextColor={colors.placeholderTextColor}
             value={recipient?.address}
@@ -868,6 +880,8 @@ const SendDetails = () => {
             editable={isEditable}
             autoCapitalize="none"
             autoCorrect={false}
+            multiline
+            underlineColorAndroid="transparent"
             testID="AddressInput"
           />
         </LabeledField>
@@ -880,6 +894,7 @@ const SendDetails = () => {
             value={transactionMemo}
             onChangeText={setTransactionMemo}
             editable={!isLoading}
+            underlineColorAndroid="transparent"
             testID="NoteInput"
           />
         </LabeledField>
@@ -898,24 +913,27 @@ const SendDetails = () => {
               customFee,
             });
           }}
-          disabled={isLoading}
+          disabled={isLoading || !hasFeeEstimate}
           style={[styles.feeSummary, stylesHook.feeSummary]}
         >
-          <View style={styles.feeSummaryTexts}>
+          <View style={[styles.feeSummaryTexts, !hasFeeEstimate && styles.feeSummaryTextsDisabled]}>
             <Text style={[styles.feeSummaryLabel, stylesHook.feeSummaryLabel]}>{loc.send.network_fee}</Text>
             {networkTransactionFeesIsLoading ? (
               <ActivityIndicator style={styles.feeSummaryLoader} />
-            ) : (
+            ) : hasFeeEstimate ? (
               <Text style={[styles.feeSummaryValue, stylesHook.feeSummaryValue]}>
-                {feePrecalc.current && amountSatsNum > 0
-                  ? `${formatFee(feePrecalc.current)} · ${feeRate} ${loc.units.sat_vbyte}`
-                  : loc.send.enter_amount_to_estimate}
+                {formatFee(feePrecalc.current!)}
+                <Text style={[styles.feeSummaryValueMeta, stylesHook.feeSummaryValueMeta]}>
+                  {` · ${feeRate} ${loc.units.sat_vbyte} ≈ ${feeEtaLabel}`}
+                </Text>
               </Text>
+            ) : (
+              <Text style={[styles.feeSummaryValue, stylesHook.feeSummaryValue]}>{loc.send.enter_amount_to_estimate}</Text>
             )}
           </View>
           <ChevronRightIcon color={colors.chevron} />
         </Pressable>
-      </View>
+      </ScrollView>
 
       <DismissKeyboardInputAccessory />
 
@@ -930,6 +948,9 @@ const SendDetails = () => {
           disabledTextColor={colors.white}
           disabled={!isFormValid || isLoading}
           onPress={createTransaction}
+          borderRadius={16}
+          style={styles.nextButton}
+          textStyle={styles.nextButtonText}
         />
       </View>
     </SafeArea>
@@ -959,15 +980,25 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
+  },
+  bodyContent: {
     paddingHorizontal: 24,
     paddingTop: 16,
     gap: 24,
   },
   fieldInput: {
     flex: 1,
+    width: '100%',
     fontFamily: ClashFont.regular,
-    fontSize: 13,
+    fontSize: 14,
+    lineHeight: 20,
     padding: 0,
+  },
+  addressFieldInput: {
+    // grows with wrapped text up to ~5 lines (comfortably fits a full silent-payment
+    // address with no scrolling); caps further growth for pathological pastes instead
+    // of letting the screen layout balloon
+    maxHeight: 100,
   },
   scanBtn: {
     width: 32,
@@ -989,6 +1020,9 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  feeSummaryTextsDisabled: {
+    opacity: 0.5,
+  },
   feeSummaryLoader: {
     alignSelf: 'flex-start',
   },
@@ -1002,8 +1036,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 26,
   },
+  feeSummaryValueMeta: {
+    fontFamily: ClashFont.medium,
+  },
   bottom: {
     paddingHorizontal: 24,
     paddingBottom: 24,
+  },
+  nextButton: {
+    height: 56,
+    minHeight: 56,
+    maxHeight: 56,
+    borderWidth: 0,
+    paddingHorizontal: 0,
+  },
+  nextButtonText: {
+    fontFamily: ClashFont.medium,
+    fontSize: 16,
+    lineHeight: 26,
+    marginHorizontal: 0,
   },
 });

@@ -1,5 +1,16 @@
 import React, { forwardRef } from 'react';
-import { ActivityIndicator, StyleProp, StyleSheet, Text, TextStyle, Pressable, PressableProps, View, ViewStyle, Platform } from 'react-native';
+import {
+  ActivityIndicator,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextStyle,
+  Pressable,
+  PressableProps,
+  View,
+  ViewStyle,
+  Platform,
+} from 'react-native';
 import { Icon } from '@rneui/themed';
 
 import { ClashFont } from '../constants/fonts';

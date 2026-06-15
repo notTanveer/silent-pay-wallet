@@ -60,7 +60,11 @@ const SendDetailsStack = () => {
         component={SelectFeeScreen}
         options={navigationStyle({ title: loc.send.network_fee_header }, withBackChevron)(theme)}
       />
-      <Stack.Screen name="Confirm" component={ConfirmComponent} options={navigationStyle({ title: loc.send.confirm_header }, withBackChevron)(theme)} />
+      <Stack.Screen
+        name="Confirm"
+        component={ConfirmComponent}
+        options={navigationStyle({ title: loc.send.confirm_header }, withBackChevron)(theme)}
+      />
       <Stack.Screen
         name="PsbtWithHardwareWallet"
         component={PsbtWithHardwareWalletComponent}

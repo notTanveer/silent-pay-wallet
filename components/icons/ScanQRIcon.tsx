@@ -1,10 +1,6 @@
 import React from 'react';
 import Svg, { Path } from 'react-native-svg';
-
-interface IconProps {
-  color: string;
-  size?: number;
-}
+import { IconProps } from './types';
 
 const ScanQRIcon: React.FC<IconProps> = ({ color, size = 20 }) => (
   <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">

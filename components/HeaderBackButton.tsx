@@ -9,7 +9,13 @@ interface HeaderBackButtonProps {
 }
 
 const HeaderBackButton: React.FC<HeaderBackButtonProps> = ({ onPress, color }) => (
-  <TouchableOpacity accessibilityRole="button" accessibilityLabel={loc._.back} style={styles.button} onPress={onPress} testID="NavigationBackButton">
+  <TouchableOpacity
+    accessibilityRole="button"
+    accessibilityLabel={loc._.back}
+    style={styles.button}
+    onPress={onPress}
+    testID="NavigationBackButton"
+  >
     <View style={styles.flip}>
       <ChevronRightIcon color={color} size={20} />
     </View>
