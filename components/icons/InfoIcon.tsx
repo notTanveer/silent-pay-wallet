@@ -1,12 +1,8 @@
 import React from 'react';
 import Svg, { Path } from 'react-native-svg';
+import { IconProps } from './types';
 
-interface InfoIconProps {
-  color: string;
-  size?: number;
-}
-
-const InfoIcon: React.FC<InfoIconProps> = ({ color, size = 20 }) => (
+const InfoIcon: React.FC<IconProps> = ({ color, size = 20 }) => (
   <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">
     <Path
       d="M9.99639 18.3268C14.5971 18.3268 18.3268 14.5971 18.3268 9.99639C18.3268 5.39565 14.5971 1.66602 9.99639 1.66602C5.39565 1.66602 1.66602 5.39565 1.66602 9.99639C1.66602 14.5971 5.39565 18.3268 9.99639 18.3268Z"

@@ -93,7 +93,7 @@ const SendDetails = () => {
   // when sending max, amountSats holds the 'MAX' sentinel, so derive the fiat estimate from the full balance
   const amountSatsNum = isMaxActive ? balance : Number(recipient?.amountSats) || 0;
   const fiatEstimate = `≈ ${satoshiToLocalCurrency(amountSatsNum)}`;
-  const isFormValid = !!recipient?.address && !isAmountEmpty(recipient?.amount);
+  const isFormValid = !!recipient?.address;
 
   const onChangeAmount = useCallback(
     (text: string) => {

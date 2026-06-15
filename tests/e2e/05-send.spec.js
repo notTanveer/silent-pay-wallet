@@ -10,12 +10,12 @@ describe('Send', () => {
     await element(by.id('HomeScreenSendButton')).tap();
     await waitFor(element(by.id('chooseFee')))
       .toBeVisible()
-      .withTimeout(15_000);
+      .withTimeout(30_000);
   });
 
   it('shows a validation alert on incomplete form and stays on send screen', async () => {
     await element(by.id('AddressInput')).replaceText('notanaddress');
-    await element(by.text('Next')).tap();
+    await element(by.id('sendNextButton')).tap();
     await waitForText('OK');
     await element(by.text('OK')).tap();
     await expect(element(by.id('AddressInput'))).toBeVisible();

@@ -25,6 +25,11 @@ process.nextTick = function (callback, ...args) {
 
 // global.location = global.location || { port: 80 }
 const isDev = typeof __DEV__ === 'boolean' && __DEV__;
+// Assign through an alias: the react-native-dotenv babel plugin rewrites every
+// `process.env.X` member expression to its literal value, which would turn this
+// assignment target into `"production" = ...` (invalid AST) and break the bundle.
+const processEnv = process.env;
+processEnv.NODE_ENV = isDev ? 'development' : 'production';
 if (typeof localStorage !== 'undefined') {
   localStorage.debug = isDev ? '*' : '';
 }
