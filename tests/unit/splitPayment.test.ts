@@ -5,6 +5,9 @@ import {
   economicFloor,
   FLOOR_K,
   SPEND_INPUT_VBYTES,
+  maxFeasibleCount,
+  pickCount,
+  SPLIT_MAX_OUTPUTS,
 } from '../../helpers/silent-payments/splitPayment';
 
 describe('computeSplitCount', () => {
@@ -98,5 +101,34 @@ describe('economicFloor', () => {
     const jittered = await economicFloor(50, fixedRng(0xff)); // max jitter
     expect(jittered).toBeGreaterThanOrEqual(base);
     expect(jittered - base).toBeLessThanOrEqual(Math.ceil(0.1 * base) + 1);
+  });
+});
+
+describe('maxFeasibleCount', () => {
+  it('caps at SPLIT_MAX_OUTPUTS for large amounts', () => {
+    expect(maxFeasibleCount(10_000_000, 25_000)).toBe(SPLIT_MAX_OUTPUTS);
+  });
+  it('is limited by floor for small amounts', () => {
+    expect(maxFeasibleCount(60_000, 25_000)).toBe(2); // floor(60000/25000) = 2
+  });
+  it('can be below 2 (not splittable) for tiny amounts', () => {
+    expect(maxFeasibleCount(30_000, 25_000)).toBe(1);
+  });
+});
+
+describe('pickCount', () => {
+  it('returns a value within [2, maxFeasible]', async () => {
+    for (let trial = 0; trial < 50; trial++) {
+      const n = await pickCount(450_000, 25_000); // maxFeasible = 5
+      expect(n).toBeGreaterThanOrEqual(2);
+      expect(n).toBeLessThanOrEqual(5);
+    }
+  });
+  it('does not derive the count deterministically from the amount', async () => {
+    const counts = new Set<number>();
+    for (let trial = 0; trial < 50; trial++) {
+      counts.add(await pickCount(1_000_000, 25_000)); // maxFeasible = 5
+    }
+    expect(counts.size).toBeGreaterThan(1); // randomized, not a fixed function of V
   });
 });

@@ -28,6 +28,21 @@ export async function economicFloor(feeRate: number, rng: RandomSource = randomB
   return base + jitter;
 }
 
+// Largest number of outputs that can each meet the floor, capped.
+export function maxFeasibleCount(paymentValue: number, floor: number): number {
+  return Math.min(SPLIT_MAX_OUTPUTS, Math.floor(paymentValue / floor));
+}
+
+// Uniformly random count in [2, maxFeasible]; decoupled from the amount's
+// magnitude. Caller guarantees maxFeasibleCount(...) >= 2.
+export async function pickCount(paymentValue: number, floor: number, rng: RandomSource = randomBytes): Promise<number> {
+  const maxFeasible = maxFeasibleCount(paymentValue, floor);
+  if (maxFeasible <= 2) return 2;
+  const buf = await rng(4);
+  const span = maxFeasible - 2 + 1; // inclusive range size
+  return 2 + (buf.readUInt32BE(0) % span);
+}
+
 export function computeSplitCount(totalSats: number): number {
   if (totalSats < 2 * SPLIT_MIN_OUTPUT_SATS) return 1;
   const raw = Math.round(totalSats / SPLIT_OUTPUT_THRESHOLD_SATS);
