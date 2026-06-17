@@ -1,4 +1,11 @@
-import { computeSplitCount, splitAmount, SPLIT_MIN_OUTPUT_SATS } from '../../helpers/silent-payments/splitPayment';
+import {
+  computeSplitCount,
+  splitAmount,
+  SPLIT_MIN_OUTPUT_SATS,
+  economicFloor,
+  FLOOR_K,
+  SPEND_INPUT_VBYTES,
+} from '../../helpers/silent-payments/splitPayment';
 
 describe('computeSplitCount', () => {
   it('returns 1 for amounts below 50k sats', () => {
@@ -69,5 +76,27 @@ describe('splitAmount', () => {
 
   it('throws when totalSats is too small for n outputs', async () => {
     await expect(splitAmount(30_000, 2)).rejects.toThrow('totalSats too small');
+  });
+});
+
+// deterministic rng: every byte = value (default 0) so jitter is reproducible
+const fixedRng = (value = 0) => async (size: number) => Buffer.alloc(size, value);
+
+describe('economicFloor', () => {
+  it('is at least the absolute minimum at low fee rates', async () => {
+    const floor = await economicFloor(1, fixedRng(0));
+    expect(floor).toBeGreaterThanOrEqual(SPLIT_MIN_OUTPUT_SATS);
+  });
+
+  it('scales with fee rate above the minimum', async () => {
+    const floor = await economicFloor(100, fixedRng(0)); // FLOOR_K * 58 * 100 = 17400... but >= MIN
+    expect(floor).toBeGreaterThanOrEqual(FLOOR_K * SPEND_INPUT_VBYTES * 100);
+  });
+
+  it('adds bounded jitter (<= 10% of base) above the floor', async () => {
+    const base = await economicFloor(50, fixedRng(0));       // jitter byte 0 -> jitter 0
+    const jittered = await economicFloor(50, fixedRng(0xff)); // max jitter
+    expect(jittered).toBeGreaterThanOrEqual(base);
+    expect(jittered - base).toBeLessThanOrEqual(Math.ceil(0.1 * base) + 1);
   });
 });
