@@ -48,3 +48,30 @@ describe('shuffleOutputs', () => {
     expect(reordered).toBe(true);
   });
 });
+
+describe('planSplitTransaction', () => {
+  const SP = 'sp1qexamplerecipientaddressxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+
+  it('payment outputs all carry the sp address and sum to the payment value', async () => {
+    const w = makeWallet();
+    const { outputs } = await (w as any).planSplitTransaction(SP, 500_000, 120_000, 2);
+    const payments = outputs.filter((o: any) => o.address === SP);
+    expect(payments.length).toBeGreaterThanOrEqual(2);
+    expect(payments.reduce((a: number, o: any) => a + o.value, 0)).toBe(500_000);
+  });
+
+  it('change outputs use distinct internal addresses (no reuse)', async () => {
+    const w = makeWallet();
+    const { outputs, changeAddresses } = await (w as any).planSplitTransaction(SP, 300_000, 5_000_000, 2);
+    const changeOuts = outputs.filter((o: any) => o.address !== SP);
+    expect(changeOuts.length).toBe(changeAddresses.length);
+    expect(new Set(changeAddresses).size).toBe(changeAddresses.length);
+  });
+
+  it('returns a single payment output when not splittable', async () => {
+    const w = makeWallet();
+    const { outputs } = await (w as any).planSplitTransaction(SP, 60_000, 0, 500);
+    const payments = outputs.filter((o: any) => o.address === SP);
+    expect(payments).toEqual([{ address: SP, value: 60_000 }]);
+  });
+});

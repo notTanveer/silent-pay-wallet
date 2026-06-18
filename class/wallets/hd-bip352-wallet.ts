@@ -20,8 +20,9 @@ import {
   IDLE_SCAN_STATE,
 } from '../../helpers/silent-payments';
 import { BIP352_ACTIVATION_HEIGHT } from '../../modules/constants';
-import { computeSplitCount, splitAmount } from '../../helpers/silent-payments/splitPayment';
+import { computeSplitCount, splitAmount, planSplitOutputs } from '../../helpers/silent-payments/splitPayment';
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types.ts';
+import { CoinSelectOutput } from 'coinselect';
 import * as bitcoin from 'bitcoinjs-lib';
 import { HDTaprootWallet } from './hd-taproot-wallet.ts';
 import { randomBytes } from '../rng';
@@ -778,6 +779,23 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       [out[i], out[j]] = [out[j], out[i]];
     }
     return out;
+  }
+
+  // Build the blended output set for a split silent payment: payment outputs to
+  // the recipient's sp address plus adaptive, distinct-addressed change outputs,
+  // all shuffled.
+  private async planSplitTransaction(
+    spAddress: string,
+    paymentValue: number,
+    changeValue: number,
+    feeRate: number,
+  ): Promise<{ outputs: CoinSelectOutput[]; changeAddresses: string[] }> {
+    const { paymentAmounts, changeAmounts } = await planSplitOutputs({ paymentValue, changeValue, feeRate });
+    const paymentOutputs: CoinSelectOutput[] = paymentAmounts.map(value => ({ address: spAddress, value }));
+    const changeAddresses = this.getChangeAddresses(changeAmounts.length);
+    const changeOutputs: CoinSelectOutput[] = changeAmounts.map((value, i) => ({ address: changeAddresses[i], value }));
+    const outputs = await this.shuffleOutputs([...paymentOutputs, ...changeOutputs]);
+    return { outputs, changeAddresses };
   }
 
   // @ts-ignore base class returns sync CreateTransactionResult; this wallet's override is intentionally async
