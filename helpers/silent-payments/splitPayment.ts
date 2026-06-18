@@ -170,3 +170,45 @@ export async function planChangeOutputs(params: {
   }
   return [];
 }
+
+// Top-level planner: turns a single payment value + the coin-selected change
+// into a blended set of payment and change amounts.
+export async function planSplitOutputs(params: {
+  paymentValue: number;
+  changeValue: number;
+  feeRate: number;
+  outputVBytes?: number;
+  dustThreshold?: number;
+  rng?: RandomSource;
+}): Promise<{ paymentAmounts: number[]; changeAmounts: number[] }> {
+  const { paymentValue, changeValue, feeRate } = params;
+  const rng = params.rng ?? randomBytes;
+  const outputVBytes = params.outputVBytes ?? OUTPUT_VBYTES;
+  const dustThreshold = params.dustThreshold ?? DEFAULT_DUST_THRESHOLD;
+
+  const floor = await economicFloor(feeRate, rng);
+
+  let paymentAmounts: number[];
+  if (maxFeasibleCount(paymentValue, floor) < 2) {
+    paymentAmounts = [paymentValue]; // too small to split at this fee rate
+  } else {
+    const n = await pickCount(paymentValue, floor, rng);
+    paymentAmounts = await deRound(await logUniformPartition(paymentValue, n, floor, rng), floor, rng);
+  }
+
+  const pMax = Math.max(...paymentAmounts);
+  let changeAmounts = await planChangeOutputs({
+    change: changeValue,
+    pMax,
+    floor,
+    feeRate,
+    paymentCount: paymentAmounts.length,
+    outputVBytes,
+    dustThreshold,
+    rng,
+  });
+  if (changeAmounts.length > 1) {
+    changeAmounts = await deRound(changeAmounts, floor, rng);
+  }
+  return { paymentAmounts, changeAmounts };
+}

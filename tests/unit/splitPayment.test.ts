@@ -12,6 +12,7 @@ import {
   deRound,
   SPLIT_ROUND_MODULUS,
   planChangeOutputs,
+  planSplitOutputs,
 } from '../../helpers/silent-payments/splitPayment';
 
 describe('computeSplitCount', () => {
@@ -217,5 +218,44 @@ describe('planChangeOutputs', () => {
     const out = await planChangeOutputs({ ...common, change, feeRate, pMax: 80_000 });
     const distributed = out.reduce((a, b) => a + b, 0);
     expect(distributed).toBeLessThan(change); // fee for added outputs came out of change
+  });
+});
+
+describe('planSplitOutputs', () => {
+  it('payments always sum to exactly the payment value', async () => {
+    for (let trial = 0; trial < 30; trial++) {
+      const { paymentAmounts } = await planSplitOutputs({
+        paymentValue: 500_000, changeValue: 120_000, feeRate: 5,
+      });
+      expect(paymentAmounts.reduce((a, b) => a + b, 0)).toBe(500_000);
+    }
+  });
+
+  it('does not split when the amount is too small for the fee-relative floor', async () => {
+    // very high fee -> floor large -> maxFeasible < 2 -> single payment output
+    const { paymentAmounts } = await planSplitOutputs({
+      paymentValue: 60_000, changeValue: 0, feeRate: 500,
+    });
+    expect(paymentAmounts).toEqual([60_000]);
+  });
+
+  it('produces blended change within the payment range when change is large', async () => {
+    const { paymentAmounts, changeAmounts } = await planSplitOutputs({
+      paymentValue: 300_000, changeValue: 5_000_000, feeRate: 2,
+    });
+    expect(changeAmounts.length).toBeGreaterThan(1);
+    const pMax = Math.max(...paymentAmounts);
+    for (const c of changeAmounts) expect(c).toBeLessThanOrEqual(pMax * 1.5);
+  });
+
+  it('avoids round payment amounts', async () => {
+    let allClean = true;
+    for (let trial = 0; trial < 30; trial++) {
+      const { paymentAmounts } = await planSplitOutputs({
+        paymentValue: 400_000, changeValue: 90_000, feeRate: 3,
+      });
+      if (paymentAmounts.some(a => a % 1000 === 0)) allClean = false;
+    }
+    expect(allClean).toBe(true);
   });
 });
