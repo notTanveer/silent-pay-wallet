@@ -212,3 +212,13 @@ export async function planSplitOutputs(params: {
   }
   return { paymentAmounts, changeAmounts };
 }
+
+// UI preview helper: the count is randomized and fee-dependent, so the preview
+// shows a range. Uses the base floor without jitter (a deliberate estimate).
+export function estimateSplitRange(paymentValue: number, feeRate: number): { min: number; max: number } {
+  const inputCost = Math.ceil(SPEND_INPUT_VBYTES * Math.max(1, feeRate));
+  const floorEstimate = Math.max(SPLIT_MIN_OUTPUT_SATS, FLOOR_K * inputCost);
+  const maxFeasible = Math.min(SPLIT_MAX_OUTPUTS, Math.floor(paymentValue / floorEstimate));
+  if (maxFeasible < 2) return { min: 1, max: 1 };
+  return { min: 2, max: maxFeasible };
+}

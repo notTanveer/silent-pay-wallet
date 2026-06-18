@@ -13,6 +13,7 @@ import {
   SPLIT_ROUND_MODULUS,
   planChangeOutputs,
   planSplitOutputs,
+  estimateSplitRange,
   SPLIT_SPREAD_RATIO,
 } from '../../helpers/silent-payments/splitPayment';
 
@@ -264,5 +265,14 @@ describe('planSplitOutputs', () => {
       if (paymentAmounts.some(a => a % 1000 === 0)) allClean = false;
     }
     expect(allClean).toBe(true);
+  });
+});
+
+describe('estimateSplitRange', () => {
+  it('returns {min:2, max:maxFeasible} for splittable amounts', () => {
+    expect(estimateSplitRange(450_000, 1)).toEqual({ min: 2, max: 5 });
+  });
+  it('returns {min:1, max:1} when not splittable at this fee rate', () => {
+    expect(estimateSplitRange(30_000, 1)).toEqual({ min: 1, max: 1 });
   });
 });

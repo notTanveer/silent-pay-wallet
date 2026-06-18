@@ -16,4 +16,10 @@ export type {
 } from './types';
 export { IDLE_SCAN_STATE } from './types';
 export { RustTransactionProcessor, createTransactionProcessor } from './RustTransactionProcessor';
-export { computeSplitCount, splitAmount, SPLIT_MIN_OUTPUT_SATS } from './splitPayment';
+export {
+  computeSplitCount,
+  splitAmount,
+  planSplitOutputs,
+  estimateSplitRange,
+  SPLIT_MIN_OUTPUT_SATS,
+} from './splitPayment';
