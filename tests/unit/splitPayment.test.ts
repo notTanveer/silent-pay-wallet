@@ -8,6 +8,7 @@ import {
   maxFeasibleCount,
   pickCount,
   SPLIT_MAX_OUTPUTS,
+  logUniformPartition,
 } from '../../helpers/silent-payments/splitPayment';
 
 describe('computeSplitCount', () => {
@@ -130,5 +131,36 @@ describe('pickCount', () => {
       counts.add(await pickCount(1_000_000, 25_000)); // maxFeasible = 5
     }
     expect(counts.size).toBeGreaterThan(1); // randomized, not a fixed function of V
+  });
+});
+
+describe('logUniformPartition', () => {
+  it('returns exactly n parts summing to total, each >= floor', async () => {
+    for (let trial = 0; trial < 30; trial++) {
+      const parts = await logUniformPartition(500_000, 4, 25_000);
+      expect(parts).toHaveLength(4);
+      expect(parts.reduce((a, b) => a + b, 0)).toBe(500_000);
+      for (const p of parts) expect(p).toBeGreaterThanOrEqual(25_000);
+    }
+  });
+
+  it('returns whole-sat integers', async () => {
+    const parts = await logUniformPartition(123_457, 3, 25_000);
+    for (const p of parts) expect(Number.isInteger(p)).toBe(true);
+  });
+
+  it('spreads amounts (not a tight uniform cluster) across trials', async () => {
+    let sawSpread = false;
+    for (let trial = 0; trial < 30 && !sawSpread; trial++) {
+      const parts = await logUniformPartition(1_000_000, 4, 25_000);
+      const max = Math.max(...parts);
+      const min = Math.min(...parts);
+      if (max / min > 2) sawSpread = true; // log-uniform produces real spread
+    }
+    expect(sawSpread).toBe(true);
+  });
+
+  it('throws when total is too small for n parts above floor', async () => {
+    await expect(logUniformPartition(40_000, 2, 25_000)).rejects.toThrow('too small');
   });
 });

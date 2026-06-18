@@ -76,3 +76,32 @@ export async function splitAmount(totalSats: number, n: number): Promise<number[
 
   return parts;
 }
+
+// Partition `total` into `n` integer parts, each >= floor, where the parts are
+// weighted log-uniformly (weight = exp(u * ln R), u uniform in [0,1)). This
+// spreads amounts across magnitudes instead of clustering around total/n.
+export async function logUniformPartition(
+  total: number,
+  n: number,
+  floor: number,
+  rng: RandomSource = randomBytes,
+): Promise<number[]> {
+  if (n <= 0) throw new Error('n must be at least 1');
+  if (n === 1) return [total];
+  const budget = total - n * floor;
+  if (budget < 0) throw new Error('total too small to split into n parts above the floor');
+
+  const buf = await rng(n * 4 + 1);
+  const lnR = Math.log(SPLIT_SPREAD_RATIO);
+  const weights: number[] = [];
+  for (let i = 0; i < n; i++) {
+    weights.push(Math.exp(floatFromBytes(buf, i * 4) * lnR));
+  }
+  const sumW = weights.reduce((a, b) => a + b, 0);
+  const parts = weights.map(w => floor + Math.floor((w / sumW) * budget));
+
+  // Assign integer rounding slack to a random part so the sum is exact.
+  const slack = total - parts.reduce((a, b) => a + b, 0);
+  parts[buf[n * 4] % n] += slack;
+  return parts;
+}
