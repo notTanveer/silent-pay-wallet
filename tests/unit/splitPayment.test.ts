@@ -11,6 +11,7 @@ import {
   logUniformPartition,
   deRound,
   SPLIT_ROUND_MODULUS,
+  planChangeOutputs,
 } from '../../helpers/silent-payments/splitPayment';
 
 describe('computeSplitCount', () => {
@@ -185,5 +186,36 @@ describe('deRound', () => {
   it('returns single-element arrays unchanged (cannot compensate)', async () => {
     const out = await deRound([100_000], 25_000);
     expect(out).toEqual([100_000]);
+  });
+});
+
+describe('planChangeOutputs', () => {
+  const common = { floor: 25_000, feeRate: 1, paymentCount: 3 };
+
+  it('drops change below dust (returns empty)', async () => {
+    const out = await planChangeOutputs({ ...common, change: 100, pMax: 80_000 });
+    expect(out).toEqual([]);
+  });
+
+  it('returns a single in-distribution change output when change <= pMax', async () => {
+    const out = await planChangeOutputs({ ...common, change: 60_000, pMax: 80_000 });
+    expect(out).toHaveLength(1);
+    // single change is reduced only by the extra-output fee, not partitioned
+    expect(out[0]).toBeLessThanOrEqual(60_000);
+    expect(out[0]).toBeGreaterThan(0);
+  });
+
+  it('splits change into multiple in-range pieces when change is an outlier', async () => {
+    const out = await planChangeOutputs({ ...common, change: 1_000_000, pMax: 80_000 });
+    expect(out.length).toBeGreaterThan(1);
+    for (const v of out) expect(v).toBeGreaterThanOrEqual(25_000);
+  });
+
+  it('accounts for the extra-output fee in the distributed total', async () => {
+    const change = 1_000_000;
+    const feeRate = 10;
+    const out = await planChangeOutputs({ ...common, change, feeRate, pMax: 80_000 });
+    const distributed = out.reduce((a, b) => a + b, 0);
+    expect(distributed).toBeLessThan(change); // fee for added outputs came out of change
   });
 });

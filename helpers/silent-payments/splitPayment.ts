@@ -133,3 +133,40 @@ export async function deRound(amounts: number[], floor: number, rng: RandomSourc
   }
   return out;
 }
+
+// Plan the change outputs so they blend with the payment outputs. A single
+// change output is used when it is <= pMax (already in-distribution); otherwise
+// change is split into in-range pieces. The fee for every output beyond the
+// 2-output coin-selection baseline is subtracted from change first.
+export async function planChangeOutputs(params: {
+  change: number;
+  pMax: number;
+  floor: number;
+  feeRate: number;
+  paymentCount: number;
+  outputVBytes?: number;
+  dustThreshold?: number;
+  rng?: RandomSource;
+}): Promise<number[]> {
+  const { change, pMax, floor, feeRate, paymentCount } = params;
+  const outputVBytes = params.outputVBytes ?? OUTPUT_VBYTES;
+  const dustThreshold = params.dustThreshold ?? DEFAULT_DUST_THRESHOLD;
+  const rng = params.rng ?? randomBytes;
+  if (change <= 0) return [];
+
+  const PRICED_OUTPUTS = 2; // coinselect baseline: 1 payment + 1 change
+  const feePerOutput = Math.ceil(outputVBytes * feeRate);
+
+  // Start from the piece count needed for each piece to be <= pMax, then reduce
+  // if added-output fees would push a piece below dust/floor. Reducing pieces
+  // lowers the fee, so this converges.
+  for (let m = Math.max(1, Math.ceil(change / pMax)); m >= 1; m--) {
+    const extraFee = Math.max(0, paymentCount + m - PRICED_OUTPUTS) * feePerOutput;
+    const distributable = change - extraFee;
+    if (distributable < dustThreshold) continue;
+    if (m === 1) return [distributable];
+    if (distributable < m * floor) continue;
+    return logUniformPartition(distributable, m, floor, rng);
+  }
+  return [];
+}
