@@ -24,6 +24,7 @@ import { computeSplitCount, splitAmount } from '../../helpers/silent-payments/sp
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types.ts';
 import * as bitcoin from 'bitcoinjs-lib';
 import { HDTaprootWallet } from './hd-taproot-wallet.ts';
+import { randomBytes } from '../rng';
 
 const ECPair = ECPairFactory(ecc);
 
@@ -754,6 +755,29 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
   allowSend(): boolean {
     return true;
+  }
+
+  // Derive `count` distinct sequential internal (change) addresses. The first
+  // equals the wallet's current free change address; deriving more than one
+  // advances the free-change pointer so the extra pieces are never reused.
+  private getChangeAddresses(count: number): string[] {
+    const base = this.next_free_change_address_index;
+    const addresses = Array.from({ length: count }, (_, i) => this._getInternalAddressByIndex(base + i));
+    if (count > 1) this.next_free_change_address_index = base + count;
+    return addresses;
+  }
+
+  // Cryptographic Fisher–Yates shuffle so the change output is not positionally
+  // identifiable among the transaction outputs.
+  private async shuffleOutputs<T>(arr: T[]): Promise<T[]> {
+    const out = arr.slice();
+    if (out.length < 2) return out;
+    const buf = await randomBytes(out.length * 4);
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = buf.readUInt32BE(i * 4) % (i + 1);
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
   }
 
   // @ts-ignore base class returns sync CreateTransactionResult; this wallet's override is intentionally async
