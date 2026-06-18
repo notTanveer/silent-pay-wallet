@@ -579,13 +579,19 @@ describe('planSplitOutputs', () => {
     expect(paymentAmounts).toEqual([60_000]);
   });
 
-  it('produces blended change within the payment range when change is large', async () => {
+  it('splits large change into floor-respecting, in-family pieces', async () => {
     const { paymentAmounts, changeAmounts } = await planSplitOutputs({
       paymentValue: 300_000, changeValue: 5_000_000, feeRate: 2,
     });
     expect(changeAmounts.length).toBeGreaterThan(1);
     const pMax = Math.max(...paymentAmounts);
-    for (const c of changeAmounts) expect(c).toBeLessThanOrEqual(pMax * 1.5);
+    for (const c of changeAmounts) {
+      expect(c).toBeGreaterThanOrEqual(SPLIT_MIN_OUTPUT_SATS); // same floor family as payments
+      expect(c).toBeLessThanOrEqual(pMax * (SPLIT_SPREAD_RATIO + 1)); // bounded by the log-uniform spread
+    }
+    const sum = changeAmounts.reduce((a, b) => a + b, 0);
+    expect(sum).toBeLessThanOrEqual(5_000_000); // change pieces never exceed the change total
+    expect(sum).toBeGreaterThan(5_000_000 - 50_000); // only small added-output fees are removed
   });
 
   it('avoids round payment amounts', async () => {
