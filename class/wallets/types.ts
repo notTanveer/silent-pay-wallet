@@ -41,6 +41,7 @@ export type CreateTransactionResult = {
   outputs: CoinSelectOutput[];
   fee: number;
   psbt: bitcoin.Psbt;
+  changeAddresses?: string[];
 };
 
 type TransactionInput = {
