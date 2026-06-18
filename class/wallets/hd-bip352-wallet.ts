@@ -812,16 +812,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     if (targets.length === 0) throw new Error('No destination provided');
     if (utxos.length === 0) throw new Error('No UTXOs provided');
 
-    // Split expansion runs before UTXO categorization so it applies regardless of which case handles the tx.
-    let expandedTargets = targets;
-    if (splitPayment && targets.length === 1 && targets[0].address?.startsWith('sp1') && targets[0].value) {
-      const n = computeSplitCount(targets[0].value);
-      if (n > 1) {
-        const amounts = await splitAmount(targets[0].value, n);
-        expandedTargets = amounts.map(amt => ({ address: targets[0].address!, value: amt }));
-      }
-    }
-
     const spUtxos: SilentPaymentUTXO[] = [];
     const regularUtxos: CreateTransactionUtxo[] = [];
 
@@ -835,12 +825,12 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
     // Case 1: Only SP UTXOs - use SP builder exclusively
     if (spUtxos.length > 0 && regularUtxos.length === 0) {
-      return this.createSPTransaction(spUtxos, expandedTargets, feeRate, changeAddress, sequence, skipSigning);
+      return this.createSPTransaction(spUtxos, targets, feeRate, changeAddress, sequence, skipSigning, splitPayment);
     }
 
     // Case 2: Only regular UTXOs - delegate to parent
     if (spUtxos.length === 0 && regularUtxos.length > 0) {
-      return super.createTransaction(regularUtxos, expandedTargets, feeRate, changeAddress, sequence, skipSigning, masterFingerprint);
+      return super.createTransaction(regularUtxos, targets, feeRate, changeAddress, sequence, skipSigning, masterFingerprint);
     }
 
     // Case 3: Mixed UTXOs - not yet implemented
@@ -854,14 +844,26 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     changeAddress: string,
     sequence: number,
     skipSigning: boolean,
+    splitPayment = false,
   ): Promise<CreateTransactionResult> {
     if (targets.length === 0) throw new Error('No destination provided');
 
-    const { inputs, outputs: rawOutputs, fee } = this.coinselect(spUtxos as CreateTransactionUtxo[], targets, feeRate);
+    const { inputs, outputs: rawOutputs } = this.coinselect(spUtxos as CreateTransactionUtxo[], targets, feeRate);
     const utxoMap = new Map(spUtxos.map(u => [`${u.txid}:${u.vout}`, u]));
 
-    let outputs = rawOutputs;
-    const hasSPOutput = rawOutputs.some(o => o.address?.startsWith('sp1'));
+    let plannedOutputs = rawOutputs;
+    let changeAddresses: string[] = [changeAddress];
+    const canSplit =
+      splitPayment && targets.length === 1 && !!targets[0].address?.startsWith('sp1') && !!targets[0].value;
+    if (canSplit) {
+      const changeValue = rawOutputs.find(o => !o.address)?.value ?? 0;
+      const planned = await this.planSplitTransaction(targets[0].address!, targets[0].value!, changeValue, feeRate);
+      plannedOutputs = planned.outputs;
+      changeAddresses = planned.changeAddresses;
+    }
+
+    let outputs = plannedOutputs;
+    const hasSPOutput = plannedOutputs.some(o => o.address?.startsWith('sp1'));
 
     this.ensurePendingInputsInitialized();
 
@@ -893,8 +895,8 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
           return { txid: input.txid, vout: input.vout, wif, utxoType: 'p2tr' as SPUTXOType };
         });
         const sp = new SilentPayment();
-        const resolved = sp.createTransaction(libUtxos, rawOutputs);
-        outputs = resolved.map((t, i) => ({ ...rawOutputs[i], address: t.address ?? rawOutputs[i].address }));
+        const resolved = sp.createTransaction(libUtxos, plannedOutputs);
+        outputs = resolved.map((t, i) => ({ ...plannedOutputs[i], address: t.address ?? plannedOutputs[i].address }));
       }
 
       const psbt = new bitcoin.Psbt();
@@ -957,6 +959,10 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
         tx = psbt.extractTransaction();
       }
 
+      const totalIn = inputs.reduce((sum, i) => sum + i.value, 0);
+      const totalOut = outputs.reduce((sum, o) => sum + o.value, 0);
+      const recomputedFee = totalIn - totalOut;
+
       return {
         tx,
         psbt,
@@ -970,7 +976,8 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
           address: o.address || changeAddress,
           value: o.value,
         })),
-        fee,
+        fee: recomputedFee,
+        changeAddresses,
       };
     } catch (error) {
       // If transaction creation fails, release the reserved UTXOs
