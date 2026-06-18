@@ -9,6 +9,8 @@ import {
   pickCount,
   SPLIT_MAX_OUTPUTS,
   logUniformPartition,
+  deRound,
+  SPLIT_ROUND_MODULUS,
 } from '../../helpers/silent-payments/splitPayment';
 
 describe('computeSplitCount', () => {
@@ -162,5 +164,26 @@ describe('logUniformPartition', () => {
 
   it('throws when total is too small for n parts above floor', async () => {
     await expect(logUniformPartition(40_000, 2, 25_000)).rejects.toThrow('too small');
+  });
+});
+
+describe('deRound', () => {
+  it('removes round values while preserving the exact sum', async () => {
+    const input = [100_000, 73_321]; // first is round (divisible by 1000)
+    const out = await deRound(input, 25_000);
+    expect(out.reduce((a, b) => a + b, 0)).toBe(173_321);
+    expect(out[0] % SPLIT_ROUND_MODULUS).not.toBe(0);
+  });
+
+  it('keeps every element >= floor', async () => {
+    const input = [50_000, 50_000, 50_000];
+    const out = await deRound(input, 25_000);
+    for (const v of out) expect(v).toBeGreaterThanOrEqual(25_000);
+    expect(out.reduce((a, b) => a + b, 0)).toBe(150_000);
+  });
+
+  it('returns single-element arrays unchanged (cannot compensate)', async () => {
+    const out = await deRound([100_000], 25_000);
+    expect(out).toEqual([100_000]);
   });
 });

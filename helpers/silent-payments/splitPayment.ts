@@ -105,3 +105,31 @@ export async function logUniformPartition(
   parts[buf[n * 4] % n] += slack;
   return parts;
 }
+
+// Nudge any round amount (divisible by SPLIT_ROUND_MODULUS) by a small delta,
+// compensating on another element so the array sum is preserved. Only works on
+// arrays of length >= 2; single elements are returned unchanged.
+export async function deRound(amounts: number[], floor: number, rng: RandomSource = randomBytes): Promise<number[]> {
+  const out = amounts.slice();
+  if (out.length < 2) return out;
+
+  for (let i = 0; i < out.length; i++) {
+    if (out[i] % SPLIT_ROUND_MODULUS !== 0) continue;
+    const buf = await rng(2);
+    const delta = 1 + (buf.readUInt8(0) % (SPLIT_ROUND_MODULUS - 1));
+    // find a partner != i that stays >= floor after losing delta
+    const start = buf.readUInt8(1) % out.length;
+    let partner = -1;
+    for (let k = 0; k < out.length; k++) {
+      const j = (start + k) % out.length;
+      if (j !== i && out[j] - delta >= floor) {
+        partner = j;
+        break;
+      }
+    }
+    if (partner === -1) continue; // no room to compensate; leave as-is
+    out[i] += delta;
+    out[partner] -= delta;
+  }
+  return out;
+}
