@@ -10,7 +10,7 @@ This wallet is built using the following sister repositories:
 
 - **[BlueWallet](https://github.com/BlueWallet/BlueWallet)** - Original codebase was forked from BlueWallet
 - **[silent-pay](https://github.com/Bitshala-Incubator/silent-pay)** - Core Silent Payments library implementing BIP-352 protocol
-- **[silent-pay-indexer](https://github.com/Bitshala-Incubator/silent-pay-indexer)** - Indexer service for efficient Silent Payment transaction scanning
+- **[shroud-indexer](https://github.com/CypherCommons/shroud-indexer)** - Indexer service for efficient Silent Payment transaction scanning
 
 ## Getting Started
 
@@ -33,8 +33,8 @@ node --version && npm --version
 * In your console:
 
 ```
-git clone https://github.com/Bitshala-Incubator/silent-pay-wallet.git
-cd silent-pay-wallet
+git clone https://github.com/CypherCommons/shroud.git
+cd shroud
 npm install
 ```
 
