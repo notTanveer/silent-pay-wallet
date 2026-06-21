@@ -28,7 +28,7 @@ import { useTheme } from '../../components/themes';
 import { Action } from '../../components/types';
 import { ClashFont } from '../../constants/fonts';
 import { isAmountEmpty, sanitizeAmountInput, displayAmountForUnit } from '../../helpers/send/format';
-import { computeSplitCount, SPLIT_MIN_OUTPUT_SATS } from '../../helpers/silent-payments/splitPayment';
+import { estimateSplitRange, SPLIT_MIN_OUTPUT_SATS } from '../../helpers/silent-payments/splitPayment';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useKeyboard } from '../../hooks/useKeyboard';
@@ -80,7 +80,12 @@ const SendDetails = () => {
   const [networkTransactionFeesIsLoading, setNetworkTransactionFeesIsLoading] = useState(false);
   const [customFee, setCustomFee] = useState<string | null>(null);
   const [selectedPresetFeeRate, setSelectedPresetFeeRate] = useState<string | null>(null);
-  const [feePrecalc, setFeePrecalc] = useState<IFee>({ current: null, slowFee: null, mediumFee: null, fastestFee: null });
+  const [feePrecalc, setFeePrecalc] = useState<IFee>({
+    current: null,
+    slowFee: null,
+    mediumFee: null,
+    fastestFee: null,
+  });
   const [changeAddress, setChangeAddress] = useState<string | null>(null);
   const [dumb, setDumb] = useState(false);
   const [displayUnit, setDisplayUnit] = useState<BitcoinUnit>(BitcoinUnit.BTC);
@@ -102,8 +107,6 @@ const SendDetails = () => {
     !isMaxActive &&
     SilentPayment.isPaymentCodeValid(recipient?.address ?? '') &&
     Number(recipient?.amountSats) >= 2 * SPLIT_MIN_OUTPUT_SATS;
-  const splitCount = isSplitEligible ? computeSplitCount(Number(recipient?.amountSats)) : 0;
-
   // Reset split when the recipient no longer qualifies (amount dropped, address changed to non-SP, etc.)
   useEffect(() => {
     if (!isSplitEligible) setIsSplitEnabled(false);
@@ -188,6 +191,8 @@ const SendDetails = () => {
     return String(networkTransactionFees.fastestFee);
   }, [customFee, selectedPresetFeeRate, feePrecalc, networkTransactionFees]);
 
+  const splitRange = isSplitEligible ? estimateSplitRange(Number(recipient?.amountSats), Number(feeRate) || 1) : { min: 0, max: 0 };
+
   useEffect(() => {
     // decode route params
     const currentAddress = addresses[0];
@@ -210,7 +215,16 @@ const SendDetails = () => {
             addrs[0] = currentAddress;
             return [...addrs];
           } else {
-            return [...addrs, { address, amount, amountSats: btcToSatoshi(amount!), key: String(Math.random()), unit: amountUnit }];
+            return [
+              ...addrs,
+              {
+                address,
+                amount,
+                amountSats: btcToSatoshi(amount!),
+                key: String(Math.random()),
+                unit: amountUnit,
+              },
+            ];
           }
         });
 
@@ -220,7 +234,10 @@ const SendDetails = () => {
         setParams({ amountUnit: BitcoinUnit.BTC });
       } catch {
         triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
-        presentAlert({ title: loc.errors.error, message: loc.send.details_error_decode });
+        presentAlert({
+          title: loc.errors.error,
+          message: loc.send.details_error_decode,
+        });
       }
     } else if (routeParams.address) {
       // screen was called with `address` parameter, so we just prefill it
@@ -252,7 +269,10 @@ const SendDetails = () => {
       });
 
       // @ts-ignore: Fix later
-      setParams(prevParams => ({ ...prevParams, addRecipientParams: undefined }));
+      setParams(prevParams => ({
+        ...prevParams,
+        addRecipientParams: undefined,
+      }));
     } else {
       setAddresses([{ address: '', key: String(Math.random()), unit: amountUnit }]);
     }
@@ -265,13 +285,19 @@ const SendDetails = () => {
     const suitable = wallets.filter(w => w.chain === Chain.ONCHAIN && w.allowSend());
     if (suitable.length === 0) {
       triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
-      presentAlert({ title: loc.errors.error, message: loc.send.details_wallet_before_tx });
+      presentAlert({
+        title: loc.errors.error,
+        message: loc.send.details_wallet_before_tx,
+      });
       navigation.goBack();
       return;
     }
     const newWallet = (routeParams.walletID && wallets.find(w => w.getID() === routeParams.walletID)) || suitable[0];
     setWallet(newWallet);
-    setParams({ feeUnit: newWallet.getPreferredBalanceUnit(), amountUnit: newWallet.getPreferredBalanceUnit() });
+    setParams({
+      feeUnit: newWallet.getPreferredBalanceUnit(),
+      amountUnit: newWallet.getPreferredBalanceUnit(),
+    });
 
     // we are ready!
     setIsLoading(false);
@@ -357,14 +383,20 @@ const SendDetails = () => {
         targets.push({ address: transaction.address, value });
       } else if (transaction.amount) {
         if (btcToSatoshi(transaction.amount) > 0) {
-          targets.push({ address: transaction.address, value: btcToSatoshi(transaction.amount) });
+          targets.push({
+            address: transaction.address,
+            value: btcToSatoshi(transaction.amount),
+          });
         }
       }
     }
 
     // if targets is empty, insert dust
     if (targets.length === 0) {
-      targets.push({ address: '36JxaUrpDzkEerkTf1FzwHNE1Hb7cCjgJV', value: 546 });
+      targets.push({
+        address: '36JxaUrpDzkEerkTf1FzwHNE1Hb7cCjgJV',
+        value: 546,
+      });
     }
 
     // replace wrong addresses with dump
@@ -444,7 +476,10 @@ const SendDetails = () => {
         // user probably scanned PSBT and got an object instead of string..?
         setIsLoading(false);
         triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
-        return presentAlert({ title: loc.errors.error, message: loc.send.details_address_field_is_not_valid });
+        return presentAlert({
+          title: loc.errors.error,
+          message: loc.send.details_address_field_is_not_valid,
+        });
       }
 
       const dataWithoutSchema = data.replace('bitcoin:', '').replace('BITCOIN:', '');
@@ -483,7 +518,10 @@ const SendDetails = () => {
           addrs[0].unit = BitcoinUnit.BTC;
           return [...addrs];
         });
-        setParams({ transactionMemo: options.label || '', amountUnit: BitcoinUnit.BTC }); // there used to be `options.message` here as well. bug?
+        setParams({
+          transactionMemo: options.label || '',
+          amountUnit: BitcoinUnit.BTC,
+        }); // there used to be `options.message` here as well. bug?
       }
 
       setIsLoading(false);
@@ -562,13 +600,16 @@ const SendDetails = () => {
         targets.push({ address: transaction.address, value });
       } else if (transaction.amount) {
         if (btcToSatoshi(transaction.amount) > 0) {
-          targets.push({ address: transaction.address, value: btcToSatoshi(transaction.amount) });
+          targets.push({
+            address: transaction.address,
+            value: btcToSatoshi(transaction.amount),
+          });
         }
       }
     }
 
     // without forcing `HDSegwitBech32Wallet` i had a weird ts error, complaining about last argument (fp)
-    const { tx, outputs, psbt, fee } = await (wallet as HDSilentPaymentsWallet)?.createTransaction(
+    const { tx, outputs, psbt, fee, changeAddresses } = await (wallet as HDSilentPaymentsWallet)?.createTransaction(
       lutxo,
       targets,
       requestedSatPerByte,
@@ -594,7 +635,8 @@ const SendDetails = () => {
     };
     await saveToDisk();
 
-    let recipients = outputs.filter(({ address }) => address !== change);
+    const changeSet = new Set(changeAddresses ?? [change]);
+    let recipients = outputs.filter(({ address }) => !address || !changeSet.has(address));
 
     if (recipients.length === 0) {
       // special case. maybe the only destination in this transaction is our own change address..?
@@ -653,7 +695,12 @@ const SendDetails = () => {
     // toggle off if we're already sending max
     if (recipient?.amount === BitcoinUnit.MAX) {
       setAddresses(addrs => {
-        const a = { ...addrs[0], amount: '', amountSats: 0, unit: BitcoinUnit.BTC };
+        const a = {
+          ...addrs[0],
+          amount: '',
+          amountSats: 0,
+          unit: BitcoinUnit.BTC,
+        };
         return [a, ...addrs.slice(1)];
       });
       return;
@@ -662,7 +709,12 @@ const SendDetails = () => {
     const applyMax = () => {
       Keyboard.dismiss();
       setAddresses(addrs => {
-        const a = { ...addrs[0], amount: BitcoinUnit.MAX, amountSats: BitcoinUnit.MAX, unit: BitcoinUnit.BTC };
+        const a = {
+          ...addrs[0],
+          amount: BitcoinUnit.MAX,
+          amountSats: BitcoinUnit.MAX,
+          unit: BitcoinUnit.BTC,
+        };
         return [a, ...addrs.slice(1)];
       });
     };
@@ -776,19 +828,31 @@ const SendDetails = () => {
       color: colors.buttonTextColor,
     },
     fieldInput: { color: colors.foregroundColor },
-    scanBtn: { backgroundColor: colors.white, shadowColor: colors.shadowColor, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
+    scanBtn: {
+      backgroundColor: colors.white,
+      shadowColor: colors.shadowColor,
+      shadowOpacity: 0.1,
+      shadowRadius: 3,
+      elevation: 2,
+    },
     feeSummary: { borderColor: colors.summaryBorder },
     feeSummaryLabel: { color: colors.textSecondary },
     feeSummaryValue: { color: colors.black },
-    splitCard: { borderColor: isSplitEnabled ? colors.brandPrimary : colors.summaryBorder },
-    splitToggleTrack: { backgroundColor: isSplitEnabled ? colors.brandPrimary : colors.chevron },
+    splitCard: {
+      borderColor: isSplitEnabled ? colors.brandPrimary : colors.summaryBorder,
+    },
+    splitToggleTrack: {
+      backgroundColor: isSplitEnabled ? colors.brandPrimary : colors.chevron,
+    },
     splitCardSubtitle: { color: colors.textSecondary },
-    splitInfoBox: { backgroundColor: colors.surfaceCaution, borderColor: colors.divider },
+    splitInfoBox: {
+      backgroundColor: colors.surfaceCaution,
+      borderColor: colors.divider,
+    },
     splitInfoText: { color: colors.textPrimary },
     splitPreviewSection: { backgroundColor: colors.elevated },
     splitPreviewLabel: { color: colors.textSecondary },
     splitPreviewAmount: { color: colors.textPrimary },
-    splitPreviewDivider: { backgroundColor: colors.divider },
     splitFeeIncreaseRow: { backgroundColor: colors.elevated },
     splitFeeIncreaseLabel: { color: colors.textPrimary },
     splitFeeIncreaseValue: { color: colors.brandPrimary },
@@ -927,23 +991,21 @@ const SendDetails = () => {
               </View>
             </View>
 
-            {isSplitEnabled && splitCount > 1 && (
+            {isSplitEnabled && splitRange.max > 1 && (
               <View style={[styles.splitPreviewSection, stylesHook.splitPreviewSection]}>
-                {Array.from({ length: splitCount }, (_, i) => (
-                  <React.Fragment key={i}>
-                    {i > 0 && <View style={[styles.splitPreviewDivider, stylesHook.splitPreviewDivider]} />}
-                    <View style={styles.splitPreviewRow}>
-                      <Text style={[styles.splitPreviewLabel, stylesHook.splitPreviewLabel]}>{`Output ${i + 1}`}</Text>
-                      <Text style={[styles.splitPreviewAmount, stylesHook.splitPreviewAmount]}>
-                        {`≈ ${satoshiToBTC(Math.floor(Number(recipient?.amountSats) / splitCount))} ${loc.units[BitcoinUnit.BTC]}`}
-                      </Text>
-                    </View>
-                  </React.Fragment>
-                ))}
+                <View style={styles.splitPreviewRow}>
+                  <Text style={[styles.splitPreviewLabel, stylesHook.splitPreviewLabel]}>{loc.send.split_payment}</Text>
+                  <Text style={[styles.splitPreviewAmount, stylesHook.splitPreviewAmount]}>
+                    {loc.formatString(loc.send.split_payment_range, {
+                      min: splitRange.min,
+                      max: splitRange.max,
+                    })}
+                  </Text>
+                </View>
                 <View style={[styles.splitFeeIncreaseRow, stylesHook.splitFeeIncreaseRow]}>
                   <Text style={[styles.splitFeeIncreaseLabel, stylesHook.splitFeeIncreaseLabel]}>{loc.send.fee_increase}</Text>
                   <Text style={[styles.splitFeeIncreaseValue, stylesHook.splitFeeIncreaseValue]}>
-                    {`≈ +${satoshiToBTC(Math.round(Number(feeRate) * 43 * (splitCount - 1)))} ${loc.units[BitcoinUnit.BTC]}`}
+                    {`≈ +${satoshiToBTC(Math.round(Number(feeRate) * 43 * (splitRange.max - 1)))} ${loc.units[BitcoinUnit.BTC]}`}
                   </Text>
                 </View>
               </View>
@@ -1142,10 +1204,6 @@ const styles = StyleSheet.create({
     fontFamily: ClashFont.medium,
     fontSize: 12,
     lineHeight: 26,
-  },
-  splitPreviewDivider: {
-    height: StyleSheet.hairlineWidth,
-    marginHorizontal: 8,
   },
   splitFeeIncreaseRow: {
     flexDirection: 'row',

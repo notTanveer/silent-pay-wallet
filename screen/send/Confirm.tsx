@@ -59,13 +59,13 @@ const reducer = (state: State, action: Action): State => {
 type ConfirmRouteProp = RouteProp<SendDetailsStackParamList, 'Confirm'>;
 type ConfirmNavigationProp = NativeStackNavigationProp<SendDetailsStackParamList, 'Confirm'>;
 
-const ConfirmDetailRow: React.FC<{ label: string; value: string; mono?: boolean; onCopy?: () => void; copied?: boolean }> = ({
-  label,
-  value,
-  mono,
-  onCopy,
-  copied,
-}) => {
+const ConfirmDetailRow: React.FC<{
+  label: string;
+  value: string;
+  mono?: boolean;
+  onCopy?: () => void;
+  copied?: boolean;
+}> = ({ label, value, mono, onCopy, copied }) => {
   const { colors } = useTheme();
   const stylesHook = StyleSheet.create({
     label: { color: colors.textPrimary },
@@ -229,7 +229,9 @@ const Confirm: React.FC = () => {
         {isSplit ? (
           <>
             <Text style={[styles.splitSectionTitle, stylesHook.splitSectionTitle]}>
-              {loc.formatString(loc.send.split_into_outputs, { count: splitOutputCount ?? recipients.length })}
+              {loc.formatString(loc.send.split_into_outputs, {
+                count: splitOutputCount ?? recipients.length,
+              })}
             </Text>
 
             <View style={styles.splitOutputsCard}>

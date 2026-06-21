@@ -20,7 +20,7 @@ import {
   IDLE_SCAN_STATE,
 } from '../../helpers/silent-payments';
 import { BIP352_ACTIVATION_HEIGHT } from '../../modules/constants';
-import { computeSplitCount, splitAmount, planSplitOutputs } from '../../helpers/silent-payments/splitPayment';
+import { planSplitOutputs } from '../../helpers/silent-payments/splitPayment';
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types.ts';
 import { CoinSelectOutput } from 'coinselect';
 import * as bitcoin from 'bitcoinjs-lib';
@@ -115,7 +115,12 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
   }
 
   private _emitScanState(status: ScanStatus, overrides?: Partial<ScanStateInfo>): void {
-    this._scanState = { ...this._scanState, status, ...overrides, lastScannedBlock: this.lastScannedBlock };
+    this._scanState = {
+      ...this._scanState,
+      status,
+      ...overrides,
+      lastScannedBlock: this.lastScannedBlock,
+    };
     this._onScanStateChangeCallback?.(this._scanState);
   }
 
@@ -454,7 +459,13 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
         return 0;
       }
 
-      this._emitScanState('scanning', { startedAt: this._scanStartTime, progress: null, eta: null, etaComputedAt: null, error: null });
+      this._emitScanState('scanning', {
+        startedAt: this._scanStartTime,
+        progress: null,
+        eta: null,
+        etaComputedAt: null,
+        error: null,
+      });
 
       let totalUTXOsAdded = 0;
 
@@ -462,7 +473,10 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
         await this._waitIfPaused();
         if (this.activeScanPromise === null || this.cancelScanCallbackScan) return;
 
-        this._scanSamples.push({ t: Date.now(), percent: progress.percentComplete });
+        this._scanSamples.push({
+          t: Date.now(),
+          percent: progress.percentComplete,
+        });
         if (this._scanSamples.length > SCAN_ETA_ROLLING_WINDOW) {
           this._scanSamples.shift();
         }
@@ -535,17 +549,26 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       }
 
       if (error.message?.includes('not initialized')) {
-        this._emitScanState('error', { error: 'Silent Payment Indexer not initialized.' });
+        this._emitScanState('error', {
+          error: 'Silent Payment Indexer not initialized.',
+        });
         throw new Error('Silent Payment Indexer not initialized. Please configure the indexer first.');
       }
 
       console.error('[SP] Scan error:', error);
-      this._emitScanState('error', { error: error.message ?? 'Unknown scan error' });
+      this._emitScanState('error', {
+        error: error.message ?? 'Unknown scan error',
+      });
       throw error;
     }
   }
 
-  async scanByTxid(txid: string): Promise<{ found: boolean; utxosFound: number; blockHeight: number; tipHeight: number }> {
+  async scanByTxid(txid: string): Promise<{
+    found: boolean;
+    utxosFound: number;
+    blockHeight: number;
+    tipHeight: number;
+  }> {
     const indexer = getDefaultIndexer();
     const [response, tipResponse] = await Promise.all([indexer.getTransactionByTxid(txid), indexer.getLatestBlockHeight()]);
     const tx = response.transaction;
@@ -790,10 +813,20 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     changeValue: number,
     feeRate: number,
   ): Promise<{ outputs: CoinSelectOutput[]; changeAddresses: string[] }> {
-    const { paymentAmounts, changeAmounts } = await planSplitOutputs({ paymentValue, changeValue, feeRate });
-    const paymentOutputs: CoinSelectOutput[] = paymentAmounts.map(value => ({ address: spAddress, value }));
+    const { paymentAmounts, changeAmounts } = await planSplitOutputs({
+      paymentValue,
+      changeValue,
+      feeRate,
+    });
+    const paymentOutputs: CoinSelectOutput[] = paymentAmounts.map(value => ({
+      address: spAddress,
+      value,
+    }));
     const changeAddresses = this.getChangeAddresses(changeAmounts.length);
-    const changeOutputs: CoinSelectOutput[] = changeAmounts.map((value, i) => ({ address: changeAddresses[i], value }));
+    const changeOutputs: CoinSelectOutput[] = changeAmounts.map((value, i) => ({
+      address: changeAddresses[i],
+      value,
+    }));
     const outputs = await this.shuffleOutputs([...paymentOutputs, ...changeOutputs]);
     return { outputs, changeAddresses };
   }
@@ -853,15 +886,13 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
     let plannedOutputs = rawOutputs;
     let changeAddresses: string[] = [changeAddress];
-    const canSplit =
-      splitPayment && targets.length === 1 && !!targets[0].address?.startsWith('sp1') && !!targets[0].value;
+    const canSplit = splitPayment && targets.length === 1 && !!targets[0].address?.startsWith('sp1') && !!targets[0].value;
     if (canSplit) {
       const changeValue = rawOutputs.find(o => !o.address)?.value ?? 0;
       const planned = await this.planSplitTransaction(targets[0].address!, targets[0].value!, changeValue, feeRate);
       plannedOutputs = planned.outputs;
       changeAddresses = planned.changeAddresses;
     }
-
     let outputs = plannedOutputs;
     const hasSPOutput = plannedOutputs.some(o => o.address?.startsWith('sp1'));
 
@@ -892,11 +923,19 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
         const libUtxos: SPLibUTXO[] = inputs.map(input => {
           const key = `${input.txid}:${input.vout}`;
           const wif = ECPair.fromPrivateKey(Buffer.from(tweakedPrivKeys.get(key)!), { compressed: true }).toWIF();
-          return { txid: input.txid, vout: input.vout, wif, utxoType: 'p2tr' as SPUTXOType };
+          return {
+            txid: input.txid,
+            vout: input.vout,
+            wif,
+            utxoType: 'p2tr' as SPUTXOType,
+          };
         });
         const sp = new SilentPayment();
         const resolved = sp.createTransaction(libUtxos, plannedOutputs);
-        outputs = resolved.map((t, i) => ({ ...plannedOutputs[i], address: t.address ?? plannedOutputs[i].address }));
+        outputs = resolved.map((t, i) => ({
+          ...plannedOutputs[i],
+          address: t.address ?? plannedOutputs[i].address,
+        }));
       }
 
       const psbt = new bitcoin.Psbt();

@@ -152,6 +152,7 @@
         "split_payment_subtitle": "Multiple outputs, Same total amount sent",
         "split_payment_info": "Your payment will be sent across multiple outputs to different derived addresses. The recipient still receives the total bitcoin sent.",
         "split_into_outputs": "Split into {{count}} payment outputs",
+        "split_payment_range": "≈ {{min}}–{{max}} outputs",
         "recipients_sp_address": "Recipient's SP address",
         "fee_increase": "Fee increase",
         "label_address": "Address",
