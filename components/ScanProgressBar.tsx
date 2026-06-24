@@ -123,7 +123,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginHorizontal: 16,
     marginVertical: 8,
     height: 50,
     paddingLeft: 14,

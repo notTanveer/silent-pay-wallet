@@ -7,6 +7,7 @@ import SafeArea from '../components/SafeArea';
 import { BiometricType, unlockWithBiometrics, useBiometrics } from '../hooks/useBiometrics';
 import loc from '../loc';
 import { useStorage } from '../hooks/context/useStorage';
+import { useTheme } from '../components/themes';
 
 enum AuthType {
   Encrypted,
@@ -50,6 +51,7 @@ function reducer(state: State, action: Action): State {
 }
 
 const UnlockWith: React.FC = () => {
+  const { colors } = useTheme();
   const [state, dispatch] = useReducer(reducer, initialState);
   const isUnlockingWallets = useRef(false);
   const { setWalletsInitialized, isStorageEncrypted, startAndDecrypt } = useStorage();
@@ -130,7 +132,7 @@ const UnlockWith: React.FC = () => {
 
   const renderUnlockOptions = () => {
     if (state.isAuthenticating) {
-      return <ActivityIndicator />;
+      return <ActivityIndicator color={colors.primary} />;
     } else {
       switch (state.auth.type) {
         case AuthType.Biometrics:
