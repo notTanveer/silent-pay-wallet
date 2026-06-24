@@ -299,7 +299,7 @@
         "no_transactions_title": "No transactions yet",
         "no_transactions_subtitle": "Share your silent payment address to receive your first private payment.",
         "share_address": "Share your Address",
-        "zero_balance_toast_title": "You need bitcoin to Send",
+        "zero_balance_toast_title": "You need bitcoin to send",
         "zero_balance_toast_subtitle": "Receive your first payment to get started",
         "request_button": "Request",
         "pay_button": "Pay",

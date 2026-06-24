@@ -453,7 +453,9 @@ const WalletsList: React.FC = () => {
       <View style={[styles.walletSection, stylesHook.walletContainer]}>
         <TouchableOpacity onPress={changeWalletBalanceUnit} style={styles.balanceHeader}>
           <View style={styles.balanceRow}>
-            <Text style={[styles.balanceNumber, stylesHook.foregroundText]} adjustsFontSizeToFit numberOfLines={1}>{displayNum}</Text>
+            <Text style={[styles.balanceNumber, stylesHook.foregroundText]} adjustsFontSizeToFit numberOfLines={1}>
+              {displayNum}
+            </Text>
             <Text style={[styles.balanceUnit, stylesHook.alternativeText]}>{preferredUnit}</Text>
           </View>
           <Text style={[styles.balanceFiat, stylesHook.alternativeText]}>{fiatLine}</Text>
@@ -618,7 +620,7 @@ const WalletsList: React.FC = () => {
       />
       <Modal transparent visible={showZeroBalanceToast} statusBarTranslucent animationType="none" onRequestClose={dismissToast}>
         <View style={styles.toastModalOverlay} pointerEvents="box-none">
-          <Animated.View style={[styles.zeroBalanceToast, stylesHook.cardStyle, { opacity: toastOpacity }]}>
+          <Animated.View testID="ZeroBalanceToast" style={[styles.zeroBalanceToast, stylesHook.cardStyle, { opacity: toastOpacity }]}>
             <View style={styles.zeroBalanceToastText}>
               <Text style={[styles.zeroBalanceToastTitle, stylesHook.foregroundText]}>{loc.wallets.zero_balance_toast_title}</Text>
               <Text style={[styles.zeroBalanceToastSubtitle, stylesHook.alternativeText]}>{loc.wallets.zero_balance_toast_subtitle}</Text>

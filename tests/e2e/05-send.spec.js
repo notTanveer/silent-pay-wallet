@@ -1,4 +1,4 @@
-import { helperCreateWallet, launchAppForE2E, waitForText } from './helperz';
+import { dismissBackupReminderIfPresent, helperCreateWallet, launchAppForE2E } from './helperz';
 
 describe('Send', () => {
   beforeAll(async () => {
@@ -6,18 +6,25 @@ describe('Send', () => {
     await helperCreateWallet();
   });
 
-  it('navigates from home to the Send screen', async () => {
+  it('shows zero-balance toast when tapping Send with no funds', async () => {
     await element(by.id('HomeScreenSendButton')).tap();
-    await waitFor(element(by.id('chooseFee')))
+    await waitFor(element(by.id('ZeroBalanceToast')))
       .toBeVisible()
-      .withTimeout(15_000);
+      .withTimeout(5_000);
   });
 
-  it('shows a validation alert on incomplete form and stays on send screen', async () => {
-    await element(by.id('AddressInput')).replaceText('notanaddress');
-    await element(by.text('Next')).tap();
-    await waitForText('OK');
-    await element(by.text('OK')).tap();
-    await expect(element(by.id('AddressInput'))).toBeVisible();
+  it('navigates to Receive screen via toast Request button', async () => {
+    await waitFor(element(by.id('ZeroBalanceToastRequestButton')))
+      .not.toExist()
+      .withTimeout(10_000);
+    await element(by.id('HomeScreenSendButton')).tap();
+    await waitFor(element(by.id('ZeroBalanceToastRequestButton')))
+      .toBeVisible()
+      .withTimeout(5_000);
+    await element(by.id('ZeroBalanceToastRequestButton')).tap();
+    await dismissBackupReminderIfPresent();
+    await waitFor(element(by.id('ReceiveDetailsScrollView')))
+      .toBeVisible()
+      .withTimeout(15_000);
   });
 });
