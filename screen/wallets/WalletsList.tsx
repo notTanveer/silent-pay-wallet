@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useReducer, useRef, useMemo } from 'react';
+import React, { useCallback, useEffect, useReducer, useRef, useMemo, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import useAppState from '../../hooks/useAppState';
 import ScanProgressBar from '../../components/ScanProgressBar';
 import { useScannableWallet } from '../../hooks/useScannableWallet';
-import { Alert, findNodeHandle, InteractionManager, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Animated, InteractionManager, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import A from '../../modules/analytics';
 import { getClipboardContent } from '../../modules/clipboard';
 import { isDesktop } from '../../modules/environment';
@@ -12,11 +12,10 @@ import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/haptic
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import { ExtendedTransaction, Transaction, TWallet } from '../../class/wallets/types';
 import presentAlert from '../../components/Alert';
-import { FButton, FContainer } from '../../components/FloatButtons';
 import { useTheme } from '../../components/themes';
 import { TransactionListItem } from '../../components/TransactionListItem';
 import { useSizeClass, SizeClass } from '../../modules/sizeClass';
-import loc, { formatBalance } from '../../loc';
+import loc, { formatBalanceWithoutSuffix } from '../../loc';
 import { BitcoinUnit } from '../../models/bitcoinUnits';
 import ActionSheet from '../ActionSheet';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -26,7 +25,14 @@ import { useStorage } from '../../hooks/context/useStorage';
 import { useSettings } from '../../hooks/context/useSettings';
 import SafeAreaSectionList from '../../components/SafeAreaSectionList';
 import { scanQrHelper } from '../../helpers/scan-qr.ts';
-import ScanIcon from '../../components/ScanIcon';
+import QRScanIcon from '../../components/icons/QRScanIcon';
+import { ClashFont } from '../../constants/fonts';
+import { satoshiToLocalCurrency } from '../../modules/currency';
+import SearchIcon from '../../components/icons/SearchIcon';
+import ShieldReceiveIcon from '../../components/icons/ShieldReceiveIcon';
+import ReceiveArrowIcon from '../../components/icons/ReceiveArrowIcon';
+import PayArrowIcon from '../../components/icons/PayArrowIcon';
+import ChevronRightIcon from '../../components/icons/ChevronRightIcon';
 
 const WalletsListSections = { WALLET: 'WALLET', TRANSACTIONS: 'TRANSACTIONS' };
 
@@ -107,36 +113,95 @@ const WalletsList: React.FC = () => {
   const navigation = useExtendedNavigation<NavigationProps>();
   const dataSource = getTransactions(undefined, Infinity);
   const walletsCount = useRef<number>(wallets.length);
-  const walletActionButtonsRef = useRef<any>();
+  const [showZeroBalanceToast, setShowZeroBalanceToast] = useState(false);
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const stylesHook = StyleSheet.create({
-    listHeaderBack: {
-      backgroundColor: colors.background,
-      paddingTop: sizeClass === SizeClass.Large ? 8 : 0,
-    },
-    listHeaderText: {
-      color: colors.foregroundColor,
-      flexShrink: 1,
-    },
-    walletContainer: {
-      backgroundColor: colors.background,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-    },
-    noWalletText: {
-      color: colors.foregroundColor,
-      fontSize: 18,
-      textAlign: 'center',
-      marginVertical: 20,
-    },
-    balanceAmountText: {
-      color: colors.foregroundColor,
-      fontSize: 36,
-      fontWeight: 'bold',
-      marginBottom: 8,
-      textAlign: 'center',
-    },
-  });
+  const dismissToast = useCallback(() => {
+    Animated.timing(toastOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start(({ finished }) => {
+      if (finished) setShowZeroBalanceToast(false);
+    });
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }, [toastOpacity]);
+
+  const triggerZeroBalanceToast = useCallback(() => {
+    setShowZeroBalanceToast(true);
+    Animated.timing(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(dismissToast, 4000);
+  }, [toastOpacity, dismissToast]);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
+
+  const stylesHook = useMemo(
+    () => ({
+      listHeaderBack: {
+        backgroundColor: colors.background,
+        paddingTop: sizeClass === SizeClass.Large ? 8 : 0,
+      },
+      walletContainer: {
+        backgroundColor: colors.background,
+      },
+      trackPaymentBg: {
+        backgroundColor: colors.bannerBackground,
+        borderColor: colors.bannerBorderColor,
+      },
+      receiveBtnStyle: {
+        backgroundColor: colors.receiveBtnBackground,
+        borderColor: colors.requestBtnBorderColor,
+      },
+      scanBtnStyle: {
+        backgroundColor: colors.background,
+        borderColor: colors.scanBtnBorderColor,
+        borderWidth: 1,
+      },
+      payBtnActive: {
+        backgroundColor: colors.buttonBackgroundColor,
+      },
+      payBtnDisabled: {
+        backgroundColor: colors.payBtnDisabledBackground,
+      },
+      cardStyle: {
+        backgroundColor: colors.elevated,
+        borderColor: colors.lightBorder,
+      },
+      emptyCardStyle: {
+        backgroundColor: colors.emptyCardBackground,
+        borderColor: colors.lightBorder,
+      },
+      foregroundText: {
+        color: colors.foregroundColor,
+      },
+      alternativeText: {
+        color: colors.alternativeTextColor,
+      },
+      requestBtnLabel: {
+        color: colors.requestBtnTextColor,
+      },
+      payBtnLabel: {
+        color: colors.payBtnTextColor,
+      },
+      toastRequestBtn: {
+        backgroundColor: colors.buttonBackgroundColor,
+      },
+      shareAddrStyle: {
+        borderWidth: 1.63,
+        borderColor: colors.shareAddrBorderColor,
+        backgroundColor: colors.shareAddrBackground,
+      },
+      shareAddrText: {
+        color: colors.requestBtnTextColor,
+      },
+      zeroBalanceRequestText: {
+        color: colors.zeroBalanceRequestTextColor,
+      },
+    }),
+    [colors, sizeClass],
+  );
 
   const refreshWallets = useCallback(
     async (index: number | undefined, showLoadingIndicator = true, showUpdateStatusIndicator = false) => {
@@ -248,33 +313,38 @@ const WalletsList: React.FC = () => {
     const wallet = wallets.length > 0 ? wallets[0] : null;
     return (
       <View style={[styles.listHeaderBack, stylesHook.listHeaderBack]}>
-        <Text
-          textBreakStrategy="simple"
-          style={[styles.listHeaderText, stylesHook.listHeaderText]}
-          numberOfLines={2}
-          adjustsFontSizeToFit={true}
-        >
-          {`${loc.transactions.list_title}${'  '}`}
-        </Text>
         {wallet && (
           <TouchableOpacity
-            style={[styles.trackPaymentBanner, { borderColor: colors.formBorder, backgroundColor: colors.background }]}
+            style={[styles.trackPaymentBanner, stylesHook.trackPaymentBg]}
             onPress={() => navigation.navigate('TrackPayment')}
             activeOpacity={0.7}
             testID="TrackPaymentBanner"
           >
-            <View style={styles.trackPaymentBannerContent}>
-              <Text style={[styles.trackPaymentBannerTitle, { color: colors.foregroundColor }]}>{loc.track_payment.banner_title}</Text>
-              <Text style={[styles.trackPaymentBannerSubtitle, { color: colors.alternativeTextColor }]}>
-                {loc.track_payment.banner_subtitle}
-              </Text>
+            <View style={styles.trackPaymentIconCircle}>
+              <SearchIcon size={48} background={colors.searchIconBackground} stroke={colors.searchIconStroke} />
             </View>
-            <Text style={[styles.trackPaymentChevron, { color: colors.alternativeTextColor2 }]}>›</Text>
+            <View style={styles.trackPaymentBannerContent}>
+              <Text style={[styles.trackPaymentBannerTitle, stylesHook.foregroundText]}>{loc.track_payment.banner_title}</Text>
+              <Text style={[styles.trackPaymentBannerSubtitle, stylesHook.alternativeText]}>{loc.track_payment.banner_subtitle}</Text>
+            </View>
+            <ChevronRightIcon color={colors.chevron} />
           </TouchableOpacity>
         )}
+        {dataSource.length > 0 && <Text style={[styles.transactionsLabel, stylesHook.alternativeText]}>{loc.transactions.list_title}</Text>}
       </View>
     );
-  }, [stylesHook.listHeaderBack, stylesHook.listHeaderText, colors, navigation, wallets]);
+  }, [
+    stylesHook.listHeaderBack,
+    stylesHook.trackPaymentBg,
+    stylesHook.foregroundText,
+    stylesHook.alternativeText,
+    navigation,
+    wallets,
+    dataSource.length,
+    colors.searchIconBackground,
+    colors.searchIconStroke,
+    colors.chevron,
+  ]);
 
   const renderTransactionListsRow = useCallback(
     (item: ExtendedTransaction) => (
@@ -294,8 +364,6 @@ const WalletsList: React.FC = () => {
         newWalletPreferredUnit = BitcoinUnit.SATS;
         break;
       case BitcoinUnit.SATS:
-        newWalletPreferredUnit = BitcoinUnit.LOCAL_CURRENCY;
-        break;
       default:
         newWalletPreferredUnit = BitcoinUnit.BTC;
         break;
@@ -305,30 +373,141 @@ const WalletsList: React.FC = () => {
     await saveToDisk();
   }, [wallets, saveToDisk]);
 
-  const renderWalletItem = useCallback(() => {
-    const wallet = wallets.length > 0 ? wallets[0] : null;
+  const onScanButtonPressed = useCallback(() => {
+    scanQrHelper().then(onBarScanned);
+  }, [onBarScanned]);
 
-    if (!wallet) {
-      return (
-        <View style={[styles.walletContainer, stylesHook.walletContainer]}>
-          <Text style={[styles.noWalletText, stylesHook.noWalletText]}>{loc.wallets.list_empty_txs1}</Text>
-        </View>
-      );
+  const onSendButtonPressed = useCallback(() => {
+    if (wallets.length > 0) {
+      const wallet = wallets[0];
+      navigation.navigate('SendDetailsRoot', {
+        walletID: wallet.getID(),
+      });
+    }
+  }, [navigation, wallets]);
+
+  const onReceiveButtonPressed = useCallback(() => {
+    if (wallets.length > 0) {
+      const wallet = wallets[0];
+      navigation.navigate('ReceiveDetails', {
+        walletID: wallet.getID(),
+        address: '',
+      });
+    }
+  }, [navigation, wallets]);
+
+  const onZeroBalanceRequestPress = useCallback(() => {
+    dismissToast();
+    onReceiveButtonPressed();
+  }, [dismissToast, onReceiveButtonPressed]);
+
+  const pasteFromClipboard = useCallback(async () => {
+    onBarScanned(await getClipboardContent());
+  }, [onBarScanned]);
+
+  const sendButtonLongPress = useCallback(async () => {
+    const isClipboardEmpty = (await getClipboardContent())?.trim().length === 0;
+
+    const options = [loc._.cancel, loc.wallets.list_long_choose, loc.wallets.list_long_scan];
+    if (!isClipboardEmpty) {
+      options.push(loc.wallets.paste_from_clipboard);
     }
 
-    const balanceText = formatBalance(wallet.getBalance(), wallet.getPreferredBalanceUnit(), true);
+    const props = { title: loc.send.header, options, cancelButtonIndex: 0 };
+
+    ActionSheet.showActionSheetWithOptions(props, buttonIndex => {
+      switch (buttonIndex) {
+        case 0:
+          break;
+        case 1:
+          fs.showImagePickerAndReadImage()
+            .then(onBarScanned)
+            .catch(error => {
+              triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
+              presentAlert({ title: loc.errors.error, message: error.message });
+            });
+          break;
+        case 2:
+          scanQrHelper().then(onBarScanned);
+          break;
+        case 3:
+          if (!isClipboardEmpty) {
+            pasteFromClipboard();
+          }
+          break;
+      }
+    });
+  }, [onBarScanned, pasteFromClipboard]);
+
+  const renderWalletItem = useCallback(() => {
+    const wallet = wallets.length > 0 ? wallets[0] : null;
+    if (!wallet) return null;
+
+    const balance = wallet.getBalance();
+    const preferredUnit = wallet.getPreferredBalanceUnit();
+    const displayNum = String(formatBalanceWithoutSuffix(balance, preferredUnit, true));
+    const fiatLine = `≈ ${satoshiToLocalCurrency(balance)}`;
+    const hasBalance = balance > 0;
 
     return (
-      <>
-        <View style={[styles.balanceHeader, stylesHook.walletContainer]}>
-          <TouchableOpacity onPress={changeWalletBalanceUnit}>
-            <Text style={[styles.balanceAmount, stylesHook.balanceAmountText]}>{balanceText}</Text>
+      <View style={[styles.walletSection, stylesHook.walletContainer]}>
+        <TouchableOpacity onPress={changeWalletBalanceUnit} style={styles.balanceHeader}>
+          <View style={styles.balanceRow}>
+            <Text style={[styles.balanceNumber, stylesHook.foregroundText]} adjustsFontSizeToFit numberOfLines={1}>{displayNum}</Text>
+            <Text style={[styles.balanceUnit, stylesHook.alternativeText]}>{preferredUnit}</Text>
+          </View>
+          <Text style={[styles.balanceFiat, stylesHook.alternativeText]}>{fiatLine}</Text>
+        </TouchableOpacity>
+
+        {scanWallet && <ScanProgressBar scanState={scanState} onResume={() => scanWallet.resumeScan()} />}
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={[styles.actionBtnWide, stylesHook.receiveBtnStyle]}
+            onPress={onReceiveButtonPressed}
+            testID="HomeScreenReceiveButton"
+            accessibilityRole="button"
+          >
+            <ReceiveArrowIcon color={colors.requestBtnTextColor} size={28} />
+            <Text style={[styles.actionBtnLabel, stylesHook.requestBtnLabel]}>{loc.wallets.request_button}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionBtnSquare, stylesHook.scanBtnStyle]}
+            onPress={onScanButtonPressed}
+            testID="HomeScreenScanButton"
+            accessibilityRole="button"
+            accessibilityLabel={loc.wallets.scan_qr_code}
+          >
+            <QRScanIcon color={colors.buttonBackgroundColor} size={22} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionBtnWide, styles.actionBtnNoBorder, hasBalance ? stylesHook.payBtnActive : stylesHook.payBtnDisabled]}
+            onPress={hasBalance ? onSendButtonPressed : triggerZeroBalanceToast}
+            onLongPress={hasBalance ? sendButtonLongPress : undefined}
+            testID="HomeScreenSendButton"
+            accessibilityRole="button"
+            accessibilityHint={hasBalance ? undefined : loc.wallets.no_balance_hint}
+          >
+            <PayArrowIcon color={colors.payBtnTextColor} size={28} />
+            <Text style={[styles.actionBtnLabel, stylesHook.payBtnLabel]}>{loc.wallets.pay_button}</Text>
           </TouchableOpacity>
         </View>
-        {scanWallet && <ScanProgressBar scanState={scanState} onResume={() => scanWallet.resumeScan()} />}
-      </>
+      </View>
     );
-  }, [wallets, stylesHook, changeWalletBalanceUnit, scanWallet, scanState]);
+  }, [
+    wallets,
+    stylesHook,
+    colors,
+    changeWalletBalanceUnit,
+    scanWallet,
+    scanState,
+    triggerZeroBalanceToast,
+    onReceiveButtonPressed,
+    onScanButtonPressed,
+    onSendButtonPressed,
+    sendButtonLongPress,
+  ]);
 
   const renderSectionItem = useCallback(
     (item: { section: any; item: ExtendedTransaction }) => {
@@ -360,128 +539,51 @@ const WalletsList: React.FC = () => {
     [sizeClass, renderListHeaderComponent],
   );
 
-  const renderSectionFooter = useCallback(
-    (section: { section: { key: any } }) => {
-      switch (section.section.key) {
-        case WalletsListSections.TRANSACTIONS:
-          if (dataSource.length === 0 && !isLoading) {
-            return (
-              <View style={styles.footerRoot} testID="NoTransactionsMessage">
-                <Text style={styles.footerEmpty}>{loc.wallets.list_empty_txs1}</Text>
-              </View>
-            );
-          } else {
-            return null;
-          }
-        default:
-          return null;
-      }
-    },
-    [dataSource.length, isLoading],
-  );
-
-  const renderButtons = useCallback(() => {
-    if (wallets.length > 0) {
-      return (
-        <FContainer ref={walletActionButtonsRef.current}>
-          <FButton onPress={onReceiveButtonPressed} icon={null} text="Request" widthRatio={1.3} testID="HomeScreenReceiveButton" />
-          <FButton
-            onPress={onScanButtonPressed}
-            icon={
-              <View style={styles.scanIconContainer}>
-                <ScanIcon />
-              </View>
-            }
-            text=""
-            widthRatio={0.01}
-            testID="HomeScreenScanButton"
+  const renderEmptyCard = useCallback(() => {
+    if (dataSource.length !== 0 || isLoading) return null;
+    const wallet = wallets.length > 0 ? wallets[0] : null;
+    return (
+      <View style={[styles.emptyCard, stylesHook.emptyCardStyle]} testID="NoTransactionsMessage">
+        <View style={styles.emptyIconOuter}>
+          <ShieldReceiveIcon
+            size={94}
+            background={colors.shieldIconBackground}
+            borderColor={colors.shieldIconBorder}
+            accent={colors.shieldIconAccent}
           />
-          <FButton
-            onPress={onSendButtonPressed}
-            onLongPress={sendButtonLongPress}
-            icon={null}
-            text="Pay"
-            widthRatio={1.3}
-            testID="HomeScreenSendButton"
-          />
-        </FContainer>
-      );
-    } else {
-      return null;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wallets.length]);
+        </View>
+        <Text style={[styles.emptyTitle, stylesHook.foregroundText]}>{loc.wallets.no_transactions_title}</Text>
+        <Text style={[styles.emptySubtitle, stylesHook.alternativeText]}>{loc.wallets.no_transactions_subtitle}</Text>
+        {wallet && (
+          <TouchableOpacity
+            style={[styles.shareAddressButton, stylesHook.shareAddrStyle]}
+            onPress={() => navigation.navigate('ReceiveDetails', { walletID: wallet.getID(), address: '' })}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+          >
+            <Text style={[styles.shareAddressText, stylesHook.shareAddrText]}>{loc.wallets.share_address}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  }, [
+    dataSource.length,
+    isLoading,
+    wallets,
+    navigation,
+    stylesHook.emptyCardStyle,
+    stylesHook.foregroundText,
+    stylesHook.alternativeText,
+    stylesHook.shareAddrStyle,
+    stylesHook.shareAddrText,
+    colors.shieldIconBackground,
+    colors.shieldIconBorder,
+    colors.shieldIconAccent,
+  ]);
 
   const sectionListKeyExtractor = useCallback((item: any, index: any) => {
     return `${item}${index}`;
   }, []);
-
-  const onScanButtonPressed = useCallback(() => {
-    scanQrHelper().then(onBarScanned);
-  }, [onBarScanned]);
-
-  const onSendButtonPressed = useCallback(() => {
-    if (wallets.length > 0) {
-      const wallet = wallets[0];
-      navigation.navigate('SendDetailsRoot', {
-        walletID: wallet.getID(),
-      });
-    }
-  }, [navigation, wallets]);
-
-  const onReceiveButtonPressed = useCallback(() => {
-    if (wallets.length > 0) {
-      const wallet = wallets[0];
-      navigation.navigate('ReceiveDetails', {
-        walletID: wallet.getID(),
-        address: '',
-      });
-    }
-  }, [navigation, wallets]);
-
-  const pasteFromClipboard = useCallback(async () => {
-    onBarScanned(await getClipboardContent());
-  }, [onBarScanned]);
-
-  const sendButtonLongPress = useCallback(async () => {
-    const isClipboardEmpty = (await getClipboardContent())?.trim().length === 0;
-
-    const options = [loc._.cancel, loc.wallets.list_long_choose, loc.wallets.list_long_scan];
-    if (!isClipboardEmpty) {
-      options.push(loc.wallets.paste_from_clipboard);
-    }
-
-    const props = { title: loc.send.header, options, cancelButtonIndex: 0 };
-
-    const anchor = findNodeHandle(walletActionButtonsRef.current);
-
-    if (anchor) {
-      options.push(String(anchor));
-    }
-
-    ActionSheet.showActionSheetWithOptions(props, buttonIndex => {
-      switch (buttonIndex) {
-        case 0:
-          break;
-        case 1:
-          fs.showImagePickerAndReadImage()
-            .then(onBarScanned)
-            .catch(error => {
-              triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
-              presentAlert({ title: loc.errors.error, message: error.message });
-            });
-          break;
-        case 2:
-          scanQrHelper().then(onBarScanned);
-          break;
-        case 3:
-          if (!isClipboardEmpty) {
-            pasteFromClipboard();
-          }
-          break;
-      }
-    });
-  }, [onBarScanned, pasteFromClipboard]);
 
   const refreshProps = isDesktop || isElectrumDisabled ? {} : { refreshing: isLoading, onRefresh };
 
@@ -498,81 +600,40 @@ const WalletsList: React.FC = () => {
     ];
   }, [sizeClass, dataSource]);
 
-  // Constants for layout calculations
-  const TRANSACTION_ITEM_HEIGHT = 80;
-  const WALLET_HEIGHT = 195;
-  const SECTION_HEADER_HEIGHT = 56; // Base height
-  const LARGE_TITLE_EXTRA_HEIGHT = 20; // Additional height for large titles
-  const TRACK_PAYMENT_BANNER_HEIGHT = 90;
-  const SCAN_BANNER_HEIGHT = 66; // ScanProgressBar: 50 height + 8+8 vertical margins
-
-  // The scan banner renders inside the WALLET section (below the balance) only while a scan is
-  // active, so factor its height into the wallet section height to keep getItemLayout offsets correct.
-  const isScanBannerVisible = !!scanWallet && (scanState.status !== 'idle' || scanState.lastScannedBlock > 0);
-  const walletSectionHeight = WALLET_HEIGHT + (isScanBannerVisible ? SCAN_BANNER_HEIGHT : 0);
-
-  const getSectionHeaderHeight = useCallback(() => {
-    const hasBanner = wallets.length > 0;
-    return (
-      SECTION_HEADER_HEIGHT + (sizeClass === SizeClass.Large ? LARGE_TITLE_EXTRA_HEIGHT : 0) + (hasBanner ? TRACK_PAYMENT_BANNER_HEIGHT : 0)
-    );
-  }, [sizeClass, wallets.length]);
-
-  const getItemLayout = useCallback(
-    (data: any, index: number) => {
-      const headerHeight = getSectionHeaderHeight();
-
-      if (sizeClass === SizeClass.Large) {
-        // On large screens: only transaction items, no wallet
-        return {
-          length: TRANSACTION_ITEM_HEIGHT,
-          offset: TRANSACTION_ITEM_HEIGHT * index,
-          index,
-        };
-      } else {
-        // On smaller screens: first item is wallet, rest are transactions
-        // First section: Wallet
-        if (index === 0) {
-          return {
-            length: walletSectionHeight,
-            offset: 0,
-            index,
-          };
-        }
-
-        // Second section: Transactions
-        // Need to account for:
-        // 1. Wallet height (incl. scan banner when active)
-        // 2. Section header height for transactions section
-        // 3. Transaction items
-        const transactionIndex = index - 1; // Adjust index to account for wallet
-        return {
-          length: TRANSACTION_ITEM_HEIGHT,
-          offset: walletSectionHeight + headerHeight + TRANSACTION_ITEM_HEIGHT * transactionIndex,
-          index,
-        };
-      }
-    },
-    [sizeClass, getSectionHeaderHeight, walletSectionHeight],
-  );
-
   return (
     <>
       <SafeAreaSectionList<any | string, SectionData>
+        contentContainerStyle={styles.sectionListContent}
         renderItem={renderSectionItem}
         keyExtractor={sectionListKeyExtractor}
         renderSectionHeader={renderSectionHeader}
         initialNumToRender={10}
-        renderSectionFooter={renderSectionFooter}
+        ListFooterComponent={renderEmptyCard}
+        ListFooterComponentStyle={styles.emptyCardOuter}
         sections={sections}
-        floatingButtonHeight={70}
         maxToRenderPerBatch={10}
         updateCellsBatchingPeriod={50}
-        getItemLayout={getItemLayout}
         ignoreTopInset={true} // Ignore top inset as the screen header already handles it
         {...refreshProps}
       />
-      {renderButtons()}
+      <Modal transparent visible={showZeroBalanceToast} statusBarTranslucent animationType="none" onRequestClose={dismissToast}>
+        <View style={styles.toastModalOverlay} pointerEvents="box-none">
+          <Animated.View style={[styles.zeroBalanceToast, stylesHook.cardStyle, { opacity: toastOpacity }]}>
+            <View style={styles.zeroBalanceToastText}>
+              <Text style={[styles.zeroBalanceToastTitle, stylesHook.foregroundText]}>{loc.wallets.zero_balance_toast_title}</Text>
+              <Text style={[styles.zeroBalanceToastSubtitle, stylesHook.alternativeText]}>{loc.wallets.zero_balance_toast_subtitle}</Text>
+            </View>
+            <TouchableOpacity
+              testID="ZeroBalanceToastRequestButton"
+              style={[styles.toastRequestBtn, stylesHook.toastRequestBtn]}
+              onPress={onZeroBalanceRequestPress}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.zeroBalanceRequestText, stylesHook.zeroBalanceRequestText]}>{loc.wallets.request_button}</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      </Modal>
     </>
   );
 };
@@ -580,80 +641,197 @@ const WalletsList: React.FC = () => {
 export default WalletsList;
 
 const styles = StyleSheet.create({
+  sectionListContent: {
+    flexGrow: 1,
+  },
   listHeaderBack: {
     flexDirection: 'column',
-    alignItems: 'center',
     paddingHorizontal: 16,
-    minHeight: 56,
+    paddingTop: 8,
   },
-  listHeaderText: {
-    fontWeight: 'bold',
-    fontSize: 24,
-    marginVertical: 16,
-    flexWrap: 'wrap',
-    textAlign: 'center',
-  },
-  footerRoot: {
-    top: 80,
-    height: 160,
-    marginBottom: 80,
-  },
-  footerEmpty: {
-    fontSize: 18,
-    color: '#9aa0aa',
-    textAlign: 'center',
-  },
-  walletContainer: {
+  walletSection: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  noWalletText: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginVertical: 20,
-    fontWeight: '500',
+    paddingBottom: 8,
   },
   balanceHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-    paddingBottom: 40,
-    paddingTop: 40,
     alignItems: 'center',
+    marginBottom: 20,
   },
-  balanceAmount: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  scanIconContainer: {
-    width: 40,
-    height: 40,
+  balanceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
     justifyContent: 'center',
+  },
+  balanceNumber: {
+    fontSize: 48,
+    lineHeight: 48,
+    letterSpacing: -1.2,
+    textAlign: 'center',
+    fontFamily: ClashFont.medium,
+    flexShrink: 1,
+  },
+  balanceUnit: {
+    fontSize: 22,
+    marginLeft: 10,
+    fontFamily: ClashFont.regular,
+  },
+  balanceFiat: {
+    fontSize: 15,
+    textAlign: 'center',
+    marginTop: 6,
+    fontFamily: ClashFont.regular,
+  },
+  actionRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
+    marginBottom: 8,
+  },
+  actionBtnWide: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    height: 60,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  actionBtnNoBorder: {
+    borderWidth: 0,
+  },
+  actionBtnSquare: {
+    width: 60,
+    height: 60,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionBtnLabel: {
+    fontSize: 15,
+    fontFamily: ClashFont.medium,
   },
   trackPaymentBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
-    marginTop: 8,
-    marginBottom: 8,
-    padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
+    padding: 16,
+    height: 80,
+    gap: 12,
+    marginBottom: 12,
+  },
+  trackPaymentIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   trackPaymentBannerContent: {
     flex: 1,
   },
   trackPaymentBannerTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontSize: 17,
+    marginBottom: 3,
+    fontFamily: ClashFont.medium,
   },
   trackPaymentBannerSubtitle: {
     fontSize: 13,
+    fontFamily: ClashFont.regular,
   },
-  trackPaymentChevron: {
-    fontSize: 22,
+  transactionsLabel: {
+    fontSize: 13,
+    marginBottom: 8,
+    marginTop: 4,
+    fontFamily: ClashFont.regular,
+  },
+  emptyCardOuter: {
+    flex: 1,
+  },
+  emptyCard: {
+    flex: 1,
+    margin: 16,
+    marginTop: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 32,
+    alignItems: 'center',
+  },
+  emptyIconOuter: {
+    marginBottom: 37,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    lineHeight: 32,
+    letterSpacing: 0.07,
+    textAlign: 'center',
+    marginBottom: 23,
+    fontFamily: ClashFont.medium,
+  },
+  emptySubtitle: {
+    fontSize: 16,
+    lineHeight: 20,
+    letterSpacing: -0.08,
+    textAlign: 'center',
+    marginBottom: 30,
+    fontFamily: ClashFont.regular,
+  },
+  shareAddressButton: {
+    borderRadius: 16,
+    height: 59,
+    alignSelf: 'stretch',
+    marginHorizontal: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shareAddressText: {
+    fontSize: 16,
+    lineHeight: 24,
+    letterSpacing: -0.31,
+    textAlign: 'center',
+    fontFamily: ClashFont.medium,
+  },
+  toastModalOverlay: {
+    flex: 1,
+  },
+  zeroBalanceToast: {
+    position: 'absolute',
+    top: 51,
+    left: 23,
+    right: 23,
+    height: 76,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 16,
+    gap: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  zeroBalanceToastText: {
+    flex: 1,
+  },
+  zeroBalanceToastTitle: {
+    fontSize: 15,
+    fontFamily: ClashFont.semibold,
+    marginBottom: 2,
+  },
+  zeroBalanceToastSubtitle: {
+    fontSize: 13,
+    fontFamily: ClashFont.regular,
+  },
+  zeroBalanceRequestText: {
+    fontSize: 15,
+    fontFamily: ClashFont.medium,
+  },
+  toastRequestBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
   },
 });

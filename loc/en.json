@@ -295,7 +295,16 @@
         "copy_ln_public": "Copy and securely store this information to restore your wallet at a later time.",
         "more_info": "More Info",
         "details_delete_wallet_error_message": "Something went wrong while deleting this wallet. You can try again, or delete it anyway.",
-        "details_delete_anyway": "Delete anyway"
+        "details_delete_anyway": "Delete anyway",
+        "no_transactions_title": "No transactions yet",
+        "no_transactions_subtitle": "Share your silent payment address to receive your first private payment.",
+        "share_address": "Share your Address",
+        "zero_balance_toast_title": "You need bitcoin to Send",
+        "zero_balance_toast_subtitle": "Receive your first payment to get started",
+        "request_button": "Request",
+        "pay_button": "Pay",
+        "scan_qr_code": "Scan QR code",
+        "no_balance_hint": "No balance yet"
     },
     "total_balance_view": {
         "display_in_bitcoin": "Display in Bitcoin",

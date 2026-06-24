@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Icon } from '@rneui/themed';
+import ChevronRightIcon from './icons/ChevronRightIcon';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -62,7 +63,7 @@ const ScanProgressBar: React.FC<Props> = ({ scanState, onResume }) => {
             {blockText}
           </Text>
         </View>
-        <Icon name="chevron-right" type="material" size={20} color={colors.chevron} />
+        <ChevronRightIcon color={colors.chevron} />
       </TouchableOpacity>
     );
   }
@@ -123,7 +124,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginVertical: 8,
+    marginTop: 8,
+    marginBottom: 16,
     height: 50,
     paddingLeft: 14,
     paddingRight: 16,

@@ -108,8 +108,8 @@ export const ShroudDefaultTheme = {
     syncFillDone: '#D2F9DC',
     syncRingError: '#FDF1F2',
     syncFillError: '#FBE9EB',
-    receiveBtnBackground: '#754CE812',
-    bannerBackground: '#754CE80D',
+    receiveBtnBackground: '#EAE4FB',
+    bannerBackground: '#F6F5FD',
     payBtnDisabledBackground: '#00000052',
     requestBtnTextColor: '#754CE8',
     requestBtnBorderColor: '#754CE8',
@@ -126,6 +126,7 @@ export const ShroudDefaultTheme = {
     shareAddrBorderColor: '#E6E2FA',
     shareAddrBackground: 'transparent',
     zeroBalanceRequestTextColor: '#ffffff',
+    emptyCardBackground: '#FDFCFE',
   },
 };
 
@@ -200,6 +201,7 @@ export const ShroudDarkTheme: Theme = {
     shieldIconAccent: '#8763EB',
     shareAddrBorderColor: '#8763EB8F',
     shareAddrBackground: '#1D1A2B',
+    emptyCardBackground: '#1A1A1A',
   },
 };
 
