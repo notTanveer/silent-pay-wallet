@@ -386,13 +386,24 @@ pub extern "C" fn sp_scan_single_transaction(
     serialize_ffi_response(result)
 }
 
+/// Scan a range of binary silent-block frames.
+///
+/// `frames_ptr` points directly into the JS engine's ArrayBuffer backing store
+/// (passed via the JSI ArrayBuffer API). No base64 encoding/decoding occurs on
+/// either side of the bridge — the bytes are read in-place.
 #[unsafe(no_mangle)]
 pub extern "C" fn sp_scan_silent_block_range(
     scan_privkey_hex: *const c_char,
     spend_pubkey_hex: *const c_char,
-    frames_base64: *const c_char,
+    frames_ptr: *const u8,
+    frames_len: usize,
 ) -> *const c_char {
-    let result = scan_silent_block_range_impl(scan_privkey_hex, spend_pubkey_hex, frames_base64);
+    let result = scan_silent_block_range_impl_raw(
+        scan_privkey_hex,
+        spend_pubkey_hex,
+        frames_ptr,
+        frames_len,
+    );
     serialize_ffi_response(result)
 }
 
@@ -436,20 +447,24 @@ fn scan_single_transaction_impl(
     serde_json::to_string(&matched).map_err(|e| format!("Serialization failed: {}", e))
 }
 
-fn scan_silent_block_range_impl(
+fn scan_silent_block_range_impl_raw(
     scan_privkey_hex: *const c_char,
     spend_pubkey_hex: *const c_char,
-    frames_base64: *const c_char,
+    frames_ptr: *const u8,
+    frames_len: usize,
 ) -> Result<String, String> {
     let scan_privkey = parse_privkey_from_ffi(scan_privkey_hex)?;
     let spend_pubkey = parse_pubkey_from_ffi(spend_pubkey_hex)?;
-    let frames_b64 = read_ffi_str(frames_base64, "frames_base64")?;
 
-    let bytes = BASE64
-        .decode(frames_b64.trim())
-        .map_err(|e| format!("Invalid base64: {}", e))?;
-    let transactions = parse_silent_block_frames(&bytes)?;
+    if frames_ptr.is_null() {
+        return Err("Null frames pointer".into());
+    }
 
+    // Safety: the C++ JSI binding guarantees that frames_ptr/frames_len come
+    // from a valid ArrayBuffer that outlives this call.
+    let bytes = unsafe { std::slice::from_raw_parts(frames_ptr, frames_len) };
+
+    let transactions = parse_silent_block_frames(bytes)?;
     let result = process_transactions_parallel(&scan_privkey, &spend_pubkey, &transactions);
     serde_json::to_string(&result).map_err(|e| format!("Serialization failed: {}", e))
 }
@@ -495,7 +510,6 @@ fn serialize_ffi_response(result: Result<String, String>) -> *const c_char {
     match CString::new(response) {
         Ok(cstring) => cstring.into_raw(),
         Err(_) => {
-            // Response contained a NUL byte; return a safe fallback error
             CString::new(r#"{"error":"Response serialization failed"}"#)
                 .expect("Fallback error string is valid")
                 .into_raw()
@@ -559,7 +573,7 @@ mod tests {
     fn make_tx(id_byte: u8, scan_tweak_hex: &str, outputs: Vec<IndexerOutput>) -> IndexerTransaction {
         IndexerTransaction {
             id: hex::encode([id_byte; 32]),
-            block_height: 0, // overwritten by the enclosing frame on parse
+            block_height: 0,
             block_hash: String::new(),
             block_time: 0,
             scan_tweak: scan_tweak_hex.to_string(),
@@ -569,7 +583,7 @@ mod tests {
 
     #[test]
     fn round_trips_multi_height_frames() {
-        let scan_tweak = hex::encode([0x02u8; 33]); // 33B placeholder (parse doesn't validate the point)
+        let scan_tweak = hex::encode([0x02u8; 33]);
         let pubkey = hex::encode([0xaau8; 32]);
 
         let tx_a = make_tx(
@@ -606,11 +620,11 @@ mod tests {
 
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&frame(842_579, &encode_silent_block(&[tx_a.clone(), tx_b.clone()])));
-        bytes.extend_from_slice(&frame(842_580, &encode_silent_block(&[]))); // empty block (2 bytes)
+        bytes.extend_from_slice(&frame(842_580, &encode_silent_block(&[])));
         bytes.extend_from_slice(&frame(842_581, &encode_silent_block(&[tx_b.clone()])));
 
         let parsed = parse_silent_block_frames(&bytes).unwrap();
-        assert_eq!(parsed.len(), 3); // tx_a, tx_b (h=842579), tx_b (h=842581)
+        assert_eq!(parsed.len(), 3);
 
         assert_eq!(parsed[0].id, tx_a.id);
         assert_eq!(parsed[0].block_height, 842_579);
@@ -629,11 +643,10 @@ mod tests {
 
     #[test]
     fn rejects_truncated_frame() {
-        // height + a byteLength claiming more bytes than are present.
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&842_579u32.to_be_bytes());
         bytes.extend_from_slice(&100u32.to_be_bytes());
-        bytes.extend_from_slice(&[0x00, 0x00]); // only 2 of the 100 promised bytes
+        bytes.extend_from_slice(&[0x00, 0x00]);
         assert!(parse_silent_block_frames(&bytes).is_err());
     }
 
@@ -642,15 +655,12 @@ mod tests {
         let secp = Secp256k1::new();
         let verify = Secp256k1::verification_only();
 
-        // Deterministic keys so the test is reproducible.
         let scan_privkey = SecretKey::from_slice(&[0x11u8; 32]).unwrap();
         let spend_privkey = SecretKey::from_slice(&[0x22u8; 32]).unwrap();
         let spend_pubkey = PublicKey::from_secret_key(&secp, &spend_privkey);
-        // scan_tweak stands in for the transaction's summed input public key.
         let tweak_privkey = SecretKey::from_slice(&[0x33u8; 32]).unwrap();
         let scan_tweak_pubkey = PublicKey::from_secret_key(&secp, &tweak_privkey);
 
-        // Construct the exact output pubkey the scanner will derive for vout's k index.
         let shared_secret = ecdh_shared_secret(&scan_privkey, &scan_tweak_pubkey).unwrap();
         let tweak_hash = compute_shared_secret_hash(&shared_secret, 0);
         let expected_xonly = derive_expected_pubkey(&verify, &spend_pubkey, &tweak_hash).unwrap();
@@ -668,13 +678,17 @@ mod tests {
         );
 
         let frames = frame(900_000, &encode_silent_block(&[tx]));
-        let frames_b64 = BASE64.encode(&frames);
 
         let scan_hex = CString::new(hex::encode(scan_privkey.secret_bytes())).unwrap();
         let spend_hex = CString::new(hex::encode(spend_pubkey.serialize())).unwrap();
-        let frames_c = CString::new(frames_b64).unwrap();
 
-        let ptr = sp_scan_silent_block_range(scan_hex.as_ptr(), spend_hex.as_ptr(), frames_c.as_ptr());
+        // Call the new raw-bytes FFI directly (no base64).
+        let ptr = sp_scan_silent_block_range(
+            scan_hex.as_ptr(),
+            spend_hex.as_ptr(),
+            frames.as_ptr(),
+            frames.len(),
+        );
         let json = unsafe { CStr::from_ptr(ptr).to_str().unwrap().to_owned() };
         free_rust_string(ptr as *mut c_char);
 
@@ -686,10 +700,9 @@ mod tests {
         let m = &result.matched_utxos[0];
         assert_eq!(m.vout, 7);
         assert_eq!(m.value, 123_456);
-        assert_eq!(m.height, 900_000, "height must come from the frame");
+        assert_eq!(m.height, 900_000);
         assert_eq!(m.pub_key, expected_xonly);
         assert_eq!(m.tweak_hex, hex::encode(tweak_hash));
-        // Binary format carries none of these — resolved later via /transactions/txid.
         assert!(!m.is_spent);
         assert_eq!(m.block_hash, "");
         assert_eq!(m.block_time, 0);
@@ -709,7 +722,7 @@ mod tests {
                 is_spent: false,
             }],
         );
-        let frames_b64 = BASE64.encode(frame(900_000, &encode_silent_block(&[tx])));
+        let frames = frame(900_000, &encode_silent_block(&[tx]));
 
         let scan_hex = CString::new(hex::encode([0x11u8; 32])).unwrap();
         let spend_pubkey = PublicKey::from_secret_key(
@@ -717,9 +730,13 @@ mod tests {
             &SecretKey::from_slice(&[0x22u8; 32]).unwrap(),
         );
         let spend_hex = CString::new(hex::encode(spend_pubkey.serialize())).unwrap();
-        let frames_c = CString::new(frames_b64).unwrap();
 
-        let ptr = sp_scan_silent_block_range(scan_hex.as_ptr(), spend_hex.as_ptr(), frames_c.as_ptr());
+        let ptr = sp_scan_silent_block_range(
+            scan_hex.as_ptr(),
+            spend_hex.as_ptr(),
+            frames.as_ptr(),
+            frames.len(),
+        );
         let json = unsafe { CStr::from_ptr(ptr).to_str().unwrap().to_owned() };
         free_rust_string(ptr as *mut c_char);
 

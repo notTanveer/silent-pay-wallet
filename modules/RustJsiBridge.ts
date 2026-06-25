@@ -46,7 +46,8 @@ interface RustErrorResult {
 interface RustJsiBridgeGlobal {
   spScanTransactions: (scanPrivkeyHex: string, spendPubkeyHex: string, transactionsJson: string) => string;
   spScanSingleTransaction: (scanPrivkeyHex: string, spendPubkeyHex: string, transactionJson: string) => string;
-  spScanSilentBlockRange: (scanPrivkeyHex: string, spendPubkeyHex: string, framesBase64: string) => string;
+  // arg 3 is now an ArrayBuffer — no base64 string on this path.
+  spScanSilentBlockRange: (scanPrivkeyHex: string, spendPubkeyHex: string, framesBuffer: ArrayBuffer) => string;
 }
 
 let isInstalled = false;
@@ -125,20 +126,24 @@ export function spScanSingleTransaction<
 }
 
 /**
- * Scan a base64-encoded buffer of framed binary silent blocks fetched from the
- * indexer's `/silent-block/range` endpoint. Each frame is
- * `height (4B BE) | byteLength (4B BE) | silentBlockBytes`; Rust parses the
- * frames and runs the same parallel BIP-352 scan as {@link spScanTransactions}.
+ * Scan a range of binary silent-block frames fetched from the indexer's
+ * `/silent-block/range` endpoint. Passes the raw `ArrayBuffer` directly to
+ * Rust via the JSI ArrayBuffer API — no base64 encoding/decoding occurs on
+ * either side of the bridge.
  *
- * Matches carry no isSpent/blockHash/blockTime (the binary format omits them) —
- * the caller resolves those per matched txid afterwards.
+ * Matches carry no isSpent/blockHash/blockTime (the binary format omits them)
+ * — the caller resolves those per matched txid afterwards.
  */
-export function spScanSilentBlockRange(scanPrivkeyHex: string, spendPubkeyHex: string, framesBase64: string): RustBatchScanResult {
+export function spScanSilentBlockRange(
+  scanPrivkeyHex: string,
+  spendPubkeyHex: string,
+  framesBuffer: ArrayBuffer,
+): RustBatchScanResult {
   if (!isInstalled) {
     throw new Error('RustJsiBridge not installed. Call initializeRustJsiBridge() first.');
   }
 
-  const resultJson = getGlobal().spScanSilentBlockRange(scanPrivkeyHex, spendPubkeyHex, framesBase64);
+  const resultJson = getGlobal().spScanSilentBlockRange(scanPrivkeyHex, spendPubkeyHex, framesBuffer);
   const result: RustBatchScanResult | RustErrorResult = JSON.parse(resultJson);
 
   if ('error' in result) {

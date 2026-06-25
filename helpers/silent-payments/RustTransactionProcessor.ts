@@ -73,8 +73,8 @@ export class RustTransactionProcessor {
 
   /**
    * Scan a range of binary silent blocks (from the indexer's `/silent-block/range`
-   * endpoint) for payments to this wallet. `frames` is the raw framed buffer; it is
-   * base64-encoded here before crossing the JSI string bridge.
+   * endpoint) for payments to this wallet. `frames` is passed directly as an
+   * ArrayBuffer into the JSI bridge — no base64 encoding occurs on either side.
    *
    * The returned UTXOs have placeholder `isSpent`/`blockHash`/`blockTime` values
    * (the binary format omits them); callers must resolve those per matched txid.
@@ -93,8 +93,12 @@ export class RustTransactionProcessor {
     }
 
     try {
-      const framesBase64 = Buffer.from(frames).toString('base64');
-      const result: RustBatchScanResult = spScanSilentBlockRange(this.scanPrivkeyHex, this.spendPubkeyHex, framesBase64);
+      // Pass the underlying ArrayBuffer directly — zero encoding cost.
+      const result: RustBatchScanResult = spScanSilentBlockRange(
+        this.scanPrivkeyHex,
+        this.spendPubkeyHex,
+        frames.buffer as ArrayBuffer,
+      );
 
       console.log(
         `[RustTransactionProcessor] (binary) Scanned ${result.transactionsScanned} txs, ` +
