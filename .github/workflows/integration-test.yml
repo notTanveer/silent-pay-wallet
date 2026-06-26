@@ -12,7 +12,7 @@ jobs:
     - name: Specify node version
       uses: actions/setup-node@v6
       with:
-        node-version: 22
+        node-version: 24
         cache: 'npm'
         cache-dependency-path: package-lock.json
 
@@ -28,7 +28,7 @@ jobs:
       run: npm ci
 
     - name: Run integration tests
-      uses: nick-fields/retry@v3
+      uses: nick-fields/retry@v4
       with:
         timeout_minutes: 5
         max_attempts: 4
