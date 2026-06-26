@@ -99,9 +99,9 @@ enum FiatUnitEnum: String, AppEnum, CaseIterable, Identifiable, Codable {
         case .DKK:
             return "CoinGecko"
         case .EUR:
-            return "Kraken"
+            return "Bitstamp"
         case .GBP:
-            return "Kraken"
+            return "Bitstamp"
         case .HRK:
             return "CoinDesk"
         case .HUF:
@@ -173,7 +173,7 @@ enum FiatUnitEnum: String, AppEnum, CaseIterable, Identifiable, Codable {
         case .UGX:
             return "CoinDesk"
         case .USD:
-            return "Kraken"
+            return "Bitstamp"
         case .UYU:
             return "CoinDesk"
         case .VEF:

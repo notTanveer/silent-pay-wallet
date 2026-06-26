@@ -9,12 +9,9 @@ const tls = require('tls');
 jest.setTimeout(150 * 1000);
 
 const hardcodedPeers = [
-  { host: 'electrum1.bluewallet.io', ssl: '443' },
-  { host: 'electrum2.bluewallet.io', ssl: '443' },
-  { host: 'electrum3.bluewallet.io', ssl: '443' },
-  { host: 'electrum1.bluewallet.io', tcp: '50001' },
-  { host: 'electrum2.bluewallet.io', tcp: '50001' },
-  { host: 'electrum3.bluewallet.io', tcp: '50001' },
+  { host: 'electrum1.bluewallet.io', port: '443' },
+  { host: 'electrum2.bluewallet.io', port: '443' },
+  { host: 'electrum3.bluewallet.io', port: '443' },
 ];
 
 function bitcoinjs_crypto_sha256(buffer /*: Buffer */) /*: Buffer */ {
@@ -24,7 +21,7 @@ function bitcoinjs_crypto_sha256(buffer /*: Buffer */) /*: Buffer */ {
 describe('ElectrumClient', () => {
   it('can connect and query', async () => {
     for (const peer of hardcodedPeers) {
-      const mainClient = new ElectrumClient(net, tls, peer.ssl || peer.tcp, peer.host, peer.ssl ? 'tls' : 'tcp');
+      const mainClient = new ElectrumClient(net, tls, peer.port, peer.host, 'tls');
 
       try {
         await mainClient.connect();

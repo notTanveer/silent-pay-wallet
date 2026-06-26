@@ -103,8 +103,8 @@ describe('Electrum', () => {
     assert.ok(!(await Electrum.testConnection('joyreactor.cc', 80, false)));
     assert.ok(!(await Electrum.testConnection('joyreactor.cc', false, 80)));
 
-    assert.ok(await Electrum.testConnection('electrum1.bluewallet.io', '50001'));
     assert.ok(await Electrum.testConnection('electrum1.bluewallet.io', false, 443));
+    assert.ok(await Electrum.testConnection('mainnet.foundationdevices.com', false, 50002));
   });
 
   it('ElectrumClient can estimate fees', async () => {

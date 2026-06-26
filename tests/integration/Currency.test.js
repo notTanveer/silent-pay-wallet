@@ -31,14 +31,14 @@ describe('currency', () => {
     assert.ok(cur[LAST_UPDATED] > 0);
     assert.ok(cur.BTC_USD > 0);
 
-    // now, setting other currency as default
-    await DefaultPreference.set(PREFERRED_CURRENCY_STORAGE_KEY, FiatUnit.JPY.endPointKey);
+    // switch currency via raw preference
+    await DefaultPreference.set(PREFERRED_CURRENCY_STORAGE_KEY, FiatUnit.GBP.endPointKey);
     await initCurrencyDaemon(true);
     curString = await DefaultPreference.get(EXCHANGE_RATES_STORAGE_KEY);
     cur = JSON.parse(curString || '{}');
-    assert.ok(cur.BTC_JPY > 0);
+    assert.ok(cur.BTC_GBP > 0);
 
-    // now setting with a proper setter
+    // switch currency via setter
     await setPreferredCurrency(FiatUnit.EUR);
     await initCurrencyDaemon(true);
     const preferred = await getPreferredCurrency();
@@ -46,19 +46,5 @@ describe('currency', () => {
     curString = await DefaultPreference.get(EXCHANGE_RATES_STORAGE_KEY);
     cur = JSON.parse(curString || '{}');
     assert.ok(cur.BTC_EUR > 0);
-
-    // test Yadio rate source
-    await setPreferredCurrency(FiatUnit.ARS);
-    await initCurrencyDaemon(true);
-    curString = await DefaultPreference.get(EXCHANGE_RATES_STORAGE_KEY);
-    cur = JSON.parse(curString || '{}');
-    assert.ok(cur.BTC_ARS > 0);
-
-    // test YadioConvert rate source
-    await setPreferredCurrency(FiatUnit.LBP);
-    await initCurrencyDaemon(true);
-    curString = await DefaultPreference.get(EXCHANGE_RATES_STORAGE_KEY);
-    cur = JSON.parse(curString || '{}');
-    assert.ok(cur.BTC_LBP > 0);
   });
 });

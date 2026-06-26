@@ -5,7 +5,6 @@ export const FiatUnitSource = {
   Coinbase: 'Coinbase',
   CoinDesk: 'CoinDesk',
   CoinGecko: 'CoinGecko',
-  Kraken: 'Kraken',
   Yadio: 'Yadio',
   YadioConvert: 'YadioConvert',
   Exir: 'Exir',
@@ -47,14 +46,6 @@ interface CoinGeckoResponse {
 
 interface BitstampResponse {
   last: string;
-}
-
-interface KrakenResponse {
-  result: {
-    [pair: string]: {
-      c: [string];
-    };
-  };
 }
 
 interface YadioResponse {
@@ -132,18 +123,6 @@ const RateExtractors = {
     }
   },
 
-  Kraken: async (ticker: string): Promise<number> => {
-    try {
-      const json = (await fetchRate(`https://api.kraken.com/0/public/Ticker?pair=XXBTZ${ticker.toUpperCase()}`)) as KrakenResponse;
-      const rate = Number(json?.result?.[`XXBTZ${ticker.toUpperCase()}`]?.c?.[0]);
-      if (!(rate >= 0)) throw new Error('Invalid data received');
-      return rate;
-    } catch (error: any) {
-      handleError('Kraken', ticker, error);
-      return undefined as never;
-    }
-  },
-
   BNR: async (): Promise<number> => {
     try {
       // Fetching USD to RON rate
@@ -217,7 +196,7 @@ export type TFiatUnit = {
   symbol: string;
   locale: string;
   country: string;
-  source: 'CoinDesk' | 'Yadio' | 'Exir' | 'coinpaprika' | 'Bitstamp' | 'Kraken';
+  source: 'Bitstamp' | 'Coinbase' | 'CoinDesk' | 'CoinGecko' | 'Yadio' | 'YadioConvert' | 'Exir' | 'coinpaprika' | 'BNR';
 };
 
 type TFiatUnits = {

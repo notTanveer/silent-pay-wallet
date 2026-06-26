@@ -28,8 +28,6 @@ class MarketAPI {
             return "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=\(endPointKey.lowercased())"
         case "BNR":
             return "https://www.bnr.ro/nbrfxrates.xml"
-        case "Kraken":
-            return "https://api.kraken.com/0/public/Ticker?pair=XXBTZ\(endPointKey.uppercased())"
         default: // CoinDesk
             return "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=\(endPointKey)"
         }
@@ -115,22 +113,6 @@ class MarketAPI {
             }
         case "BNR":
             throw CurrencyError(errorDescription: "BNR data source is not yet implemented")
-        case "Kraken":
-            if let result = json["result"] as? [String: Any],
-               let tickerData = result["XXBTZ\(endPointKey.uppercased())"] as? [String: Any],
-               let c = tickerData["c"] as? [String],
-               let rateString = c.first,
-               let rateDouble = Double(rateString) {
-                let lastUpdatedString = ISO8601DateFormatter().string(from: Date())
-                latestRateDataStore = WidgetDataStore(rate: rateString, lastUpdate: lastUpdatedString, rateDouble: rateDouble)
-                return latestRateDataStore
-            } else {
-                if let errorMessage = json["error"] as? [String] {
-                    throw CurrencyError(errorDescription: "Kraken API error: \(errorMessage.joined(separator: ", "))")
-                } else {
-                    throw CurrencyError(errorDescription: "Data formatting error for source: \(source)")
-                }
-            }
         default: // CoinDesk
             if let rateDouble = json[endPointKey] as? Double {
                 let lastUpdatedString = ISO8601DateFormatter().string(from: Date())
