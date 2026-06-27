@@ -6,7 +6,7 @@ import BigNumber from 'bignumber.js';
 import { TOptions } from 'bip21';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Svg, { Path } from 'react-native-svg';
-import { ActivityIndicator, Keyboard, LayoutAnimation, StyleSheet, Text, TextInput, Pressable, View } from 'react-native';
+import { ActivityIndicator, Keyboard, LayoutAnimation, ScrollView, StyleSheet, Text, TextInput, Pressable, View } from 'react-native';
 import { SilentPayment } from 'silent-payments';
 import { btcToSatoshi, satoshiToBTC, satoshiToLocalCurrency } from '../../modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes, triggerSelectionHapticFeedback } from '../../modules/hapticFeedback';
@@ -192,6 +192,13 @@ const SendDetails = () => {
   }, [customFee, selectedPresetFeeRate, feePrecalc, networkTransactionFees]);
 
   const splitRange = isSplitEligible ? estimateSplitRange(Number(recipient?.amountSats), Number(feeRate) || 1) : { min: 0, max: 0 };
+  const isSPAddress = SilentPayment.isPaymentCodeValid(recipient?.address ?? '');
+  const previewOutputCount = splitRange.min >= 2 ? splitRange.min : 2;
+  const previewAmountEach = amountSatsNum > 0 ? Math.floor(amountSatsNum / previewOutputCount) : 0;
+  const previewOutputs: Array<{ label: string; sats: number }> =
+    isSplitEnabled && splitRange.max >= 2
+      ? Array.from({ length: previewOutputCount }, (_, i) => ({ label: `Output ${i + 1}`, sats: previewAmountEach }))
+      : [];
 
   useEffect(() => {
     // decode route params
@@ -835,6 +842,7 @@ const SendDetails = () => {
       shadowRadius: 3,
       elevation: 2,
     },
+    fieldLabel: { color: colors.textSecondary },
     feeSummary: { borderColor: colors.summaryBorder },
     feeSummaryLabel: { color: colors.textSecondary },
     feeSummaryValue: { color: colors.black },
@@ -850,10 +858,7 @@ const SendDetails = () => {
       borderColor: colors.divider,
     },
     splitInfoText: { color: colors.textPrimary },
-    splitPreviewSection: { backgroundColor: colors.elevated },
-    splitPreviewLabel: { color: colors.textSecondary },
-    splitPreviewAmount: { color: colors.textPrimary },
-    splitFeeIncreaseRow: { backgroundColor: colors.elevated },
+    splitFeeIncreaseRow: { backgroundColor: colors.white },
     splitFeeIncreaseLabel: { color: colors.textPrimary },
     splitFeeIncreaseValue: { color: colors.brandPrimary },
   });
@@ -886,7 +891,12 @@ const SendDetails = () => {
 
   return (
     <SafeArea style={[styles.root, stylesHook.root]}>
-      <View style={styles.body}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <AmountHero
           editable
           amount={displayAmount}
@@ -900,26 +910,52 @@ const SendDetails = () => {
           isMax={isMaxActive}
         />
 
-        <LabeledField
-          label={loc.send.label_address}
-          trailing={
-            <Pressable accessibilityRole="button" onPress={navigateToQRCodeScanner} style={[styles.scanBtn, stylesHook.scanBtn]}>
-              <ScanQRIcon color={colors.brandPrimary} size={20} />
+        {/* Address — display card when SP address is set, editable input otherwise */}
+        {isSPAddress ? (
+          <View style={styles.fieldGroup}>
+            <Text style={[styles.fieldLabel, stylesHook.fieldLabel]}>{loc.send.label_address}</Text>
+            <View style={styles.spAddressBox}>
+              <Text style={styles.spAddressText}>{recipient?.address}</Text>
+            </View>
+            <Pressable accessibilityRole="button" style={styles.saveContactRow}>
+              <View style={styles.saveContactIconCircle}>
+                <Svg width={10} height={10} viewBox="0 0 24 24" fill="none">
+                  <Path
+                    d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"
+                    stroke="#754CE8"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <Path d="M17 21v-8H7v8M7 3v5h8" stroke="#754CE8" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                </Svg>
+              </View>
+              <Text style={styles.saveContactText}>{loc.send.save_as_contact}</Text>
+              <ChevronRightIcon color="#C7C7CC" size={20} />
             </Pressable>
-          }
-        >
-          <TextInput
-            style={[styles.fieldInput, stylesHook.fieldInput]}
-            placeholder={loc.send.paste_or_scan}
-            placeholderTextColor={colors.placeholderTextColor}
-            value={recipient?.address}
-            onChangeText={onChangeAddress}
-            editable={isEditable}
-            autoCapitalize="none"
-            autoCorrect={false}
-            testID="AddressInput"
-          />
-        </LabeledField>
+          </View>
+        ) : (
+          <LabeledField
+            label={loc.send.label_address}
+            trailing={
+              <Pressable accessibilityRole="button" onPress={navigateToQRCodeScanner} style={[styles.scanBtn, stylesHook.scanBtn]}>
+                <ScanQRIcon color={colors.brandPrimary} size={20} />
+              </Pressable>
+            }
+          >
+            <TextInput
+              style={[styles.fieldInput, stylesHook.fieldInput]}
+              placeholder={loc.send.paste_or_scan}
+              placeholderTextColor={colors.placeholderTextColor}
+              value={recipient?.address}
+              onChangeText={onChangeAddress}
+              editable={isEditable}
+              autoCapitalize="none"
+              autoCorrect={false}
+              testID="AddressInput"
+            />
+          </LabeledField>
+        )}
 
         <LabeledField label={loc.send.label_note}>
           <TextInput
@@ -964,11 +1000,10 @@ const SendDetails = () => {
           </View>
           <ChevronRightIcon color={colors.chevron} />
         </Pressable>
-      </View>
 
-      {isSplitEligible && (
-        <View style={styles.splitCardWrap}>
+        {isSplitEligible && (
           <View style={[styles.splitCard, stylesHook.splitCard]}>
+            {/* Header row */}
             <View style={styles.splitCardHeader}>
               <View style={styles.splitIconCircle}>
                 <Svg width={19} height={19} viewBox="0 0 24 24" fill="none">
@@ -991,33 +1026,40 @@ const SendDetails = () => {
               </View>
             </View>
 
-            {isSplitEnabled && splitRange.max > 1 && (
-              <View style={[styles.splitPreviewSection, stylesHook.splitPreviewSection]}>
-                <View style={styles.splitPreviewRow}>
-                  <Text style={[styles.splitPreviewLabel, stylesHook.splitPreviewLabel]}>{loc.send.split_payment}</Text>
-                  <Text style={[styles.splitPreviewAmount, stylesHook.splitPreviewAmount]}>
-                    {loc.formatString(loc.send.split_payment_range, {
-                      min: splitRange.min,
-                      max: splitRange.max,
-                    })}
-                  </Text>
-                </View>
-                <View style={[styles.splitFeeIncreaseRow, stylesHook.splitFeeIncreaseRow]}>
-                  <Text style={[styles.splitFeeIncreaseLabel, stylesHook.splitFeeIncreaseLabel]}>{loc.send.fee_increase}</Text>
-                  <Text style={[styles.splitFeeIncreaseValue, stylesHook.splitFeeIncreaseValue]}>
-                    {`≈ +${satoshiToBTC(Math.round(Number(feeRate) * 43 * (splitRange.max - 1)))} ${loc.units[BitcoinUnit.BTC]}`}
-                  </Text>
-                </View>
-              </View>
-            )}
-
+            {/* Info box — always visible */}
             <View style={[styles.splitInfoBox, stylesHook.splitInfoBox]}>
               <InfoIcon color={colors.iconCaution} size={20} />
               <Text style={[styles.splitInfoText, stylesHook.splitInfoText]}>{loc.send.split_payment_info}</Text>
             </View>
+
+            {/* Output preview + fee increase — shown when enabled */}
+            {isSplitEnabled && splitRange.max > 1 && (
+              <>
+                <View style={styles.splitOutputsSection}>
+                  {previewOutputs.map((output, i) => (
+                    <React.Fragment key={i}>
+                      <View style={styles.splitOutputRow}>
+                        <Text style={styles.splitOutputLabel}>{output.label}</Text>
+                        <Text style={styles.splitOutputAmount}>
+                          {satoshiToBTC(output.sats)} {loc.units[BitcoinUnit.BTC]}
+                        </Text>
+                      </View>
+                      {i < previewOutputs.length - 1 && <View style={styles.splitOutputDivider} />}
+                    </React.Fragment>
+                  ))}
+                </View>
+
+                <View style={[styles.splitFeeIncreaseRow, stylesHook.splitFeeIncreaseRow]}>
+                  <Text style={[styles.splitFeeIncreaseLabel, stylesHook.splitFeeIncreaseLabel]}>{loc.send.fee_increase}</Text>
+                  <Text style={[styles.splitFeeIncreaseValue, stylesHook.splitFeeIncreaseValue]}>
+                    {`+${satoshiToBTC(Math.round(Number(feeRate) * 43 * (splitRange.max - 1)))} ${loc.units[BitcoinUnit.BTC]}`}
+                  </Text>
+                </View>
+              </>
+            )}
           </View>
-        </View>
-      )}
+        )}
+      </ScrollView>
 
       <DismissKeyboardInputAccessory />
 
@@ -1045,6 +1087,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
   },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
+    gap: 22,
+  },
   select: {
     marginBottom: 24,
     marginHorizontal: 24,
@@ -1059,11 +1110,57 @@ const styles = StyleSheet.create({
     fontFamily: ClashFont.regular,
     fontSize: 14,
   },
-  body: {
+  // SP address display (read-only card shown when an SP address is entered)
+  fieldGroup: {
+    gap: 8,
+  },
+  fieldLabel: {
+    fontFamily: ClashFont.regular,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  spAddressBox: {
+    backgroundColor: '#F6F5FD',
+    borderWidth: 1,
+    borderColor: '#E6E2FA',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minHeight: 75,
+    justifyContent: 'center',
+  },
+  spAddressText: {
+    fontFamily: ClashFont.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#1A1A1A',
+  },
+  saveContactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#E7E7E7',
+    borderRadius: 16,
+    backgroundColor: '#FDFCFE',
+    paddingHorizontal: 15,
+    height: 44,
+    gap: 8,
+  },
+  saveContactIconCircle: {
+    width: 17,
+    height: 17,
+    borderRadius: 9,
+    backgroundColor: '#F6F5FD',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveContactText: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    gap: 24,
+    fontFamily: ClashFont.medium,
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#754CE8',
   },
   fieldInput: {
     flex: 1,
@@ -1107,9 +1204,6 @@ const styles = StyleSheet.create({
   bottom: {
     paddingHorizontal: 24,
     paddingBottom: 24,
-  },
-  splitCardWrap: {
-    paddingHorizontal: 24,
   },
   splitCard: {
     borderRadius: 12,
@@ -1183,27 +1277,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 20,
   },
-  splitPreviewSection: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    gap: 8,
-    padding: 8,
+  splitOutputsSection: {
+    gap: 0,
   },
-  splitPreviewRow: {
+  splitOutputRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 8,
+    paddingVertical: 1,
   },
-  splitPreviewLabel: {
+  splitOutputLabel: {
     fontFamily: ClashFont.regular,
     fontSize: 12,
     lineHeight: 26,
+    color: '#8E8E93',
   },
-  splitPreviewAmount: {
+  splitOutputAmount: {
     fontFamily: ClashFont.medium,
     fontSize: 12,
     lineHeight: 26,
+    color: '#1A1A1A',
+  },
+  splitOutputDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(230, 228, 228, 0.6)',
+    marginVertical: 2,
   },
   splitFeeIncreaseRow: {
     flexDirection: 'row',
@@ -1212,7 +1310,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 16,
-    marginTop: 4,
   },
   splitFeeIncreaseLabel: {
     fontFamily: ClashFont.regular,

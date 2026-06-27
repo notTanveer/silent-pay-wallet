@@ -148,6 +148,7 @@
         "txSaved": "The transaction file ({filePath}) has been saved.",
         "file_saved_at_path": "The file ({filePath}) has been saved.",
         "cant_send_to_silentpayment_adress": "This wallet cannot send to SilentPayment addresses",
+        "save_as_contact": "Save as Contact",
         "split_payment": "Split payment",
         "split_payment_subtitle": "Multiple outputs, Same total amount sent",
         "split_payment_info": "Your payment will be sent across multiple outputs to different derived addresses. The recipient still receives the total bitcoin sent.",
