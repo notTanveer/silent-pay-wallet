@@ -130,7 +130,15 @@ export function streamSilentBlocks(params: StreamSilentBlocksParams): Promise<vo
       if (heartbeat !== null) return;
       heartbeat = setInterval(() => {
         try {
-          if (ws.readyState === WebSocket.OPEN) {
+          if (ws.readyState !== WebSocket.OPEN) return;
+          // Use native WebSocket ping frame (opcode 0x9) — this is what proxies
+          // (Cloudflare Tunnel, nginx, etc.) actually look for. An application-level
+          // JSON message is just payload data that proxies ignore for keepalive.
+          // React Native exposes ws.ping() for this; fall back to a JSON no-op only
+          // if the native method isn't available (older RN versions).
+          if (typeof (ws as any).ping === 'function') {
+            (ws as any).ping();
+          } else {
             ws.send(JSON.stringify({ event: 'ping' }));
           }
         } catch {
@@ -299,20 +307,25 @@ export function streamSilentBlocks(params: StreamSilentBlocksParams): Promise<vo
     };
 
     ws.onerror = (event: any) => {
+      const detail = event?.message ?? event?.type ?? 'unknown';
+      console.warn(`[WS] onerror — receivedAny=${receivedAny} lastHeight=${lastHeight} detail="${detail}"`);
       // No data yet → endpoint probably isn't there; signal a fallback to HTTP.
       fail(
         receivedAny
-          ? new Error('Silent-block stream socket error')
-          : new StreamUnsupportedError(`WebSocket error before any data: ${event?.message ?? ''}`),
+          ? new Error(`Silent-block stream socket error: ${detail}`)
+          : new StreamUnsupportedError(`WebSocket error before any data: ${detail}`),
       );
     };
 
     ws.onclose = (event: any) => {
       if (settled) return;
+      const code = event?.code ?? '?';
+      const reason = event?.reason ?? '';
+      console.warn(`[WS] onclose — receivedAny=${receivedAny} lastHeight=${lastHeight} code=${code} reason="${reason}"`);
       fail(
         receivedAny
-          ? new Error(`Silent-block stream closed prematurely (code ${event?.code})`)
-          : new StreamUnsupportedError(`WebSocket closed before any data (code ${event?.code})`),
+          ? new Error(`Silent-block stream closed prematurely (code ${code}${reason ? `: ${reason}` : ''})`)
+          : new StreamUnsupportedError(`WebSocket closed before any data (code ${code})`),
       );
     };
   });
