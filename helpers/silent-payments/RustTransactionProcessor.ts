@@ -93,6 +93,8 @@ export class RustTransactionProcessor {
     }
 
     try {
+      const date = Date.now();
+
       // Pass the underlying ArrayBuffer directly — zero encoding cost.
       const result: RustBatchScanResult = spScanSilentBlockRange(
         this.scanPrivkeyHex,
@@ -100,9 +102,13 @@ export class RustTransactionProcessor {
         frames.buffer as ArrayBuffer,
       );
 
+      const scanTime = Date.now() - date;
+
       console.log(
-        `[RustTransactionProcessor] (binary) Scanned ${result.transactionsScanned} txs, ` +
-          `${result.outputsScanned} outputs, found ${result.matchedUtxos.length} matches`,
+        `[RustTransactionProcessor] (binary) input ${frames.length} bytes (${(frames.length / 1024).toFixed(1)} KB), ` +
+          `rust-scan ${scanTime}ms — ` +
+          `scanned ${result.transactionsScanned} txs, ${result.outputsScanned} outputs, ` +
+          `found ${result.matchedUtxos.length} matches`,
       );
 
       return result.matchedUtxos.map(utxo => this.convertToSilentPaymentUTXO(utxo, silentPaymentAddress));

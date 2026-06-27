@@ -5,7 +5,6 @@ use std::collections::HashMap;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
-use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use bitcoin_hashes::{sha256t_hash_newtype, Hash, HashEngine};
 use rayon::prelude::*;
 use secp256k1::{PublicKey, Scalar, Secp256k1, SecretKey};
