@@ -18,3 +18,4 @@ export type {
 } from './types';
 export { IDLE_SCAN_STATE } from './types';
 export { RustTransactionProcessor, createTransactionProcessor } from './RustTransactionProcessor';
+export { formatBlockHeight } from './format';

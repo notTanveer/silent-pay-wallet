@@ -15,15 +15,45 @@ export class IndexerHttpError extends Error {
   }
 }
 
+const TRANSIENT_STATUSES = new Set([429, 502, 503, 504]);
+const RETRY_DELAYS_MS = [500, 1000, 2000];
+
 export class IndexerHttpClient {
   constructor(
     private baseUrl: string,
     private timeout: number = 30000,
   ) {}
 
+  /**
+   * Wraps a fetch call with bounded exponential backoff for transient failures
+   * (502/503/504/429 and thrown network errors). Non-retryable responses are
+   * returned immediately so the caller can inspect `response.ok` and status.
+   */
+  private async fetchWithLocalRetry(url: string, options: Parameters<typeof fetchWithRetries>[1]): Promise<Response> {
+    let lastErr: unknown;
+    for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+      if (attempt > 0) {
+        await new Promise(r => setTimeout(r, RETRY_DELAYS_MS[attempt - 1]));
+      }
+      try {
+        const response = await fetchWithRetries(url, options);
+        if (response.ok || !TRANSIENT_STATUSES.has(response.status)) {
+          return response;
+        }
+        // Retryable status — keep looping; on exhaustion fall through to return below.
+        lastErr = new IndexerHttpError(response.status, `HTTP error! status: ${response.status}`);
+        if (attempt === RETRY_DELAYS_MS.length) return response;
+      } catch (err) {
+        lastErr = err;
+        if (attempt === RETRY_DELAYS_MS.length) throw err;
+      }
+    }
+    throw lastErr;
+  }
+
   private async executeGet<T>(endpoint: string, errorContext: string): Promise<T> {
     try {
-      const response = await fetchWithRetries(`${this.baseUrl}${endpoint}`, {
+      const response = await this.fetchWithLocalRetry(`${this.baseUrl}${endpoint}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -53,7 +83,7 @@ export class IndexerHttpClient {
    */
   async getBinary(endpoint: string, errorContext: string): Promise<Uint8Array> {
     try {
-      const response = await fetchWithRetries(`${this.baseUrl}${endpoint}`, {
+      const response = await this.fetchWithLocalRetry(`${this.baseUrl}${endpoint}`, {
         method: 'GET',
         headers: {
           Accept: 'application/octet-stream',

@@ -48,23 +48,23 @@ describe('SilentPaymentIndexer scan loop', () => {
     const { handlers, binaryCalls, jsonCalls } = recordingHandlers();
     const progress: number[] = [];
 
-    // 100..174 → two ranges with RANGE_BATCH_SIZE=50: [100,149], [150,174].
-    await indexer.scanForwardWithCallback(100, 174, handlers, p => {
+    // 100..274 → two ranges with RANGE_BATCH_SIZE=100: [100,199], [200,274].
+    await indexer.scanForwardWithCallback(100, 274, handlers, p => {
       progress.push(p.currentBlock);
     });
 
     expect(binarySpy).toHaveBeenCalledTimes(2);
-    expect(binarySpy).toHaveBeenNthCalledWith(1, 100, 149);
-    expect(binarySpy).toHaveBeenNthCalledWith(2, 150, 174);
+    expect(binarySpy).toHaveBeenNthCalledWith(1, 100, 199);
+    expect(binarySpy).toHaveBeenNthCalledWith(2, 200, 274);
     expect(jsonSpy).not.toHaveBeenCalled();
 
     // Handler invoked once per range with rangeEnd — even though the frames carry
     // no matches, so the wallet still advances lastScannedBlock past empty blocks.
-    expect(binaryCalls.map(c => c.rangeEnd)).toEqual([149, 174]);
+    expect(binaryCalls.map(c => c.rangeEnd)).toEqual([199, 274]);
     expect(jsonCalls).toHaveLength(0);
 
     // Progress is reported per range and reaches the tip.
-    expect(progress).toEqual([149, 174]);
+    expect(progress).toEqual([199, 274]);
   });
 
   it('prefetches the next range while processing the current one (one-ahead pipeline)', async () => {
@@ -80,8 +80,8 @@ describe('SilentPaymentIndexer scan loop', () => {
       processJsonRange: async () => 0,
     };
 
-    // 100..249 → three ranges: [100,149], [150,199], [200,249].
-    await indexer.scanForwardWithCallback(100, 249, handlers);
+    // 100..399 → three ranges: [100,199], [200,299], [300,399].
+    await indexer.scanForwardWithCallback(100, 399, handlers);
 
     // While processing range 0, range 1's fetch is already in flight (2 dispatched);
     // while processing range 1, range 2's is too (3); range 2 has nothing to prefetch.
@@ -91,7 +91,7 @@ describe('SilentPaymentIndexer scan loop', () => {
 
   it('aborts the whole scan on a fetch failure and does not advance past the last good range', async () => {
     const binarySpy = jest.spyOn(indexer, 'getSilentBlocksRange').mockImplementation(async (start: number) => {
-      if (start === 150) {
+      if (start === 200) {
         throw new Error('network down');
       }
       return new Uint8Array([0]);
@@ -99,14 +99,14 @@ describe('SilentPaymentIndexer scan loop', () => {
 
     const { handlers, binaryCalls } = recordingHandlers();
 
-    // 100..249 → [100,149] ok, [150,199] fails, [200,249] should never be fetched.
-    await expect(indexer.scanForwardWithCallback(100, 249, handlers)).rejects.toThrow('Failed to fetch range 150-199');
+    // 100..399 → [100,199] ok, [200,299] fails, [300,399] should never be fetched.
+    await expect(indexer.scanForwardWithCallback(100, 399, handlers)).rejects.toThrow('Failed to fetch range 200-299');
 
-    // Only the first range was processed (committed up to 149); the failed and
+    // Only the first range was processed (committed up to 199); the failed and
     // subsequent ranges were not, so lastScannedBlock stays at the last good range.
-    expect(binaryCalls.map(c => c.rangeEnd)).toEqual([149]);
+    expect(binaryCalls.map(c => c.rangeEnd)).toEqual([199]);
     // The range after the failure is never fetched.
-    expect(binarySpy.mock.calls.map(c => c[0])).toEqual([100, 150]);
+    expect(binarySpy.mock.calls.map(c => c[0])).toEqual([100, 200]);
   });
 
   it('falls back to the JSON path for the rest of the scan when the binary endpoint 404s', async () => {
@@ -119,17 +119,34 @@ describe('SilentPaymentIndexer scan loop', () => {
 
     const { handlers, binaryCalls, jsonCalls } = recordingHandlers();
 
-    // 100..199 → [100,149], [150,199].
-    await indexer.scanForwardWithCallback(100, 199, handlers);
+    // 100..299 → [100,199], [200,299].
+    await indexer.scanForwardWithCallback(100, 299, handlers);
 
     // Binary is tried once (404 on the first range); after that the loop uses JSON
     // directly and never probes the binary endpoint again.
     expect(binarySpy).toHaveBeenCalledTimes(1);
     expect(jsonSpy).toHaveBeenCalledTimes(2);
-    expect(jsonSpy).toHaveBeenNthCalledWith(1, 100, 149);
-    expect(jsonSpy).toHaveBeenNthCalledWith(2, 150, 199);
+    expect(jsonSpy).toHaveBeenNthCalledWith(1, 100, 199);
+    expect(jsonSpy).toHaveBeenNthCalledWith(2, 200, 299);
 
     expect(binaryCalls).toHaveLength(0);
-    expect(jsonCalls.map(c => c.rangeEnd)).toEqual([149, 199]);
+    expect(jsonCalls.map(c => c.rangeEnd)).toEqual([199, 299]);
+  });
+
+  it('includes tipHeight in every HTTP-path onProgress payload', async () => {
+    jest.spyOn(indexer, 'getSilentBlocksRange').mockImplementation(async () => new Uint8Array([0]));
+
+    const payloads: any[] = [];
+    await indexer.scanForwardWithCallback(
+      100,
+      274,
+      { processBinaryRange: async () => 0, processJsonRange: async () => 0 },
+      p => { payloads.push(p); },
+    );
+
+    expect(payloads.length).toBeGreaterThan(0);
+    for (const p of payloads) {
+      expect(p.tipHeight).toBe(274);
+    }
   });
 });

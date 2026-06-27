@@ -27,12 +27,17 @@ interface StreamSilentBlocksParams {
   firstFrameTimeoutMs?: number;
   /** Abort if the stream stalls mid-flight (no message) for this long. */
   idleTimeoutMs?: number;
+  /** Send a no-op JSON ping this often to prevent proxy keepalive timeouts. */
+  heartbeatIntervalMs?: number;
 }
 
 // ~ one 200-block HTTP chunk's worth of bytes; keeps the Rust scan batched.
 const DEFAULT_FLUSH_BYTES = 1_500_000;
 const DEFAULT_FIRST_FRAME_TIMEOUT = 15_000;
 const DEFAULT_IDLE_TIMEOUT = 30_000;
+// Proxies (Cloudflare Tunnel, nginx) typically close idle WebSocket connections
+// after 60–300 s. Sending a no-op ping every 20 s keeps the TCP session alive.
+const DEFAULT_HEARTBEAT_INTERVAL = 20_000;
 
 /** http(s)://host[:port] -> ws(s)://host[:port] (the WS gateway shares the HTTP server). */
 export function deriveWsUrl(baseUrl: string): string {
@@ -78,6 +83,7 @@ export function streamSilentBlocks(params: StreamSilentBlocksParams): Promise<vo
     flushBytes = DEFAULT_FLUSH_BYTES,
     firstFrameTimeoutMs = DEFAULT_FIRST_FRAME_TIMEOUT,
     idleTimeoutMs = DEFAULT_IDLE_TIMEOUT,
+    heartbeatIntervalMs = DEFAULT_HEARTBEAT_INTERVAL,
   } = params;
 
   return new Promise<void>((resolve, reject) => {
@@ -97,6 +103,7 @@ export function streamSilentBlocks(params: StreamSilentBlocksParams): Promise<vo
     let lastHeight = from - 1;
     let blocksScanned = 0;
     let utxosFound = 0;
+    let lastProgressEmit = 0;
 
     // Accumulated frames awaiting a flush to the (sequential) Rust scanner.
     let pending: Uint8Array[] = [];
@@ -109,6 +116,7 @@ export function streamSilentBlocks(params: StreamSilentBlocksParams): Promise<vo
     let chainError: Error | null = null;
 
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let heartbeat: ReturnType<typeof setInterval> | null = null;
 
     const clearTimer = () => {
       if (timer) {
@@ -117,8 +125,25 @@ export function streamSilentBlocks(params: StreamSilentBlocksParams): Promise<vo
       }
     };
 
+    const startHeartbeat = () => {
+      if (heartbeat !== null) return;
+      heartbeat = setInterval(() => {
+        try {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ event: 'ping' }));
+          }
+        } catch {
+          /* noop — if the socket is gone the next onerror/onclose will handle it */
+        }
+      }, heartbeatIntervalMs);
+    };
+
     const cleanup = () => {
       clearTimer();
+      if (heartbeat !== null) {
+        clearInterval(heartbeat);
+        heartbeat = null;
+      }
       try {
         ws.onopen = null;
         ws.onmessage = null;
@@ -230,6 +255,7 @@ export function streamSilentBlocks(params: StreamSilentBlocksParams): Promise<vo
 
       // Binary frame.
       armTimer(idleTimeoutMs, () => new Error('Silent-block stream stalled'));
+      startHeartbeat(); // keep the proxy connection alive once streaming begins
       const frame = new Uint8Array(data as ArrayBuffer);
       if (frame.length < 8) return;
 
@@ -245,6 +271,21 @@ export function streamSilentBlocks(params: StreamSilentBlocksParams): Promise<vo
         fail(new Error('SCAN_CANCELLED'));
         return;
       }
+
+      const now = Date.now();
+      if (onProgress && now - lastProgressEmit >= 250) {
+        lastProgressEmit = now;
+        const scannedSoFar = lastHeight - from + 1;
+        onProgress({
+          currentBlock: lastHeight,
+          tipHeight: to,
+          totalBlocks,
+          blocksScanned: scannedSoFar,
+          percentComplete: totalBlocks > 0 ? (scannedSoFar / totalBlocks) * 100 : 0,
+          utxosFound,
+        });
+      }
+
       if (pendingBytes >= flushBytes) flush(false);
     };
 

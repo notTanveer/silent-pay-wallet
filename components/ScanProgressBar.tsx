@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import loc from '../loc';
+import { formatBlockHeight } from '../helpers/silent-payments';
 import type { ScanStateInfo } from '../helpers/silent-payments';
 import { DetailViewStackParamList } from '../navigation/DetailViewStackParamList';
 import { useTheme } from './themes';
@@ -45,7 +46,7 @@ const ScanProgressBar: React.FC<Props> = ({ scanState, onResume }) => {
   if (status === 'idle' && !isDone) return null;
 
   if (isDone) {
-    const blockText = loc.formatString(loc.sync.banner_synced, { blockHeight: lastScannedBlock.toLocaleString() });
+    const blockText = loc.formatString(loc.sync.banner_synced, { blockHeight: formatBlockHeight(lastScannedBlock) });
     return (
       <TouchableOpacity
         style={[styles.container, { borderColor: colors.accentSubtle, backgroundColor: colors.surfaceSubtle }]}
@@ -69,7 +70,7 @@ const ScanProgressBar: React.FC<Props> = ({ scanState, onResume }) => {
 
   if (status === 'paused') {
     const pausedBlock = progress?.currentBlock ?? lastScannedBlock;
-    const blockText = loc.formatString(loc.sync.banner_paused_at, { blockHeight: pausedBlock.toLocaleString() });
+    const blockText = loc.formatString(loc.sync.banner_paused_at, { blockHeight: formatBlockHeight(pausedBlock) });
     return (
       <View style={[styles.container, { borderColor: colors.accentSubtle, backgroundColor: colors.surfaceSubtle }]}>
         <TouchableOpacity

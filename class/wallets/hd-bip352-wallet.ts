@@ -27,7 +27,7 @@ import { HDTaprootWallet } from './hd-taproot-wallet.ts';
 const ECPair = ECPairFactory(ecc);
 
 // Minimum gap between scan-progress state emissions, to avoid flooding React with re-renders.
-const SCAN_PROGRESS_THROTTLE_MS = 500;
+const SCAN_PROGRESS_THROTTLE_MS = 150;
 // Number of recent progress samples kept for the windowed ETA throughput estimate.
 const SCAN_ETA_ROLLING_WINDOW = 10;
 
@@ -474,6 +474,9 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     this._scanSamples = [];
     this._lastProgressEmitTime = 0;
 
+    // Emit scanning immediately so the banner appears before any network I/O.
+    this._emitScanState('scanning', { startedAt: this._scanStartTime, progress: null, eta: null, etaComputedAt: null, error: null });
+
     try {
       const indexer = getDefaultIndexer();
       const latestHeightResponse = await indexer.getLatestBlockHeight();
@@ -491,6 +494,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
         startHeight = this.lastScannedBlock + 1;
 
         if (startHeight > latestHeight) {
+          this._emitScanState('idle', IDLE_SCAN_STATE);
           return 0;
         }
       } else {
@@ -498,10 +502,9 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       }
 
       if (startHeight > endHeight) {
+        this._emitScanState('idle', IDLE_SCAN_STATE);
         return 0;
       }
-
-      this._emitScanState('scanning', { startedAt: this._scanStartTime, progress: null, eta: null, etaComputedAt: null, error: null });
 
       let totalUTXOsAdded = 0;
 
@@ -516,8 +519,14 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
         let eta: number | null = null;
         let etaComputedAt: number | null = null;
-        if (this._scanSamples.length >= 2) {
-          const oldest = this._scanSamples[0];
+        if (this._scanSamples.length >= 1) {
+          // Anchor the window to (startedAt, 0%) when the window isn't full yet so
+          // ETA is available from the very first sample — important for fast WS scans
+          // where the whole backfill may complete before the window fills.
+          const oldest =
+            this._scanSamples.length >= SCAN_ETA_ROLLING_WINDOW
+              ? this._scanSamples[0]
+              : { t: this._scanStartTime, percent: 0 };
           const newest = this._scanSamples[this._scanSamples.length - 1];
           const elapsedMs = newest.t - oldest.t;
           const percentGained = newest.percent - oldest.percent;

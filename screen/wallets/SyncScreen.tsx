@@ -8,7 +8,7 @@ import SyncStatusIcon, { PauseIcon, PlayIcon } from '../../components/SyncStatus
 import { useStorage } from '../../hooks/context/useStorage';
 import { useScannableWallet } from '../../hooks/useScannableWallet';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
-import { type ScanProgress, type ScanStatus } from '../../helpers/silent-payments';
+import { type ScanProgress, type ScanStatus, formatBlockHeight } from '../../helpers/silent-payments';
 import loc from '../../loc';
 import { ClashFont } from '../../constants/fonts';
 import { useTheme } from '../../components/themes';
@@ -222,11 +222,11 @@ const SyncScreen: React.FC<SyncScreenProps> = () => {
               {effectiveProgress ? (
                 <View style={styles.blockHeightRow}>
                   <Text style={[styles.cardValue, styles.cardValueSemibold, { color: colors.textPrimary }]} numberOfLines={1}>
-                    {effectiveProgress.currentBlock.toLocaleString()}
+                    {formatBlockHeight(effectiveProgress.currentBlock)}
                   </Text>
                   <Text style={[styles.cardValue, { color: colors.textMuted }]}>{' / '}</Text>
                   <Text style={[styles.cardValue, { color: colors.textPrimary }]} numberOfLines={1}>
-                    {effectiveProgress.tipHeight.toLocaleString()}
+                    {formatBlockHeight(effectiveProgress.tipHeight)}
                   </Text>
                 </View>
               ) : (
