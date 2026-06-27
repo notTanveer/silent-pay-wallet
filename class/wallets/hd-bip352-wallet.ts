@@ -2,7 +2,7 @@ import * as bip39 from 'bip39';
 import { Buffer } from 'buffer';
 import { ECPairFactory } from 'ecpair';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet.ts';
-import { getDefaultIndexer } from '../../modules/SilentPaymentIndexer';
+import { disconnectIndexer, getDefaultIndexer, StreamUnsupportedError } from '../../modules/SilentPaymentIndexer';
 import ecc from '../../modules/noble_ecc';
 import {
   getSilentPaymentAddress,
@@ -16,6 +16,7 @@ import {
   type ScanProgressCallback,
   type ScanStateInfo,
   type ScanStatus,
+  type ScanRangeHandlers,
   IDLE_SCAN_STATE,
   type IScannableWallet,
 } from '../../helpers/silent-payments';
@@ -510,9 +511,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
           this._scanSamples.shift();
         }
 
-        // Estimate ETA from the recent throughput (percent/ms) over the rolling window,
-        // not a raw batch count: time spanned vs. percent gained between the oldest and
-        // newest samples gives the current scan rate, which we extrapolate to 100%.
         let eta: number | null = null;
         let etaComputedAt: number | null = null;
         if (this._scanSamples.length >= 2) {
@@ -543,42 +541,61 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         }
       };
 
-      await indexer.scanForwardWithCallback(
-        startHeight,
-        endHeight,
-        {
-          // Frames cover every height in the range, so advance lastScannedBlock to
-          // rangeEnd even when a range contains no matches (fixes trailing empty
-          // blocks being rescanned forever).
-          processBinaryRange: async (frames, rangeEnd) => {
-            if (this.cancelScanCallbackScan) {
-              throw new Error('SCAN_CANCELLED');
-            }
+      const handlers: ScanRangeHandlers = {
+        // Frames cover every height in the range, so advance lastScannedBlock to
+        // rangeEnd even when a range contains no matches (fixes trailing empty
+        // blocks being rescanned forever).
+        processBinaryRange: async (frames, rangeEnd) => {
+          if (this.cancelScanCallbackScan) {
+            throw new Error('SCAN_CANCELLED');
+          }
 
-            await this._waitIfPaused();
-            if (this.cancelScanCallbackScan) throw new Error('SCAN_CANCELLED');
+          await this._waitIfPaused();
+          if (this.cancelScanCallbackScan) throw new Error('SCAN_CANCELLED');
 
-            const utxos = await this.processSilentBlockFrames(frames);
-            const addedCount = this.commitUTXOs(utxos, rangeEnd);
-            totalUTXOsAdded += addedCount;
+          const utxos = await this.processSilentBlockFrames(frames);
+          const addedCount = this.commitUTXOs(utxos, rangeEnd);
+          totalUTXOsAdded += addedCount;
 
-            return addedCount;
-          },
-          processJsonRange: async (transactions, rangeEnd) => {
-            if (this.cancelScanCallbackScan) {
-              throw new Error('SCAN_CANCELLED');
-            }
-
-            const utxos = await this.processTransactions(transactions);
-            const addedCount = this.commitUTXOs(utxos, rangeEnd);
-            totalUTXOsAdded += addedCount;
-
-            return addedCount;
-          },
+          return addedCount;
         },
-        wrappedProgress,
-        () => this.cancelScanCallbackScan,
-      );
+        processJsonRange: async (transactions, rangeEnd) => {
+          if (this.cancelScanCallbackScan) {
+            throw new Error('SCAN_CANCELLED');
+          }
+
+          const utxos = await this.processTransactions(transactions);
+          const addedCount = this.commitUTXOs(utxos, rangeEnd);
+          totalUTXOsAdded += addedCount;
+
+          return addedCount;
+        },
+      };
+
+      const cancel = () => this.cancelScanCallbackScan;
+
+      // Prefer the WebSocket stream: one connection carries the whole backfill, so
+      // the ~1.5s tunnel round-trip is paid once instead of per 200-block chunk.
+      // Fall back to the HTTP range loop for older indexers (no `sync` support) or
+      // if the stream drops — resuming from wherever commitUTXOs last advanced
+      // lastScannedBlock, so no height is ever skipped.
+      try {
+        await indexer.streamForwardWithCallback(startHeight, endHeight, handlers, wrappedProgress, cancel);
+      } catch (error: any) {
+        if (error?.message === 'SCAN_CANCELLED') {
+          throw error;
+        }
+        if (error instanceof StreamUnsupportedError) {
+          console.warn('[SP] WS streaming unavailable; using HTTP range scan:', error.message);
+        } else {
+          console.warn('[SP] WS streaming failed; resuming via HTTP range scan:', error?.message);
+        }
+
+        const resumeStart = this.lastScannedBlock >= startHeight ? this.lastScannedBlock + 1 : startHeight;
+        if (resumeStart <= endHeight) {
+          await indexer.scanForwardWithCallback(resumeStart, endHeight, handlers, wrappedProgress, cancel);
+        }
+      }
 
       this._emitScanState('idle', IDLE_SCAN_STATE);
 

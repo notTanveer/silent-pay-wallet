@@ -14,6 +14,7 @@ export type {
   ScanStatus,
   ScanStateInfo,
   IScannableWallet,
+  ScanRangeHandlers,
 } from './types';
 export { IDLE_SCAN_STATE, isScannable } from './types';
 export { RustTransactionProcessor, createTransactionProcessor } from './RustTransactionProcessor';

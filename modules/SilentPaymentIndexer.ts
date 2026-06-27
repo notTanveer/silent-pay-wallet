@@ -1,4 +1,5 @@
 import { IndexerHttpClient, IndexerHttpError } from '../helpers/silent-payments/IndexerHttpClient';
+import { deriveWsUrl, StreamUnsupportedError, streamSilentBlocks } from './SilentBlockStreamClient';
 import type {
   HealthResponse,
   LatestBlockHeightResponse,
@@ -52,10 +53,20 @@ class SilentPaymentIndexer {
    * the binary endpoint, letting the scan loop fall back to the JSON path.
    */
   async getSilentBlocksRange(startHeight: number, endHeight: number): Promise<Uint8Array> {
-    return this.httpClient.getBinary(
-      `/silent-block/range?startHeight=${startHeight}&endHeight=${endHeight}`,
+    const t0 = Date.now();
+    const frames = await this.httpClient.getBinary(
+      `/silent-block/range?startHeight=${startHeight}&endHeight=${endHeight}&filterSpent=true`,
       `Error fetching silent block range ${startHeight}-${endHeight}`,
     );
+    const elapsedMs = Date.now() - t0;
+    const bytes = frames.length;
+    const kbPerSec = elapsedMs > 0 ? (bytes / 1024) / (elapsedMs / 1000) : 0;
+    console.log(
+      `[Indexer] GET /silent-block/range [${startHeight}-${endHeight}] ` +
+        `received ${bytes} bytes (${(bytes / 1024).toFixed(1)} KB) in ${elapsedMs}ms ` +
+        `(${kbPerSec.toFixed(1)} KB/s)`,
+    );
+    return frames;
   }
 
   async getLatestBlockHeight(): Promise<LatestBlockHeightResponse> {
@@ -94,6 +105,33 @@ class SilentPaymentIndexer {
     await this.scanBlocks(startHeight, endHeight, handlers, onProgress, cancelCallback);
   }
 
+  /**
+   * Sync [startHeight, endHeight] over a single WebSocket connection instead of a
+   * poll loop, so the ~1.5s tunnel round-trip is paid once per session rather than
+   * per 200-block chunk. Frames are delegated to `handlers.processBinaryRange`, the
+   * same contract as {@link scanForwardWithCallback}.
+   *
+   * Rejects with {@link StreamUnsupportedError} if the indexer doesn't speak the
+   * `sync` protocol (caller falls back to the HTTP range scan).
+   */
+  async streamForwardWithCallback(
+    startHeight: number,
+    endHeight: number,
+    handlers: ScanRangeHandlers,
+    onProgress?: ScanProgressCallback,
+    cancelCallback?: () => boolean,
+  ): Promise<void> {
+    await streamSilentBlocks({
+      wsUrl: deriveWsUrl(this.httpClient.getBaseUrl()),
+      from: startHeight,
+      to: endHeight,
+      filterSpent: true,
+      handlers,
+      onProgress,
+      cancelCallback,
+    });
+  }
+
   private async scanBlocks(
     startHeight: number,
     endHeight: number,
@@ -101,7 +139,7 @@ class SilentPaymentIndexer {
     onProgress?: ScanProgressCallback,
     cancelCallback?: () => boolean,
   ): Promise<void> {
-    const RANGE_BATCH_SIZE = 50;
+    const RANGE_BATCH_SIZE = 100;
     const totalBlocks = endHeight - startHeight + 1;
     let blocksScanned = 0;
     let utxosFound = 0;
@@ -211,3 +249,5 @@ export function getDefaultIndexer(): SilentPaymentIndexer {
 export function disconnectIndexer(): void {
   defaultIndexer = null;
 }
+
+export { StreamUnsupportedError } from './SilentBlockStreamClient';
