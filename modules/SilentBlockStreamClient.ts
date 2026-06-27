@@ -100,6 +100,7 @@ export function streamSilentBlocks(params: StreamSilentBlocksParams): Promise<vo
 
     let settled = false;
     let receivedAny = false;
+    let streamingStarted = false;
     let lastHeight = from - 1;
     let blocksScanned = 0;
     let utxosFound = 0;
@@ -247,6 +248,13 @@ export function streamSilentBlocks(params: StreamSilentBlocksParams): Promise<vo
         if (msg?.event === 'synced') {
           clearTimer();
           flush(true);
+        } else if (msg?.event === 'pong') {
+          // Server acknowledged our heartbeat ping — connection is alive.
+          // Reset the stall timer so a slow LMDB scan between frames doesn't
+          // time us out as long as the server keeps responding to pings.
+          if (streamingStarted) {
+            armTimer(idleTimeoutMs, () => new Error('Silent-block stream stalled'));
+          }
         } else if (msg?.event === 'error') {
           fail(new Error(`Indexer stream error: ${msg?.data?.message ?? 'unknown'}`));
         }
@@ -254,6 +262,7 @@ export function streamSilentBlocks(params: StreamSilentBlocksParams): Promise<vo
       }
 
       // Binary frame.
+      streamingStarted = true;
       armTimer(idleTimeoutMs, () => new Error('Silent-block stream stalled'));
       startHeartbeat(); // keep the proxy connection alive once streaming begins
       const frame = new Uint8Array(data as ArrayBuffer);
