@@ -16,12 +16,17 @@ function floatFromBytes(buf: Buffer, offset: number): number {
   return buf.readUInt32BE(offset) / 0x100000000;
 }
 
+// Deterministic base floor (no jitter) — shared by economicFloor and estimateSplitRange.
+export function baseFloor(feeRate: number): number {
+  const inputCost = Math.ceil(SPEND_INPUT_VBYTES * Math.max(1, feeRate));
+  return Math.max(SPLIT_MIN_OUTPUT_SATS, FLOOR_K * inputCost);
+}
+
 // Economically spendable floor: a multiple of the cost to later spend a P2TR
 // input, never below the absolute minimum, plus up to 10% random jitter so the
 // floor is not a constant fingerprint.
 export async function economicFloor(feeRate: number, rng: RandomSource = randomBytes): Promise<number> {
-  const inputCost = Math.ceil(SPEND_INPUT_VBYTES * feeRate);
-  const base = Math.max(SPLIT_MIN_OUTPUT_SATS, FLOOR_K * inputCost);
+  const base = baseFloor(feeRate);
   const buf = await rng(4);
   const jitter = Math.floor(floatFromBytes(buf, 0) * 0.1 * base);
   return base + jitter;
@@ -97,13 +102,14 @@ export async function deRound(amounts: number[], floor: number, rng: RandomSourc
 // Plan the change outputs so they blend with the payment outputs. A single
 // change output is used when it is <= pMax (already in-distribution); otherwise
 // change is split into in-range pieces. The fee for every output beyond the
-// 2-output coin-selection baseline is subtracted from change first.
+// coinselect-priced baseline is subtracted from change first.
 export async function planChangeOutputs(params: {
   change: number;
   pMax: number;
   floor: number;
   feeRate: number;
   paymentCount: number;
+  coinSelectOutputCount?: number; // outputs coinselect already priced for (default 2: 1 payment + 1 change)
   outputVBytes?: number;
   dustThreshold?: number;
   rng?: RandomSource;
@@ -114,7 +120,7 @@ export async function planChangeOutputs(params: {
   const rng = params.rng ?? randomBytes;
   if (change <= 0) return [];
 
-  const PRICED_OUTPUTS = 2; // coinselect baseline: 1 payment + 1 change
+  const PRICED_OUTPUTS = params.coinSelectOutputCount ?? 2;
   const feePerOutput = Math.ceil(outputVBytes * feeRate);
 
   // Start from the piece count needed for each piece to be <= pMax, then reduce
@@ -133,10 +139,14 @@ export async function planChangeOutputs(params: {
 
 // Top-level planner: turns a single payment value + the coin-selected change
 // into a blended set of payment and change amounts.
+// coinSelectOutputCount: how many outputs coinselect already priced for
+//   (1 = coin-perfect/no-change, 2 = with change). Used to gate splits that
+//   would add outputs whose fee exceeds the available change budget.
 export async function planSplitOutputs(params: {
   paymentValue: number;
   changeValue: number;
   feeRate: number;
+  coinSelectOutputCount?: number;
   outputVBytes?: number;
   dustThreshold?: number;
   rng?: RandomSource;
@@ -145,15 +155,25 @@ export async function planSplitOutputs(params: {
   const rng = params.rng ?? randomBytes;
   const outputVBytes = params.outputVBytes ?? OUTPUT_VBYTES;
   const dustThreshold = params.dustThreshold ?? DEFAULT_DUST_THRESHOLD;
+  const coinSelectOutputCount = params.coinSelectOutputCount ?? 2;
 
   const floor = await economicFloor(feeRate, rng);
+  const feePerOutput = Math.ceil(outputVBytes * feeRate);
 
   let paymentAmounts: number[];
   if (maxFeasibleCount(paymentValue, floor) < 2) {
     paymentAmounts = [paymentValue]; // too small to split at this fee rate
   } else {
     const n = await pickCount(paymentValue, floor, rng);
-    paymentAmounts = await deRound(await logUniformPartition(paymentValue, n, floor, rng), floor, rng);
+    // Extra payment outputs beyond the coinselect baseline must be funded by
+    // change (assuming 0 change outputs in the worst case). Guard prevents the
+    // split from firing when there is no change budget for those extra vbytes.
+    const extraFeeNeeded = Math.max(0, n - coinSelectOutputCount) * feePerOutput;
+    if (changeValue < extraFeeNeeded) {
+      paymentAmounts = [paymentValue]; // not enough change to cover extra output fees
+    } else {
+      paymentAmounts = await deRound(await logUniformPartition(paymentValue, n, floor, rng), floor, rng);
+    }
   }
 
   const pMax = Math.max(...paymentAmounts);
@@ -163,6 +183,7 @@ export async function planSplitOutputs(params: {
     floor,
     feeRate,
     paymentCount: paymentAmounts.length,
+    coinSelectOutputCount,
     outputVBytes,
     dustThreshold,
     rng,
@@ -176,8 +197,7 @@ export async function planSplitOutputs(params: {
 // UI preview helper: the count is randomized and fee-dependent, so the preview
 // shows a range. Uses the base floor without jitter (a deliberate estimate).
 export function estimateSplitRange(paymentValue: number, feeRate: number): { min: number; max: number } {
-  const inputCost = Math.ceil(SPEND_INPUT_VBYTES * Math.max(1, feeRate));
-  const floorEstimate = Math.max(SPLIT_MIN_OUTPUT_SATS, FLOOR_K * inputCost);
+  const floorEstimate = baseFloor(feeRate);
   const maxFeasible = Math.min(SPLIT_MAX_OUTPUTS, Math.floor(paymentValue / floorEstimate));
   if (maxFeasible < 2) return { min: 1, max: 1 };
   return { min: 2, max: maxFeasible };

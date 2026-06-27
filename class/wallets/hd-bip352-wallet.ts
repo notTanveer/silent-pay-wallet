@@ -787,7 +787,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
   private getChangeAddresses(count: number): string[] {
     const base = this.next_free_change_address_index;
     const addresses = Array.from({ length: count }, (_, i) => this._getInternalAddressByIndex(base + i));
-    if (count > 1) this.next_free_change_address_index = base + count;
+    if (count >= 1) this.next_free_change_address_index = base + count;
     return addresses;
   }
 
@@ -812,11 +812,13 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     paymentValue: number,
     changeValue: number,
     feeRate: number,
+    coinSelectOutputCount: number,
   ): Promise<{ outputs: CoinSelectOutput[]; changeAddresses: string[] }> {
     const { paymentAmounts, changeAmounts } = await planSplitOutputs({
       paymentValue,
       changeValue,
       feeRate,
+      coinSelectOutputCount,
     });
     const paymentOutputs: CoinSelectOutput[] = paymentAmounts.map(value => ({
       address: spAddress,
@@ -831,7 +833,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     return { outputs, changeAddresses };
   }
 
-  // @ts-ignore base class returns sync CreateTransactionResult; this wallet's override is intentionally async
+  // @ts-expect-error TS2416: base class returns sync CreateTransactionResult but this override is async; callers use TWallet which is typed as this class
   async createTransaction(
     utxos: CreateTransactionUtxo[],
     targets: CreateTransactionTarget[],
@@ -886,10 +888,16 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
     let plannedOutputs = rawOutputs;
     let changeAddresses: string[] = [changeAddress];
-    const canSplit = splitPayment && targets.length === 1 && !!targets[0].address?.startsWith('sp1') && !!targets[0].value;
+    const changeValue = rawOutputs.find(o => !o.address)?.value ?? 0;
+    const canSplit =
+      splitPayment &&
+      targets.length === 1 &&
+      !!targets[0].address?.startsWith('sp1') &&
+      !!targets[0].value &&
+      changeValue > 0;
     if (canSplit) {
-      const changeValue = rawOutputs.find(o => !o.address)?.value ?? 0;
-      const planned = await this.planSplitTransaction(targets[0].address!, targets[0].value!, changeValue, feeRate);
+      const coinSelectOutputCount = rawOutputs.length;
+      const planned = await this.planSplitTransaction(targets[0].address!, targets[0].value!, changeValue, feeRate, coinSelectOutputCount);
       plannedOutputs = planned.outputs;
       changeAddresses = planned.changeAddresses;
     }

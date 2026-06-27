@@ -104,6 +104,7 @@ const Confirm: React.FC = () => {
   const [copiedAddr, setCopiedAddr] = React.useState(false);
   const [copiedTxid, setCopiedTxid] = React.useState(false);
   const [copiedOutputs, setCopiedOutputs] = React.useState<Record<number, boolean>>({});
+  const [copiedSP, setCopiedSP] = React.useState(false);
 
   const stylesHook = StyleSheet.create({
     root: { backgroundColor: colors.elevated },
@@ -213,10 +214,7 @@ const Confirm: React.FC = () => {
   };
 
   const copyOutput = (index: number, text: string) => {
-    Clipboard.setString(text);
-    triggerHapticFeedback(HapticFeedbackTypes.Selection);
-    setCopiedOutputs(prev => ({ ...prev, [index]: true }));
-    setTimeout(() => setCopiedOutputs(prev => ({ ...prev, [index]: false })), 1000);
+    copy(text, v => setCopiedOutputs(prev => ({ ...prev, [index]: v })));
   };
 
   return (
@@ -266,7 +264,7 @@ const Confirm: React.FC = () => {
                 <Pressable
                   accessibilityRole="button"
                   style={[styles.spAddressRow, stylesHook.spAddressRow]}
-                  onPress={() => copy(spRecipientAddress, () => {})}
+                  onPress={() => copy(spRecipientAddress, setCopiedSP)}
                 >
                   <View style={[styles.spIconCircle, stylesHook.spIconCircle]}>
                     <Svg width={12} height={12} viewBox="0 0 14 14" fill="none">
@@ -278,7 +276,7 @@ const Confirm: React.FC = () => {
                     {loc.send.recipients_sp_address}
                   </Text>
                   <View style={styles.chevronDown}>
-                    <ChevronRightIcon color="#545454" size={18} />
+                    <CopyIcon size={18} color={copiedSP ? colors.brandPrimary : '#545454'} />
                   </View>
                 </Pressable>
               )}

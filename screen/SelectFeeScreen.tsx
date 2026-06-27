@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useReducer, useEffect, FC } from 'react';
+import React, { useRef, useCallback, useReducer, useEffect, useMemo, FC } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Keyboard } from 'react-native';
 import { useTheme, Theme } from '../components/themes';
 import loc from '../loc';
@@ -112,16 +112,20 @@ interface FeeCardProps {
 }
 
 const FeeCard: FC<FeeCardProps> = ({ label, subtitle, eta, icon, selected, disabled, onPress, colors }) => {
-  const stylesHook = StyleSheet.create({
-    card: {
-      backgroundColor: selected ? colors.surfaceSubtle : colors.white,
-      borderColor: selected ? colors.feeCardSelectedBorder : colors.feeCardBorder,
-    },
-    iconCircle: { backgroundColor: selected ? colors.white : colors.surfaceSubtle },
-    label: { color: colors.black },
-    subtitle: { color: colors.textPrimary },
-    eta: { color: selected ? colors.brandPrimary : colors.amountMeta },
-  });
+  const stylesHook = useMemo(
+    () =>
+      StyleSheet.create({
+        card: {
+          backgroundColor: selected ? colors.surfaceSubtle : colors.white,
+          borderColor: selected ? colors.feeCardSelectedBorder : colors.feeCardBorder,
+        },
+        iconCircle: { backgroundColor: selected ? colors.white : colors.surfaceSubtle },
+        label: { color: colors.black },
+        subtitle: { color: colors.textPrimary },
+        eta: { color: selected ? colors.brandPrimary : colors.amountMeta },
+      }),
+    [selected, colors],
+  );
 
   return (
     <TouchableOpacity
