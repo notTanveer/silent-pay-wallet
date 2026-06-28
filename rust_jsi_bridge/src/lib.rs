@@ -516,6 +516,23 @@ fn serialize_ffi_response(result: Result<String, String>) -> *const c_char {
     }
 }
 
+// TEMPORARY (Task 1 spike): forces the async/TLS deps to link on every target.
+// Removed in Task 4 when the real engine references them.
+#[allow(dead_code)]
+#[doc(hidden)]
+pub fn __ws_link_check() -> usize {
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    rt.block_on(async {
+        // Reference the TLS roots + connector type so they are not dead-code-eliminated.
+        let roots = webpki_roots::TLS_SERVER_ROOTS.len();
+        let _ = tokio::time::sleep(std::time::Duration::from_millis(0)).await;
+        roots
+    })
+}
+
 // ============================================================================
 // Tests
 // ============================================================================
