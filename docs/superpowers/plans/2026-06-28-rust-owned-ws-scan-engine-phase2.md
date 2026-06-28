@@ -631,6 +631,9 @@ pub extern "C" fn sp_scan_start(config_json: *const c_char, emit_cb: EmitCallbac
             let ws_cfg = cfg_arc.clone();
             let ws_task = tokio::spawn(async move { ws::run_ws(ws_cfg, tx, ws_emit).await; });
             run_scan_loop(cfg_arc.clone(), rx, emit, ctrl_for_thread).await;
+            // abort run_ws so cancel doesn't block up to idle_timeout_ms waiting on a
+            // frame; no-op when run_ws already returned on `synced`.
+            ws_task.abort();
             let _ = ws_task.await;
         });
         // session end: cfg_arc drops here, zeroizing the held key.
