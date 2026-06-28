@@ -50,7 +50,19 @@ interface RustJsiBridgeGlobal {
   spScanSilentBlockRange: (scanPrivkeyHex: string, spendPubkeyHex: string, framesBuffer: ArrayBuffer) => string;
   // Async (off-JS-thread) variant — resolves via the native CallInvoker.
   spScanSilentBlockRangeAsync?: (scanPrivkeyHex: string, spendPubkeyHex: string, framesBuffer: ArrayBuffer) => Promise<string>;
+  // Stream-engine globals (Task 5) — installed at runtime by the native module.
+  spScanStart?: (configJson: string, onEvent: (eventJson: string) => void) => void;
+  spScanPause?: () => void;
+  spScanResume?: () => void;
+  spScanCancel?: () => void;
 }
+
+/** Discriminated-union of every event the Rust stream engine can emit. */
+export type RustScanEvent =
+  | { type: 'progress'; currentBlock: number; tipHeight: number; totalBlocks: number; blocksScanned: number; percentComplete: number; utxosFound: number }
+  | { type: 'match'; utxos: Array<{ txid: string; vout: number; value: number; height: number; pubKey: string; tweakHex: string }> }
+  | { type: 'done' }
+  | { type: 'error'; code: string; message: string };
 
 let isInstalled = false;
 
@@ -153,6 +165,31 @@ export function spScanSilentBlockRange(
   }
 
   return result as RustBatchScanResult;
+}
+
+// ─── Stream-engine wrappers (Task 6) ────────────────────────────────────────
+
+/** Start the Rust-owned stream scan. configJson is the serialised ScanConfig. */
+export function spScanStart(configJson: string, onEvent: (eventJson: string) => void): void {
+  if (!isInstalled) throw new Error('RustJsiBridge not installed. Call initializeRustJsiBridge() first.');
+  const fn = getGlobal().spScanStart;
+  if (!fn) throw new Error('spScanStart not available on this native build.');
+  fn(configJson, onEvent);
+}
+
+export function spScanPause(): void {
+  if (!isInstalled) throw new Error('RustJsiBridge not installed.');
+  getGlobal().spScanPause?.();
+}
+
+export function spScanResume(): void {
+  if (!isInstalled) throw new Error('RustJsiBridge not installed.');
+  getGlobal().spScanResume?.();
+}
+
+export function spScanCancel(): void {
+  if (!isInstalled) throw new Error('RustJsiBridge not installed.');
+  getGlobal().spScanCancel?.();
 }
 
 /**

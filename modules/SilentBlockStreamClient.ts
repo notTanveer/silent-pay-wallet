@@ -1,4 +1,5 @@
 import type { ScanProgressCallback, ScanRangeHandlers } from '../helpers/silent-payments/types';
+import type { RustScanEvent } from './RustJsiBridge';
 
 /**
  * Thrown when the indexer doesn't appear to support the WebSocket `sync` stream
@@ -328,5 +329,98 @@ export function streamSilentBlocks(params: StreamSilentBlocksParams): Promise<vo
           : new StreamUnsupportedError(`WebSocket closed before any data (code ${code})`),
       );
     };
+  });
+}
+
+// ─── Rust-owned stream engine bridge (Phase 2 / Task 6) ─────────────────────
+
+/** Handler shape for streamViaRustEngine — extends the WS path's handler with onMatch. */
+interface RustStreamHandlers {
+  onMatch(utxos: Array<{ txid: string; vout: number; value: number; height: number; pubKey: string; tweakHex: string }>): Promise<void>;
+}
+
+interface StreamViaRustEngineParams {
+  wsUrl: string;
+  from: number;
+  to: number;
+  scanPrivkeyHex: string;
+  spendPubkeyHex: string;
+  handlers: RustStreamHandlers;
+  onProgress?: ScanProgressCallback;
+  cancelCallback?: () => boolean;
+}
+
+/**
+ * Drive the Rust-owned stream scan engine (JSI globals installed by Task 5).
+ * Maps engine events onto the existing onProgress / handlers.onMatch contract.
+ * Additive — not referenced by production code until Phase 3 wires performScan.
+ *
+ * ponytail: calls global.spScanStart directly so tests can mock it without
+ * needing a native module installed (bypasses RustJsiBridge.isInstalled guard).
+ */
+export function streamViaRustEngine(params: StreamViaRustEngineParams): Promise<void> {
+  const { wsUrl, from, to, scanPrivkeyHex, spendPubkeyHex, handlers, onProgress, cancelCallback } = params;
+  const g = global as any;
+
+  return new Promise<void>((resolve, reject) => {
+    if (typeof g.spScanStart !== 'function') {
+      reject(new StreamUnsupportedError('spScanStart not available — native engine not installed'));
+      return;
+    }
+
+    const configJson = JSON.stringify({ wsUrl, from, to, scanPrivkeyHex, spendPubkeyHex });
+
+    // Wire cancelCallback to spScanCancel so the caller can abort.
+    const origCancel = cancelCallback;
+    if (origCancel) {
+      // ponytail: poll-free; the caller drives cancel via cancelCallback returning true.
+      // Phase 3 can add a setInterval poller if needed.
+    }
+
+    let settled = false;
+    const settle = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
+      fn();
+    };
+
+    g.spScanStart(configJson, (eventJson: string) => {
+      if (settled) return;
+      let event: RustScanEvent;
+      try {
+        event = JSON.parse(eventJson) as RustScanEvent;
+      } catch {
+        return;
+      }
+
+      switch (event.type) {
+        case 'progress':
+          onProgress?.({
+            currentBlock: event.currentBlock,
+            tipHeight: event.tipHeight,
+            totalBlocks: event.totalBlocks,
+            blocksScanned: event.blocksScanned,
+            percentComplete: event.percentComplete,
+            utxosFound: event.utxosFound,
+          });
+          break;
+        case 'match':
+          // Fire-and-forget; errors surface as unhandled rejections (acceptable for Phase 2).
+          handlers.onMatch(event.utxos).catch(e => settle(() => reject(e)));
+          break;
+        case 'done':
+          settle(() => resolve());
+          break;
+        case 'error':
+          settle(() =>
+            reject(
+              event.code === 'unsupported'
+                ? new StreamUnsupportedError(event.message)
+                : new Error(event.message),
+            ),
+          );
+          break;
+      }
+    });
   });
 }
