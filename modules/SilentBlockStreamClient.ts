@@ -372,17 +372,27 @@ export function streamViaRustEngine(params: StreamViaRustEngineParams): Promise<
 
     // Wire cancelCallback to spScanCancel so the caller can abort.
     const origCancel = cancelCallback;
-    if (origCancel) {
-      // ponytail: poll-free; the caller drives cancel via cancelCallback returning true.
-      // Phase 3 can add a setInterval poller if needed.
-    }
+    let cancelPollId: ReturnType<typeof setInterval> | undefined;
+
+    const pendingMatches: Promise<void>[] = [];
 
     let settled = false;
     const settle = (fn: () => void) => {
       if (settled) return;
       settled = true;
+      if (cancelPollId !== undefined) { clearInterval(cancelPollId); cancelPollId = undefined; }
       fn();
     };
+
+    if (origCancel) {
+      // ponytail: poll every 250ms; cleared in settle so it stops on done/error/cancel.
+      cancelPollId = setInterval(() => {
+        if (origCancel()) {
+          g.spScanCancel?.();
+          settle(() => reject(new Error('SCAN_CANCELLED')));
+        }
+      }, 250);
+    }
 
     g.spScanStart(configJson, (eventJson: string) => {
       if (settled) return;
@@ -405,11 +415,16 @@ export function streamViaRustEngine(params: StreamViaRustEngineParams): Promise<
           });
           break;
         case 'match':
-          // Fire-and-forget; errors surface as unhandled rejections (acceptable for Phase 2).
-          handlers.onMatch(event.utxos).catch(e => settle(() => reject(e)));
+          // Collect pending onMatch promises; done awaits all before resolving so
+          // a late onMatch rejection is not silently swallowed by the settled guard.
+          pendingMatches.push(handlers.onMatch(event.utxos));
           break;
         case 'done':
-          settle(() => resolve());
+          Promise.allSettled(pendingMatches).then(results => {
+            const failed = results.find(r => r.status === 'rejected');
+            if (failed) settle(() => reject((failed as PromiseRejectedResult).reason));
+            else settle(() => resolve());
+          });
           break;
         case 'error':
           settle(() =>

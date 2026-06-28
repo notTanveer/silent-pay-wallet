@@ -50,3 +50,22 @@ it('forwards match events to onMatch', async () => {
   });
   expect(matches).toHaveLength(1);
 });
+
+it('calls spScanCancel and rejects with SCAN_CANCELLED when cancelCallback returns true', async () => {
+  jest.useFakeTimers();
+  // Engine that never emits done — cancel drives settlement.
+  (global as any).spScanStart = (_cfg: string, _onEvent: (j: string) => void) => {};
+  const mockCancel = jest.fn();
+  (global as any).spScanCancel = mockCancel;
+
+  const p = streamViaRustEngine({
+    wsUrl: 'wss://x/', from: 1, to: 10, scanPrivkeyHex: 'aa', spendPubkeyHex: 'bb',
+    handlers: { onMatch: async () => {} },
+    cancelCallback: () => true,
+  });
+
+  jest.advanceTimersByTime(300); // fire the 250ms poll
+  await expect(p).rejects.toThrow('SCAN_CANCELLED');
+  expect(mockCancel).toHaveBeenCalled();
+  jest.useRealTimers();
+});
