@@ -1,5 +1,10 @@
+use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use crate::MatchedUTXO;
+
+pub mod session;
+
+pub type EmitFn = Arc<dyn Fn(ScanEvent) + Send + Sync>;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]

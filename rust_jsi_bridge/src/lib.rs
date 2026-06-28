@@ -192,7 +192,7 @@ fn create_matched_utxo(
 // Batch Processing
 // ============================================================================
 
-fn process_transactions_parallel(
+pub(crate) fn process_transactions_parallel(
     scan_privkey: &SecretKey,
     spend_pubkey: &PublicKey,
     transactions: &[IndexerTransaction],
@@ -349,7 +349,7 @@ fn parse_silent_block(
     Ok(())
 }
 
-fn parse_silent_block_frames(bytes: &[u8]) -> Result<Vec<IndexerTransaction>, String> {
+pub(crate) fn parse_silent_block_frames(bytes: &[u8]) -> Result<Vec<IndexerTransaction>, String> {
     let mut r = ByteReader::new(bytes);
     let mut transactions = Vec::new();
 
