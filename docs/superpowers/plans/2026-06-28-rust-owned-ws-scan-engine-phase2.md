@@ -710,14 +710,19 @@ extern "C" {
 The `onEvent` JS function is retained in a heap `EventCtx` whose pointer is the FFI `ctx`. The C `emit_cb` is a non-capturing function that hops to the JS thread via the captured `CallInvoker` and invokes `onEvent`.
 
 ```cpp
-struct EventCtx {
+// EventCtx is shared-owned (enable_shared_from_this) so a still-queued event
+// lambda keeps it alive even if gEventCtx is reset (cancel/restart) before the
+// lambda runs — capturing a raw EventCtx* would use-after-free in that window.
+struct EventCtx : std::enable_shared_from_this<EventCtx> {
     std::shared_ptr<facebook::react::CallInvoker> callInvoker;
     std::shared_ptr<Function> onEvent;
     Runtime* rt;
+    EventCtx(std::shared_ptr<facebook::react::CallInvoker> ci, std::shared_ptr<Function> oe, Runtime* r)
+        : callInvoker(std::move(ci)), onEvent(std::move(oe)), rt(r) {}
 };
 
 static void sp_emit_trampoline(void* ctx, const uint8_t* json_ptr, size_t json_len) {
-    auto* ec = static_cast<EventCtx*>(ctx);
+    auto ec = static_cast<EventCtx*>(ctx)->shared_from_this(); // bump refcount for the queued lambda
     auto json = std::make_shared<std::string>(reinterpret_cast<const char*>(json_ptr), json_len);
     ec->callInvoker->invokeAsync([ec, json]() {
         Runtime& rt = *ec->rt;
@@ -725,18 +730,21 @@ static void sp_emit_trampoline(void* ctx, const uint8_t* json_ptr, size_t json_l
     });
 }
 
+// ponytail: single-session static — one active scan at a time per process.
+static std::shared_ptr<EventCtx> gEventCtx;
+
 auto spScanStart = Function::createFromHostFunction(
     jsiRuntime, PropNameID::forAscii(jsiRuntime, "spScanStart"), 2,
     [callInvoker](Runtime& runtime, const Value&, const Value* args, size_t count) -> Value {
         if (count < 2) throw JSError(runtime, "spScanStart() expects (configJson, onEvent)");
         std::string configJson = args[0].asString(runtime).utf8(runtime);
         auto onEvent = std::make_shared<Function>(args[1].asObject(runtime).asFunction(runtime));
-        // Leaked deliberately for the session lifetime; freed when the session ends.
-        // ponytail: single session, so one EventCtx at a time; cancel path frees it.
-        auto* ctx = new EventCtx{ callInvoker, onEvent, &runtime };
-        const char* res = sp_scan_start(configJson.c_str(), &sp_emit_trampoline, ctx);
+        // Reset-then-check: free the previous session's EventCtx (safe — Rust emits
+        // nothing after terminal/cancel; queued lambdas hold their own shared_ptr).
+        gEventCtx = std::make_shared<EventCtx>(callInvoker, onEvent, &runtime);
+        const char* res = sp_scan_start(configJson.c_str(), &sp_emit_trampoline, gEventCtx.get());
         std::string r(res); free_rust_string(const_cast<char*>(res));
-        if (r.rfind("error", 0) == 0) { delete ctx; throw JSError(runtime, r.c_str()); }
+        if (r.rfind("error", 0) == 0) { gEventCtx.reset(); throw JSError(runtime, r.c_str()); }
         return Value::undefined();
     });
 jsiRuntime.global().setProperty(jsiRuntime, "spScanStart", std::move(spScanStart));
@@ -755,7 +763,7 @@ for (const char* name : {"spScanPause","spScanResume","spScanCancel"}) {
 }
 ```
 
-> `EventCtx` lifetime: it must outlive all `emit` calls. The Rust side stops calling `emit` after a terminal `done`/`error` and after `sp_scan_cancel` returns (it joins the thread). Free the `EventCtx` when a terminal event is delivered OR on the next `spScanStart`. Simplest correct approach for a single session: keep a `static std::unique_ptr<EventCtx>` in the binding and reset it on `spScanStart`/terminal event; reconcile into clean code. Do not free it inside `sp_emit_trampoline` before `invokeAsync` runs.
+> `EventCtx` lifetime: it must outlive every queued `emit` callback. `sp_scan_cancel` joins the Rust worker, but a terminal event the worker emitted just before the join may still be **queued on the JS thread**; if `gEventCtx.reset()` then freed a raw-pointer-captured EventCtx, that queued lambda would use-after-free. The fix (above): `EventCtx` is `enable_shared_from_this`, owned by `gEventCtx` (a `shared_ptr`), and `sp_emit_trampoline` captures `shared_from_this()` so each queued lambda holds its own reference. `gEventCtx.reset()`/reassign on cancel/restart then only drops the global's reference; the object dies when the last queued lambda finishes. The same `spScanCancel` handler still calls `sp_scan_cancel()` then `gEventCtx.reset()`. Never free `EventCtx` inside the trampoline before `invokeAsync` runs.
 
 - [ ] **Step 3: Build-verify on Android**
 
