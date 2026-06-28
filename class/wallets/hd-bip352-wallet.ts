@@ -30,6 +30,8 @@ const ECPair = ECPairFactory(ecc);
 
 // Minimum gap between scan-progress state emissions, to avoid flooding React with re-renders.
 const SCAN_PROGRESS_THROTTLE_MS = 150;
+// Minimum gap between scan-height disk persists during streaming (~10 progress ticks/s).
+const SCAN_PERSIST_THROTTLE_MS = 3000;
 // Number of recent progress samples kept for the windowed ETA throughput estimate.
 const SCAN_ETA_ROLLING_WINDOW = 10;
 // Keep the scanning UI visible for at least this long so the user can register progress.
@@ -63,6 +65,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
   private _scanResumeResolver: (() => void) | null = null;
   private _scanResumePromise: Promise<void> | null = null;
   private _lastProgressEmitTime: number = 0;
+  private _lastPersistTime: number = 0;
   // rolling window of {wall-clock time, cumulative percentComplete} samples, used for ETA
   private _scanSamples: { t: number; percent: number }[] = [];
   private _scanStartTime: number = 0;
@@ -98,6 +101,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       this._scanResumePromise = new Promise<void>(resolve => {
         this._scanResumeResolver = resolve;
       });
+      this._flushScanPersist(); // guarantee progress survives a pause
       this._emitScanState('paused');
     }
   }
@@ -388,8 +392,13 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     return resolved;
   }
 
-  /** Adds each UTXO, fires balance + persist callbacks if any were new. Does NOT touch lastScannedBlock. */
-  private addUTXOs(utxos: SilentPaymentUTXO[]): number {
+  /**
+   * Adds each UTXO, fires balance callback if any were new. Does NOT touch lastScannedBlock.
+   * opts.persist (default true) controls whether onPersistCallback fires; commitUTXOs passes
+   * false so the single persist flows through advanceScanHeight instead.
+   */
+  private addUTXOs(utxos: SilentPaymentUTXO[], opts?: { persist?: boolean }): number {
+    const shouldPersist = opts?.persist ?? true;
     let addedCount = 0;
     for (const utxo of utxos) {
       if (this.addUTXO(utxo)) {
@@ -398,35 +407,43 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     }
     if (addedCount > 0) {
       this.onBalanceChangeCallback?.();
-      this.onPersistCallback?.();
+      if (shouldPersist) this.onPersistCallback?.();
     }
     return addedCount;
   }
 
   /**
-   * Advance lastScannedBlock monotonically (never backwards).
-   * When opts.persist is true, onPersistCallback is called only if the height actually advanced.
-   * Throttling is handled by the caller (Task 3); for now persist is immediate.
+   * Advance lastScannedBlock monotonically (never backwards). In-memory update is always
+   * immediate. Disk persist (opts.persist) is throttled to SCAN_PERSIST_THROTTLE_MS to avoid
+   * thrashing storage on every ~10Hz progress tick; pass opts.force to bypass the throttle
+   * (used for forced final flushes).
    */
-  private advanceScanHeight(height: number, opts?: { persist?: boolean }): void {
+  private advanceScanHeight(height: number, opts?: { persist?: boolean; force?: boolean }): void {
     if (height > this.lastScannedBlock) {
       this.lastScannedBlock = height;
       if (opts?.persist) {
-        this.onPersistCallback?.();
+        const now = Date.now();
+        if (opts?.force || now - this._lastPersistTime >= SCAN_PERSIST_THROTTLE_MS) {
+          this.onPersistCallback?.();
+          this._lastPersistTime = now;
+        }
       }
     }
   }
 
+  /** Unconditionally flush lastScannedBlock to disk (bypasses throttle). Call on done/pause/cancel. */
+  private _flushScanPersist(): void {
+    this.onPersistCallback?.();
+    this._lastPersistTime = Date.now();
+  }
+
   /**
-   * Re-expressed as addUTXOs + advanceScanHeight.
-   *
-   * ponytail: Original persisted when newLastScannedBlock > 0 regardless of addedCount, and fired
-   * onPersistCallback once. This split may fire it twice (UTXO add + height advance) in the common
-   * path, and skips persist when newLastScannedBlock == 0 with UTXOs — both are benign edge cases
-   * given the scan loop always passes a positive rangeEnd. Documented per task brief.
+   * Re-expressed as addUTXOs + advanceScanHeight. addUTXOs is called with persist:false so the
+   * single persist flows through advanceScanHeight (throttled). Balance callback still fires on
+   * new UTXOs. ponytail: one persist per committed range, not two.
    */
   private commitUTXOs(utxos: SilentPaymentUTXO[], newLastScannedBlock: number): number {
-    const added = this.addUTXOs(utxos);
+    const added = this.addUTXOs(utxos, { persist: false });
     this.advanceScanHeight(newLastScannedBlock, { persist: newLastScannedBlock > 0 });
     return added;
   }
@@ -446,6 +463,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     // "Silent Payment Indexer not initialized"). cancelScan stops the scan loop via the cancel
     // flag below; it must not tear down the shared indexer.
     this.stopPolling();
+    this._flushScanPersist(); // guarantee partial progress survives a cancel
     this._emitScanState('idle', IDLE_SCAN_STATE);
   }
 
@@ -702,6 +720,12 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
       if (elapsed < MIN_VISIBLE_SCAN_MS) {
         await new Promise(resolve => setTimeout(resolve, MIN_VISIBLE_SCAN_MS - elapsed));
       }
+      // ponytail: single guaranteed flush; covers all paths (engine, WS, HTTP fallback).
+      // The engine done-advance above uses {persist:true} (throttled) — this flush wins if
+      // the throttle suppressed it. WS/HTTP paths have no explicit done-advance so this is
+      // the only guarantee. No double-persist concern: calling onPersistCallback twice is
+      // idempotent and rare (only when done-advance fired within the same throttle window).
+      this._flushScanPersist();
       this._emitScanState('idle', IDLE_SCAN_STATE);
 
       if (this.lastScannedBlock >= latestHeight && !this.isPollingActive && !this.cancelScanCallbackScan) {

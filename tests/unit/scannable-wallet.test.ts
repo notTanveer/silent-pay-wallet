@@ -11,6 +11,23 @@ function makeSeed() {
   return bip39.mnemonicToSeedSync('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
 }
 
+// Promoted to module level so both describe blocks can use it.
+function makeUTXO(txid = 'a'.repeat(64)): SilentPaymentUTXO {
+  return {
+    txid,
+    vout: 0,
+    value: 1000,
+    height: 800000,
+    address: 'bc1ptest',
+    silentPaymentAddress: 'sp1qtest',
+    pubKey: VALID_XONLY_PUBKEY,
+    tweak: new Uint8Array(32),
+    blockHash: '',
+    blockTime: 0,
+    isSpent: false,
+  };
+}
+
 describe('HDSilentPaymentsWallet scan-control surface', () => {
   const SCAN_METHODS = [
     'getScanState',
@@ -67,22 +84,6 @@ describe('RustTransactionProcessor.convertRawMatches', () => {
 });
 
 describe('HDSilentPaymentsWallet addUTXOs / advanceScanHeight', () => {
-  function makeUTXO(txid = 'a'.repeat(64)): SilentPaymentUTXO {
-    return {
-      txid,
-      vout: 0,
-      value: 1000,
-      height: 800000,
-      address: 'bc1ptest',
-      silentPaymentAddress: 'sp1qtest',
-      pubKey: VALID_XONLY_PUBKEY,
-      tweak: new Uint8Array(32),
-      blockHash: '',
-      blockTime: 0,
-      isSpent: false,
-    };
-  }
-
   it('addUTXOs adds UTXOs without touching lastScannedBlock', () => {
     const wallet = new HDSilentPaymentsWallet();
     expect(wallet.getScanState().lastScannedBlock).toBe(0);
@@ -100,5 +101,94 @@ describe('HDSilentPaymentsWallet addUTXOs / advanceScanHeight', () => {
 
     (wallet as any).advanceScanHeight(50);
     expect(wallet.getScanState().lastScannedBlock).toBe(100); // unchanged
+  });
+});
+
+describe('HDSilentPaymentsWallet persistence throttle', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(10_000); // start at t=10s so _lastPersistTime=0 is always stale
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('throttles onPersistCallback: many rapid advances within window → 1 call', () => {
+    const wallet = new HDSilentPaymentsWallet();
+    const persist = jest.fn();
+    (wallet as any).onPersistCallback = persist;
+
+    for (let h = 800001; h <= 800010; h++) {
+      (wallet as any).advanceScanHeight(h, { persist: true });
+    }
+
+    expect(persist).toHaveBeenCalledTimes(1);
+    // in-memory reflects all advances
+    expect(wallet.getScanState().lastScannedBlock).toBe(800010);
+  });
+
+  it('allows another persist after throttle window elapses', () => {
+    const wallet = new HDSilentPaymentsWallet();
+    const persist = jest.fn();
+    (wallet as any).onPersistCallback = persist;
+
+    (wallet as any).advanceScanHeight(800001, { persist: true });
+    expect(persist).toHaveBeenCalledTimes(1);
+
+    jest.advanceTimersByTime(3001);
+    (wallet as any).advanceScanHeight(800002, { persist: true });
+    expect(persist).toHaveBeenCalledTimes(2);
+  });
+
+  it('force:true persists immediately regardless of throttle window', () => {
+    const wallet = new HDSilentPaymentsWallet();
+    const persist = jest.fn();
+    (wallet as any).onPersistCallback = persist;
+
+    (wallet as any).advanceScanHeight(800001, { persist: true });          // fires (1)
+    (wallet as any).advanceScanHeight(800002, { persist: true, force: true }); // force: fires (2)
+    expect(persist).toHaveBeenCalledTimes(2);
+  });
+
+  it('_flushScanPersist always persists regardless of throttle', () => {
+    const wallet = new HDSilentPaymentsWallet();
+    const persist = jest.fn();
+    (wallet as any).onPersistCallback = persist;
+
+    (wallet as any).advanceScanHeight(800001, { persist: true }); // fires (1), now throttled
+    (wallet as any).advanceScanHeight(800002, { persist: true }); // throttled: no call
+    (wallet as any)._flushScanPersist();                          // unconditional: fires (2)
+    expect(persist).toHaveBeenCalledTimes(2);
+  });
+
+  it('lastScannedBlock updates on every advance regardless of throttle', () => {
+    const wallet = new HDSilentPaymentsWallet();
+    const persist = jest.fn();
+    (wallet as any).onPersistCallback = persist;
+
+    for (let h = 800001; h <= 800020; h++) {
+      (wallet as any).advanceScanHeight(h, { persist: true });
+    }
+
+    expect(wallet.getScanState().lastScannedBlock).toBe(800020);
+    expect(persist).toHaveBeenCalledTimes(1); // only first call fired
+  });
+
+  it('commitUTXOs results in exactly one onPersistCallback (no double-persist)', () => {
+    const wallet = new HDSilentPaymentsWallet();
+    const persist = jest.fn();
+    (wallet as any).onPersistCallback = persist;
+
+    (wallet as any).commitUTXOs([makeUTXO()], 800001);
+    expect(persist).toHaveBeenCalledTimes(1);
+  });
+
+  it('commitUTXOs with empty UTXOs still persists height advance once', () => {
+    const wallet = new HDSilentPaymentsWallet();
+    const persist = jest.fn();
+    (wallet as any).onPersistCallback = persist;
+
+    (wallet as any).commitUTXOs([], 800001);
+    expect(persist).toHaveBeenCalledTimes(1);
   });
 });
