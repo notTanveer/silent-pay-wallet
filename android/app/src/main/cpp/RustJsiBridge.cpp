@@ -43,21 +43,26 @@ namespace rustjsibridge {
 
 // --- EventCtx: holds the JS callback and invoker for the streaming scan engine ---
 
-struct EventCtx {
+struct EventCtx : std::enable_shared_from_this<EventCtx> {
     std::shared_ptr<CallInvoker> callInvoker;
     std::shared_ptr<Function> onEvent;
     Runtime* rt; // stable for app lifetime; captured by pointer, NOT by ref
+    EventCtx(std::shared_ptr<CallInvoker> ci, std::shared_ptr<Function> oe, Runtime* r)
+        : callInvoker(std::move(ci)), onEvent(std::move(oe)), rt(r) {}
 };
 
 // ponytail: single-session static — one active scan at a time per process.
 // Per-runtime map would be needed if multiple runtimes ever coexist.
-static std::unique_ptr<EventCtx> gEventCtx;
+static std::shared_ptr<EventCtx> gEventCtx;
 
 // Non-capturing C trampoline: hops the emit to the JS thread via callInvoker.
 // Captures json by value (shared_ptr<string>) so the Rust buffer can be freed
-// before invokeAsync runs. Never frees EventCtx here — gEventCtx is the owner.
+// before invokeAsync runs. Captures a shared_ptr to the EventCtx (via
+// shared_from_this) so a still-queued event lambda keeps the EventCtx alive even
+// if gEventCtx.reset() runs first (cancel/restart) — without this, the reset would
+// free the EventCtx out from under a pending callback (use-after-free).
 static void sp_emit_trampoline(void* ctx, const uint8_t* json_ptr, size_t json_len) {
-    auto* ec = static_cast<EventCtx*>(ctx);
+    auto ec = static_cast<EventCtx*>(ctx)->shared_from_this();
     auto json = std::make_shared<std::string>(reinterpret_cast<const char*>(json_ptr), json_len);
     ec->callInvoker->invokeAsync([ec, json]() {
         Runtime& rt = *ec->rt; // dereference stable Runtime* inside the lambda
@@ -292,7 +297,7 @@ void installJSIBindings(Runtime &jsiRuntime, std::shared_ptr<CallInvoker> callIn
 
             // ponytail: reset-then-check — old session EventCtx freed here;
             // safe because Rust guarantees no emits after terminal/cancel.
-            gEventCtx = std::make_unique<EventCtx>(EventCtx{callInvoker, onEvent, &runtime});
+            gEventCtx = std::make_shared<EventCtx>(callInvoker, onEvent, &runtime);
 
             const char* res = sp_scan_start(configJson.c_str(), &sp_emit_trampoline, gEventCtx.get());
             std::string r(res);
