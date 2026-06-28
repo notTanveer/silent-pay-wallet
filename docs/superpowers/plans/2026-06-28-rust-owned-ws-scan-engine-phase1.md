@@ -343,17 +343,33 @@ Then, **inside** `installJSIBindings`, after the existing `spScanSilentBlockRang
 
                     auto resolve = std::make_shared<Value>(rt, execArgs[0]);
                     auto reject = std::make_shared<Value>(rt, execArgs[1]);
+                    // Capture the Runtime by pointer (its address is stable for the app
+                    // lifetime), NOT by reference to `rt` — `rt` is a stack-bound reference
+                    // parameter that dies when this executor returns, before the detached
+                    // thread and its invokeAsync callback dereference it.
+                    Runtime *rtPtr = &rt;
 
-                    std::thread([callInvoker, scanPrivkeyHex, spendPubkeyHex, frames, resolve, reject, &rt]() {
+                    std::thread([callInvoker, scanPrivkeyHex, spendPubkeyHex, frames, resolve, reject, rtPtr]() {
                         const char* result = sp_scan_silent_block_range(
                             scanPrivkeyHex->c_str(),
                             spendPubkeyHex->c_str(),
                             frames->data(),
                             frames->size());
+
+                        if (!result) {
+                            callInvoker->invokeAsync([reject, rtPtr]() {
+                                Runtime &rt = *rtPtr;
+                                reject->asObject(rt).asFunction(rt).call(
+                                    rt, String::createFromUtf8(rt, "sp_scan_silent_block_range returned null"));
+                            });
+                            return;
+                        }
+
                         auto resultStr = std::make_shared<std::string>(result);
                         free_rust_string(const_cast<char*>(result));
 
-                        callInvoker->invokeAsync([resultStr, resolve, &rt]() {
+                        callInvoker->invokeAsync([resultStr, resolve, rtPtr]() {
+                            Runtime &rt = *rtPtr;
                             resolve->asObject(rt).asFunction(rt).call(
                                 rt, String::createFromUtf8(rt, *resultStr));
                         });
@@ -371,7 +387,7 @@ Then, **inside** `installJSIBindings`, after the existing `spScanSilentBlockRang
         std::move(spScanSilentBlockRangeAsync));
 ```
 
-> Note: capturing `Runtime &rt` by reference into the `invokeAsync` lambda is safe — `invokeAsync` runs on the JS thread where the runtime is valid. `reject` is captured for symmetry; the existing Rust FFI returns an error JSON rather than throwing, so the JS wrapper surfaces it.
+> Note: the worker thread captures `Runtime *rtPtr` (the Runtime object outlives the app; its address is stable), NOT `Runtime &rt` — `rt` is a reference parameter whose stack slot is gone once the executor returns, so capturing `&rt` into the detached thread is a dangling reference (UB). `invokeAsync` runs the resolve/reject on the JS thread where the Runtime is valid. The null-result branch guards against `std::string(nullptr)` UB; the existing Rust FFI returns error JSON rather than null, but the guard costs nothing.
 
 - [ ] **Step 4: Build the iOS app**
 

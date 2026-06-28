@@ -194,17 +194,32 @@ void installJSIBindings(Runtime &jsiRuntime, std::shared_ptr<CallInvoker> callIn
 
                     auto resolve = std::make_shared<Value>(rt, execArgs[0]);
                     auto reject = std::make_shared<Value>(rt, execArgs[1]);
+                    // Capture the Runtime by pointer (stable for the app lifetime), NOT by
+                    // reference to `rt` — `rt` is a stack-bound reference parameter that dies
+                    // when this executor returns, before the detached thread dereferences it.
+                    Runtime *rtPtr = &rt;
 
-                    std::thread([callInvoker, scanPrivkeyHex, spendPubkeyHex, frames, resolve, reject, &rt]() {
+                    std::thread([callInvoker, scanPrivkeyHex, spendPubkeyHex, frames, resolve, reject, rtPtr]() {
                         const char* result = sp_scan_silent_block_range(
                             scanPrivkeyHex->c_str(),
                             spendPubkeyHex->c_str(),
                             frames->data(),
                             frames->size());
+
+                        if (!result) {
+                            callInvoker->invokeAsync([reject, rtPtr]() {
+                                Runtime &rt = *rtPtr;
+                                reject->asObject(rt).asFunction(rt).call(
+                                    rt, String::createFromUtf8(rt, "sp_scan_silent_block_range returned null"));
+                            });
+                            return;
+                        }
+
                         auto resultStr = std::make_shared<std::string>(result);
                         free_rust_string(const_cast<char*>(result));
 
-                        callInvoker->invokeAsync([resultStr, resolve, &rt]() {
+                        callInvoker->invokeAsync([resultStr, resolve, rtPtr]() {
+                            Runtime &rt = *rtPtr;
                             resolve->asObject(rt).asFunction(rt).call(
                                 rt, String::createFromUtf8(rt, *resultStr));
                         });
