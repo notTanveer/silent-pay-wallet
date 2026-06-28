@@ -1,5 +1,5 @@
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::mpsc::Receiver;
 
@@ -43,8 +43,8 @@ pub async fn run_scan_loop(
     };
     let total_blocks = cfg.to.saturating_sub(cfg.from).saturating_add(1);
     let mut pending: Vec<u8> = Vec::new();
+    #[allow(unused_assignments)] // initial sentinel; overwritten by the first frame before any read
     let mut pending_max_height = cfg.from.saturating_sub(1);
-    let mut blocks_scanned: u32 = 0;
     let mut utxos_found: u32 = 0;
     let mut last_emit = Instant::now()
         .checked_sub(std::time::Duration::from_millis(cfg.progress_interval_ms))
@@ -90,7 +90,6 @@ pub async fn run_scan_loop(
                         utxos_found += res.matched_utxos.len() as u32;
                         emit(ScanEvent::Match { utxos: res.matched_utxos });
                     }
-                    blocks_scanned = pending_max_height.saturating_sub(cfg.from).saturating_add(1);
                 }
                 Err(e) => { emit(ScanEvent::Error { code: "scan".into(), message: e }); return; }
             }
@@ -103,12 +102,12 @@ pub async fn run_scan_loop(
         match scan_batch(sk, pk, batch).await {
             Ok(res) => {
                 if !res.matched_utxos.is_empty() {
+                    utxos_found += res.matched_utxos.len() as u32;
                     emit(ScanEvent::Match { utxos: res.matched_utxos });
                 }
             }
             Err(e) => { emit(ScanEvent::Error { code: "scan".into(), message: e }); return; }
         }
-        let _ = blocks_scanned;
     }
     if !ctrl.cancel.load(Ordering::SeqCst) {
         // final 100% progress + done
@@ -123,6 +122,7 @@ pub async fn run_scan_loop(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
     use tokio::sync::mpsc;
 
     fn test_cfg(flush_bytes: usize) -> ScanConfig {
@@ -180,5 +180,24 @@ mod tests {
         let evs = events.lock().unwrap();
         assert!(!evs.iter().any(|e| matches!(e, ScanEvent::Done)));
         assert!(evs.iter().any(|e| matches!(e, ScanEvent::Error { code, .. } if code == "cancelled")));
+    }
+
+    #[tokio::test]
+    async fn flushes_remainder_on_channel_close() {
+        // flush_bytes large so frames buffer and are only scanned at channel close.
+        let cfg = Arc::new(test_cfg(1_000_000));
+        let events = Arc::new(Mutex::new(Vec::<ScanEvent>::new()));
+        let ev2 = events.clone();
+        let emit: EmitFn = Arc::new(move |e| ev2.lock().unwrap().push(e));
+        let (tx, rx) = mpsc::channel(8);
+        for h in 1..=3 { tx.send(empty_frame(h)).await.unwrap(); }
+        drop(tx);
+        run_scan_loop(cfg, rx, emit, SessionControl::new()).await;
+        let evs = events.lock().unwrap();
+        assert!(matches!(evs.last().unwrap(), ScanEvent::Done));
+        // final progress event before Done must be 100%
+        let last_progress = evs.iter().rev().find_map(|e| match e {
+            ScanEvent::Progress(p) => Some(p.percent_complete), _ => None }).unwrap();
+        assert_eq!(last_progress, 100.0);
     }
 }
