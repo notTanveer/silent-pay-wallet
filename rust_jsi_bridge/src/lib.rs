@@ -1,6 +1,8 @@
 //! BIP-352 Silent Payment transaction scanner with JSI bridge
 //! Provides high-performance parallel scanning via FFI
 
+pub mod stream_engine;
+
 use std::collections::HashMap;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
