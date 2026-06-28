@@ -386,31 +386,47 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     return resolved;
   }
 
-  private commitUTXOs(utxos: SilentPaymentUTXO[], newLastScannedBlock: number): number {
+  /** Adds each UTXO, fires balance + persist callbacks if any were new. Does NOT touch lastScannedBlock. */
+  private addUTXOs(utxos: SilentPaymentUTXO[]): number {
     let addedCount = 0;
-
     for (const utxo of utxos) {
       if (this.addUTXO(utxo)) {
         addedCount++;
       }
     }
-
-    // Always update lastScannedBlock to track progress, even if no UTXOs found
-    if (newLastScannedBlock > this.lastScannedBlock) {
-      this.lastScannedBlock = newLastScannedBlock;
-    }
-
-    // Trigger callbacks if state changed
     if (addedCount > 0) {
       this.onBalanceChangeCallback?.();
+      this.onPersistCallback?.();
     }
-
-    // Always persist when lastScannedBlock updates to track scan progress
-    if (newLastScannedBlock > 0 && this.onPersistCallback) {
-      this.onPersistCallback();
-    }
-
     return addedCount;
+  }
+
+  /**
+   * Advance lastScannedBlock monotonically (never backwards).
+   * When opts.persist is true, onPersistCallback is called only if the height actually advanced.
+   * Throttling is handled by the caller (Task 3); for now persist is immediate.
+   */
+  private advanceScanHeight(height: number, opts?: { persist?: boolean }): void {
+    if (height > this.lastScannedBlock) {
+      this.lastScannedBlock = height;
+      if (opts?.persist) {
+        this.onPersistCallback?.();
+      }
+    }
+  }
+
+  /**
+   * Re-expressed as addUTXOs + advanceScanHeight.
+   *
+   * ponytail: Original persisted when newLastScannedBlock > 0 regardless of addedCount, and fired
+   * onPersistCallback once. This split may fire it twice (UTXO add + height advance) in the common
+   * path, and skips persist when newLastScannedBlock == 0 with UTXOs — both are benign edge cases
+   * given the scan loop always passes a positive rangeEnd. Documented per task brief.
+   */
+  private commitUTXOs(utxos: SilentPaymentUTXO[], newLastScannedBlock: number): number {
+    const added = this.addUTXOs(utxos);
+    this.advanceScanHeight(newLastScannedBlock, { persist: newLastScannedBlock > 0 });
+    return added;
   }
 
   cancelScan(): void {

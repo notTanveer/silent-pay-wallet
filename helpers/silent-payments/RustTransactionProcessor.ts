@@ -43,6 +43,23 @@ export class RustTransactionProcessor {
     };
   }
 
+  /**
+   * Convert raw WS-engine match events (no isSpent/blockHash/blockTime) into
+   * SilentPaymentUTXOs by padding placeholder fields and delegating to
+   * convertToSilentPaymentUTXO. Resolution of those fields happens later.
+   */
+  public convertRawMatches(
+    rawUtxos: Array<{ txid: string; vout: number; value: number; height: number; pubKey: string; tweakHex: string }>,
+    silentPaymentAddress: string,
+  ): SilentPaymentUTXO[] {
+    return rawUtxos.map(raw =>
+      this.convertToSilentPaymentUTXO(
+        { ...raw, isSpent: false, blockHash: '', blockTime: 0 },
+        silentPaymentAddress,
+      ),
+    );
+  }
+
   async processBatch(
     transactions: IndexerTransaction[],
     silentPaymentAddress: string,
