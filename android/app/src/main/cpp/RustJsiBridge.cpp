@@ -30,9 +30,42 @@ extern "C" {
         const uint8_t* frames_ptr,
         size_t frames_len
     );
+
+    // Streaming async scan engine (Task 4 FFI).
+    typedef void (*EmitCallback)(void* ctx, const uint8_t* json_ptr, size_t json_len);
+    const char* sp_scan_start(const char* config_json, EmitCallback emit_cb, void* ctx);
+    void sp_scan_pause();
+    void sp_scan_resume();
+    void sp_scan_cancel();
 }
 
 namespace rustjsibridge {
+
+// --- EventCtx: holds the JS callback and invoker for the streaming scan engine ---
+
+struct EventCtx {
+    std::shared_ptr<CallInvoker> callInvoker;
+    std::shared_ptr<Function> onEvent;
+    Runtime* rt; // stable for app lifetime; captured by pointer, NOT by ref
+};
+
+// ponytail: single-session static — one active scan at a time per process.
+// Per-runtime map would be needed if multiple runtimes ever coexist.
+static std::unique_ptr<EventCtx> gEventCtx;
+
+// Non-capturing C trampoline: hops the emit to the JS thread via callInvoker.
+// Captures json by value (shared_ptr<string>) so the Rust buffer can be freed
+// before invokeAsync runs. Never frees EventCtx here — gEventCtx is the owner.
+static void sp_emit_trampoline(void* ctx, const uint8_t* json_ptr, size_t json_len) {
+    auto* ec = static_cast<EventCtx*>(ctx);
+    auto json = std::make_shared<std::string>(reinterpret_cast<const char*>(json_ptr), json_len);
+    ec->callInvoker->invokeAsync([ec, json]() {
+        Runtime& rt = *ec->rt; // dereference stable Runtime* inside the lambda
+        ec->onEvent->call(rt, String::createFromUtf8(rt, *json));
+    });
+}
+
+// ---------------------------------------------------------------------------------
 
 void installJSIBindings(Runtime &jsiRuntime, std::shared_ptr<CallInvoker> callInvoker) {
     auto spScanTransactions = Function::createFromHostFunction(
@@ -235,6 +268,77 @@ void installJSIBindings(Runtime &jsiRuntime, std::shared_ptr<CallInvoker> callIn
         jsiRuntime,
         "spScanSilentBlockRangeAsync",
         std::move(spScanSilentBlockRangeAsync));
+
+    // --- Streaming scan engine host functions ---
+
+    // spScanStart(configJson: string, onEvent: (eventJson: string) => void)
+    // Starts the Rust scan engine. The onEvent callback is retained in gEventCtx
+    // for the session lifetime. spScanStart resets gEventCtx (freeing the previous
+    // session's EventCtx) before starting — safe because Rust guarantees no emits
+    // after a terminal done/error event or after sp_scan_cancel returns.
+    auto spScanStart = Function::createFromHostFunction(
+        jsiRuntime,
+        PropNameID::forAscii(jsiRuntime, "spScanStart"),
+        2,
+        [callInvoker](Runtime &runtime,
+                      const Value &,
+                      const Value *args,
+                      size_t count) -> Value {
+            if (count < 2) {
+                throw JSError(runtime, "spScanStart() expects (configJson, onEvent)");
+            }
+            std::string configJson = args[0].asString(runtime).utf8(runtime);
+            auto onEvent = std::make_shared<Function>(args[1].asObject(runtime).asFunction(runtime));
+
+            // ponytail: reset-then-check — old session EventCtx freed here;
+            // safe because Rust guarantees no emits after terminal/cancel.
+            gEventCtx = std::make_unique<EventCtx>(EventCtx{callInvoker, onEvent, &runtime});
+
+            const char* res = sp_scan_start(configJson.c_str(), &sp_emit_trampoline, gEventCtx.get());
+            std::string r(res);
+            free_rust_string(const_cast<char*>(res));
+
+            if (r.rfind("error", 0) == 0) {
+                // Rust returned error — no worker was started, no pending emits — free ctx.
+                gEventCtx.reset();
+                throw JSError(runtime, r.c_str());
+            }
+            return Value::undefined();
+        });
+    jsiRuntime.global().setProperty(jsiRuntime, "spScanStart", std::move(spScanStart));
+
+    auto spScanPause = Function::createFromHostFunction(
+        jsiRuntime,
+        PropNameID::forAscii(jsiRuntime, "spScanPause"),
+        0,
+        [](Runtime &, const Value &, const Value *, size_t) -> Value {
+            sp_scan_pause();
+            return Value::undefined();
+        });
+    jsiRuntime.global().setProperty(jsiRuntime, "spScanPause", std::move(spScanPause));
+
+    auto spScanResume = Function::createFromHostFunction(
+        jsiRuntime,
+        PropNameID::forAscii(jsiRuntime, "spScanResume"),
+        0,
+        [](Runtime &, const Value &, const Value *, size_t) -> Value {
+            sp_scan_resume();
+            return Value::undefined();
+        });
+    jsiRuntime.global().setProperty(jsiRuntime, "spScanResume", std::move(spScanResume));
+
+    auto spScanCancel = Function::createFromHostFunction(
+        jsiRuntime,
+        PropNameID::forAscii(jsiRuntime, "spScanCancel"),
+        0,
+        [](Runtime &, const Value &, const Value *, size_t) -> Value {
+            sp_scan_cancel();
+            // Rust joins the worker before returning from sp_scan_cancel, so no
+            // emits are in flight after this point — safe to free the EventCtx.
+            gEventCtx.reset();
+            return Value::undefined();
+        });
+    jsiRuntime.global().setProperty(jsiRuntime, "spScanCancel", std::move(spScanCancel));
 }
 
 } // namespace rustjsibridge
