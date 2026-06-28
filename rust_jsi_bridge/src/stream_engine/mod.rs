@@ -121,6 +121,10 @@ pub extern "C" fn sp_scan_start(
             .into_raw() as *const c_char
     };
 
+    if config_json.is_null() {
+        return ret("error: null config");
+    }
+
     // Parse and zeroize the raw JSON string (contains the plaintext key) before
     // doing anything else, so it leaves memory as soon as possible.
     let mut cfg_str = match unsafe { CStr::from_ptr(config_json) }.to_str() {
@@ -168,7 +172,8 @@ pub extern "C" fn sp_scan_start(
             let ws_cfg = cfg_arc.clone();
             let ws_task = tokio::spawn(async move { ws::run_ws(ws_cfg, tx, ws_emit).await });
             session::run_scan_loop(cfg_arc, rx, emit, ctrl_for_thread).await;
-            let _ = ws_task.await;
+            ws_task.abort();
+            let _ = ws_task.await; // Err(Cancelled) on the cancel path; already-complete (Ok) on the synced path
             // cfg_arc drops here, zeroizing scan_privkey_hex via ScanConfig::drop.
         });
 
