@@ -68,6 +68,24 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
   const [walletsInitialized, setWalletsInitialized] = useState<boolean>(false);
   const [scanState, setScanState] = useState<ScanStateInfo>(IDLE_SCAN_STATE);
 
+  const handleScanStateChange = useCallback((next: ScanStateInfo) => {
+    setScanState(prev => {
+      if (
+        prev.status === next.status &&
+        prev.lastScannedBlock === next.lastScannedBlock &&
+        prev.eta === next.eta &&
+        prev.etaComputedAt === next.etaComputedAt &&
+        prev.startedAt === next.startedAt &&
+        prev.error === next.error &&
+        prev.progress?.percentComplete === next.progress?.percentComplete &&
+        prev.progress?.currentBlock === next.progress?.currentBlock
+      ) {
+        return prev;
+      }
+      return next;
+    });
+  }, []);
+
   const selectedWalletID = useCallback((): string | undefined => {
     if (!navigationRef.current || !navigationRef.current.isReady()) return undefined;
 
@@ -190,16 +208,14 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       if ('setOnPersistCallback' in wallet && typeof wallet.setOnPersistCallback === 'function') {
         wallet.setOnPersistCallback(debouncedPersist);
       }
-      // NOTE: there is a single shared `scanState`. This assumes at most one silent-payments
-      // wallet is active at a time; multiple would clobber each other here.
-      wallet.setOnScanStateChangeCallback(setScanState);
-      setScanState(wallet.getScanState());
+      wallet.setOnScanStateChangeCallback(handleScanStateChange);
+      handleScanStateChange(wallet.getScanState());
 
       shroudApp.wallets.push(wallet);
       setWallets([...shroudApp.getWallets()]);
       return true;
     },
-    [forceWalletsUpdate, debouncedPersist],
+    [forceWalletsUpdate, debouncedPersist, handleScanStateChange],
   );
 
   const deleteWallet = useCallback((wallet: TWallet) => {
@@ -284,13 +300,14 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
         if ('setOnPersistCallback' in wallet && typeof wallet.setOnPersistCallback === 'function') {
           wallet.setOnPersistCallback(debouncedPersist);
         }
-        wallet.setOnScanStateChangeCallback(setScanState);
-        setScanState(wallet.getScanState());
+        wallet.setOnScanStateChangeCallback(handleScanStateChange);
+        handleScanStateChange(wallet.getScanState());
       });
 
       setWallets(currentWallets);
     }
-  }, [walletsInitialized, forceWalletsUpdate, debouncedPersist]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [walletsInitialized]);
 
   // Add a refresh lock to prevent concurrent refreshes
   const refreshingRef = useRef<boolean>(false);

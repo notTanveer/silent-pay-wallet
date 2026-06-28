@@ -30,6 +30,8 @@ const ECPair = ECPairFactory(ecc);
 const SCAN_PROGRESS_THROTTLE_MS = 150;
 // Number of recent progress samples kept for the windowed ETA throughput estimate.
 const SCAN_ETA_ROLLING_WINDOW = 10;
+// Keep the scanning UI visible for at least this long so the user can register progress.
+const MIN_VISIBLE_SCAN_MS = 1500;
 
 export class HDSilentPaymentsWallet extends HDTaprootWallet {
   static readonly type = 'HDSilentPaymentsWallet';
@@ -111,8 +113,27 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     }
   }
 
+  private _scanStateEquals(a: ScanStateInfo, b: ScanStateInfo): boolean {
+    if (a.status !== b.status || a.lastScannedBlock !== b.lastScannedBlock || a.eta !== b.eta ||
+        a.etaComputedAt !== b.etaComputedAt || a.startedAt !== b.startedAt || a.error !== b.error) {
+      return false;
+    }
+    if (a.progress === b.progress) return true;
+    if (a.progress === null || b.progress === null) return false;
+    return (
+      a.progress.percentComplete === b.progress.percentComplete &&
+      a.progress.currentBlock === b.progress.currentBlock &&
+      a.progress.blocksScanned === b.progress.blocksScanned &&
+      a.progress.utxosFound === b.progress.utxosFound &&
+      a.progress.tipHeight === b.progress.tipHeight &&
+      a.progress.totalBlocks === b.progress.totalBlocks
+    );
+  }
+
   private _emitScanState(status: ScanStatus, overrides?: Partial<ScanStateInfo>): void {
-    this._scanState = { ...this._scanState, status, ...overrides, lastScannedBlock: this.lastScannedBlock };
+    const next: ScanStateInfo = { ...this._scanState, status, ...overrides, lastScannedBlock: this.lastScannedBlock };
+    if (this._scanStateEquals(this._scanState, next)) return;
+    this._scanState = next;
     this._onScanStateChangeCallback?.(this._scanState);
   }
 
@@ -609,6 +630,10 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
         }
       }
 
+      const elapsed = Date.now() - this._scanStartTime;
+      if (elapsed < MIN_VISIBLE_SCAN_MS) {
+        await new Promise(resolve => setTimeout(resolve, MIN_VISIBLE_SCAN_MS - elapsed));
+      }
       this._emitScanState('idle', IDLE_SCAN_STATE);
 
       if (this.lastScannedBlock >= latestHeight && !this.isPollingActive && !this.cancelScanCallbackScan) {

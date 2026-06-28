@@ -43,6 +43,10 @@ const SyncScreen: React.FC<SyncScreenProps> = () => {
 
   const progressAnim = useRef(new Animated.Value(0)).current;
 
+  const progressPct = scanState.progress?.percentComplete ?? 0;
+  const progressBlock = scanState.progress?.currentBlock ?? 0;
+  const progressUtxos = scanState.progress?.utxosFound ?? 0;
+
   useEffect(() => {
     if (scanState.progress) {
       lastProgressRef.current = scanState.progress;
@@ -56,16 +60,16 @@ const SyncScreen: React.FC<SyncScreenProps> = () => {
     } else if (scanState.status !== 'idle') {
       setShowDone(false);
     }
-  }, [scanState.status, scanState.progress]);
+  }, [scanState.status, progressPct, progressBlock, progressUtxos]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    const pct = showDone || scanState.status === 'idle' ? 100 : (scanState.progress?.percentComplete ?? 0);
+    const pct = showDone || scanState.status === 'idle' ? 100 : progressPct;
     Animated.timing(progressAnim, {
       toValue: pct,
       duration: 400,
       useNativeDriver: false,
     }).start();
-  }, [scanState.progress?.percentComplete, showDone, scanState.status, progressAnim]);
+  }, [progressPct, showDone, scanState.status, progressAnim]);
 
   // Sync liveEta whenever a new ETA arrives from the wallet
   useEffect(() => {
