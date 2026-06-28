@@ -48,6 +48,8 @@ interface RustJsiBridgeGlobal {
   spScanSingleTransaction: (scanPrivkeyHex: string, spendPubkeyHex: string, transactionJson: string) => string;
   // arg 3 is now an ArrayBuffer — no base64 string on this path.
   spScanSilentBlockRange: (scanPrivkeyHex: string, spendPubkeyHex: string, framesBuffer: ArrayBuffer) => string;
+  // Async (off-JS-thread) variant — resolves via the native CallInvoker.
+  spScanSilentBlockRangeAsync?: (scanPrivkeyHex: string, spendPubkeyHex: string, framesBuffer: ArrayBuffer) => Promise<string>;
 }
 
 let isInstalled = false;
@@ -150,5 +152,33 @@ export function spScanSilentBlockRange(
     throw new Error(`Rust scan error: ${(result as RustErrorResult).error}`);
   }
 
+  return result as RustBatchScanResult;
+}
+
+/**
+ * Off-the-JS-thread variant of {@link spScanSilentBlockRange}. The native side copies
+ * the inputs, runs the scan on a worker thread, and resolves via the CallInvoker, so
+ * the JS thread stays free to render. Falls back to the synchronous global on older
+ * native binaries that predate the async function.
+ */
+export async function spScanSilentBlockRangeAsync(
+  scanPrivkeyHex: string,
+  spendPubkeyHex: string,
+  framesBuffer: ArrayBuffer,
+): Promise<RustBatchScanResult> {
+  if (!isInstalled) {
+    throw new Error('RustJsiBridge not installed. Call initializeRustJsiBridge() first.');
+  }
+
+  const g = getGlobal();
+  const resultJson: string =
+    typeof g.spScanSilentBlockRangeAsync === 'function'
+      ? await g.spScanSilentBlockRangeAsync(scanPrivkeyHex, spendPubkeyHex, framesBuffer)
+      : g.spScanSilentBlockRange(scanPrivkeyHex, spendPubkeyHex, framesBuffer); // sync fallback (older binary)
+
+  const result: RustBatchScanResult | RustErrorResult = JSON.parse(resultJson);
+  if ('error' in result) {
+    throw new Error(`Rust scan error: ${(result as RustErrorResult).error}`);
+  }
   return result as RustBatchScanResult;
 }

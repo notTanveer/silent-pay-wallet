@@ -5,7 +5,7 @@ import { IndexerTransaction, SilentPaymentUTXO } from './types';
 import {
   spScanTransactions,
   spScanSingleTransaction,
-  spScanSilentBlockRange,
+  spScanSilentBlockRangeAsync,
   RustMatchedUTXO,
   RustBatchScanResult,
 } from '../../modules/RustJsiBridge';
@@ -95,8 +95,9 @@ export class RustTransactionProcessor {
     try {
       const date = Date.now();
 
-      // Pass the underlying ArrayBuffer directly — zero encoding cost.
-      const result: RustBatchScanResult = spScanSilentBlockRange(
+      // Off the JS thread: native copies the buffer, scans on a worker thread, resolves
+      // via the CallInvoker. ponytail: falls back to sync global on older native binaries.
+      const result: RustBatchScanResult = await spScanSilentBlockRangeAsync(
         this.scanPrivkeyHex,
         this.spendPubkeyHex,
         frames.buffer as ArrayBuffer,
