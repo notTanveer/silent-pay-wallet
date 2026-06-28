@@ -377,12 +377,12 @@ pub async fn run_scan_loop(
         match scan_batch(sk, pk, batch).await {
             Ok(res) => {
                 if !res.matched_utxos.is_empty() {
+                    utxos_found += res.matched_utxos.len() as u32; // mirror the in-loop flush
                     emit(ScanEvent::Match { utxos: res.matched_utxos });
                 }
             }
             Err(e) => { emit(ScanEvent::Error { code: "scan".into(), message: e }); return; }
         }
-        let _ = blocks_scanned;
     }
     if !ctrl.cancel.load(Ordering::SeqCst) {
         // final 100% progress + done
