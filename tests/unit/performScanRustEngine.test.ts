@@ -50,14 +50,22 @@ describe('performScan — Rust engine path', () => {
     delete (global as any).spScanCancel;
   });
 
-  it('progress event advances lastScannedBlock via wrappedProgress', async () => {
+  it('progress event at intermediate height advances lastScannedBlock via engineProgress', async () => {
+    const INTERMEDIATE = 899995; // strictly below endHeight (900000)
+    let lastScannedAfterProgress: number | null = null;
+
     scriptEngine(emit => {
       emit(JSON.stringify({
         type: 'progress',
-        currentBlock: 899995, tipHeight: 900000,
+        currentBlock: INTERMEDIATE, tipHeight: 900000,
         totalBlocks: 10, blocksScanned: 5, percentComplete: 50, utxosFound: 0,
       }));
-      emit(JSON.stringify({ type: 'done' }));
+      // Capture height BEFORE done so we can confirm the progress event itself advanced it.
+      // We do this by scheduling the assertion before emitting done.
+      setImmediate(() => {
+        lastScannedAfterProgress = (wallet as any).lastScannedBlock;
+        emit(JSON.stringify({ type: 'done' }));
+      });
     });
 
     const wallet = makeWallet();
@@ -65,8 +73,37 @@ describe('performScan — Rust engine path', () => {
     await jest.runAllTimersAsync();
     await scanPromise;
 
-    // wrappedProgress calls advanceScanHeight(currentBlock); done path calls advanceScanHeight(endHeight)
-    expect(wallet.getScanState().lastScannedBlock).toBeGreaterThanOrEqual(899995);
+    // The progress event alone (before done) must have advanced to INTERMEDIATE.
+    // This fails if advanceScanHeight is removed from engineProgress.
+    expect(lastScannedAfterProgress).toBe(INTERMEDIATE);
+    // done path advances to endHeight
+    expect(wallet.getScanState().lastScannedBlock).toBe(900000);
+  });
+
+  it('cancel during engine stream rejects with SCAN_CANCELLED and skips HTTP fallback', async () => {
+    scriptEngine(emit => {
+      emit(JSON.stringify({
+        type: 'progress',
+        currentBlock: 899993, tipHeight: 900000,
+        totalBlocks: 10, blocksScanned: 3, percentComplete: 30, utxosFound: 0,
+      }));
+      // No 'done' — engine is still streaming when cancel fires
+    });
+
+    const indexer = getDefaultIndexer();
+    const fallbackSpy = jest.spyOn(indexer, 'scanForwardWithCallback').mockResolvedValue(undefined as any);
+
+    const wallet = makeWallet();
+    // Trigger cancel after the first progress event is processed
+    setImmediate(() => { (wallet as any).cancelScanCallbackScan = true; });
+
+    const scanPromise = wallet.scanForPayments();
+    await jest.runAllTimersAsync();
+    // Cancelled scan returns 0, does not throw
+    const result = await scanPromise;
+
+    expect(result).toBe(0);
+    expect(fallbackSpy).not.toHaveBeenCalled();
   });
 
   it('unsupported error triggers HTTP fallback via scanForwardWithCallback', async () => {

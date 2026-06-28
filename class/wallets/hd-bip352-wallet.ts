@@ -587,8 +587,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
           this._emitScanState('scanning', { progress, eta, etaComputedAt });
         }
 
-        this.advanceScanHeight(progress.currentBlock, { persist: true });
-
         if (onProgress) {
           await onProgress(progress);
         }
@@ -641,7 +639,16 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
           const addr = this.getSilentPaymentAddress()!;
           const converted = this.transactionProcessor!.convertRawMatches(rawUtxos, addr);
           const resolved = await this.resolveMatchMetadata(converted);
-          this.addUTXOs(resolved); // does NOT advance lastScannedBlock; wrappedProgress does
+          this.addUTXOs(resolved); // does NOT advance lastScannedBlock; engineProgress does
+        };
+
+        // ponytail: engine-only wrapper — the engine reports only heights it has actually
+        // scanned; there is no per-range commitUTXOs on this path so we advance here.
+        // The else/legacy WS path and engine-catch HTTP fallback use wrappedProgress only
+        // (commitUTXOs advances height there, preserving the no-skip invariant).
+        const engineProgress: ScanProgressCallback = async (progress) => {
+          await wrappedProgress(progress);
+          this.advanceScanHeight(progress.currentBlock, { persist: true });
         };
 
         try {
@@ -650,7 +657,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
             from: startHeight, to: endHeight,
             scanPrivkeyHex, spendPubkeyHex,
             handlers: { onMatch },
-            onProgress: wrappedProgress,
+            onProgress: engineProgress,
             cancelCallback: cancel,
           });
           this.advanceScanHeight(endHeight, { persist: true }); // done → final height
