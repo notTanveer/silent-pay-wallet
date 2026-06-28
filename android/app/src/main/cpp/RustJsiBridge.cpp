@@ -1,5 +1,11 @@
 #include "RustJsiBridge.h"
 #include <string>
+#include <thread>
+#include <vector>
+#include <memory>
+#include <ReactCommon/CallInvoker.h>
+
+using facebook::react::CallInvoker;
 
 // External Rust function declarations
 extern "C" {
@@ -28,7 +34,7 @@ extern "C" {
 
 namespace rustjsibridge {
 
-void installJSIBindings(Runtime &jsiRuntime) {
+void installJSIBindings(Runtime &jsiRuntime, std::shared_ptr<CallInvoker> callInvoker) {
     auto spScanTransactions = Function::createFromHostFunction(
         jsiRuntime,
         PropNameID::forAscii(jsiRuntime, "spScanTransactions"),
@@ -149,6 +155,71 @@ void installJSIBindings(Runtime &jsiRuntime) {
         "spScanSilentBlockRange",
         std::move(spScanSilentBlockRange)
     );
+
+    // Async variant: copies inputs on the JS thread, runs the scan on a detached
+    // worker thread, and resolves a JS Promise on the JS thread via the CallInvoker.
+    auto spScanSilentBlockRangeAsync = Function::createFromHostFunction(
+        jsiRuntime,
+        PropNameID::forAscii(jsiRuntime, "spScanSilentBlockRangeAsync"),
+        3,
+        [callInvoker](Runtime &runtime,
+                      const Value &thisValue,
+                      const Value *arguments,
+                      size_t count) -> Value {
+
+            if (count < 3) {
+                throw JSError(runtime, "spScanSilentBlockRangeAsync() expects 3 arguments");
+            }
+
+            // --- copy everything off the JSI objects on the JS thread ---
+            auto scanPrivkeyHex = std::make_shared<std::string>(arguments[0].asString(runtime).utf8(runtime));
+            auto spendPubkeyHex = std::make_shared<std::string>(arguments[1].asString(runtime).utf8(runtime));
+
+            if (!arguments[2].isObject() || !arguments[2].asObject(runtime).isArrayBuffer(runtime)) {
+                throw JSError(runtime, "spScanSilentBlockRangeAsync() arg 3 must be an ArrayBuffer");
+            }
+            auto arrayBuffer = arguments[2].asObject(runtime).getArrayBuffer(runtime);
+            auto frames = std::make_shared<std::vector<uint8_t>>(
+                arrayBuffer.data(runtime),
+                arrayBuffer.data(runtime) + arrayBuffer.size(runtime));
+
+            // --- build the Promise ---
+            auto promiseCtor = runtime.global().getPropertyAsFunction(runtime, "Promise");
+            auto executor = Function::createFromHostFunction(
+                runtime,
+                PropNameID::forAscii(runtime, "executor"),
+                2,
+                [callInvoker, scanPrivkeyHex, spendPubkeyHex, frames](
+                    Runtime &rt, const Value &, const Value *execArgs, size_t) -> Value {
+
+                    auto resolve = std::make_shared<Value>(rt, execArgs[0]);
+                    auto reject = std::make_shared<Value>(rt, execArgs[1]);
+
+                    std::thread([callInvoker, scanPrivkeyHex, spendPubkeyHex, frames, resolve, reject, &rt]() {
+                        const char* result = sp_scan_silent_block_range(
+                            scanPrivkeyHex->c_str(),
+                            spendPubkeyHex->c_str(),
+                            frames->data(),
+                            frames->size());
+                        auto resultStr = std::make_shared<std::string>(result);
+                        free_rust_string(const_cast<char*>(result));
+
+                        callInvoker->invokeAsync([resultStr, resolve, &rt]() {
+                            resolve->asObject(rt).asFunction(rt).call(
+                                rt, String::createFromUtf8(rt, *resultStr));
+                        });
+                    }).detach();
+
+                    return Value::undefined();
+                });
+
+            return promiseCtor.callAsConstructor(runtime, executor);
+        });
+
+    jsiRuntime.global().setProperty(
+        jsiRuntime,
+        "spScanSilentBlockRangeAsync",
+        std::move(spScanSilentBlockRangeAsync));
 }
 
 } // namespace rustjsibridge
