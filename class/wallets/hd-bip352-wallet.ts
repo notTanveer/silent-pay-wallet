@@ -6,6 +6,7 @@ import { disconnectIndexer, getDefaultIndexer, StreamUnsupportedError } from '..
 import ecc from '../../modules/noble_ecc';
 import {
   getSilentPaymentAddress,
+  getScanPrivateKey,
   getSpendPrivateKey,
   getSpendPublicKey,
   RustTransactionProcessor,
@@ -19,7 +20,8 @@ import {
   type ScanRangeHandlers,
   IDLE_SCAN_STATE,
 } from '../../helpers/silent-payments';
-import { BIP352_ACTIVATION_HEIGHT } from '../../modules/constants';
+import { BIP352_ACTIVATION_HEIGHT, useRustOwnedStream } from '../../modules/constants';
+import { streamViaRustEngine, deriveWsUrl } from '../../modules/SilentBlockStreamClient';
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types.ts';
 import * as bitcoin from 'bitcoinjs-lib';
 import { HDTaprootWallet } from './hd-taproot-wallet.ts';
@@ -585,6 +587,8 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
           this._emitScanState('scanning', { progress, eta, etaComputedAt });
         }
 
+        this.advanceScanHeight(progress.currentBlock, { persist: true });
+
         if (onProgress) {
           await onProgress(progress);
         }
@@ -623,26 +627,67 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
 
       const cancel = () => this.cancelScanCallbackScan;
 
-      // Prefer the WebSocket stream: one connection carries the whole backfill, so
-      // the ~1.5s tunnel round-trip is paid once instead of per 200-block chunk.
-      // Fall back to the HTTP range loop for older indexers (no `sync` support) or
-      // if the stream drops — resuming from wherever commitUTXOs last advanced
-      // lastScannedBlock, so no height is ever skipped.
-      try {
-        await indexer.streamForwardWithCallback(startHeight, endHeight, handlers, wrappedProgress, cancel);
-      } catch (error: any) {
-        if (error?.message === 'SCAN_CANCELLED') {
-          throw error;
-        }
-        if (error instanceof StreamUnsupportedError) {
-          console.warn('[SP] WS streaming unavailable; using HTTP range scan:', error.message);
-        } else {
-          console.warn('[SP] WS streaming failed; resuming via HTTP range scan:', error?.message);
-        }
+      if (useRustOwnedStream) {
+        // Rust-owned engine: the native layer owns the WS connection and calls us back
+        // with parsed match events. Falls back to HTTP on unsupported/socket errors.
+        this.ensureTransactionProcessor();
+        const seed = this.getSeed();
+        const scanPrivkeyHex = Buffer.from(getScanPrivateKey(seed)).toString('hex');
+        const spendPubkeyHex = Buffer.from(getSpendPublicKey(seed)).toString('hex');
 
-        const resumeStart = this.lastScannedBlock >= startHeight ? this.lastScannedBlock + 1 : startHeight;
-        if (resumeStart <= endHeight) {
-          await indexer.scanForwardWithCallback(resumeStart, endHeight, handlers, wrappedProgress, cancel);
+        const onMatch = async (rawUtxos: Array<{ txid: string; vout: number; value: number; height: number; pubKey: string; tweakHex: string }>) => {
+          await this._waitIfPaused();
+          if (this.cancelScanCallbackScan) throw new Error('SCAN_CANCELLED');
+          const addr = this.getSilentPaymentAddress()!;
+          const converted = this.transactionProcessor!.convertRawMatches(rawUtxos, addr);
+          const resolved = await this.resolveMatchMetadata(converted);
+          this.addUTXOs(resolved); // does NOT advance lastScannedBlock; wrappedProgress does
+        };
+
+        try {
+          await streamViaRustEngine({
+            wsUrl: deriveWsUrl(indexer.getBaseUrl()),
+            from: startHeight, to: endHeight,
+            scanPrivkeyHex, spendPubkeyHex,
+            handlers: { onMatch },
+            onProgress: wrappedProgress,
+            cancelCallback: cancel,
+          });
+          this.advanceScanHeight(endHeight, { persist: true }); // done → final height
+        } catch (error: any) {
+          if (error?.message === 'SCAN_CANCELLED') throw error;
+          if (error instanceof StreamUnsupportedError) {
+            console.warn('[SP] Rust engine unavailable; using HTTP range scan:', error.message);
+          } else {
+            console.warn('[SP] Rust engine failed; resuming via HTTP range scan:', error?.message);
+          }
+          const resumeStart = this.lastScannedBlock >= startHeight ? this.lastScannedBlock + 1 : startHeight;
+          if (resumeStart <= endHeight) {
+            await indexer.scanForwardWithCallback(resumeStart, endHeight, handlers, wrappedProgress, cancel);
+          }
+        }
+      } else {
+        // Prefer the WebSocket stream: one connection carries the whole backfill, so
+        // the ~1.5s tunnel round-trip is paid once instead of per 200-block chunk.
+        // Fall back to the HTTP range loop for older indexers (no `sync` support) or
+        // if the stream drops — resuming from wherever commitUTXOs last advanced
+        // lastScannedBlock, so no height is ever skipped.
+        try {
+          await indexer.streamForwardWithCallback(startHeight, endHeight, handlers, wrappedProgress, cancel);
+        } catch (error: any) {
+          if (error?.message === 'SCAN_CANCELLED') {
+            throw error;
+          }
+          if (error instanceof StreamUnsupportedError) {
+            console.warn('[SP] WS streaming unavailable; using HTTP range scan:', error.message);
+          } else {
+            console.warn('[SP] WS streaming failed; resuming via HTTP range scan:', error?.message);
+          }
+
+          const resumeStart = this.lastScannedBlock >= startHeight ? this.lastScannedBlock + 1 : startHeight;
+          if (resumeStart <= endHeight) {
+            await indexer.scanForwardWithCallback(resumeStart, endHeight, handlers, wrappedProgress, cancel);
+          }
         }
       }
 
