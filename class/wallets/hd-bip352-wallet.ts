@@ -17,6 +17,7 @@ import {
   type ScanStateInfo,
   type ScanStatus,
   IDLE_SCAN_STATE,
+  type IScannableWallet,
 } from '../../helpers/silent-payments';
 import { BIP352_ACTIVATION_HEIGHT } from '../../modules/constants';
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types.ts';
@@ -30,7 +31,7 @@ const SCAN_PROGRESS_THROTTLE_MS = 500;
 // Number of recent progress samples kept for the windowed ETA throughput estimate.
 const SCAN_ETA_ROLLING_WINDOW = 10;
 
-export class HDSilentPaymentsWallet extends HDTaprootWallet {
+export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannableWallet {
   static readonly type = 'HDSilentPaymentsWallet';
   static readonly typeReadable = 'HD Silent Payments';
   // @ts-ignore: override
@@ -349,6 +350,10 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet {
     // flag below; it must not tear down the shared indexer.
     this.stopPolling();
     this._emitScanState('idle', IDLE_SCAN_STATE);
+  }
+
+  isScanActive(): boolean {
+    return this.activeScanPromise !== null;
   }
 
   private startPolling(): void {
