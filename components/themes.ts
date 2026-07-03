@@ -183,7 +183,7 @@ export const ShroudDarkTheme: Theme = {
     cta2: '#ffffff',
     outputValue: '#ffffff',
     elevated: '#121212',
-    mainColor: '#0A84FF',
+    mainColor: '#754CE8',
     success: '#202020',
     successCheck: '#00A63E',
     buttonBlueBackgroundColor: '#202020',
@@ -224,6 +224,7 @@ export const ShroudDarkTheme: Theme = {
     incomingIconBorder: '#473F71',
     outgoingIconBackground: '#161616',
     outgoingIconBorder: '#473F71',
+    primary: '#754CE8',
   },
 };
 
