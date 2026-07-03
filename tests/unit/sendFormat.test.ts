@@ -45,7 +45,7 @@ describe('send/format', () => {
     it('keeps digits and a single dot in BTC mode, dropping extras', () => {
       expect(sanitizeAmountInput('0.0000344', BitcoinUnit.BTC)).toBe('0.0000344');
       expect(sanitizeAmountInput('abc1.2.3', BitcoinUnit.BTC)).toBe('1.23');
-      expect(sanitizeAmountInput('1,000.5', BitcoinUnit.BTC)).toBe('1000.5');
+      expect(sanitizeAmountInput('1,000.5', BitcoinUnit.BTC)).toBe('1.0005');
       expect(sanitizeAmountInput('1.2.3.4', BitcoinUnit.BTC)).toBe('1.234');
     });
     it('keeps digits only in sats mode, dropping dots and separators', () => {

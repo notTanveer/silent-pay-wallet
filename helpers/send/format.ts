@@ -43,7 +43,7 @@ export const sanitizeAmountInput = (text: string, unit: BitcoinUnit): string => 
   if (unit === BitcoinUnit.SATS) {
     return text.replace(/[^0-9]/g, '');
   }
-  const cleaned = text.replace(/[^0-9.]/g, '');
+  const cleaned = text.replace(/,/g, '.').replace(/[^0-9.]/g, '');
   const [intPart, ...rest] = cleaned.split('.');
   return rest.length ? `${intPart}.${rest.join('')}` : intPart;
 };

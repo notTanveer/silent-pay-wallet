@@ -8,7 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NetworkTransactionFeeType } from '../models/networkTransactionFees';
 import { ClashFont } from '../constants/fonts';
 import { satoshiToBTC } from '../modules/currency';
-import { formatFeeOptionSubtitle, feeSpeedTierForRate, estimateFeeForRate } from '../helpers/send/format';
+import { feeSpeedTierForRate, estimateFeeForRate } from '../helpers/send/format';
 import LightningIcon from '../components/icons/LightningIcon';
 import ClockIcon from '../components/icons/ClockIcon';
 import Button from '../components/Button';
@@ -103,7 +103,8 @@ const feeScreenReducer = (state: FeeScreenState, action: FeeScreenAction): FeeSc
 
 interface FeeCardProps {
   label: string;
-  subtitle: string;
+  fee: number | null;
+  rate: number;
   eta: string;
   icon: React.ReactNode;
   selected: boolean;
@@ -112,7 +113,7 @@ interface FeeCardProps {
   colors: Theme['colors'];
 }
 
-const FeeCard: FC<FeeCardProps> = ({ label, subtitle, eta, icon, selected, disabled, onPress, colors }) => {
+const FeeCard: FC<FeeCardProps> = ({ label, fee, rate, eta, icon, selected, disabled, onPress, colors }) => {
   const stylesHook = StyleSheet.create({
     card: {
       backgroundColor: selected ? colors.surfaceSubtle : colors.white,
@@ -120,7 +121,8 @@ const FeeCard: FC<FeeCardProps> = ({ label, subtitle, eta, icon, selected, disab
     },
     iconCircle: { backgroundColor: selected ? colors.white : colors.surfaceSubtle },
     label: { color: colors.black },
-    subtitle: { color: colors.textSecondary },
+    subtitlePrimary: { color: colors.textPrimary },
+    subtitleSecondary: { color: colors.textSecondary },
     eta: { color: selected ? colors.brandPrimary : colors.amountMeta },
   });
 
@@ -134,7 +136,10 @@ const FeeCard: FC<FeeCardProps> = ({ label, subtitle, eta, icon, selected, disab
       <View style={[styles.iconCircle, stylesHook.iconCircle]}>{icon}</View>
       <View style={styles.cardBody}>
         <Text style={[styles.cardLabel, stylesHook.label]}>{label}</Text>
-        <Text style={[styles.cardSubtitle, stylesHook.subtitle]}>{subtitle}</Text>
+        <Text style={[styles.cardSubtitle, stylesHook.subtitlePrimary]}>
+          {fee != null ? `${satoshiToBTC(fee)} BTC · ` : '— '}
+          <Text style={stylesHook.subtitleSecondary}>{fee != null ? `${rate} ${loc.units.sat_vbyte}` : loc.units.sat_vbyte}</Text>
+        </Text>
       </View>
       <Text style={[styles.cardEta, stylesHook.eta]}>{eta}</Text>
     </TouchableOpacity>
@@ -172,7 +177,7 @@ const SelectFeeScreen = () => {
     customSubtitle: { color: colors.textSecondary },
     customInputRow: { backgroundColor: colors.white },
     satVbyteText: { color: colors.textSecondary },
-    customFeeInputColors: { color: colors.feeValue },
+    customFeeInputColors: { color: colors.textPrimary },
     customEstimateText: { color: colors.textPrimary },
     customEstimateRate: { color: colors.textSecondary },
     customEstimateEta: { color: colors.brandPrimary },
@@ -273,9 +278,6 @@ const SelectFeeScreen = () => {
     }, []),
   );
 
-  const subtitleFor = (fee: number | null, rate: number) =>
-    fee != null ? formatFeeOptionSubtitle(String(satoshiToBTC(fee)), rate, loc.units.sat_vbyte) : `— ${loc.units.sat_vbyte}`;
-
   const isNextDisabled = state.isCustomFeeSelected
     ? !(state.customFeeValue && Number(state.customFeeValue.replace(',', '.')) > 0)
     : !state.options.some(opt => opt.active);
@@ -308,7 +310,8 @@ const SelectFeeScreen = () => {
             <FeeCard
               key={label}
               label={label}
-              subtitle={subtitleFor(fee, rate)}
+              fee={fee}
+              rate={rate}
               eta={`~${time}`}
               icon={
                 feeType === NetworkTransactionFeeType.FAST ? (
@@ -408,8 +411,8 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontFamily: ClashFont.regular,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 16,
+    lineHeight: 22,
   },
   card: {
     flexDirection: 'row',

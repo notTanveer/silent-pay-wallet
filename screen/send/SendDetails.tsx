@@ -738,6 +738,7 @@ const SendDetails = () => {
     return walletActions;
   }, [addresses, isEditable, wallet]);
 
+  // TODO: update the design of this as well
   const HeaderRight = useCallback(
     () => <HeaderMenuButton disabled onPressMenuItem={headerRightOnPress} actions={headerRightActions()} />,
     [headerRightOnPress, headerRightActions],
@@ -1014,6 +1015,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 16,
     paddingHorizontal: 16,
+    paddingVertical: 8,
     gap: 12,
   },
   feeSummaryTexts: {
