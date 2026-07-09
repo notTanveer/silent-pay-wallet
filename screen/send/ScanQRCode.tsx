@@ -2,7 +2,7 @@ import { RouteProp, StackActions, useIsFocused, useRoute } from '@react-navigati
 import * as bitcoin from 'bitcoinjs-lib';
 import { sha256 } from '@noble/hashes/sha256';
 import React, { useEffect, useState } from 'react';
-import { Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Base43 from '../../modules/base43';
 import * as fs from '../../modules/fs';
 import { BlueURDecoder, decodeUR, extractSingleWorkload } from '../../modules/ur';
@@ -10,15 +10,17 @@ import { ShroudText } from '../../ShroudComponents';
 import { openPrivacyDesktopSettings } from '../../class/camera';
 import Button from '../../components/Button';
 import { useTheme } from '../../components/themes';
-import { isCameraAuthorizationStatusGranted } from '../../helpers/scan-qr';
+import { getCameraAuthorizationStatus, requestCameraAuthorization } from '../../helpers/scan-qr';
+import { RESULTS } from 'react-native-permissions';
 import loc from '../../loc';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import CameraScreen from '../../components/CameraScreen';
 import SafeArea from '../../components/SafeArea';
 import presentAlert from '../../components/Alert';
 import { SendDetailsStackParamList } from '../../navigation/SendDetailsStackParamList.ts';
-import { Spacing40 } from '../../components/Spacing';
 import { Loading } from '../../components/Loading.tsx';
+import { ClashFont } from '../../constants/fonts';
+import CameraIcon from '../../components/icons/CameraIcon';
 
 let decoder: BlueURDecoder | undefined;
 
@@ -29,9 +31,71 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000000',
   },
-  openSettingsContainer: {
+  permissionContainer: {
+    height: '100%',
+    paddingHorizontal: 24,
+  },
+  permissionContent: {
+    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignContent: 'center',
+    gap: 20,
+  },
+  iconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  permissionTitle: {
+    fontFamily: ClashFont.medium,
+    fontSize: 18,
+    lineHeight: 26,
+    textAlign: 'center',
+    paddingHorizontal: 12,
+  },
+  permissionActions: {
+    gap: 12,
+    paddingBottom: 8,
+  },
+  primaryButton: {
+    height: 56,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryButtonText: {
+    fontFamily: ClashFont.medium,
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  secondaryButton: {
+    height: 56,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButtonText: {
+    fontFamily: ClashFont.medium,
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  ghostButton: {
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ghostButtonText: {
+    fontFamily: ClashFont.medium,
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  buttonPressed: {
+    opacity: 0.85,
+  },
+  cameraLoading: {
+    justifyContent: 'center',
     alignItems: 'center',
     height: '100%',
   },
@@ -76,9 +140,14 @@ const ScanQRCode = () => {
   const [animatedQRCodeData, setAnimatedQRCodeData] = useState<Record<string, string>>({});
   const [cameraStatusGranted, setCameraStatusGranted] = useState<boolean | undefined>(undefined);
   const stylesHook = StyleSheet.create({
-    openSettingsContainer: {
-      backgroundColor: colors.brandingColor,
-    },
+    rootElevated: { backgroundColor: colors.elevated },
+    iconCircle: { backgroundColor: colors.surfaceSubtle },
+    permissionTitle: { color: colors.foregroundColor },
+    primaryButton: { backgroundColor: colors.brandPrimary },
+    primaryButtonText: { color: colors.white },
+    secondaryButton: { backgroundColor: colors.accentSubtle },
+    secondaryButtonText: { color: colors.brandPrimary },
+    ghostButtonText: { color: colors.alternativeTextColor },
     progressWrapper: { backgroundColor: colors.brandingColor, borderColor: colors.foregroundColor, borderWidth: 4 },
     backdoorInput: {
       borderColor: colors.formBorder,
@@ -89,7 +158,40 @@ const ScanQRCode = () => {
   });
 
   useEffect(() => {
-    isCameraAuthorizationStatusGranted().then(setCameraStatusGranted);
+    let active = true;
+    (async () => {
+      // Resolve permission from within the presented modal. Requesting before navigating
+      // (the old behaviour) raced the iOS permission alert against this modal's
+      // presentation and wedged UIKit's modal stack.
+      const status = await getCameraAuthorizationStatus();
+      if (!active) return;
+
+      if (status === RESULTS.GRANTED) {
+        setCameraStatusGranted(true);
+        return;
+      }
+      if (status !== RESULTS.DENIED) {
+        // BLOCKED / UNAVAILABLE / LIMITED: not requestable — show the fallback directly.
+        // Never call request() here: on Android a permanently-denied permission makes it
+        // hang forever (no OS prompt, no callback), stranding the screen.
+        setCameraStatusGranted(false);
+        return;
+      }
+
+      // DENIED — usually requestable, but Android's check() also reports DENIED for some
+      // permanently-denied states where request() then hangs. So don't block on it:
+      // honour the result if/when it arrives, and after a short grace period drop to the
+      // fallback so the screen is never stuck on a spinner ("black screen").
+      requestCameraAuthorization()
+        .then(result => active && setCameraStatusGranted(result === RESULTS.GRANTED))
+        .catch(() => active && setCameraStatusGranted(false));
+      setTimeout(() => {
+        if (active) setCameraStatusGranted(prev => (prev === undefined ? false : prev));
+      }, 800);
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const HashIt = function (s: string): string {
@@ -284,16 +386,45 @@ const ScanQRCode = () => {
   ) : (
     <View>
       {cameraStatusGranted === false ? (
-        <View style={[styles.openSettingsContainer, stylesHook.openSettingsContainer]}>
-          <ShroudText>{loc.send.permission_camera_message}</ShroudText>
-          <Spacing40 />
-          <Button title={loc.send.open_settings} onPress={openPrivacyDesktopSettings} />
-          <Spacing40 />
-          {showFileImportButton && <Button title={loc.wallets.import_file} onPress={showFilePicker} />}
-          <Spacing40 />
-          <Button title={loc.wallets.list_long_choose} onPress={onShowImagePickerButtonPress} />
-          <Spacing40 />
-          <Button title={loc._.cancel} onPress={dismiss} />
+        <View style={styles.permissionContainer}>
+          <View style={styles.permissionContent}>
+            <View style={[styles.iconCircle, stylesHook.iconCircle]}>
+              <CameraIcon color={colors.brandPrimary} size={32} />
+            </View>
+            <ShroudText style={[styles.permissionTitle, stylesHook.permissionTitle]}>{loc.send.permission_camera_message}</ShroudText>
+          </View>
+          <View style={styles.permissionActions}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={openPrivacyDesktopSettings}
+              style={({ pressed }) => [styles.primaryButton, stylesHook.primaryButton, pressed && styles.buttonPressed]}
+            >
+              <Text style={[styles.primaryButtonText, stylesHook.primaryButtonText]}>{loc.send.open_settings}</Text>
+            </Pressable>
+            {showFileImportButton && (
+              <Pressable
+                accessibilityRole="button"
+                onPress={showFilePicker}
+                style={({ pressed }) => [styles.secondaryButton, stylesHook.secondaryButton, pressed && styles.buttonPressed]}
+              >
+                <Text style={[styles.secondaryButtonText, stylesHook.secondaryButtonText]}>{loc.wallets.import_file}</Text>
+              </Pressable>
+            )}
+            <Pressable
+              accessibilityRole="button"
+              onPress={onShowImagePickerButtonPress}
+              style={({ pressed }) => [styles.secondaryButton, stylesHook.secondaryButton, pressed && styles.buttonPressed]}
+            >
+              <Text style={[styles.secondaryButtonText, stylesHook.secondaryButtonText]}>{loc.wallets.list_long_choose}</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={dismiss}
+              style={({ pressed }) => [styles.ghostButton, pressed && styles.buttonPressed]}
+            >
+              <Text style={[styles.ghostButtonText, stylesHook.ghostButtonText]}>{loc._.cancel}</Text>
+            </Pressable>
+          </View>
         </View>
       ) : isFocused && cameraStatusGranted ? (
         <CameraScreen
@@ -304,7 +435,14 @@ const ScanQRCode = () => {
           onImagePickerButtonPress={onShowImagePickerButtonPress}
           onCancelButtonPress={dismiss}
         />
-      ) : null}
+      ) : (
+        // Permission still resolving (checking status / awaiting the OS prompt). Show a
+        // spinner rather than the bare black root so the screen behind the permission
+        // dialog doesn't read as a broken "black screen".
+        <View style={styles.cameraLoading}>
+          <Loading color="#ffffff" />
+        </View>
+      )}
       {urTotal > 0 && (
         <View style={[styles.progressWrapper, stylesHook.progressWrapper]} testID="UrProgressBar">
           <ShroudText>{loc.wallets.please_continue_scanning}</ShroudText>
@@ -342,7 +480,7 @@ const ScanQRCode = () => {
     </View>
   );
 
-  return <SafeArea style={styles.root}>{render}</SafeArea>;
+  return <SafeArea style={[styles.root, cameraStatusGranted === false ? stylesHook.rootElevated : null]}>{render}</SafeArea>;
 };
 
 export default ScanQRCode;

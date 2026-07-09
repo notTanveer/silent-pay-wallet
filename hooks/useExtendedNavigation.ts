@@ -3,7 +3,6 @@ import { navigationRef } from '../NavigationService';
 import { presentWalletExportReminder } from '../helpers/presentWalletExportReminder';
 import { unlockWithBiometrics, useBiometrics } from './useBiometrics';
 import { useStorage } from './context/useStorage';
-import { requestCameraAuthorization } from '../helpers/scan-qr';
 import { useCallback, useMemo } from 'react';
 
 // List of screens that require biometrics
@@ -131,9 +130,8 @@ export const useExtendedNavigation = <T extends NavigationProp<ParamListBase>>()
           }
         }
 
-        if (screenName === 'ScanQRCode') {
-          await requestCameraAuthorization();
-        }
+        // ScanQRCode requests camera permission itself once presented; requesting here
+        // (before navigation) raced the permission alert against the modal presentation.
         proceedWithNavigation();
       })();
     },
