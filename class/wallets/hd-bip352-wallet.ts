@@ -1,10 +1,10 @@
 import * as bip39 from 'bip39';
 import { Buffer } from 'buffer';
 import { ECPairFactory } from 'ecpair';
+import { SilentPayment, UTXOType as SPUTXOType, UTXO as SPLibUTXO } from 'silent-payments';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet.ts';
 import { getDefaultIndexer } from '../../modules/SilentPaymentIndexer';
 import ecc from '../../modules/noble_ecc';
-import { SilentPayment } from 'silent-payments';
 import { calculateSumOfPrivateKeys, createInputHash, scanOutputs, type PrivateKey } from '@silent-pay/core';
 import {
   getSilentPaymentAddress,
@@ -28,9 +28,12 @@ import {
   type IScannableWallet,
 } from '../../helpers/silent-payments';
 import { BIP352_ACTIVATION_HEIGHT } from '../../modules/constants';
+import { planSplitOutputs, SPEND_INPUT_VBYTES, OUTPUT_VBYTES } from '../../helpers/silent-payments';
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types.ts';
+import { CoinSelectOutput, CoinSelectReturnInput } from 'coinselect';
 import * as bitcoin from 'bitcoinjs-lib';
 import { HDTaprootWallet } from './hd-taproot-wallet.ts';
+import { randomBytes } from '../rng';
 
 const ECPair = ECPairFactory(ecc);
 
@@ -44,6 +47,8 @@ interface SpendKeyPair {
 const SCAN_PROGRESS_THROTTLE_MS = 500;
 // Number of recent progress samples kept for the windowed ETA throughput estimate.
 const SCAN_ETA_ROLLING_WINDOW = 10;
+// Maximum fee rate at which opportunistic input obfuscation is attempted
+const MAX_SPLIT_FEE_RATE_SATS_VB = 10;
 
 export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannableWallet {
   static readonly type = 'HDSilentPaymentsWallet';
@@ -119,7 +124,12 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
   }
 
   private _emitScanState(status: ScanStatus, overrides?: Partial<ScanStateInfo>): void {
-    this._scanState = { ...this._scanState, status, ...overrides, lastScannedBlock: this.lastScannedBlock };
+    this._scanState = {
+      ...this._scanState,
+      status,
+      ...overrides,
+      lastScannedBlock: this.lastScannedBlock,
+    };
     this._onScanStateChangeCallback?.(this._scanState);
   }
 
@@ -526,7 +536,13 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         return 0;
       }
 
-      this._emitScanState('scanning', { startedAt: this._scanStartTime, progress: null, eta: null, etaComputedAt: null, error: null });
+      this._emitScanState('scanning', {
+        startedAt: this._scanStartTime,
+        progress: null,
+        eta: null,
+        etaComputedAt: null,
+        error: null,
+      });
 
       let totalUTXOsAdded = 0;
 
@@ -534,7 +550,10 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         await this._waitIfPaused();
         if (this.activeScanPromise === null || this.cancelScanCallbackScan) return;
 
-        this._scanSamples.push({ t: Date.now(), percent: progress.percentComplete });
+        this._scanSamples.push({
+          t: Date.now(),
+          percent: progress.percentComplete,
+        });
         if (this._scanSamples.length > SCAN_ETA_ROLLING_WINDOW) {
           this._scanSamples.shift();
         }
@@ -607,17 +626,26 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       }
 
       if (error.message?.includes('not initialized')) {
-        this._emitScanState('error', { error: 'Silent Payment Indexer not initialized.' });
+        this._emitScanState('error', {
+          error: 'Silent Payment Indexer not initialized.',
+        });
         throw new Error('Silent Payment Indexer not initialized. Please configure the indexer first.');
       }
 
       console.error('[SP] Scan error:', error);
-      this._emitScanState('error', { error: error.message ?? 'Unknown scan error' });
+      this._emitScanState('error', {
+        error: error.message ?? 'Unknown scan error',
+      });
       throw error;
     }
   }
 
-  async scanByTxid(txid: string): Promise<{ found: boolean; utxosFound: number; blockHeight: number; tipHeight: number }> {
+  async scanByTxid(txid: string): Promise<{
+    found: boolean;
+    utxosFound: number;
+    blockHeight: number;
+    tipHeight: number;
+  }> {
     const indexer = getDefaultIndexer();
     const [response, tipResponse] = await Promise.all([indexer.getTransactionByTxid(txid), indexer.getLatestBlockHeight()]);
     const tx = response.transaction;
@@ -833,7 +861,144 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     return true;
   }
 
-  createTransaction(
+  // Derive `count` distinct sequential internal (change) addresses starting at
+  // the current free change index. Deliberately does NOT advance the pointer:
+  // planning runs many times per send (fee previews, RBF rebuilds) and would
+  // leak indices toward the gap limit. The pointer advances through normal
+  // on-chain discovery once a tx confirms — same convention as
+  // getChangeAddressAsync for the single-change case.
+  private getChangeAddresses(count: number): string[] {
+    const base = this.next_free_change_address_index;
+    return Array.from({ length: count }, (_, i) => this._getInternalAddressByIndex(base + i));
+  }
+
+  // Cryptographic Fisher–Yates shuffle so the change output is not positionally
+  // identifiable among the transaction outputs.
+  private async shuffleOutputs<T>(arr: T[]): Promise<T[]> {
+    const out = arr.slice();
+    if (out.length < 2) return out;
+    const buf = await randomBytes(out.length * 4);
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = buf.readUInt32BE(i * 4) % (i + 1);
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
+  }
+
+  // Build the blended output set for a split silent payment: payment outputs to
+  // the recipient's sp address plus adaptive, distinct-addressed change outputs,
+  // all shuffled.
+  private async planSplitTransaction(
+    spAddress: string,
+    paymentValue: number,
+    changeValue: number,
+    feeRate: number,
+    coinSelectOutputCount: number,
+    precalculatedPaymentAmounts?: number[],
+  ): Promise<{ outputs: CoinSelectOutput[]; changeAddresses: string[] }> {
+    const { paymentAmounts, changeAmounts } = await planSplitOutputs({
+      paymentValue,
+      changeValue,
+      feeRate,
+      coinSelectOutputCount,
+      precalculatedPaymentAmounts,
+    });
+    const paymentOutputs: CoinSelectOutput[] = paymentAmounts.map(value => ({
+      address: spAddress,
+      value,
+    }));
+    const changeAddresses = this.getChangeAddresses(changeAmounts.length);
+    const changeOutputs: CoinSelectOutput[] = changeAmounts.map((value, i) => ({
+      address: changeAddresses[i],
+      value,
+    }));
+    const outputs = await this.shuffleOutputs([...paymentOutputs, ...changeOutputs]);
+    return { outputs, changeAddresses };
+  }
+
+  // Obfuscates the "unnecessary input heuristic" by opportunistically selecting more
+  // inputs until the change value is strictly greater than any individual input in the tx.
+  // This causes the heuristic to fail, as both the real payment and the change output
+  // interpretations will have apparent "unnecessary" inputs.
+  // We only run this when fees are low (<MAX_SPLIT_FEE_RATE_SATS_VB sats/vB) and when performing a split payment.
+  private obfuscateUnnecessaryInputHeuristic(
+    inputs: CoinSelectReturnInput[],
+    rawOutputs: CoinSelectOutput[],
+    availableUtxos: CreateTransactionUtxo[],
+    feeRate: number,
+  ): { inputs: CoinSelectReturnInput[]; rawOutputs: CoinSelectOutput[] } {
+    if (feeRate >= MAX_SPLIT_FEE_RATE_SATS_VB) return { inputs, rawOutputs };
+    if (inputs.length <= 1) return { inputs, rawOutputs };
+
+    const selectedKeys = new Set(inputs.map(i => `${i.txid}:${i.vout}`));
+    const unselectedUtxos = availableUtxos.filter(u => !selectedKeys.has(`${u.txid}:${u.vout}`));
+
+    const currentInputs = [...inputs];
+    let changeValue = rawOutputs.find(o => !o.address)?.value ?? 0;
+
+    // Sort unselected descending by value to minimize the number of inputs added to cross the threshold
+    unselectedUtxos.sort((a, b) => b.value - a.value);
+
+    for (const utxo of unselectedUtxos) {
+      const maxInputValue = Math.max(...currentInputs.map(i => i.value));
+      if (changeValue > maxInputValue) break;
+
+      const inputCost = Math.ceil(SPEND_INPUT_VBYTES * feeRate);
+      const netValue = utxo.value - inputCost;
+
+      if (netValue > 0) {
+        currentInputs.push(utxo as CoinSelectReturnInput);
+        changeValue += netValue;
+      }
+    }
+
+    const newRawOutputs = rawOutputs.map(o => {
+      if (!o.address) {
+        return { ...o, value: changeValue };
+      }
+      return o;
+    });
+
+    if (!newRawOutputs.some(o => !o.address) && changeValue > 0) {
+      const outputFee = Math.ceil(OUTPUT_VBYTES * feeRate);
+      changeValue = Math.max(0, changeValue - outputFee);
+      if (changeValue <= 0) return { inputs: currentInputs, rawOutputs };
+      newRawOutputs.push({ value: changeValue });
+    }
+
+    return { inputs: currentInputs, rawOutputs: newRawOutputs };
+  }
+
+  // Resolve sp1 targets to real Taproot addresses via sender-side BIP-352
+  // derivation. Shared by both SP-UTXO and regular-UTXO senders — only the
+  // source of each input's WIF differs between them.
+  private resolveSPOutputs(
+    inputWifs: Array<{ txid: string; vout: number; wif: string }>,
+    plannedOutputs: CoinSelectOutput[],
+  ): CoinSelectOutput[] {
+    const libUtxos: SPLibUTXO[] = inputWifs.map(u => ({
+      txid: u.txid,
+      vout: u.vout,
+      wif: u.wif,
+      utxoType: 'p2tr' as SPUTXOType,
+    }));
+    const sp = new SilentPayment();
+    const resolved = sp.createTransaction(libUtxos, plannedOutputs);
+    return resolved.map((t, i) => ({
+      ...plannedOutputs[i],
+      address: t.address ?? plannedOutputs[i].address,
+    }));
+  }
+
+  private getTweakedWIF(internalWif: string): string {
+    const keyPair = ECPair.fromWIF(internalWif);
+    const tapInternalKey = keyPair.publicKey.subarray(1, 33);
+    const tweakHash = bitcoin.crypto.taggedHash('TapTweak', tapInternalKey);
+    return keyPair.tweak(tweakHash).toWIF();
+  }
+  
+  // @ts-expect-error TS2416: base class returns sync CreateTransactionResult but this override is async; callers use TWallet which is typed as this class
+  async createTransaction(
     utxos: CreateTransactionUtxo[],
     targets: CreateTransactionTarget[],
     feeRate: number,
@@ -841,7 +1006,9 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     sequence: number = AbstractHDElectrumWallet.finalRBFSequence,
     skipSigning = false,
     masterFingerprint: number = 0,
-  ): CreateTransactionResult {
+    splitPayment = false,
+    precalculatedPaymentAmounts?: number[],
+  ): Promise<CreateTransactionResult> {
     if (targets.length === 0) throw new Error('No destination provided');
     if (utxos.length === 0) throw new Error('No UTXOs provided');
 
@@ -858,11 +1025,35 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
 
     // Case 1: Only SP UTXOs - use SP builder exclusively
     if (spUtxos.length > 0 && regularUtxos.length === 0) {
-      return this.createSPTransaction(spUtxos, targets, feeRate, changeAddress, sequence, skipSigning);
+      return this.createSPTransaction(
+        spUtxos,
+        targets,
+        feeRate,
+        changeAddress,
+        sequence,
+        skipSigning,
+        splitPayment,
+        precalculatedPaymentAmounts,
+      );
     }
 
-    // Case 2: Only regular UTXOs - delegate to parent
+    // Case 2: Only regular UTXOs - delegate to parent, unless a split to an SP
+    // recipient was requested and is actually feasible for this payment.
     if (spUtxos.length === 0 && regularUtxos.length > 0) {
+      const canSplit = splitPayment && targets.length === 1 && !!targets[0].address?.startsWith('sp1') && !!targets[0].value;
+      if (canSplit) {
+        const split = await this.createSplitRegularToSPTransaction(
+          regularUtxos,
+          targets,
+          feeRate,
+          changeAddress,
+          sequence,
+          skipSigning,
+          masterFingerprint,
+          precalculatedPaymentAmounts,
+        );
+        if (split) return split;
+      }
       return super.createTransaction(regularUtxos, targets, feeRate, changeAddress, sequence, skipSigning, masterFingerprint);
     }
 
@@ -870,18 +1061,155 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     throw new Error('Mixed UTXO spending (SP + regular) is not yet implemented. Please select only SP UTXOs or only regular UTXOs.');
   }
 
-  private createSPTransaction(
+  // Split-payment builder for senders whose coinselected inputs are plain
+  // (non-SP-tagged) Taproot UTXOs — e.g. a wallet that has never received via
+  // silent payments but wants to split a payment to an SP recipient. Signing
+  // uses the standard BIP-86 taproot tweak per input (_getWifForAddress +
+  // TapTweak), unlike createSPTransaction which signs with an already-tweaked
+  // BIP-352 receive key. Returns null when the planner declines to split
+  // (below the economic floor, fee cap, or no change budget), so the caller
+  // can fall back to the plain (proven, non-split) parent implementation.
+  private async createSplitRegularToSPTransaction(
+    regularUtxos: CreateTransactionUtxo[],
+    targets: CreateTransactionTarget[],
+    feeRate: number,
+    changeAddress: string,
+    sequence: number,
+    skipSigning: boolean,
+    masterFingerprint: number,
+    precalculatedPaymentAmounts?: number[],
+  ): Promise<CreateTransactionResult | null> {
+    const spAddress = targets[0].address!;
+    let { inputs, outputs: rawOutputs } = this.coinselect(regularUtxos, targets, feeRate);
+
+    const obf = this.obfuscateUnnecessaryInputHeuristic(inputs, rawOutputs, regularUtxos, feeRate);
+    inputs = obf.inputs;
+    rawOutputs = obf.rawOutputs;
+
+    const changeValue = rawOutputs.find(o => !o.address)?.value ?? 0;
+    if (changeValue <= 0) return null;
+
+    const planned = await this.planSplitTransaction(
+      spAddress,
+      targets[0].value!,
+      changeValue,
+      feeRate,
+      rawOutputs.length,
+      precalculatedPaymentAmounts,
+    );
+    const paymentCount = planned.outputs.filter(o => o.address === spAddress).length;
+    if (paymentCount < 2) return null; // planner declined to split; let the caller fall back
+
+    const inputWifs = inputs.map(input => ({
+      txid: input.txid,
+      vout: input.vout,
+      wif: this.getTweakedWIF(this._getWifForAddress(String(input.address))),
+    }));
+    const outputs = this.resolveSPOutputs(inputWifs, planned.outputs);
+
+    let masterFingerprintBuffer: Buffer;
+    if (masterFingerprint) {
+      let masterFingerprintHex = Number(masterFingerprint).toString(16);
+      if (masterFingerprintHex.length < 8) masterFingerprintHex = '0' + masterFingerprintHex;
+      masterFingerprintBuffer = Buffer.from(Buffer.from(masterFingerprintHex, 'hex')).reverse();
+    } else {
+      masterFingerprintBuffer = Buffer.from([0x00, 0x00, 0x00, 0x00]);
+    }
+
+    let psbt = new bitcoin.Psbt();
+    inputs.forEach(input => {
+      psbt = this._addPsbtInput(psbt, input, sequence, masterFingerprintBuffer);
+    });
+    outputs.forEach(output => {
+      psbt.addOutput({
+        address: output.address || changeAddress,
+        value: BigInt(output.value),
+      });
+    });
+
+    let tx: bitcoin.Transaction | undefined;
+    if (!skipSigning) {
+      inputs.forEach((input, idx) => {
+        const keyPair = ECPair.fromWIF(this._getWifForAddress(String(input.address)));
+        const tapInternalKey = psbt.data.inputs[idx].tapInternalKey as Uint8Array;
+        psbt.signTaprootInput(idx, keyPair.tweak(bitcoin.crypto.taggedHash('TapTweak', tapInternalKey)));
+      });
+      psbt.finalizeAllInputs();
+      tx = psbt.extractTransaction();
+    }
+
+    const totalIn = inputs.reduce((sum, i) => sum + i.value, 0);
+    const totalOut = outputs.reduce((sum, o) => sum + o.value, 0);
+
+    return {
+      tx,
+      psbt,
+      inputs: inputs.map(i => ({
+        txid: i.txid,
+        vout: i.vout,
+        address: i.address,
+        value: i.value,
+      })),
+      outputs: outputs.map(o => ({
+        address: o.address || changeAddress,
+        value: o.value,
+      })),
+      fee: totalIn - totalOut,
+      changeAddresses: planned.changeAddresses,
+    };
+  }
+
+  private async createSPTransaction(
     spUtxos: SilentPaymentUTXO[],
     targets: CreateTransactionTarget[],
     feeRate: number,
     changeAddress: string,
     sequence: number,
     skipSigning: boolean,
-  ): CreateTransactionResult {
+    splitPayment = false,
+    precalculatedPaymentAmounts?: number[],
+  ): Promise<CreateTransactionResult> {
     if (targets.length === 0) throw new Error('No destination provided');
 
-    const { inputs, outputs, fee } = this.coinselect(spUtxos as CreateTransactionUtxo[], targets, feeRate);
+    let { inputs, outputs: rawOutputs } = this.coinselect(spUtxos as CreateTransactionUtxo[], targets, feeRate);
     const utxoMap = new Map(spUtxos.map(u => [`${u.txid}:${u.vout}`, u]));
+
+    let plannedOutputs = rawOutputs;
+    let changeAddresses: string[] = [changeAddress];
+    const changeValue = rawOutputs.find(o => !o.address)?.value ?? 0;
+    const canSplit =
+      splitPayment && targets.length === 1 && !!targets[0].address?.startsWith('sp1') && !!targets[0].value && changeValue > 0;
+    if (canSplit) {
+      const originalInputs = inputs;
+      const originalRawOutputs = rawOutputs;
+      const obf = this.obfuscateUnnecessaryInputHeuristic(inputs, rawOutputs, spUtxos as CreateTransactionUtxo[], feeRate);
+      inputs = obf.inputs;
+      rawOutputs = obf.rawOutputs;
+
+      const coinSelectOutputCount = rawOutputs.length;
+      const planned = await this.planSplitTransaction(
+        targets[0].address!,
+        targets[0].value!,
+        obf.rawOutputs.find(o => !o.address)?.value ?? 0,
+        feeRate,
+        coinSelectOutputCount,
+        precalculatedPaymentAmounts,
+      );
+
+      const paymentCount = planned.outputs.filter(o => o.address === targets[0].address).length;
+      if (paymentCount >= 2) {
+        plannedOutputs = planned.outputs;
+        changeAddresses = planned.changeAddresses;
+      } else {
+        inputs = originalInputs;
+        rawOutputs = originalRawOutputs;
+      }
+    }
+    // Fill the change address in before BIP-352 resolution: our own change address is itself an
+    // sp1 address whenever every input is an SP UTXO, so it has to be derived like any other
+    // sp1 output rather than handed to psbt.addOutput raw.
+    let outputs: CoinSelectOutput[] = plannedOutputs.map(o => ({ ...o, address: o.address || changeAddress }));
+    const hasSPOutput = outputs.some(o => o.address?.startsWith('sp1'));
 
     this.ensurePendingInputsInitialized();
 
@@ -908,6 +1236,17 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         return { input, spendPub, tweakedPriv, outputKey: Buffer.from(spUtxo.pubKey, 'hex') };
       });
 
+      // Resolve sp1 targets to real Taproot addresses via sender-side BIP-352 derivation.
+      // The library groups targets by recipient and increments k for each output in the group.
+      if (hasSPOutput) {
+        const inputWifs = resolvedInputs.map(({ input, tweakedPriv }) => ({
+          txid: input.txid,
+          vout: input.vout,
+          wif: ECPair.fromPrivateKey(Buffer.from(tweakedPriv), { compressed: true }).toWIF(),
+        }));
+        outputs = this.resolveSPOutputs(inputWifs, outputs);
+      }
+
       const psbt = new bitcoin.Psbt();
 
       // add taproot inputs with tweaked public keys
@@ -929,33 +1268,16 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         });
       });
 
-      let finalOutputs = outputs.map(o => ({
-        address: o.address || changeAddress,
-        value: o.value,
-      }));
-
-      const hasSilentPaymentOutput = finalOutputs.some(o => o.address?.startsWith('sp1'));
-      if (hasSilentPaymentOutput) {
-        const inputsForSP = resolvedInputs.map(({ input, tweakedPriv }) => ({
-          txid: input.txid,
-          vout: input.vout,
-          wif: ECPair.fromPrivateKey(Buffer.from(tweakedPriv), { compressed: true }).toWIF(),
-          utxoType: 'p2tr' as const,
-        }));
-
-        const sp = new SilentPayment();
-        finalOutputs = sp.createTransaction(inputsForSP, finalOutputs) as typeof finalOutputs;
-      }
-
-      finalOutputs.forEach(output => {
-        if (!output.address) {
+      outputs.forEach(output => {
+        const address = output.address || changeAddress;
+        if (!address) {
           throw new Error('Transaction output is missing an address');
         }
         if (output.value === undefined || output.value === null) {
-          throw new Error(`Transaction output to ${output.address} is missing a value`);
+          throw new Error(`Transaction output to ${address} is missing a value`);
         }
         psbt.addOutput({
-          address: output.address,
+          address,
           value: BigInt(output.value),
         });
       });
@@ -973,6 +1295,10 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         tx = psbt.extractTransaction();
       }
 
+      const totalIn = inputs.reduce((sum, i) => sum + i.value, 0);
+      const totalOut = outputs.reduce((sum, o) => sum + o.value, 0);
+      const recomputedFee = totalIn - totalOut;
+
       return {
         tx,
         psbt,
@@ -986,7 +1312,8 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
           address: o.address || changeAddress,
           value: o.value,
         })),
-        fee,
+        fee: recomputedFee,
+        changeAddresses,
       };
     } catch (error) {
       // If transaction creation fails, release the reserved UTXOs
