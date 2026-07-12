@@ -1,6 +1,23 @@
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
+import { SilentPayment } from 'silent-payments';
+import { ECPairFactory } from 'ecpair';
+import ecc from '../../modules/noble_ecc';
+import * as bitcoin from 'bitcoinjs-lib';
+
+jest.mock('../../modules/Electrum', () => ({
+  broadcastV2: jest.fn(async () => '1'.repeat(64)),
+}));
+
+const ECPair = ECPairFactory(ecc);
 
 const MNEMONIC = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+
+function independentTaprootTweakedWif(internalWif: string): string {
+  const keyPair = ECPair.fromWIF(internalWif);
+  const tapInternalKey = keyPair.publicKey.subarray(1, 33);
+  const tweakHash = bitcoin.crypto.taggedHash('TapTweak', tapInternalKey);
+  return keyPair.tweak(tweakHash).toWIF();
+}
 
 function makeWallet(): HDSilentPaymentsWallet {
   const w = new HDSilentPaymentsWallet();
@@ -121,7 +138,7 @@ describe('createTransaction (Case 2: plain, non-SP-tagged UTXOs) with splitPayme
       undefined,
       false,
       0,
-      true, // splitPayment
+      { enabled: true },
     );
 
     expect(result.tx).toBeDefined(); // standard BIP-86 tweak + signTaprootInput succeeded
@@ -130,6 +147,25 @@ describe('createTransaction (Case 2: plain, non-SP-tagged UTXOs) with splitPayme
     expect(paymentOutputs.length).toBeGreaterThanOrEqual(2); // actually split, not a silent no-op
     expect(paymentOutputs.reduce((a: number, o: any) => a + o.value, 0)).toBe(150_000);
     expect(new Set(paymentOutputs.map((o: any) => o.address)).size).toBe(paymentOutputs.length); // BIP-352 k-increment gives distinct addresses
+
+    // Pin against an independently computed tweaked-key derivation: the address must come
+    // from the TapTweak'd output key, not the untweaked internal key (the fund-loss bug).
+    const expectedFirst = new SilentPayment().createTransaction(
+      [{ txid: regularUtxoBase.txid, vout: regularUtxoBase.vout, wif: independentTaprootTweakedWif(withWif(w).wif), utxoType: 'p2tr' }],
+      [{ address: SP_ADDRESS, value: 150_000 }],
+    );
+    expect(paymentOutputs.map((o: any) => o.address)).toContain(expectedFirst[0].address);
+
+    // Change outputs must carry PSBT derivation metadata so an external signer (routeParams
+    // .launchedBy) can recognize them as the wallet's own change rather than presenting them
+    // as payments to unknown third parties.
+    const psbtOutputs = result.psbt.data.outputs;
+    const txOutputs = result.psbt.txOutputs;
+    for (let i = 0; i < txOutputs.length; i++) {
+      if (!changeSet.has(txOutputs[i].address)) continue;
+      expect(psbtOutputs[i].tapInternalKey).toBeDefined();
+      expect(psbtOutputs[i].tapBip32Derivation?.length).toBeGreaterThan(0);
+    }
   });
 
   it('falls back to a plain single-output send when the payment is too small to split', () => {
@@ -142,11 +178,21 @@ describe('createTransaction (Case 2: plain, non-SP-tagged UTXOs) with splitPayme
       undefined,
       false,
       0,
-      true, // splitPayment requested, but planner should decline
+      { enabled: true }, // splitPayment requested, but planner should decline
     );
 
     expect(result.tx).toBeDefined();
     expect(result.outputs).toHaveLength(2); // 1 payment + 1 change, same as a non-split send
+
+    // Fallback path routes through the parent's createTransaction (abstract-hd-electrum-wallet.ts),
+    // which must tweak the key exactly as the split path does — same input, same derived address.
+    const changeAddress = w._getInternalAddressByIndex(0);
+    const spOutput = result.outputs.find((o: any) => o.address !== changeAddress);
+    const expected = new SilentPayment().createTransaction(
+      [{ txid: regularUtxoBase.txid, vout: regularUtxoBase.vout, wif: independentTaprootTweakedWif(withWif(w).wif), utxoType: 'p2tr' }],
+      [{ address: SP_ADDRESS, value: 10_000 }],
+    );
+    expect(spOutput.address).toBe(expected[0].address);
   });
 });
 
@@ -159,10 +205,6 @@ describe('createTransaction (Case 1: SP-tagged UTXOs) with splitPayment', () => 
     const spendPubKey = w.getSpendPublicKey();
     const tweak = new Uint8Array(32);
     tweak[31] = 0x07;
-    // @ts-ignore: required for tests
-    const ecc = require('../../modules/noble_ecc').default;
-    // @ts-ignore: required for tests
-    const bitcoin = require('bitcoinjs-lib');
     const tweakedPub = ecc.pointAddScalar(spendPubKey, tweak, true)!;
     const expectedOutputKey = Buffer.from(tweakedPub.subarray(1, 33));
     const p2trAddress = bitcoin.payments.p2tr({
@@ -186,7 +228,7 @@ describe('createTransaction (Case 1: SP-tagged UTXOs) with splitPayment', () => 
       undefined,
       false,
       0,
-      true, // splitPayment
+      { enabled: true },
     );
 
     expect(result.tx).toBeDefined();
@@ -241,5 +283,114 @@ describe('obfuscateUnnecessaryInputHeuristic', () => {
 
     const newChange = res.rawOutputs.find((o: any) => !o.address)?.value;
     expect(newChange).toBeGreaterThan(5000); // Exceeds the max input value to break heuristic
+  });
+
+  // NOTE: every fixture below needs >= 2 selected inputs. obfuscateUnnecessaryInputHeuristic
+  // returns early on `inputs.length <= 1`, so a single-input fixture passes these assertions
+  // without ever reaching the precheck, the caps, or the bail-out being tested.
+
+  it('stops at MAX_OBFUSCATION_INPUTS even when more inputs would reach the threshold', () => {
+    const w = makeWallet();
+    // max(selected) = 100,000 and change = 1,000, so crossing the threshold needs 6 additions
+    // (1,000 + 6 x 19,710 = 119,260). The cap must stop at 2 and leave the threshold uncrossed
+    // rather than linking four more coins chasing it.
+    const inputs = [
+      { txid: 'big', vout: 0, value: 100_000 },
+      { txid: 'small', vout: 0, value: 20_000 },
+    ] as any;
+    const rawOutputs = [{ address: 'sp1', value: 118_000 }, { value: 1_000 }] as any;
+    const available = Array.from({ length: 10 }, (_, i) => ({
+      txid: `u${i}`,
+      vout: 0,
+      value: 20_000,
+      height: 1,
+      address: 'a',
+    }));
+
+    const res = (w as any).obfuscateUnnecessaryInputHeuristic(inputs, rawOutputs, available, 5);
+
+    expect(res.inputs.length - inputs.length).toBe(2); // exactly the cap, not the 6 it would take
+    const newChange = res.rawOutputs.find((o: any) => !o.address)?.value;
+    expect(newChange).toBe(1_000 + 2 * (20_000 - Math.ceil(58 * 5))); // change credited for both
+  });
+
+  it('bails without adding anything when the target is provably unreachable', () => {
+    const w = makeWallet();
+    const inputs = [
+      { txid: '1', vout: 0, value: 1_000_000 },
+      { txid: '1b', vout: 0, value: 10_000 },
+    ] as any;
+    const rawOutputs = [{ address: 'sp1', value: 1_005_000 }, { value: 5_000 }] as any;
+    // Every unselected UTXO combined nets 1,420 — nowhere near the 1,000,000 bar — so the loop
+    // would burn fees on both without ever crossing it. The precheck must skip them outright.
+    const available = [
+      { txid: '2', vout: 0, value: 1_000, height: 1, address: 'a' },
+      { txid: '3', vout: 0, value: 1_000, height: 1, address: 'a' },
+    ];
+
+    const res = (w as any).obfuscateUnnecessaryInputHeuristic(inputs, rawOutputs, available, 5);
+    expect(res.inputs).toBe(inputs);
+    expect(res.rawOutputs).toBe(rawOutputs);
+  });
+
+  it('bails to the original inputs/outputs rather than pairing expanded inputs with stale outputs', () => {
+    const w = makeWallet();
+    // No existing change output (fully-spent coinselect result): after adding obfuscation
+    // inputs there IS leftover value, but it's too small to survive a new output's own fee.
+    const inputs = [
+      { txid: '1', vout: 0, value: 100 },
+      { txid: '1b', vout: 0, value: 100 },
+    ] as any;
+    const rawOutputs = [{ address: 'sp1', value: 200 }] as any; // no change entry
+    // 100 small UTXOs so the reachability precheck (which sums ALL of them, uncapped) passes,
+    // but the per-run cap limits what's actually added to 2 x net 2 = 4 sats — less than the
+    // 44-sat fee a new change output would cost, so there's nothing to return.
+    const available = Array.from({ length: 100 }, (_, i) => ({ txid: `u${i}`, vout: 0, value: 60, height: 1, address: 'a' }));
+
+    const res = (w as any).obfuscateUnnecessaryInputHeuristic(inputs, rawOutputs, available, 1);
+    // Returning `currentInputs` here (the pre-fix behaviour) would pay the added inputs' value
+    // straight to miners, since `rawOutputs` has no change output to credit it to.
+    expect(res.inputs).toBe(inputs);
+    expect(res.rawOutputs).toBe(rawOutputs);
+  });
+});
+
+describe('broadcastTx advances the change index past used outputs', () => {
+  function buildTxHex(outputs: Array<{ address: string; value: number }>): string {
+    const tx = new bitcoin.Transaction();
+    tx.addInput(Buffer.alloc(32, 1), 0);
+    for (const o of outputs) {
+      tx.addOutput(bitcoin.address.toOutputScript(o.address, bitcoin.networks.bitcoin), BigInt(o.value));
+    }
+    return tx.toHex();
+  }
+
+  it('advances past the highest change index actually paid to, including skipped n+1..n+3', () => {
+    const w = makeWallet();
+    const base = w.next_free_change_address_index;
+    // Simulate a split send that used index base and base+2, but not base+1 — exactly the
+    // gap getChangeAddresses() leaves unvalidated/unadvanced.
+    const changeAddr0 = w._getInternalAddressByIndex(base);
+    const changeAddr2 = w._getInternalAddressByIndex(base + 2);
+
+    const hex = buildTxHex([
+      { address: changeAddr0, value: 10_000 },
+      { address: changeAddr2, value: 20_000 },
+    ]);
+
+    return w.broadcastTx(hex).then(() => {
+      expect(w.next_free_change_address_index).toBe(base + 3);
+    });
+  });
+
+  it('does not advance the index when the tx pays no change addresses of ours', () => {
+    const w = makeWallet();
+    const base = w.next_free_change_address_index;
+    const foreignAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq'; // well-known unrelated address
+    const hex = buildTxHex([{ address: foreignAddress, value: 10_000 }]);
+
+    return w.broadcastTx(hex).then(() => {
+      expect(w.next_free_change_address_index).toBe(base);
+    });
   });
 });
