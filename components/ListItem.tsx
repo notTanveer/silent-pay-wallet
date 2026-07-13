@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { ActivityIndicator, Pressable, PressableProps, StyleSheet, Switch, TouchableOpacity, View } from 'react-native';
 import { Avatar, ListItem as RNElementsListItem, Button } from '@rneui/themed'; // Replace with actual import paths
 import { useTheme } from './themes';
+import { ClashFont } from '../constants/fonts';
 
 // Update the type for the props
 interface ListItemProps {
@@ -20,10 +21,13 @@ interface ListItemProps {
   switch?: object; // Define more specific type if needed
   leftIcon?: any; // Define more specific type if needed
   title: string;
+  titleStyle?: object;
   subtitle?: string | React.ReactNode;
+  subtitleStyle?: object;
   subtitleNumberOfLines?: number;
   rightTitle?: string;
   rightTitleStyle?: object;
+  rightTitleContainerStyle?: object;
   isLoading?: boolean;
   chevron?: boolean;
   checkmark?: boolean;
@@ -74,10 +78,13 @@ const ListItem: React.FC<ListItemProps> = React.memo(
     switch: switchProps,
     leftIcon,
     title,
+    titleStyle,
     subtitle,
+    subtitleStyle,
     subtitleNumberOfLines,
     rightTitle,
     rightTitleStyle,
+    rightTitleContainerStyle,
     isLoading,
     chevron,
     checkmark,
@@ -89,12 +96,12 @@ const ListItem: React.FC<ListItemProps> = React.memo(
       title: {
         color: disabled ? colors.buttonDisabledTextColor : colors.foregroundColor,
         fontSize: 16,
-        fontWeight: '500',
+        fontFamily: ClashFont.medium,
       },
       subtitle: {
         flexWrap: 'wrap',
         color: colors.alternativeTextColor,
-        fontWeight: '400',
+        fontFamily: ClashFont.regular,
         paddingVertical: switchProps ? 8 : 0,
         lineHeight: 20,
         fontSize: 14,
@@ -124,14 +131,14 @@ const ListItem: React.FC<ListItemProps> = React.memo(
           </>
         )}
         <RNElementsListItem.Content>
-          <RNElementsListItem.Title style={stylesHook.title} numberOfLines={0} accessible={switchProps === undefined}>
+          <RNElementsListItem.Title style={[stylesHook.title, titleStyle]} numberOfLines={0} accessible={switchProps === undefined}>
             {title}
           </RNElementsListItem.Title>
           {subtitle && (
             <RNElementsListItem.Subtitle
               numberOfLines={switchProps ? 0 : (subtitleNumberOfLines ?? 1)}
               accessible={switchProps === undefined}
-              style={stylesHook.subtitle}
+              style={[stylesHook.subtitle, subtitleStyle]}
             >
               {subtitle}
             </RNElementsListItem.Subtitle>
@@ -139,7 +146,7 @@ const ListItem: React.FC<ListItemProps> = React.memo(
         </RNElementsListItem.Content>
 
         {rightTitle && (
-          <View style={styles.margin8}>
+          <View style={[styles.margin8, rightTitleContainerStyle]}>
             <RNElementsListItem.Title style={rightTitleStyle} numberOfLines={0}>
               {rightTitle}
             </RNElementsListItem.Title>
