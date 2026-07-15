@@ -4,9 +4,11 @@ export const shortenAddress = (address: string): string => {
   return address.substr(0, 4) + '...' + address.substr(address.length - 4, 4);
 };
 
+export const isIncomingTransaction = (value?: number): boolean => (value ?? 0) >= 0;
+
 export const getRelevantAddress = (item: Transaction): string | null => {
   // outgoing transactions, show the destination address
-  if (item.value && item.value < 0) {
+  if (!isIncomingTransaction(item.value)) {
     // first output address that's not ours (change address)
     if (item.outputs && item.outputs.length > 0) {
       for (const output of item.outputs) {
