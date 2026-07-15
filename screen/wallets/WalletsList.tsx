@@ -743,10 +743,12 @@ const styles = StyleSheet.create({
     fontFamily: ClashFont.regular,
   },
   transactionsLabel: {
-    fontSize: 13,
-    marginBottom: 8,
-    marginTop: 4,
-    fontFamily: ClashFont.regular,
+    fontSize: 16,
+    lineHeight: 20,
+    letterSpacing: 0.48,
+    marginBottom: 12,
+    marginTop: 8,
+    fontFamily: ClashFont.medium,
   },
   emptyCardOuter: {
     flex: 1,
