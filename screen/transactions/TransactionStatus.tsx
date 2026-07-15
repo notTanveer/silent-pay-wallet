@@ -10,9 +10,9 @@ import { HDSegwitBech32Transaction } from '../../class';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import { Transaction, TWallet } from '../../class/wallets/types';
 import Button from '../../components/Button';
-import TransactionIncomingIcon from '../../components/icons/TransactionIncomingIcon';
-import TransactionOutgoingIcon from '../../components/icons/TransactionOutgoingIcon';
+import TransactionDirectionIcon from '../../components/icons/TransactionDirectionIcon';
 import TransactionPendingIcon from '../../components/icons/TransactionPendingIcon';
+import { getTransactionIconColors } from '../../components/icons/getTransactionIconColors';
 import SafeArea from '../../components/SafeArea';
 import { useTheme } from '../../components/themes';
 import loc, { formatBalanceWithoutSuffix } from '../../loc';
@@ -554,16 +554,10 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({ transaction, txid
                           <TransactionPendingIcon />
                         </View>
                       );
-                    } else if (tx.value < 0) {
-                      return (
-                        <View style={styles.icon}>
-                          <TransactionOutgoingIcon />
-                        </View>
-                      );
                     } else {
                       return (
                         <View style={styles.icon}>
-                          <TransactionIncomingIcon />
+                          <TransactionDirectionIcon size={30} {...getTransactionIconColors(colors, tx.value)} />
                         </View>
                       );
                     }

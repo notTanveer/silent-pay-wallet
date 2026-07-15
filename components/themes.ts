@@ -25,9 +25,7 @@ export const ShroudDefaultTheme = {
     buttonBlueBackgroundColor: '#ccddf9',
     buttonGrayBackgroundColor: '#EEEEEE',
     incomingBackgroundColor: '#d2f8d6',
-    incomingForegroundColor: '#37c0a1',
     outgoingBackgroundColor: '#f8d2d2',
-    outgoingForegroundColor: '#d0021b',
     successColor: '#37c0a1',
     failedColor: '#ff0000',
     warningColor: '#F5A623',
@@ -40,8 +38,6 @@ export const ShroudDefaultTheme = {
     lnbackgroundColor: '#FFFAEF',
     background: '#FFFFFF',
     lightButton: '#eef0f4',
-    ballReceive: '#d2f8d6',
-    ballOutgoing: '#f8d2d2',
     lightBorder: '#ededed',
     ballOutgoingExpired: '#ECF1F7',
     modal: '#ffffff',
@@ -127,7 +123,7 @@ export const ShroudDefaultTheme = {
     shareAddrBorderColor: '#E6E2FA',
     shareAddrBackground: 'transparent',
     zeroBalanceRequestTextColor: '#ffffff',
-    emptyCardBackground: '#FDFCFE',
+    cardBackground: '#FDFCFE',
 
     // --- Send redesign tokens (light-only; dark mode is not yet wired up in NavigationContainer) ---
     fieldBackground: '#F5F5F7', // Address / Note field background
@@ -142,6 +138,12 @@ export const ShroudDefaultTheme = {
     copyButtonBorder: '#E6E4E4', // Confirm copy-button border
     divider: '#E6E4E4', // Confirm section dividers
     summaryBorder: '#E6E4E4', // SendDetails fee summary card border
+    transactionCardBorder: '#E6E4E4',
+    txIconHaloBorder: '#E6E2FA',
+    incomingIconBackground: '#E7E6F5',
+    incomingIconBorder: '#E6E2FA',
+    outgoingIconBackground: '#F5F5F7',
+    outgoingIconBorder: '#D9D9D9',
   },
 };
 
@@ -158,6 +160,7 @@ export const ShroudDarkTheme: Theme = {
     brandingColor: '#000000',
     borderTopColor: '#9aa0aa',
     background: '#121212',
+    brandPrimary: '#8763EB',
     foregroundColor: '#ffffff',
     buttonDisabledBackgroundColor: '#3A3A3C',
     buttonBackgroundColor: '#754CE8',
@@ -166,8 +169,6 @@ export const ShroudDarkTheme: Theme = {
     buttonAlternativeTextColor: '#ffffff',
     alternativeTextColor: '#9aa0aa',
     alternativeTextColor2: '#0A84FF',
-    ballReceive: '#202020',
-    ballOutgoing: '#202020',
     lightBorder: '#313030',
     ballOutgoingExpired: '#202020',
     modal: '#202020',
@@ -216,7 +217,13 @@ export const ShroudDarkTheme: Theme = {
     shieldIconAccent: '#8763EB',
     shareAddrBorderColor: '#8763EB8F',
     shareAddrBackground: '#1D1A2B',
-    emptyCardBackground: '#1A1A1A',
+    cardBackground: '#1A1A1A',
+    transactionCardBorder: '#313030',
+    txIconHaloBorder: '#473F71',
+    incomingIconBackground: '#322361',
+    incomingIconBorder: '#473F71',
+    outgoingIconBackground: '#161616',
+    outgoingIconBorder: '#473F71',
   },
 };
 
