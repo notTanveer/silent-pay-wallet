@@ -16,16 +16,35 @@ import { CommonToolTipActions } from '../typings/CommonToolTipActions';
 import { pop } from '../NavigationService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HighlightedText from './HighlightedText';
-import { shortenAddress, getRelevantAddress } from '../utils/transactionHelpers';
+import { shortenAddress, getRelevantAddress, isIncomingTransaction } from '../utils/transactionHelpers';
+import TransactionDirectionIcon from './icons/TransactionDirectionIcon';
+import { getTransactionIconColors } from './icons/getTransactionIconColors';
+import { ClashFont } from '../constants/fonts';
+
+const ROW_TYPOGRAPHY = {
+  fontSize: 14.6,
+  lineHeight: 18,
+  letterSpacing: -0.1,
+  fontFamily: ClashFont.medium,
+} as const;
 
 const styles = StyleSheet.create({
   subtitle: {
-    color: 'colors.foregroundColor',
     fontSize: 13,
+    fontFamily: ClashFont.regular,
   },
   subtitleTime: {
     fontSize: 12,
     opacity: 0.6,
+  },
+  title: {
+    ...ROW_TYPOGRAPHY,
+  },
+  rightTitleContainer: {
+    alignSelf: 'flex-start',
+  },
+  subtitleGap: {
+    marginTop: 8,
   },
   highlight: {
     backgroundColor: '#FFF5C0',
@@ -59,23 +78,40 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
   }: TransactionListItemProps) => {
     const [subtitleNumberOfLines, setSubtitleNumberOfLines] = useState(1);
     const { colors } = useTheme();
+    const stylesHook = StyleSheet.create({
+      subtitle: {
+        color: colors.foregroundColor,
+      },
+    });
     const { navigate } = useExtendedNavigation<NavigationProps>();
     const menuRef = useRef<ToolTipMenuProps>();
     const { txMetadata } = useStorage();
     const insets = useSafeAreaInsets();
     const containerStyle = useMemo(
       () => ({
-        backgroundColor: colors.background,
-        borderBottomColor: colors.lightBorder,
-        paddingLeft: 16,
-        paddingRight: 16,
+        backgroundColor: colors.cardBackground,
+        borderColor: colors.transactionCardBorder,
+        borderWidth: 0.5,
+        borderRadius: 16,
+        minHeight: 77,
+        marginHorizontal: 16,
+        marginBottom: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
       }),
-      [colors.background, colors.lightBorder],
+      [colors.cardBackground, colors.transactionCardBorder],
     );
 
     const combinedStyle = useMemo(() => [containerStyle, style], [containerStyle, style]);
 
     const relevantAddress = getRelevantAddress(item);
+
+    const isIncoming = isIncomingTransaction(item.value);
+
+    const leftAvatar = useMemo(
+      () => <TransactionDirectionIcon size={44} {...getTransactionIconColors(colors, item.value)} />,
+      [item.value, colors],
+    );
 
     const title = useMemo(() => {
       if (relevantAddress) {
@@ -124,29 +160,25 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
     }, [timeText, txMemo, item.confirmations]);
 
     const formattedAmount = useMemo(() => {
-      return formatBalanceWithoutSuffix(item.value && item.value, itemPriceUnit, true).toString();
-    }, [item.value, itemPriceUnit]);
+      const formatted = formatBalanceWithoutSuffix(item.value && item.value, itemPriceUnit, true).toString();
+      return isIncoming ? `+${formatted}` : formatted;
+    }, [item.value, itemPriceUnit, isIncoming]);
 
     const rowTitle = useMemo(() => {
       return formattedAmount;
     }, [formattedAmount]);
 
     const rowTitleStyle = useMemo(() => {
-      let color = colors.successColor;
-
-      if (item.value! / 100000000 < 0) {
-        color = colors.foregroundColor;
-      }
+      const color = isIncoming ? colors.brandPrimary : colors.foregroundColor;
 
       return {
+        ...ROW_TYPOGRAPHY,
         color,
-        fontSize: 14,
-        fontWeight: '600',
         textAlign: 'right' as const,
         paddingRight: insets.right,
         paddingLeft: insets.left,
       };
-    }, [colors.successColor, colors.foregroundColor, item.value, insets.right, insets.left]);
+    }, [isIncoming, colors.brandPrimary, colors.foregroundColor, insets.right, insets.left]);
 
     useEffect(() => {
       setSubtitleNumberOfLines(1);
@@ -178,7 +210,7 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
       }
     }, [item, navigate, walletID]);
 
-    const handleOnCopyAmountTap = useCallback(() => Clipboard.setString(rowTitle.replace(/[\s\\-]/g, '')), [rowTitle]);
+    const handleOnCopyAmountTap = useCallback(() => Clipboard.setString(rowTitle.replace(/[\s+\\-]/g, '')), [rowTitle]);
     const handleOnCopyTransactionID = useCallback(() => Clipboard.setString(item.hash), [item.hash]);
     const handleOnCopyNote = useCallback(() => Clipboard.setString(subtitle ?? ''), [subtitle]);
 
@@ -242,20 +274,22 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
       >
         <ListItem
           title={title}
+          titleStyle={styles.title}
+          subtitleStyle={styles.subtitleGap}
           subtitleNumberOfLines={subtitleNumberOfLines}
           subtitle={
             subtitle ? (
               renderHighlightedText ? (
                 renderHighlightedText(subtitle, searchQuery ?? '')
               ) : relevantAddress ? (
-                <Text style={[styles.subtitle, styles.subtitleTime]}>{subtitle}</Text>
+                <Text style={[styles.subtitle, stylesHook.subtitle, styles.subtitleTime]}>{subtitle}</Text>
               ) : (
                 <HighlightedText
                   text={subtitle}
                   query={searchQuery ?? ''}
                   caseSensitive={false}
                   highlightOnlyFirstMatch={searchQuery ? searchQuery.length === 1 : false}
-                  style={styles.subtitle}
+                  style={[styles.subtitle, stylesHook.subtitle]}
                 />
               )
             ) : undefined
@@ -263,8 +297,11 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
           Component={View}
           subtitleProps={subtitleProps}
           chevron={false}
+          leftAvatar={leftAvatar}
+          bottomDivider={false}
           rightTitle={rowTitle}
           rightTitleStyle={rowTitleStyle}
+          rightTitleContainerStyle={styles.rightTitleContainer}
           containerStyle={combinedStyle}
           testID="TransactionListItem"
         />
