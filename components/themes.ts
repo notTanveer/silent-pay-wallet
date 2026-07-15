@@ -127,7 +127,7 @@ export const ShroudDefaultTheme = {
     shareAddrBorderColor: '#E6E2FA',
     shareAddrBackground: 'transparent',
     zeroBalanceRequestTextColor: '#ffffff',
-    emptyCardBackground: '#FDFCFE',
+    cardBackground: '#FDFCFE',
 
     // --- Send redesign tokens (light-only; dark mode is not yet wired up in NavigationContainer) ---
     fieldBackground: '#F5F5F7', // Address / Note field background
@@ -142,6 +142,12 @@ export const ShroudDefaultTheme = {
     copyButtonBorder: '#E6E4E4', // Confirm copy-button border
     divider: '#E6E4E4', // Confirm section dividers
     summaryBorder: '#E6E4E4', // SendDetails fee summary card border
+    transactionCardBorder: '#E6E4E4',
+    txIconHaloBorder: '#E6E2FA',
+    incomingIconBackground: '#E7E6F5',
+    incomingIconBorder: '#E6E2FA',
+    outgoingIconBackground: '#F5F5F7',
+    outgoingIconBorder: '#D9D9D9',
   },
 };
 
@@ -158,6 +164,7 @@ export const ShroudDarkTheme: Theme = {
     brandingColor: '#000000',
     borderTopColor: '#9aa0aa',
     background: '#121212',
+    brandPrimary: '#8763EB',
     foregroundColor: '#ffffff',
     buttonDisabledBackgroundColor: '#3A3A3C',
     buttonBackgroundColor: '#754CE8',
@@ -216,7 +223,13 @@ export const ShroudDarkTheme: Theme = {
     shieldIconAccent: '#8763EB',
     shareAddrBorderColor: '#8763EB8F',
     shareAddrBackground: '#1D1A2B',
-    emptyCardBackground: '#1A1A1A',
+    cardBackground: '#1A1A1A',
+    transactionCardBorder: '#313030',
+    txIconHaloBorder: '#473F71',
+    incomingIconBackground: '#322361',
+    incomingIconBorder: '#473F71',
+    outgoingIconBackground: '#161616',
+    outgoingIconBorder: '#473F71',
   },
 };
 

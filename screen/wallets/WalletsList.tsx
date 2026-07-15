@@ -170,7 +170,7 @@ const WalletsList: React.FC = () => {
         borderColor: colors.lightBorder,
       },
       emptyCardStyle: {
-        backgroundColor: colors.emptyCardBackground,
+        backgroundColor: colors.cardBackground,
         borderColor: colors.lightBorder,
       },
       foregroundText: {
