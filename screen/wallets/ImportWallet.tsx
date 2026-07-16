@@ -274,7 +274,6 @@ const ImportWallet = () => {
       <TouchableWithoutFeedback accessibilityRole="button" onPress={speedBackdoorTap} testID="SpeedBackdoor">
         <ShroudFormLabel>{loc.wallets.import_explanation}</ShroudFormLabel>
       </TouchableWithoutFeedback>
-      <Spacing20 />
       <View style={styles.mnemonicInputContainer}>
         <ShroudFormMultiInput
           value={importText}
@@ -313,6 +312,7 @@ const ImportWallet = () => {
 const styles = StyleSheet.create({
   root: {
     paddingTop: 10,
+    flexGrow: 1,
   },
   center: {
     flex: 1,

@@ -3,6 +3,7 @@ import { Platform, StyleSheet, TextInput, View } from 'react-native';
 import { ShroudFormLabel } from '../ShroudComponents';
 import { useTheme } from './themes';
 import loc from '../loc';
+import { ClashFont } from '../constants/fonts';
 
 interface WalletBirthSectionProps {
   birthDate: string;
@@ -21,7 +22,7 @@ export const WalletBirthSection: React.FC<WalletBirthSectionProps> = ({ birthDat
   });
 
   return (
-    <View style={styles.container}>
+    <View>
       <ShroudFormLabel>{loc.wallet_birth.birth_date_label}</ShroudFormLabel>
       <TextInput
         style={[styles.input, stylesHook.input]}
@@ -40,16 +41,14 @@ export const WalletBirthSection: React.FC<WalletBirthSectionProps> = ({ birthDat
 };
 
 const styles = StyleSheet.create({
-  container: {
-    marginHorizontal: 16,
-  },
   input: {
     borderWidth: 1,
     borderRadius: 4,
     paddingHorizontal: 12,
     paddingVertical: Platform.select({ ios: 14, default: 10 }),
-    marginHorizontal: 0,
+    marginHorizontal: 20,
     marginTop: 6,
     minHeight: 44,
+    fontFamily: ClashFont.regular,
   },
 });

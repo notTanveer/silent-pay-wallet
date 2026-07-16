@@ -10,6 +10,7 @@ import { detectQRCodeInImage } from 'react-native-camera-kit-no-google';
 import { CommonToolTipActions } from '../typings/CommonToolTipActions';
 import { useSettings } from '../hooks/context/useSettings';
 import { scanQrHelper } from '../helpers/scan-qr';
+import { ClashFont } from '../constants/fonts';
 
 interface AddressInputScanButtonProps {
   isLoading?: boolean;
@@ -167,9 +168,11 @@ const styles = StyleSheet.create({
   },
   scanText: {
     marginLeft: 4,
+    fontFamily: ClashFont.regular,
   },
   linkText: {
     textAlign: 'center',
     fontSize: 16,
+    fontFamily: ClashFont.regular,
   },
 });

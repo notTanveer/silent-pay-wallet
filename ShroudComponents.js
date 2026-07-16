@@ -3,6 +3,7 @@ import React, { forwardRef } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Text } from '@rneui/themed';
 import { useTheme } from './components/themes';
+import { ClashFont } from './constants/fonts';
 
 /**
  * TODO: remove this comment once this file gets properly converted to typescript.
@@ -52,7 +53,7 @@ export const ShroudFormLabel = props => {
       {...props}
       style={{
         color: colors.foregroundColor,
-        fontWeight: '400',
+        fontFamily: ClashFont.regular,
         marginHorizontal: 20,
       }}
     />
@@ -82,6 +83,7 @@ export const ShroudFormMultiInput = props => {
         backgroundColor: colors.inputBackgroundColor,
         color: colors.foregroundColor,
         textAlignVertical: 'top',
+        fontFamily: ClashFont.regular,
       }}
       autoCorrect={false}
       autoCapitalize="none"
