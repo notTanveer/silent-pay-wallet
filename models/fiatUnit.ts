@@ -5,11 +5,11 @@ export const FiatUnitSource = {
   Coinbase: 'Coinbase',
   CoinDesk: 'CoinDesk',
   CoinGecko: 'CoinGecko',
+  Kraken: 'Kraken',
   Yadio: 'Yadio',
   YadioConvert: 'YadioConvert',
   Exir: 'Exir',
   coinpaprika: 'coinpaprika',
-  Bitstamp: 'Bitstamp',
   BNR: 'BNR',
 } as const;
 
@@ -44,8 +44,12 @@ interface CoinGeckoResponse {
   };
 }
 
-interface BitstampResponse {
-  last: string;
+interface KrakenResponse {
+  result: {
+    [pair: string]: {
+      c: [string];
+    };
+  };
 }
 
 interface YadioResponse {
@@ -111,14 +115,14 @@ const RateExtractors = {
     }
   },
 
-  Bitstamp: async (ticker: string): Promise<number> => {
+  Kraken: async (ticker: string): Promise<number> => {
     try {
-      const json = (await fetchRate(`https://www.bitstamp.net/api/v2/ticker/btc${ticker.toLowerCase()}`)) as BitstampResponse;
-      const rate = Number(json?.last);
+      const json = (await fetchRate(`https://api.kraken.com/0/public/Ticker?pair=XXBTZ${ticker.toUpperCase()}`)) as KrakenResponse;
+      const rate = Number(json?.result?.[`XXBTZ${ticker.toUpperCase()}`]?.c?.[0]);
       if (!(rate >= 0)) throw new Error('Invalid data received');
       return rate;
     } catch (error: any) {
-      handleError('Bitstamp', ticker, error);
+      handleError('Kraken', ticker, error);
       return undefined as never;
     }
   },
@@ -196,7 +200,7 @@ export type TFiatUnit = {
   symbol: string;
   locale: string;
   country: string;
-  source: 'Bitstamp' | 'Coinbase' | 'CoinDesk' | 'CoinGecko' | 'Yadio' | 'YadioConvert' | 'Exir' | 'coinpaprika' | 'BNR';
+  source: 'Coinbase' | 'CoinDesk' | 'CoinGecko' | 'Kraken' | 'Yadio' | 'YadioConvert' | 'Exir' | 'coinpaprika' | 'BNR';
 };
 
 type TFiatUnits = {
