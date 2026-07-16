@@ -31,8 +31,11 @@ const palette = {
   violet850: '#473F71',
   violet900: '#1D1A2B',
   violet500Alpha: '#8763EB8F',
+
   blue500: '#0A84FF',
   teal500: '#37C0A1',
+  green500: '#00A63E',
+  orange400: '#F38C47',
   pink200: '#F8D2D2',
   red600: '#D0021B',
 };
@@ -45,7 +48,7 @@ export const ShroudDefaultTheme = {
     ...DefaultTheme.colors,
     brandingColor: palette.white,
     customHeader: palette.white,
-    foregroundColor: '#0c2550',
+    foregroundColor: '#0C2550',
     buttonBackgroundColor: palette.violet600,
     buttonTextColor: palette.white,
     secondButtonTextColor: '#50555C',
@@ -53,11 +56,11 @@ export const ShroudDefaultTheme = {
     buttonDisabledBackgroundColor: palette.gray100,
     buttonDisabledTextColor: palette.gray400,
     inputBorderColor: palette.gray300,
-    inputBackgroundColor: '#f5f5f5',
+    inputBackgroundColor: '#F5F5F5',
     alternativeTextColor: palette.gray400,
     alternativeTextColor2: palette.violet600,
     buttonGrayBackgroundColor: palette.gray150,
-    incomingBackgroundColor: '#d2f8d6',
+    incomingBackgroundColor: '#D2F8D6',
     successColor: palette.teal500,
     warningColor: '#F5A623',
     placeholderTextColor: palette.gray500,
@@ -66,7 +69,7 @@ export const ShroudDefaultTheme = {
     hdborderColor: '#68BBE1',
     background: palette.white,
     lightButton: palette.gray100,
-    lightBorder: '#ededed',
+    lightBorder: '#EDEDED',
     ballOutgoingExpired: '#ECF1F7',
     modal: palette.white,
     formBorder: palette.gray300,
@@ -79,11 +82,11 @@ export const ShroudDefaultTheme = {
     elevated: palette.white,
     mainColor: palette.violet600,
     success: palette.violet600,
-    successCheck: '#00A63E',
+    successCheck: palette.green500,
     redBG: palette.pink200,
     redText: palette.red600,
     changeBackground: '#FDF2DA',
-    changeText: '#F38C47',
+    changeText: palette.orange400,
     receiveBackground: '#D1F9D6',
     receiveText: palette.teal500,
     navigationBarColor: palette.white,
@@ -200,13 +203,13 @@ export const ShroudDarkTheme: Theme = {
     elevated: palette.gray950,
     mainColor: palette.blue500,
     success: palette.gray900,
-    successCheck: '#00A63E',
+    successCheck: palette.green500,
     scanLabel: 'rgba(255,255,255,.2)',
     labelText: palette.white,
     redBG: palette.maroon900,
     redText: '#FC6D6D',
     changeBackground: palette.maroon900,
-    changeText: '#F38C47',
+    changeText: palette.orange400,
     receiveBackground: 'rgba(210,248,214,.2)',
     receiveText: palette.teal500,
     navigationBarColor: palette.gray800,
@@ -253,3 +256,9 @@ export class BlueCurrentTheme {
 }
 
 BlueCurrentTheme.updateColorScheme();
+
+// Keep the static snapshot in sync when the OS appearance changes at runtime.
+// Without this, BlueCurrentTheme.colors is frozen at import and consumers that
+// read it go stale after a light/dark toggle. Consumers must read the value at
+// render time (not bake it into a module-level StyleSheet) to observe the update.
+Appearance.addChangeListener(() => BlueCurrentTheme.updateColorScheme());
