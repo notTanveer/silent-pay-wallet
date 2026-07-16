@@ -1,9 +1,8 @@
 import React from 'react';
-import { Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import SettingsIconWrapper from '../../components/icons/SettingsIconWrapper';
-import ChevronRightIcon from '../../components/icons/ChevronRightIcon';
+import Row from '../../components/SettingsRow';
 import CurrencyIcon from '../../components/icons/CurrencyIcon';
 import SecurityIcon from '../../components/icons/SecurityIcon';
 import NetworkIcon from '../../components/icons/NetworkIcon';
@@ -30,15 +29,6 @@ type SettingsIconColorToken =
   | 'settingsToolsIconColor'
   | 'settingsAboutIconColor';
 
-interface RowProps {
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-  onPress: () => void;
-  testID?: string;
-  showSeparator?: boolean;
-}
-
 interface RowConfig {
   Icon: React.FC<IconProps>;
   colorToken: SettingsIconColorToken;
@@ -47,32 +37,6 @@ interface RowConfig {
   route: SettingsRoute;
   testID: string;
 }
-
-const Row: React.FC<RowProps> = ({ icon, title, subtitle, onPress, testID, showSeparator = true }) => {
-  const { colors } = useTheme();
-  return (
-    <View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${title}, ${subtitle}`}
-        style={({ pressed }) => [styles.row, pressed && Platform.OS !== 'android' && styles.rowPressed]}
-        onPress={onPress}
-        testID={testID}
-        android_ripple={{ color: colors.settingsRipple }}
-      >
-        <SettingsIconWrapper>{icon}</SettingsIconWrapper>
-        <View style={styles.rowText}>
-          <Text style={[styles.rowTitle, { color: colors.settingsRowTitle }]} numberOfLines={1}>
-            {title}
-          </Text>
-          <Text style={[styles.rowSubtitle, { color: colors.alternativeTextColor }]}>{subtitle}</Text>
-        </View>
-        <ChevronRightIcon />
-      </Pressable>
-      {showSeparator && <View style={[styles.separator, { backgroundColor: colors.settingsCardBorder }]} />}
-    </View>
-  );
-};
 
 const MAIN_ROWS: RowConfig[] = [
   {
@@ -185,32 +149,6 @@ const styles = StyleSheet.create({
   },
   cardGap: {
     marginTop: 16,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-  },
-  rowPressed: {
-    opacity: 0.7,
-  },
-  rowText: {
-    flex: 1,
-    marginLeft: 16,
-    justifyContent: 'center',
-  },
-  rowTitle: {
-    fontSize: 16,
-    fontFamily: ClashFont.medium,
-  },
-  rowSubtitle: {
-    fontSize: 13,
-    fontFamily: ClashFont.regular,
-    marginTop: 8,
-  },
-  separator: {
-    height: StyleSheet.hairlineWidth,
   },
   deleteWalletButton: {
     borderRadius: 12,
