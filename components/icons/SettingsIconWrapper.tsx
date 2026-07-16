@@ -10,9 +10,7 @@ interface SettingsIconWrapperProps {
 const SettingsIconWrapper: React.FC<SettingsIconWrapperProps> = ({ children, circle = false }) => {
   const { colors } = useTheme();
   return (
-    <View
-      style={[styles.container, { backgroundColor: colors.settingsIconWrapperBg, borderRadius: circle ? 24 : 14 }]}
-    >
+    <View style={[styles.container, circle ? styles.circle : styles.square, { backgroundColor: colors.settingsIconWrapperBg }]}>
       {children}
     </View>
   );
@@ -24,6 +22,12 @@ const styles = StyleSheet.create({
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  circle: {
+    borderRadius: 24,
+  },
+  square: {
+    borderRadius: 14,
   },
 });
 

@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const mainLocFile = './loc/en.json';
-const dirsToInterate = ['components', 'screen', 'modules', 'class', 'hooks', 'helpers', 'navigation', 'typings'];
+const dirsToInterate = ['components', 'screen', 'modules', 'class', 'hooks', 'helpers', 'navigation', 'typings', 'loc'];
 const addFiles = ['ShroudComponents.js', 'App.tsx', 'navigation/index.tsx'];
 const allowedLocPrefixes = ['loc.units'];
 

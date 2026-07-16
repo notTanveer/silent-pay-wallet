@@ -75,12 +75,7 @@ const Currency: React.FC = () => {
           disabled={isDisabled}
           roundIcon
           icon={
-            <Text
-              style={[styles.symbol, { color: colors.settingsRowTitle }]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.5}
-            >
+            <Text style={[styles.symbol, { color: colors.settingsRowTitle }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>
               {item.symbol}
             </Text>
           }
@@ -110,7 +105,14 @@ const Currency: React.FC = () => {
         />
       );
     },
-    [isSavingNewPreferredCurrency, selectedCurrency, colors.settingsRowTitle, fetchCurrency, setPreferredFiatCurrencyStorage],
+    [
+      isSavingNewPreferredCurrency,
+      selectedCurrency,
+      colors.settingsRowTitle,
+      colors.successCheck,
+      fetchCurrency,
+      setPreferredFiatCurrencyStorage,
+    ],
   );
 
   const keyExtractor = useCallback((item: FiatUnitType) => `${item.endPointKey}-${item.locale}`, []);
