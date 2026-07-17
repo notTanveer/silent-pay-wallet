@@ -289,17 +289,12 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
   private async processTransactions(transactions: IndexerTransaction[]): Promise<{ utxos: SilentPaymentUTXO[]; lastScannedBlock: number }> {
     this.ensureTransactionProcessor();
 
-    const silentPaymentAddress = this.getSilentPaymentAddress()!;
     const validTransactions = transactions.filter(tx => tx.scanTweak && tx.outputs && tx.outputs.length > 0);
 
     // Derive the highest block height from transactions
     const maxBlockHeight = validTransactions.reduce((max, tx) => Math.max(max, tx.blockHeight), this.lastScannedBlock);
 
-    const newUTXOs = await this.transactionProcessor!.processBatch(
-      validTransactions,
-      silentPaymentAddress,
-      () => this.cancelScanCallbackScan,
-    );
+    const newUTXOs = await this.transactionProcessor!.processBatch(validTransactions, () => this.cancelScanCallbackScan);
 
     return {
       utxos: newUTXOs,

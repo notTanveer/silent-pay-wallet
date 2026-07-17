@@ -44,9 +44,17 @@ interface RustErrorResult {
 }
 
 interface RustJsiBridgeGlobal {
-  spScanTransactions: (scanPrivkeyHex: string, spendPubkeyHex: string, transactionsJson: string) => string;
-  spScanSingleTransaction: (scanPrivkeyHex: string, spendPubkeyHex: string, transactionJson: string) => string;
+  spScanTransactions: (scanPrivkeyHex: string, spendPubkeysHex: string, transactionsJson: string) => string;
+  spScanSingleTransaction: (scanPrivkeyHex: string, spendPubkeysHex: string, transactionJson: string) => string;
 }
+
+/** The native side parses the spend pubkeys as a comma-separated list of compressed hex keys. */
+const encodeSpendPubkeys = (spendPubkeysHex: string[]): string => {
+  if (spendPubkeysHex.length === 0) {
+    throw new Error('At least one spend pubkey is required');
+  }
+  return spendPubkeysHex.join(',');
+};
 
 let isInstalled = false;
 
@@ -82,13 +90,13 @@ export function spScanTransactions<
     scanTweak: string;
     outputs: Array<{ transactionId: string; vout: number; pubKey: string; value: number; isSpent: boolean | number }>;
   },
->(scanPrivkeyHex: string, spendPubkeyHex: string, transactions: T[]): RustBatchScanResult {
+>(scanPrivkeyHex: string, spendPubkeysHex: string[], transactions: T[]): RustBatchScanResult {
   if (!isInstalled) {
     throw new Error('RustJsiBridge not installed. Call initializeRustJsiBridge() first.');
   }
 
   const transactionsJson = JSON.stringify(transactions);
-  const resultJson = getGlobal().spScanTransactions(scanPrivkeyHex, spendPubkeyHex, transactionsJson);
+  const resultJson = getGlobal().spScanTransactions(scanPrivkeyHex, encodeSpendPubkeys(spendPubkeysHex), transactionsJson);
   const result: RustBatchScanResult | RustErrorResult = JSON.parse(resultJson);
 
   if ('error' in result) {
@@ -107,13 +115,13 @@ export function spScanSingleTransaction<
     scanTweak: string;
     outputs: Array<{ transactionId: string; vout: number; pubKey: string; value: number; isSpent: boolean | number }>;
   },
->(scanPrivkeyHex: string, spendPubkeyHex: string, transaction: T): RustMatchedUTXO[] {
+>(scanPrivkeyHex: string, spendPubkeysHex: string[], transaction: T): RustMatchedUTXO[] {
   if (!isInstalled) {
     throw new Error('RustJsiBridge not installed. Call initializeRustJsiBridge() first.');
   }
 
   const transactionJson = JSON.stringify(transaction);
-  const resultJson = getGlobal().spScanSingleTransaction(scanPrivkeyHex, spendPubkeyHex, transactionJson);
+  const resultJson = getGlobal().spScanSingleTransaction(scanPrivkeyHex, encodeSpendPubkeys(spendPubkeysHex), transactionJson);
   const result: RustMatchedUTXO[] | RustErrorResult = JSON.parse(resultJson);
 
   if ('error' in result) {

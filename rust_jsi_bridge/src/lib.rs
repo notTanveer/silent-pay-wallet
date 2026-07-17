@@ -92,12 +92,10 @@ fn ecdh_shared_secret(
 fn derive_expected_pubkey(
     secp: &Secp256k1<secp256k1::VerifyOnly>,
     spend_pubkey: &PublicKey,
-    tweak_hash: &[u8; 32],
+    tweak_scalar: &Scalar,
 ) -> Result<String, &'static str> {
-    let tweak_scalar = Scalar::from_be_bytes(*tweak_hash)
-        .map_err(|_| "Invalid tweak scalar")?;
     let expected_pubkey = spend_pubkey
-        .add_exp_tweak(secp, &tweak_scalar)
+        .add_exp_tweak(secp, tweak_scalar)
         .map_err(|_| "Tweak addition failed")?;
     Ok(hex::encode(&expected_pubkey.serialize()[1..33]))
 }
@@ -116,7 +114,7 @@ fn build_output_map(outputs: &[IndexerOutput]) -> HashMap<String, &IndexerOutput
 fn scan_transaction(
     secp: &Secp256k1<secp256k1::VerifyOnly>,
     scan_privkey: &SecretKey,
-    spend_pubkey: &PublicKey,
+    spend_pubkeys: &[PublicKey],
     tx: &IndexerTransaction,
 ) -> Vec<MatchedUTXO> {
     let scan_tweak_pubkey = match parse_scan_tweak(&tx.scan_tweak) {
@@ -130,7 +128,7 @@ fn scan_transaction(
     };
 
     let output_map = build_output_map(&tx.outputs);
-    scan_outputs(secp, spend_pubkey, &shared_secret, &output_map, tx)
+    scan_outputs(secp, spend_pubkeys, &shared_secret, &output_map, tx)
 }
 
 fn parse_scan_tweak(scan_tweak_hex: &str) -> Result<PublicKey, &'static str> {
@@ -145,7 +143,7 @@ fn parse_scan_tweak(scan_tweak_hex: &str) -> Result<PublicKey, &'static str> {
 
 fn scan_outputs(
     secp: &Secp256k1<secp256k1::VerifyOnly>,
-    spend_pubkey: &PublicKey,
+    spend_pubkeys: &[PublicKey],
     shared_secret: &[u8; 33],
     output_map: &HashMap<String, &IndexerOutput>,
     tx: &IndexerTransaction,
@@ -154,14 +152,20 @@ fn scan_outputs(
 
     for k in 0..tx.outputs.len() as u32 {
         let tweak_hash = compute_shared_secret_hash(shared_secret, k);
-        
-        let expected_xonly = match derive_expected_pubkey(secp, spend_pubkey, &tweak_hash) {
-            Ok(xonly) => xonly,
+        let tweak_scalar = match Scalar::from_be_bytes(tweak_hash) {
+            Ok(scalar) => scalar,
             Err(_) => continue,
         };
 
-        if let Some(output) = output_map.get(&expected_xonly) {
-            matches.push(create_matched_utxo(output, tx, tweak_hash));
+        for spend_pubkey in spend_pubkeys {
+            let Ok(expected_xonly) = derive_expected_pubkey(secp, spend_pubkey, &tweak_scalar)
+            else {
+                continue;
+            };
+            if let Some(output) = output_map.get(&expected_xonly) {
+                matches.push(create_matched_utxo(output, tx, tweak_hash));
+                break; // each output can only match one spend key
+            }
         }
     }
 
@@ -192,7 +196,7 @@ fn create_matched_utxo(
 
 fn process_transactions_parallel(
     scan_privkey: &SecretKey,
-    spend_pubkey: &PublicKey,
+    spend_pubkeys: &[PublicKey],
     transactions: &[IndexerTransaction],
 ) -> BatchScanResult {
     let secp = Secp256k1::verification_only();
@@ -200,7 +204,7 @@ fn process_transactions_parallel(
 
     let matched_utxos: Vec<MatchedUTXO> = transactions
         .par_iter()
-        .flat_map(|tx| scan_transaction(&secp, scan_privkey, spend_pubkey, tx))
+        .flat_map(|tx| scan_transaction(&secp, scan_privkey, spend_pubkeys, tx))
         .collect();
 
     BatchScanResult {
@@ -217,20 +221,21 @@ fn process_transactions_parallel(
 #[unsafe(no_mangle)]
 pub extern "C" fn sp_scan_transactions(
     scan_privkey_hex: *const c_char,
-    spend_pubkey_hex: *const c_char,
+    spend_pubkeys_hex: *const c_char,
     transactions_json: *const c_char,
 ) -> *const c_char {
-    let result = scan_transactions_impl(scan_privkey_hex, spend_pubkey_hex, transactions_json);
+    let result = scan_transactions_impl(scan_privkey_hex, spend_pubkeys_hex, transactions_json);
     serialize_ffi_response(result)
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn sp_scan_single_transaction(
     scan_privkey_hex: *const c_char,
-    spend_pubkey_hex: *const c_char,
+    spend_pubkeys_hex: *const c_char,
     transaction_json: *const c_char,
 ) -> *const c_char {
-    let result = scan_single_transaction_impl(scan_privkey_hex, spend_pubkey_hex, transaction_json);
+    let result =
+        scan_single_transaction_impl(scan_privkey_hex, spend_pubkeys_hex, transaction_json);
     serialize_ffi_response(result)
 }
 
@@ -249,28 +254,28 @@ pub extern "C" fn free_rust_string(ptr: *mut c_char) {
 
 fn scan_transactions_impl(
     scan_privkey_hex: *const c_char,
-    spend_pubkey_hex: *const c_char,
+    spend_pubkeys_hex: *const c_char,
     transactions_json: *const c_char,
 ) -> Result<String, String> {
     let scan_privkey = parse_privkey_from_ffi(scan_privkey_hex)?;
-    let spend_pubkey = parse_pubkey_from_ffi(spend_pubkey_hex)?;
+    let spend_pubkeys = parse_pubkeys_from_ffi(spend_pubkeys_hex)?;
     let transactions = parse_transactions_from_ffi(transactions_json)?;
 
-    let result = process_transactions_parallel(&scan_privkey, &spend_pubkey, &transactions);
+    let result = process_transactions_parallel(&scan_privkey, &spend_pubkeys, &transactions);
     serde_json::to_string(&result).map_err(|e| format!("Serialization failed: {}", e))
 }
 
 fn scan_single_transaction_impl(
     scan_privkey_hex: *const c_char,
-    spend_pubkey_hex: *const c_char,
+    spend_pubkeys_hex: *const c_char,
     transaction_json: *const c_char,
 ) -> Result<String, String> {
     let scan_privkey = parse_privkey_from_ffi(scan_privkey_hex)?;
-    let spend_pubkey = parse_pubkey_from_ffi(spend_pubkey_hex)?;
+    let spend_pubkeys = parse_pubkeys_from_ffi(spend_pubkeys_hex)?;
     let transaction = parse_single_transaction_from_ffi(transaction_json)?;
 
     let secp = Secp256k1::verification_only();
-    let matched = scan_transaction(&secp, &scan_privkey, &spend_pubkey, &transaction);
+    let matched = scan_transaction(&secp, &scan_privkey, &spend_pubkeys, &transaction);
     serde_json::to_string(&matched).map_err(|e| format!("Serialization failed: {}", e))
 }
 
@@ -287,17 +292,37 @@ fn parse_privkey_from_ffi(ptr: *const c_char) -> Result<SecretKey, String> {
     SecretKey::from_slice(&bytes).map_err(|e| format!("Invalid private key: {}", e))
 }
 
-fn parse_pubkey_from_ffi(ptr: *const c_char) -> Result<PublicKey, String> {
+fn parse_pubkeys_from_ffi(ptr: *const c_char) -> Result<Vec<PublicKey>, String> {
     if ptr.is_null() {
-        return Err("Null pointer for spend_pubkey".to_string());
+        return Err("Null pointer for spend_pubkeys".to_string());
     }
-    let hex_str = unsafe {
+    let string_val = unsafe {
         CStr::from_ptr(ptr)
             .to_str()
-            .map_err(|_| "Invalid UTF-8 in spend_pubkey")?
+            .map_err(|_| "Invalid UTF-8 in spend_pubkeys")?
     };
-    let bytes = hex::decode(hex_str).map_err(|e| format!("Invalid hex: {}", e))?;
-    PublicKey::from_slice(&bytes).map_err(|e| format!("Invalid public key: {}", e))
+    parse_pubkeys(string_val)
+}
+
+/// Spend pubkeys arrive as a comma-separated list of compressed hex keys.
+/// Kept separate from the FFI shim so it is testable without unsafe.
+fn parse_pubkeys(input: &str) -> Result<Vec<PublicKey>, String> {
+    let mut pubkeys = Vec::new();
+    for hex_str in input.split(',') {
+        if hex_str.trim().is_empty() {
+            continue;
+        }
+        let bytes = hex::decode(hex_str.trim()).map_err(|e| format!("Invalid hex: {}", e))?;
+        let pubkey =
+            PublicKey::from_slice(&bytes).map_err(|e| format!("Invalid public key: {}", e))?;
+        pubkeys.push(pubkey);
+    }
+
+    if pubkeys.is_empty() {
+        return Err("No valid public keys provided".to_string());
+    }
+
+    Ok(pubkeys)
 }
 
 fn parse_transactions_from_ffi(ptr: *const c_char) -> Result<Vec<IndexerTransaction>, String> {
@@ -337,5 +362,54 @@ fn serialize_ffi_response(result: Result<String, String>) -> *const c_char {
                 .expect("Fallback error string is valid")
                 .into_raw()
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const KEY_A: &str = "0250929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0";
+    const KEY_B: &str = "03c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5";
+
+    #[test]
+    fn parses_a_single_key() {
+        let keys = parse_pubkeys(KEY_A).expect("single key should parse");
+        assert_eq!(keys.len(), 1);
+        assert_eq!(hex::encode(keys[0].serialize()), KEY_A);
+    }
+
+    #[test]
+    fn parses_multiple_keys_in_order() {
+        let keys = parse_pubkeys(&format!("{},{}", KEY_A, KEY_B)).expect("both keys should parse");
+        assert_eq!(keys.len(), 2);
+        assert_eq!(hex::encode(keys[0].serialize()), KEY_A);
+        assert_eq!(hex::encode(keys[1].serialize()), KEY_B);
+    }
+
+    #[test]
+    fn skips_whitespace_and_empty_entries() {
+        let keys = parse_pubkeys(&format!(" {} , , {} ,", KEY_A, KEY_B)).expect("should parse");
+        assert_eq!(keys.len(), 2);
+    }
+
+    #[test]
+    fn rejects_empty_input() {
+        assert!(parse_pubkeys("").is_err());
+        assert!(parse_pubkeys(" , , ").is_err());
+    }
+
+    #[test]
+    fn rejects_invalid_hex() {
+        assert!(parse_pubkeys("zzzz").is_err());
+        assert!(parse_pubkeys(&format!("{},zzzz", KEY_A)).is_err());
+    }
+
+    #[test]
+    fn rejects_hex_that_is_not_a_compressed_pubkey() {
+        // 32 bytes: an x-only key, not the 33-byte compressed form the scanner needs.
+        assert!(parse_pubkeys(&KEY_A[2..]).is_err());
+        // Right length, but 0x00 is not a valid compressed-point prefix.
+        assert!(parse_pubkeys(&format!("00{}", &KEY_A[2..])).is_err());
     }
 }
