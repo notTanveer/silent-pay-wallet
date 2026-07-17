@@ -4,6 +4,11 @@ export {
   getScanPublicKey,
   getSpendPublicKey,
   getSilentPaymentAddress,
+  getSilentPaymentChangeAddress,
+  getSilentPaymentChangeSpendPrivateKey,
+  getSilentPaymentChangeSpendPublicKey,
+  getSilentPaymentChangeLabelMap,
+  SP_CHANGE_LABEL,
 } from './SilentPaymentKeyDerivation';
 export type {
   IndexerTransaction,
