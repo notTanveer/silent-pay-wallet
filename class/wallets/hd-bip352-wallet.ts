@@ -4,10 +4,18 @@ import { ECPairFactory } from 'ecpair';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet.ts';
 import { getDefaultIndexer } from '../../modules/SilentPaymentIndexer';
 import ecc from '../../modules/noble_ecc';
+import { SilentPayment } from 'silent-payments';
+import { calculateSumOfPrivateKeys, createInputHash, scanOutputs, type PrivateKey } from '@silent-pay/core';
 import {
   getSilentPaymentAddress,
+  getSilentPaymentChangeAddress,
+  getScanPrivateKey,
   getSpendPrivateKey,
   getSpendPublicKey,
+  getSilentPaymentChangeSpendPrivateKey,
+  getSilentPaymentChangeSpendPublicKey,
+  getSilentPaymentChangeLabelMap,
+  SP_CHANGE_LABEL,
   RustTransactionProcessor,
   createTransactionProcessor,
   type IndexerTransaction,
@@ -26,6 +34,12 @@ import { HDTaprootWallet } from './hd-taproot-wallet.ts';
 
 const ECPair = ECPairFactory(ecc);
 
+/** A spend keypair a silent payment output can belong to (main, or label-0 change). */
+interface SpendKeyPair {
+  spendPriv: Uint8Array;
+  spendPub: Uint8Array;
+}
+
 // Minimum gap between scan-progress state emissions, to avoid flooding React with re-renders.
 const SCAN_PROGRESS_THROTTLE_MS = 500;
 // Number of recent progress samples kept for the windowed ETA throughput estimate.
@@ -41,6 +55,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
 
   private readonly POLLING_INTERVAL_MS = 30000;
   private cachedSeed: Buffer | null = null;
+  private spendKeyCandidates: SpendKeyPair[] | null = null;
   private transactionProcessor: RustTransactionProcessor | null = null;
   private lastScannedBlock: number = 0;
   private _birthHeight: number = BIP352_ACTIVATION_HEIGHT;
@@ -190,9 +205,18 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
 
   private addUTXO(utxo: SilentPaymentUTXO): boolean {
     const key = `${utxo.txid}:${utxo.vout}`;
-    const exists = this._utxo.some(u => `${u.txid}:${u.vout}` === key);
+    const existing = this._utxo.find(u => `${u.txid}:${u.vout}` === key) as SilentPaymentUTXO | undefined;
 
-    if (exists) {
+    if (existing) {
+      // The post-broadcast scan stores a placeholder with height 0 and no block hash.
+      // Reconcile it when the indexer later returns the confirmed record, otherwise the
+      // placeholder metadata sticks forever.
+      if (existing.height === 0 && utxo.height > 0) {
+        existing.height = utxo.height;
+        existing.blockHash = utxo.blockHash;
+        existing.blockTime = utxo.blockTime;
+        this.invalidateUTXOCache();
+      }
       return false;
     }
 
@@ -268,6 +292,27 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     return getSilentPaymentAddress(seed);
   }
 
+  getSilentPaymentChangeAddress(): string {
+    const seed = this.getSeed();
+    return getSilentPaymentChangeAddress(seed);
+  }
+
+  /**
+   * The change address that `createTransaction` will actually use for these UTXOs.
+   *
+   * Only `createSPTransaction` can consume a silent payment change address — the parent
+   * builder feeds change straight to `psbt.addOutput`, which cannot encode an `sp1` address.
+   * So the label-0 address is only valid when every selected UTXO is SP, which is exactly
+   * the condition that routes to the SP builder.
+   *
+   * Callers that need the change address up front (e.g. to filter it out of a recipient
+   * list) must use this rather than deciding for themselves.
+   */
+  getChangeAddressForUtxos(utxos: CreateTransactionUtxo[], fallbackChangeAddress: string): string {
+    const allSp = utxos.length > 0 && utxos.every(u => 'tweak' in u && u.tweak instanceof Uint8Array);
+    return allSp ? this.getSilentPaymentChangeAddress() : fallbackChangeAddress;
+  }
+
   getSpendPrivateKey(): Uint8Array {
     const seed = this.getSeed();
     return getSpendPrivateKey(seed);
@@ -276,6 +321,45 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
   getSpendPublicKey(): Uint8Array {
     const seed = this.getSeed();
     return getSpendPublicKey(seed);
+  }
+
+  /** Every spend key this wallet can own an output under: the main one and label-0 change. */
+  private getSpendKeyCandidates(): SpendKeyPair[] {
+    if (!this.spendKeyCandidates) {
+      const seed = this.getSeed();
+      this.spendKeyCandidates = [
+        { spendPriv: getSpendPrivateKey(seed), spendPub: getSpendPublicKey(seed) },
+        { spendPriv: getSilentPaymentChangeSpendPrivateKey(seed), spendPub: getSilentPaymentChangeSpendPublicKey(seed) },
+      ];
+    }
+    return this.spendKeyCandidates;
+  }
+
+  /**
+   * Pick the spend key that actually owns this UTXO.
+   *
+   * A UTXO is either a normal SP receive (main spend key) or our own label-0 change
+   * (labeled spend key). This is derived rather than remembered: exactly one of
+   * `B_main + tweak` and `B_change + tweak` reproduces the output key, so the answer
+   * verifies itself and cannot drift with stale persisted metadata.
+   */
+  private resolveSpendKeys(spUtxo: SilentPaymentUTXO): SpendKeyPair {
+    const outputKey = Buffer.from(spUtxo.pubKey, 'hex');
+    if (outputKey.length !== 32) {
+      throw new Error(`UTXO ${spUtxo.txid}:${spUtxo.vout}: pubKey must be 32-byte x-only, got ${outputKey.length}`);
+    }
+
+    for (const candidate of this.getSpendKeyCandidates()) {
+      const tweakedPub = ecc.pointAddScalar(candidate.spendPub, spUtxo.tweak, true);
+      if (tweakedPub && outputKey.equals(Buffer.from(tweakedPub.subarray(1, 33)))) {
+        return candidate;
+      }
+    }
+
+    throw new Error(
+      `UTXO ${spUtxo.txid}:${spUtxo.vout}: no spend key reproduces the stored output key ` +
+        `(tried the main key and label-${SP_CHANGE_LABEL} change) — its tweak or pubKey is wrong`,
+    );
   }
 
   private getSeed(): Buffer {
@@ -697,6 +781,9 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     const spIncomingTransactions: Transaction[] = [];
 
     for (const [txid, utxoGroup] of txMap) {
+      if (this._sp_spending_txs.some(tx => tx.txid === txid)) {
+        continue;
+      }
       const totalValue = utxoGroup.reduce((sum, utxo) => sum + utxo.value, 0);
       const firstUtxo = utxoGroup[0];
 
@@ -723,7 +810,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
             hex: utxo.pubKey,
             reqSigs: 1,
             type: 'witness_v1_taproot',
-            addresses: [this.getSilentPaymentAddress() || ''],
+            addresses: [utxo.silentPaymentAddress || ''],
           },
         })),
       });
@@ -803,32 +890,28 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     inputKeys.forEach(key => this._sp_pending_inputs.add(key));
 
     try {
-      const spendPrivKey = this.getSpendPrivateKey();
-      const spendPubKey = this.getSpendPublicKey();
-
-      const psbt = new bitcoin.Psbt();
-      const xOnlySpendPub = spendPubKey.subarray(1, 33);
-
-      // add taproot inputs with tweaked public keys
-      inputs.forEach(input => {
+      // Resolve each input's spend key once. `resolveSpendKeys` derives which key owns the
+      // UTXO from its own tweak/pubKey, so it doubles as the check that the stored UTXO is
+      // internally consistent before we build anything.
+      const resolvedInputs = inputs.map(input => {
         const spUtxo = utxoMap.get(`${input.txid}:${input.vout}`);
         if (!spUtxo) {
           throw new Error(`UTXO not found: ${input.txid}:${input.vout}`);
         }
 
-        const outputKey = Buffer.from(spUtxo.pubKey, 'hex');
-        if (outputKey.length !== 32) {
-          throw new Error(`UTXO ${input.txid}:${input.vout}: pubKey must be 32-byte x-only, got ${outputKey.length}`);
+        const { spendPriv, spendPub } = this.resolveSpendKeys(spUtxo);
+        const tweakedPriv = ecc.privateAdd(spendPriv, spUtxo.tweak);
+        if (!tweakedPriv) {
+          throw new Error(`UTXO ${input.txid}:${input.vout}: failed to compute tweaked private key`);
         }
 
-        const tweakedPub = ecc.pointAddScalar(spendPubKey, spUtxo.tweak, true);
-        if (!tweakedPub) {
-          throw new Error('Failed to compute tweaked public key');
-        }
-        if (!outputKey.equals(Buffer.from(tweakedPub.subarray(1, 33)))) {
-          throw new Error(`UTXO ${input.txid}:${input.vout}: derived output key does not match indexer pubKey`);
-        }
+        return { input, spendPub, tweakedPriv, outputKey: Buffer.from(spUtxo.pubKey, 'hex') };
+      });
 
+      const psbt = new bitcoin.Psbt();
+
+      // add taproot inputs with tweaked public keys
+      resolvedInputs.forEach(({ input, spendPub, outputKey }) => {
         const witnessScript = Buffer.concat([
           Buffer.from([0x51, 0x20]), // OP_1 + PUSH32 (Taproot script)
           outputKey,
@@ -842,13 +925,37 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
             script: witnessScript,
             value: BigInt(input.value),
           },
-          tapInternalKey: Buffer.from(xOnlySpendPub),
+          tapInternalKey: Buffer.from(spendPub.subarray(1, 33)),
         });
       });
 
-      outputs.forEach(output => {
+      let finalOutputs = outputs.map(o => ({
+        address: o.address || changeAddress,
+        value: o.value,
+      }));
+
+      const hasSilentPaymentOutput = finalOutputs.some(o => o.address?.startsWith('sp1'));
+      if (hasSilentPaymentOutput) {
+        const inputsForSP = resolvedInputs.map(({ input, tweakedPriv }) => ({
+          txid: input.txid,
+          vout: input.vout,
+          wif: ECPair.fromPrivateKey(Buffer.from(tweakedPriv), { compressed: true }).toWIF(),
+          utxoType: 'p2tr' as const,
+        }));
+
+        const sp = new SilentPayment();
+        finalOutputs = sp.createTransaction(inputsForSP, finalOutputs) as typeof finalOutputs;
+      }
+
+      finalOutputs.forEach(output => {
+        if (!output.address) {
+          throw new Error('Transaction output is missing an address');
+        }
+        if (output.value === undefined || output.value === null) {
+          throw new Error(`Transaction output to ${output.address} is missing a value`);
+        }
         psbt.addOutput({
-          address: output.address || changeAddress,
+          address: output.address,
           value: BigInt(output.value),
         });
       });
@@ -857,18 +964,8 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
 
       if (!skipSigning) {
         // sign each input with its tweaked key pair
-        inputs.forEach((input, idx) => {
-          const spUtxo = utxoMap.get(`${input.txid}:${input.vout}`);
-          if (!spUtxo) {
-            throw new Error(`UTXO not found: ${input.txid}:${input.vout}`);
-          }
-
-          const tweakedPrivKey = ecc.privateAdd(spendPrivKey, spUtxo.tweak);
-          if (!tweakedPrivKey) {
-            throw new Error('Failed to compute tweaked private key');
-          }
-
-          const tweakedKeyPair = ECPair.fromPrivateKey(Buffer.from(tweakedPrivKey), { compressed: true });
+        resolvedInputs.forEach(({ tweakedPriv }, idx) => {
+          const tweakedKeyPair = ECPair.fromPrivateKey(Buffer.from(tweakedPriv), { compressed: true });
           psbt.signTaprootInput(idx, tweakedKeyPair);
         });
 
@@ -895,6 +992,100 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       // If transaction creation fails, release the reserved UTXOs
       inputKeys.forEach(key => this._sp_pending_inputs.delete(key));
       throw error;
+    }
+  }
+
+  /**
+   * Scan a transaction we just built for silent payment outputs belonging to us — in
+   * practice our label-0 change, but a self-payment to the main address is found too.
+   *
+   * Every input must be ours: the BIP-352 input hash is computed over *all* of them, so a
+   * foreign or regular input would silently produce a wrong tweak that matches nothing.
+   *
+   * Note the tweak stored here already carries the label offset for a change match (that is
+   * what the label map buys us), so change found this way is spendable with the *main*
+   * spend key, whereas the Rust scanner reports the raw tweak against the labeled key.
+   * Both are handled because `resolveSpendKeys` derives the owning key per UTXO.
+   */
+  private scanBroadcastedTxForOurOutputs(tx: bitcoin.Transaction, broadcastedTxid: string): void {
+    const ourInputs = tx.ins.map(input => ({
+      txid: Buffer.from(input.hash).reverse().toString('hex'),
+      vout: input.index,
+    }));
+
+    const inputPrivKeys: PrivateKey[] = [];
+    for (const { txid, vout } of ourInputs) {
+      const spUtxo = this._utxo.find(u => u.txid === txid && u.vout === vout) as SilentPaymentUTXO | undefined;
+      if (!spUtxo || !('tweak' in spUtxo)) {
+        console.warn(`[SP] Skipping instant change scan: input ${txid}:${vout} is not one of our SP UTXOs`);
+        return;
+      }
+      const { spendPriv } = this.resolveSpendKeys(spUtxo);
+      const tweakedPriv = ecc.privateAdd(spendPriv, spUtxo.tweak);
+      if (!tweakedPriv) {
+        console.warn(`[SP] Skipping instant change scan: could not tweak the key for input ${txid}:${vout}`);
+        return;
+      }
+      inputPrivKeys.push({ key: Buffer.from(tweakedPriv).toString('hex'), isXOnly: true });
+    }
+
+    const sumOfInputPrivKeys = calculateSumOfPrivateKeys(inputPrivKeys);
+    const sumOfInputPubKeys = ecc.pointFromScalar(sumOfInputPrivKeys, true);
+    if (!sumOfInputPubKeys) {
+      console.warn('[SP] Skipping instant change scan: summed input keys are not a valid point');
+      return;
+    }
+
+    // BIP-352 keys the input hash on the lexicographically smallest outpoint,
+    // serialised as reverse(txid) || vout (little endian).
+    const smallestOutpoint = [...ourInputs].sort((a, b) => {
+      const serialise = (o: { txid: string; vout: number }) => {
+        const buf = Buffer.alloc(4);
+        buf.writeUInt32LE(o.vout);
+        return Buffer.concat([Buffer.from(o.txid, 'hex').reverse(), buf]);
+      };
+      return Buffer.compare(serialise(a), serialise(b));
+    })[0];
+
+    // Taproot outputs as the 33-byte even-Y pubkeys the scanner compares against.
+    const outputsByHex = new Map<string, number>();
+    tx.outs.forEach((out, idx) => {
+      if (out.script.length === 34 && out.script[0] === 0x51 && out.script[1] === 0x20) {
+        const compressed = Buffer.concat([Buffer.from([0x02]), Buffer.from(out.script.subarray(2))]);
+        outputsByHex.set(compressed.toString('hex'), idx);
+      }
+    });
+    if (outputsByHex.size === 0) return;
+
+    const seed = this.getSeed();
+    const matches = scanOutputs(
+      getScanPrivateKey(seed),
+      getSpendPublicKey(seed),
+      sumOfInputPubKeys,
+      createInputHash(sumOfInputPubKeys, smallestOutpoint),
+      [...outputsByHex.keys()].map(hex => Buffer.from(hex, 'hex')),
+      getSilentPaymentChangeLabelMap(seed),
+    );
+
+    const blockTime = Math.floor(Date.now() / 1000);
+    for (const [outputHex, tweak] of matches) {
+      const vout = outputsByHex.get(outputHex);
+      if (vout === undefined) continue;
+
+      const pubKey = outputHex.slice(2); // drop the 0x02 prefix back to x-only
+      this.addUTXO({
+        txid: broadcastedTxid,
+        vout,
+        value: Number(tx.outs[vout].value),
+        height: 0,
+        address: bitcoin.payments.p2tr({ pubkey: Buffer.from(pubKey, 'hex') }).address!,
+        silentPaymentAddress: this.getSilentPaymentAddress()!,
+        pubKey,
+        tweak,
+        blockHash: '',
+        isSpent: false,
+        blockTime,
+      });
     }
   }
 
@@ -929,6 +1120,18 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       if (txid && spInputs.length > 0) {
         const broadcastedTxid = tx.getId();
 
+        // -------------------------
+        // INSTANT SP CHANGE SCAN
+        // -------------------------
+        // Our own change is a silent payment output, so `weOwnAddress` can't see it and it
+        // would stay invisible until the next indexer scan. Rebuild the scan data from the
+        // inputs we just signed and scan this transaction locally.
+        try {
+          this.scanBroadcastedTxForOurOutputs(tx, broadcastedTxid);
+        } catch (scanError) {
+          console.warn('[SP] Post-broadcast instant scan failed:', scanError);
+        }
+
         // start with 0, subtract our inputs, add our outputs (change)
         let value = 0;
 
@@ -943,7 +1146,17 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         }
 
         // add back any outputs going to our addresses (change)
-        for (const output of tx.outs) {
+        for (let idx = 0; idx < tx.outs.length; idx++) {
+          const output = tx.outs[idx];
+
+          // Any SP output of this tx that our scan claimed is ours — change *or* a
+          // self-payment to the main address, both of which `weOwnAddress` cannot see.
+          const isSpOutputOfOurs = this._utxo.some(u => u.txid === broadcastedTxid && u.vout === idx && 'tweak' in u);
+          if (isSpOutputOfOurs) {
+            value += Number(output.value);
+            continue;
+          }
+
           try {
             const address = bitcoin.address.fromOutputScript(output.script, bitcoin.networks.bitcoin);
             if (this.weOwnAddress(address)) {
@@ -1037,6 +1250,11 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     if (this.cachedSeed) {
       this.cachedSeed.fill(0);
       this.cachedSeed = null;
+    }
+
+    if (this.spendKeyCandidates) {
+      this.spendKeyCandidates.forEach(({ spendPriv }) => spendPriv.fill(0));
+      this.spendKeyCandidates = null;
     }
 
     this.stopPolling();
