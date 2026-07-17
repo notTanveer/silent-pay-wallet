@@ -85,7 +85,7 @@ const tokens = {
   feeValue: same(palette.violet600),
   labelText: pair(palette.gray500, palette.white),
   elevated: pair(palette.white, palette.gray950),
-  mainColor: pair(palette.violet600, palette.blue500),
+  mainColor: same(palette.violet600),
   success: pair(palette.violet600, palette.gray900),
   successCheck: same(palette.green500),
   redBG: pair(palette.pink200, palette.maroon900),
@@ -96,7 +96,9 @@ const tokens = {
   receiveText: same(palette.teal500),
   navigationBarColor: pair(palette.white, palette.gray800),
   androidRippleColor: pair('#CCCCCC', '#444444'),
-  primary: pair(palette.violet600, DarkTheme.colors.primary as string),
+  // Brand violet in both modes, matching master #123 which set dark primary/mainColor to
+  // violet600 (previously dark `primary` fell through to RN's blue and `mainColor` was blue).
+  primary: same(palette.violet600),
 
   // --- Revamp design tokens (Sync/scan UI) ---
   // Dedicated keys (not the React Navigation reserved primary/text/border) so DarkTheme can't recolor them.
