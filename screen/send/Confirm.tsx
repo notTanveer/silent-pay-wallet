@@ -21,7 +21,7 @@ import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useSettings } from '../../hooks/context/useSettings';
 import AmountHero from '../../components/AmountHero';
-import CopyIcon from '../../components/icons/CopyIcon';
+import DetailRow from '../../components/DetailRow';
 import SendIcon from '../../components/icons/SendIcon';
 import { ClashFont } from '../../constants/fonts';
 import { computeTotalSats } from '../../helpers/send/format';
@@ -56,34 +56,6 @@ const reducer = (state: State, action: Action): State => {
 
 type ConfirmRouteProp = RouteProp<SendDetailsStackParamList, 'Confirm'>;
 type ConfirmNavigationProp = NativeStackNavigationProp<SendDetailsStackParamList, 'Confirm'>;
-
-const ConfirmDetailRow: React.FC<{ label: string; value: string; mono?: boolean; onCopy?: () => void; copied?: boolean }> = ({
-  label,
-  value,
-  mono,
-  onCopy,
-  copied,
-}) => {
-  const { colors } = useTheme();
-  const stylesHook = StyleSheet.create({
-    label: { color: colors.textPrimary },
-    value: { color: colors.textPrimary },
-    copyBtn: { backgroundColor: colors.white, borderColor: colors.copyButtonBorder },
-  });
-  return (
-    <View style={styles.detailRow}>
-      <View style={styles.detailHead}>
-        <Text style={[styles.detailLabel, stylesHook.label]}>{label}</Text>
-        {onCopy && (
-          <Pressable accessibilityRole="button" onPress={onCopy} style={[styles.copyBtn, stylesHook.copyBtn]}>
-            <CopyIcon size={16} color={copied ? colors.brandPrimary : colors.chevron} />
-          </Pressable>
-        )}
-      </View>
-      <Text style={[mono ? styles.detailMono : styles.detailValue, stylesHook.value]}>{value}</Text>
-    </View>
-  );
-};
 
 const Confirm: React.FC = () => {
   const { wallets, fetchAndSaveWalletTransactions } = useStorage();
@@ -208,21 +180,23 @@ const Confirm: React.FC = () => {
 
         <View style={styles.detailsGroup}>
           <View>
-            <ConfirmDetailRow
+            <DetailRow
               label={loc.send.onchain_address_derived}
               value={recipient?.address ?? ''}
               mono
               copied={copiedAddr}
               onCopy={() => copy(recipient?.address ?? '', setCopiedAddr)}
+              accessibilityLabel={loc.transactions.details_copy}
             />
             <View style={styles.lightDivider} />
 
-            <ConfirmDetailRow
+            <DetailRow
               label={loc.send.transaction_id}
               value={txid}
               mono
               copied={copiedTxid}
               onCopy={() => copy(txid, setCopiedTxid)}
+              accessibilityLabel={loc.transactions.details_copy_txid}
             />
             <View style={styles.lightDivider} />
           </View>
@@ -296,36 +270,7 @@ const styles = StyleSheet.create({
   detailsGroup: {
     marginTop: -10,
   },
-  detailRow: {
-    gap: 4,
-    paddingVertical: 8,
-  },
-  detailHead: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  detailLabel: {
-    fontFamily: ClashFont.medium,
-    fontSize: 14,
-    lineHeight: 26,
-  },
-  detailValue: {
-    fontFamily: ClashFont.regular,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  detailMono: {
-    fontFamily: ClashFont.regular,
-    fontSize: 14,
-    lineHeight: 26,
-  },
-  copyBtn: {
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

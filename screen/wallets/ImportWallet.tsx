@@ -62,6 +62,18 @@ async function resolveBirthHeight(dateStr: string, currentHeight: number): Promi
   }
 }
 
+const ImportWalletHeaderLeft = ({ onPress, closeImage, style }: { onPress: () => void; closeImage: any; style: any }) => (
+  <TouchableOpacity
+    accessibilityRole="button"
+    accessibilityLabel={loc._.close}
+    style={style}
+    onPress={onPress}
+    testID="NavigationCloseButton"
+  >
+    <Image source={closeImage} />
+  </TouchableOpacity>
+);
+
 const ImportWallet = () => {
   const navigation = useExtendedNavigation<NavigationProps>();
   const { colors, closeImage } = useTheme();
@@ -226,22 +238,17 @@ const ImportWallet = () => {
   }, [triggerImport, handleImport]);
 
   // Adding the ToolTipMenu to the header
+  const renderHeaderLeft = useCallback(
+    () => <ImportWalletHeaderLeft onPress={() => navigation.goBack()} closeImage={closeImage} style={styles.button} />,
+    [closeImage, navigation],
+  );
+
   useEffect(() => {
     if (navigation.getState().index !== 0) return;
     navigation.setOptions({
-      headerLeft: () => (
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={loc._.close}
-          style={styles.button}
-          onPress={() => navigation.goBack()}
-          testID="NavigationCloseButton"
-        >
-          <Image source={closeImage} />
-        </TouchableOpacity>
-      ),
+      headerLeft: renderHeaderLeft,
     });
-  }, [colors, navigation, closeImage]);
+  }, [navigation, renderHeaderLeft]);
 
   const renderOptionsAndImportButton = (
     <>

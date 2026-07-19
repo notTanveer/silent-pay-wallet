@@ -196,7 +196,7 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
         if (renderHighlightedText) {
           pop();
         }
-        navigate('TransactionStatus', { hash: item.hash, walletID });
+        navigate('TransactionDetails', { tx: item, hash: item.hash, walletID });
       }
     }, [item, renderHighlightedText, navigate, walletID, customOnPress]);
 
