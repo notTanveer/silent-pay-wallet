@@ -22,7 +22,7 @@ export type DetailViewStackParamList = {
   UnlockWithScreen: undefined;
   WalletsList: { onBarScanned?: string };
   TransactionDetails: { tx: Transaction; hash: string; walletID: string };
-  TransactionStatus: { hash: string; walletID?: string };
+
   CPFP: {
     wallet: TWallet | null;
     txid: string;

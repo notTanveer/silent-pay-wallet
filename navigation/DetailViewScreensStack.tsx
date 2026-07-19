@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { NativeStackNavigationOptions } from '@react-navigation/native-stack';
-import HeaderRightButton from '../components/HeaderRightButton';
 import navigationStyle, { CloseButtonPosition } from '../components/navigationStyle';
 import { useTheme } from '../components/themes';
 import loc from '../loc';
@@ -10,7 +9,6 @@ import CPFP from '../screen/transactions/CPFP';
 import TransactionDetails from '../screen/transactions/TransactionDetails';
 import RBFBumpFee from '../screen/transactions/RBFBumpFee';
 import RBFCancel from '../screen/transactions/RBFCancel';
-import TransactionStatus from '../screen/transactions/TransactionStatus';
 import WalletsList from '../screen/wallets/WalletsList';
 import { DetailViewStack } from './index';
 import SettingsButton from '../components/icons/SettingsButton';
@@ -36,7 +34,6 @@ import OnboardingStack from './OnboardingStack';
 const DetailViewStackScreensStack = () => {
   const theme = useTheme();
   const { sizeClass } = useSizeClass();
-  const DetailButton = useMemo(() => <HeaderRightButton testID="DetailButton" disabled={true} title={loc.send.create_details} />, []);
   const RightBarButtons = useMemo(() => <SettingsButton />, []);
 
   const walletListScreenOptions = useMemo<NativeStackNavigationOptions>(() => {
@@ -78,23 +75,6 @@ const DetailViewStackScreensStack = () => {
             backgroundColor: theme.colors.background,
           },
           headerTitle: loc.transactions.details_title,
-        })(theme)}
-      />
-      <DetailViewStack.Screen
-        name="TransactionStatus"
-        component={TransactionStatus}
-        initialParams={{
-          hash: undefined,
-          walletID: undefined,
-        }}
-        options={navigationStyle({
-          statusBarStyle: 'auto',
-          headerStyle: {
-            backgroundColor: theme.colors.background,
-          },
-          headerTitle: '',
-          headerRight: () => DetailButton,
-          headerBackButtonDisplayMode: 'default',
         })(theme)}
       />
       <DetailViewStack.Screen name="CPFP" component={CPFP} options={navigationStyle({ title: loc.transactions.cpfp_title })(theme)} />
