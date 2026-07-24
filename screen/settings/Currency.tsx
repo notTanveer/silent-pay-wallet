@@ -15,6 +15,8 @@ import { ClashFont } from '../../constants/fonts';
 
 const ITEM_HEIGHT = 88;
 
+const TOP_CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD', 'CHF'];
+
 const currencyShortName = (item: FiatUnitType) => item.country.match(/\(([^)]+)\)/)?.[1] ?? item.country;
 
 const Currency: React.FC = () => {
@@ -25,10 +27,19 @@ const Currency: React.FC = () => {
   const [search, setSearch] = useState('');
 
   const data = useMemo(() => {
-    const searchLower = search.toLowerCase();
-    return Object.values(FiatUnit).filter(
-      item => item.endPointKey.toLowerCase().includes(searchLower) || item.country.toLowerCase().includes(searchLower),
+    const all = Object.values(FiatUnit);
+    const query = search.trim().toLowerCase();
+
+    if (!query) {
+      const rest = all.filter(item => !TOP_CURRENCIES.includes(item.endPointKey));
+      return [...TOP_CURRENCIES.map(code => FiatUnit[code]), ...rest];
+    }
+
+    const codeMatches = all.filter(item => item.endPointKey.toLowerCase().startsWith(query));
+    const nameMatches = all.filter(
+      item => !item.endPointKey.toLowerCase().startsWith(query) && currencyShortName(item).toLowerCase().includes(query),
     );
+    return [...codeMatches, ...nameMatches];
   }, [search]);
 
   const fetchCurrency = useCallback(async () => {
@@ -176,7 +187,7 @@ const styles = StyleSheet.create({
   },
   symbol: {
     fontSize: 16,
-    fontFamily: ClashFont.medium,
+    fontFamily: ClashFont.regular,
     maxWidth: 36,
     textAlign: 'center',
   },
