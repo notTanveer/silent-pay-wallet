@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { LayoutAnimation, Platform, StyleSheet, Text, TextInput, UIManager, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { getPreferredCurrency, initCurrencyDaemon, setPreferredCurrency } from '../../modules/currency';
 import presentAlert from '../../components/Alert';
@@ -13,10 +13,6 @@ import { useSettings } from '../../hooks/context/useSettings';
 import SafeAreaFlatList from '../../components/SafeAreaFlatList';
 import { ClashFont } from '../../constants/fonts';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
 const ITEM_HEIGHT = 88;
 
 const currencyShortName = (item: FiatUnitType) => item.country.match(/\(([^)]+)\)/)?.[1] ?? item.country;
@@ -29,10 +25,6 @@ const Currency: React.FC = () => {
   const [search, setSearch] = useState('');
 
   const data = useMemo(() => {
-    if (search.length > 0) {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    }
-
     const searchLower = search.toLowerCase();
     return Object.values(FiatUnit).filter(
       item => item.endPointKey.toLowerCase().includes(searchLower) || item.country.toLowerCase().includes(searchLower),
