@@ -2,6 +2,7 @@ import * as bip39 from 'bip39';
 import { Buffer } from 'buffer';
 import { ECPairFactory } from 'ecpair';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet.ts';
+import * as Electrum from '../../modules/Electrum';
 import { getDefaultIndexer } from '../../modules/SilentPaymentIndexer';
 import ecc from '../../modules/noble_ecc';
 import { SilentPayment } from 'silent-payments';
@@ -44,6 +45,8 @@ interface SpendKeyPair {
 const SCAN_PROGRESS_THROTTLE_MS = 500;
 // Number of recent progress samples kept for the windowed ETA throughput estimate.
 const SCAN_ETA_ROLLING_WINDOW = 10;
+
+type ScanByTxidResult = { found: boolean; utxosFound: number; blockHeight: number; tipHeight: number };
 
 export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannableWallet {
   static readonly type = 'HDSilentPaymentsWallet';
@@ -617,7 +620,39 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     }
   }
 
-  async scanByTxid(txid: string): Promise<{ found: boolean; utxosFound: number; blockHeight: number; tipHeight: number }> {
+  async scanByTxid(txid: string): Promise<ScanByTxidResult> {
+    // Sequential on purpose: fetchUtxo()'s SP snapshot-restore would drop UTXOs added by a concurrent SP branch.
+    let sp: ScanByTxidResult | null = null;
+    try {
+      sp = await this.scanTxidForSilentPayment(txid);
+    } catch (error) {
+      console.warn('[SP] scanByTxid: silent payment branch failed:', error);
+    }
+
+    let regular: ScanByTxidResult | null = null;
+    try {
+      regular = await this.scanTxidForRegularPayment(txid);
+    } catch (error) {
+      console.warn('[SP] scanByTxid: regular payment branch failed:', error);
+    }
+
+    const spHit = sp?.found ? sp : null;
+    const regularHit = regular?.found ? regular : null;
+    const winner = spHit ?? regularHit;
+
+    if (!winner) {
+      return { found: false, utxosFound: 0, blockHeight: 0, tipHeight: 0 };
+    }
+
+    return {
+      found: true,
+      utxosFound: (spHit?.utxosFound ?? 0) + (regularHit?.utxosFound ?? 0),
+      blockHeight: winner.blockHeight,
+      tipHeight: winner.tipHeight,
+    };
+  }
+
+  private async scanTxidForSilentPayment(txid: string): Promise<ScanByTxidResult> {
     const indexer = getDefaultIndexer();
     const [response, tipResponse] = await Promise.all([indexer.getTransactionByTxid(txid), indexer.getLatestBlockHeight()]);
     const tx = response.transaction;
@@ -641,6 +676,32 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       utxosFound: result.utxos.length,
       blockHeight: tx.blockHeight,
       tipHeight: tipResponse.height,
+    };
+  }
+
+  private async scanTxidForRegularPayment(txid: string): Promise<ScanByTxidResult> {
+    // fetchUtxo() only queries addresses with a known balance, so fetchBalance() must run first.
+    await super.fetchBalance();
+    await super.fetchTransactions();
+    await this.fetchUtxo();
+
+    const tx = super.getTransactions().find(t => t.txid === txid);
+    if (!tx || !tx.value || tx.value <= 0) {
+      return { found: false, utxosFound: 0, blockHeight: 0, tipHeight: 0 };
+    }
+
+    const utxosFound = tx.outputs.filter(o => o.scriptPubKey?.addresses?.[0] && this.weOwnAddress(o.scriptPubKey.addresses[0])).length;
+    const tipHeight = Electrum.estimateCurrentBlockheight();
+    const confirmations = tx.confirmations || 0;
+
+    this.onBalanceChangeCallback?.();
+    this.onPersistCallback?.();
+
+    return {
+      found: true,
+      utxosFound,
+      blockHeight: confirmations > 0 ? tipHeight - confirmations + 1 : 0,
+      tipHeight,
     };
   }
 
