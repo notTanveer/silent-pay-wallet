@@ -169,7 +169,7 @@ const SelectFeeScreen = () => {
 
   const stylesHook = StyleSheet.create({
     container: {
-      backgroundColor: colors.elevated,
+      backgroundColor: colors.background,
     },
     customCard: { backgroundColor: colors.white, borderColor: colors.feeCardBorder },
     customCardSelected: { backgroundColor: colors.surfaceSubtle, borderColor: colors.feeCardSelectedBorder },

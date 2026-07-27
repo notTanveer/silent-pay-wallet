@@ -46,7 +46,7 @@ export const Tabs: React.FC<TabsProps> = ({ active, onSwitch, tabs, isIpad = fal
           key={i}
           accessibilityRole="button"
           onPress={() => onSwitch(i)}
-          style={[tabsStyles.tabRoot, active === i && { ...tabsStyles.activeTabRoot, borderColor: colors.buttonAlternativeTextColor }]}
+          style={[tabsStyles.tabRoot, active === i && { ...tabsStyles.activeTabRoot, borderColor: colors.white }]}
         >
           <Tab active={active === i} />
         </TouchableOpacity>

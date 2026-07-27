@@ -102,7 +102,7 @@ const Confirm: React.FC = () => {
   const [copiedTxid, setCopiedTxid] = React.useState(false);
 
   const stylesHook = StyleSheet.create({
-    root: { backgroundColor: colors.elevated },
+    root: { backgroundColor: colors.background },
     divider: { backgroundColor: colors.divider },
     summaryLabel: { color: colors.amountMeta },
     summaryValue: { color: colors.black },

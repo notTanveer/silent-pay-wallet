@@ -481,10 +481,10 @@ export const FButton = ({
     return {
       root: {
         ...baseStyles,
-        backgroundColor: colors.buttonBackgroundColor,
+        backgroundColor: colors.primary,
       },
       text: {
-        color: colors.buttonAlternativeTextColor,
+        color: colors.white,
         fontSize,
       },
       textDisabled: {

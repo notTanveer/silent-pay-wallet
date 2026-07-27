@@ -78,10 +78,10 @@ const ImportWallet = () => {
   const { addAndSaveWallet, wallets } = useStorage();
   const stylesHook = StyleSheet.create({
     root: {
-      backgroundColor: colors.elevated,
+      backgroundColor: colors.background,
     },
     center: {
-      backgroundColor: colors.elevated,
+      backgroundColor: colors.background,
     },
   });
 
@@ -288,7 +288,7 @@ const ImportWallet = () => {
       <Spacing20 />
       <WalletBirthSection birthDate={birthDate} setBirthDate={setBirthDate} />
 
-      {isLoading && <ActivityIndicator size="large" color={colors.mainColor} style={styles.activityIndicator} />}
+      {isLoading && <ActivityIndicator size="large" color={colors.primary} style={styles.activityIndicator} />}
 
       {Platform.select({ android: !isToolbarVisibleForAndroid && renderOptionsAndImportButton, default: renderOptionsAndImportButton })}
       {Platform.select({

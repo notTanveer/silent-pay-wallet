@@ -83,7 +83,7 @@ const ReceiveDetails = () => {
 
   const stylesHook = StyleSheet.create({
     root: {
-      backgroundColor: colors.elevated,
+      backgroundColor: colors.background,
     },
     label: {
       color: colors.foregroundColor,
@@ -362,7 +362,7 @@ const ReceiveDetails = () => {
             tabValues={segmentControlValues}
             currentTab={currentTab}
             setCurrentTab={setCurrentTab}
-            backgroundColor={colors.elevated}
+            backgroundColor={colors.background}
           />
         )}
         {showAddress && renderTabContent()}
@@ -387,8 +387,8 @@ const ReceiveDetails = () => {
               pressed && !shareDisabled ? styles.sharePressed : null,
             ]}
           >
-            <ShareIcon size={19} color={shareDisabled ? colors.buttonDisabledTextColor : colors.white} />
-            <ShroudText style={[styles.shareLabel, { color: shareDisabled ? colors.buttonDisabledTextColor : colors.white }]}>
+            <ShareIcon size={19} color={shareDisabled ? colors.alternativeTextColor : colors.white} />
+            <ShroudText style={[styles.shareLabel, { color: shareDisabled ? colors.alternativeTextColor : colors.white }]}>
               {loc.receive.details_share}
             </ShroudText>
           </Pressable>

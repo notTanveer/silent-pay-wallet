@@ -39,11 +39,11 @@ interface ButtonProps extends PressableProps {
 export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps>((props, ref) => {
   const { colors } = useTheme();
 
-  let backgroundColor = props.backgroundColor ?? colors.mainColor;
-  let fontColor = props.buttonTextColor ?? colors.buttonTextColor;
+  let backgroundColor = props.backgroundColor ?? colors.primary;
+  let fontColor = props.buttonTextColor ?? colors.white;
   if (props.disabled) {
     backgroundColor = props.disabledBackgroundColor ?? colors.buttonDisabledBackgroundColor;
-    fontColor = props.disabledTextColor ?? colors.buttonDisabledTextColor;
+    fontColor = props.disabledTextColor ?? colors.alternativeTextColor;
   }
 
   const borderRadius = props.borderRadius ?? styles.button.borderRadius;

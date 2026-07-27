@@ -26,7 +26,7 @@ export const useDynamicStyles = () => {
     () =>
       StyleSheet.create({
         root: {
-          backgroundColor: theme.colors.elevated,
+          backgroundColor: theme.colors.background,
           // Add more dynamic styles as needed
         },
         container: {

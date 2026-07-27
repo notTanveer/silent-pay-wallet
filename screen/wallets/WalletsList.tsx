@@ -160,13 +160,13 @@ const WalletsList: React.FC = () => {
         borderWidth: 1,
       },
       payBtnActive: {
-        backgroundColor: colors.buttonBackgroundColor,
+        backgroundColor: colors.primary,
       },
       payBtnDisabled: {
         backgroundColor: colors.payBtnDisabledBackground,
       },
       cardStyle: {
-        backgroundColor: colors.elevated,
+        backgroundColor: colors.background,
         borderColor: colors.lightBorder,
       },
       emptyCardStyle: {
@@ -180,13 +180,13 @@ const WalletsList: React.FC = () => {
         color: colors.alternativeTextColor,
       },
       requestBtnLabel: {
-        color: colors.requestBtnTextColor,
+        color: colors.brandPrimary,
       },
       payBtnLabel: {
-        color: colors.payBtnTextColor,
+        color: colors.white,
       },
       toastRequestBtn: {
-        backgroundColor: colors.buttonBackgroundColor,
+        backgroundColor: colors.primary,
       },
       shareAddrStyle: {
         borderWidth: 1.63,
@@ -194,10 +194,10 @@ const WalletsList: React.FC = () => {
         backgroundColor: colors.shareAddrBackground,
       },
       shareAddrText: {
-        color: colors.requestBtnTextColor,
+        color: colors.brandPrimary,
       },
       zeroBalanceRequestText: {
-        color: colors.zeroBalanceRequestTextColor,
+        color: colors.white,
       },
     }),
     [colors, sizeClass],
@@ -321,7 +321,7 @@ const WalletsList: React.FC = () => {
             testID="TrackPaymentBanner"
           >
             <View style={styles.trackPaymentIconCircle}>
-              <SearchIcon size={48} background={colors.searchIconBackground} stroke={colors.searchIconStroke} />
+              <SearchIcon size={48} background={colors.searchIconBackground} stroke={colors.brandPrimary} />
             </View>
             <View style={styles.trackPaymentBannerContent}>
               <Text style={[styles.trackPaymentBannerTitle, stylesHook.foregroundText]}>{loc.track_payment.banner_title}</Text>
@@ -342,7 +342,7 @@ const WalletsList: React.FC = () => {
     wallets,
     dataSource.length,
     colors.searchIconBackground,
-    colors.searchIconStroke,
+    colors.brandPrimary,
     colors.chevron,
   ]);
 
@@ -469,7 +469,7 @@ const WalletsList: React.FC = () => {
             testID="HomeScreenReceiveButton"
             accessibilityRole="button"
           >
-            <ReceiveArrowIcon color={colors.requestBtnTextColor} size={28} />
+            <ReceiveArrowIcon color={colors.brandPrimary} size={28} />
             <Text style={[styles.actionBtnLabel, stylesHook.requestBtnLabel]}>{loc.wallets.request_button}</Text>
           </TouchableOpacity>
 
@@ -480,7 +480,7 @@ const WalletsList: React.FC = () => {
             accessibilityRole="button"
             accessibilityLabel={loc.wallets.scan_qr_code}
           >
-            <QRScanIcon color={colors.buttonBackgroundColor} size={22} />
+            <QRScanIcon color={colors.primary} size={22} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -491,7 +491,7 @@ const WalletsList: React.FC = () => {
             accessibilityRole="button"
             accessibilityHint={hasBalance ? undefined : loc.wallets.no_balance_hint}
           >
-            <PayArrowIcon color={colors.payBtnTextColor} size={28} />
+            <PayArrowIcon color={colors.white} size={28} />
             <Text style={[styles.actionBtnLabel, stylesHook.payBtnLabel]}>{loc.wallets.pay_button}</Text>
           </TouchableOpacity>
         </View>
@@ -551,7 +551,7 @@ const WalletsList: React.FC = () => {
             size={94}
             background={colors.shieldIconBackground}
             borderColor={colors.shieldIconBorder}
-            accent={colors.shieldIconAccent}
+            accent={colors.brandPrimary}
           />
         </View>
         <Text style={[styles.emptyTitle, stylesHook.foregroundText]}>{loc.wallets.no_transactions_title}</Text>
@@ -580,7 +580,7 @@ const WalletsList: React.FC = () => {
     stylesHook.shareAddrText,
     colors.shieldIconBackground,
     colors.shieldIconBorder,
-    colors.shieldIconAccent,
+    colors.brandPrimary,
   ]);
 
   const sectionListKeyExtractor = useCallback((item: any, index: any) => {

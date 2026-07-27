@@ -39,13 +39,13 @@ const PsbtWithHardwareWallet = () => {
 
   const stylesHook = StyleSheet.create({
     scrollViewContent: {
-      backgroundColor: colors.elevated,
+      backgroundColor: colors.background,
     },
     rootPadding: {
-      backgroundColor: colors.elevated,
+      backgroundColor: colors.background,
     },
     hexWrap: {
-      backgroundColor: colors.elevated,
+      backgroundColor: colors.background,
     },
     hexLabel: {
       color: colors.foregroundColor,

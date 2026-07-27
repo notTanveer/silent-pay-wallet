@@ -26,11 +26,11 @@ export const SecondButton = forwardRef<React.ElementRef<typeof TouchableOpacity>
   let fontColor = colors.secondButtonTextColor;
   if (props.disabled === true) {
     backgroundColor = colors.buttonDisabledBackgroundColor;
-    fontColor = colors.buttonDisabledTextColor;
+    fontColor = colors.alternativeTextColor;
   }
 
   const buttonView = props.loading ? (
-    <ActivityIndicator size="small" color={colors.buttonTextColor} />
+    <ActivityIndicator size="small" color={colors.white} />
   ) : (
     <View style={styles.view}>
       {props.icon && <Icon name={props.icon.name} type={props.icon.type} color={props.icon.color} />}

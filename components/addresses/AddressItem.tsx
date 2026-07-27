@@ -34,7 +34,7 @@ const AddressItem = ({ item, balanceUnit, walletID, onPress, searchQuery = '', r
   const stylesHook = StyleSheet.create({
     container: {
       borderBottomColor: colors.lightBorder,
-      backgroundColor: colors.elevated,
+      backgroundColor: colors.background,
     },
 
     index: {
@@ -44,7 +44,7 @@ const AddressItem = ({ item, balanceUnit, walletID, onPress, searchQuery = '', r
       color: colors.alternativeTextColor,
     },
     address: {
-      color: hasTransactions ? colors.darkGray : colors.buttonTextColor,
+      color: hasTransactions ? colors.darkGray : colors.white,
     },
   });
 

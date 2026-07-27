@@ -89,7 +89,7 @@ const OutputList: React.FC<TOutputListProps> = ({
   const amount = formatBalance(value, balanceUnit, true);
 
   const oStyles = StyleSheet.create({
-    container: { borderBottomColor: colors.lightBorder, backgroundColor: colors.elevated },
+    container: { borderBottomColor: colors.lightBorder, backgroundColor: colors.background },
     containerSelected: {
       backgroundColor: colors.ballOutgoingExpired,
       borderBottomColor: 'rgba(0, 0, 0, 0)',
@@ -493,14 +493,14 @@ const CoinControl: React.FC = () => {
 
   if (loading) {
     return (
-      <SafeArea style={[styles.center, { backgroundColor: colors.elevated }]}>
+      <SafeArea style={[styles.center, { backgroundColor: colors.background }]}>
         <ActivityIndicator testID="Loading" />
       </SafeArea>
     );
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.elevated }]}>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       {utxos.length === 0 && (
         <View style={styles.empty}>
           <Text style={{ color: colors.foregroundColor }}>{loc.cc.empty}</Text>
@@ -513,7 +513,7 @@ const CoinControl: React.FC = () => {
           Keyboard.dismiss();
           setOutput(undefined);
         }}
-        backgroundColor={colors.elevated}
+        backgroundColor={colors.background}
         contentContainerStyle={styles.modalMinHeight}
         footer={
           <View style={mStyles.buttonContainer}>
@@ -546,14 +546,14 @@ const CoinControl: React.FC = () => {
           <FButton
             onPress={handleMassFreeze}
             text={allFrozen ? loc.cc.freezeLabel_un : loc.cc.freezeLabel}
-            icon={<Icon name="snowflake" size={buttonFontSize} type="font-awesome-5" color={colors.buttonAlternativeTextColor} />}
+            icon={<Icon name="snowflake" size={buttonFontSize} type="font-awesome-5" color={colors.white} />}
           />
           <FButton
             onPress={handleMassUse}
             text={selected.length > 1 ? loc.cc.use_coins : loc.cc.use_coin}
             icon={
               <View style={styles.sendIcon}>
-                <Icon name="arrow-down" size={buttonFontSize} type="font-awesome" color={colors.buttonAlternativeTextColor} />
+                <Icon name="arrow-down" size={buttonFontSize} type="font-awesome" color={colors.white} />
               </View>
             }
           />

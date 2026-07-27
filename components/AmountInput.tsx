@@ -247,9 +247,9 @@ export const AmountInput: React.FC<AmountInputProps> = props => {
 
   const stylesHook = StyleSheet.create({
     center: { padding: amount === BitcoinUnit.MAX ? 0 : 15 },
-    localCurrency: { color: disabled ? colors.buttonDisabledTextColor : colors.alternativeTextColor2 },
-    input: { color: disabled ? colors.buttonDisabledTextColor : colors.alternativeTextColor2, fontSize: amount.length > 10 ? 20 : 36 },
-    cryptoCurrency: { color: disabled ? colors.buttonDisabledTextColor : colors.alternativeTextColor2 },
+    localCurrency: { color: disabled ? colors.alternativeTextColor : colors.alternativeTextColor2 },
+    input: { color: disabled ? colors.alternativeTextColor : colors.alternativeTextColor2, fontSize: amount.length > 10 ? 20 : 36 },
+    cryptoCurrency: { color: disabled ? colors.alternativeTextColor : colors.alternativeTextColor2 },
   });
 
   return (
@@ -272,7 +272,7 @@ export const AmountInput: React.FC<AmountInputProps> = props => {
                 ref={textInputRef}
                 editable={!isLoading && !disabled}
                 value={amount === BitcoinUnit.MAX ? loc.units.MAX : parseFloat(amount) >= 0 ? String(amount) : undefined}
-                placeholderTextColor={disabled ? colors.buttonDisabledTextColor : colors.alternativeTextColor2}
+                placeholderTextColor={disabled ? colors.alternativeTextColor : colors.alternativeTextColor2}
                 style={[styles.input, stylesHook.input]}
                 {...otherProps}
               />
@@ -318,7 +318,7 @@ export const AmountInput: React.FC<AmountInputProps> = props => {
             disabled={isRateBeingUpdatedLocal}
             style={isRateBeingUpdatedLocal ? styles.disabledButton : styles.enabledButon}
           >
-            <Icon name="sync" type="font-awesome-5" size={16} color={colors.buttonAlternativeTextColor} />
+            <Icon name="sync" type="font-awesome-5" size={16} color={colors.white} />
           </TouchableOpacity>
         </View>
       )}

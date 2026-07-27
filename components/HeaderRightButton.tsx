@@ -21,7 +21,7 @@ const HeaderRightButton: React.FC<HeaderRightButtonProps> = ({ disabled = true, 
       onPress={onPress}
       testID={testID}
     >
-      <Text style={[styles.saveText, { color: colors.buttonTextColor }]}>{title}</Text>
+      <Text style={[styles.saveText, { color: colors.white }]}>{title}</Text>
     </TouchableOpacity>
   );
 };

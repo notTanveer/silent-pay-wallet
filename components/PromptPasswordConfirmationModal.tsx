@@ -51,7 +51,7 @@ const PromptPasswordConfirmationModal = forwardRef<PromptPasswordConfirmationMod
 
     const stylesHook = StyleSheet.create({
       modalContent: {
-        backgroundColor: colors.elevated,
+        backgroundColor: colors.background,
         width: '100%',
       },
       input: {
@@ -61,7 +61,7 @@ const PromptPasswordConfirmationModal = forwardRef<PromptPasswordConfirmationMod
         width: '100%',
       },
       feeModalCustomText: {
-        color: colors.buttonAlternativeTextColor,
+        color: colors.white,
       },
       feeModalLabel: {
         color: colors.successColor,

@@ -125,7 +125,7 @@ const TrackPayment: React.FC<TrackPaymentProps> = () => {
           <View style={[styles.infoBox, stylesHook.infoBox]}>
             <View style={styles.infoHeader}>
               <Icon name="info-outline" type="material" size={18} color={colors.hdborderColor} />
-              <Text style={[styles.infoTitle, { color: colors.shadowColor }]}>{loc.track_payment.whats_txid}</Text>
+              <Text style={[styles.infoTitle, { color: colors.black }]}>{loc.track_payment.whats_txid}</Text>
             </View>
             <Text style={[styles.infoText, stylesHook.infoText]}>{loc.track_payment.txid_explanation}</Text>
           </View>
@@ -133,7 +133,7 @@ const TrackPayment: React.FC<TrackPaymentProps> = () => {
 
         <View style={styles.buttonContainer}>
           {isLoading ? (
-            <ActivityIndicator size="large" color={colors.mainColor} />
+            <ActivityIndicator size="large" color={colors.primary} />
           ) : (
             <Pressable
               style={[styles.outlineButton, stylesHook.outlineButton, (!isValidTxid || !wallet) && styles.disabled]}

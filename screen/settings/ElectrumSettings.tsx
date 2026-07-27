@@ -72,7 +72,7 @@ const ElectrumSettings: React.FC = () => {
       backgroundColor: colors.redBG,
     },
     textConnected: {
-      color: colors.feeValue,
+      color: colors.primary,
     },
     textDisconnected: {
       color: colors.redText,

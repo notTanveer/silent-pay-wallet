@@ -42,7 +42,7 @@ const NoPaymentFound: React.FC = () => {
     reasonsTitle: { color: colors.foregroundColor },
     reasonText: { color: colors.alternativeTextColor },
     tipBox: { backgroundColor: colors.ballOutgoingExpired },
-    tipText: { color: colors.shadowColor },
+    tipText: { color: colors.black },
   });
 
   return (
@@ -75,7 +75,7 @@ const NoPaymentFound: React.FC = () => {
 
           <View style={[styles.tipBox, stylesHook.tipBox]}>
             <Text style={[styles.tipText, stylesHook.tipText]}>
-              <Text style={[styles.tipLabel, { color: colors.buttonBackgroundColor }]}>{loc.no_payment_found.tip_label} </Text>
+              <Text style={[styles.tipLabel, { color: colors.primary }]}>{loc.no_payment_found.tip_label} </Text>
               {loc.no_payment_found.tip}
             </Text>
           </View>
@@ -85,7 +85,7 @@ const NoPaymentFound: React.FC = () => {
           <Button
             title={loc.no_payment_found.copy_my_address}
             onPress={handleCopyAddress}
-            icon={{ name: 'content-copy', type: 'material', color: colors.buttonTextColor }}
+            icon={{ name: 'content-copy', type: 'material', color: colors.white }}
             testID="CopyMyAddressButton"
           />
         </View>

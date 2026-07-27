@@ -140,7 +140,7 @@ const ScanQRCode = () => {
   const [animatedQRCodeData, setAnimatedQRCodeData] = useState<Record<string, string>>({});
   const [cameraStatusGranted, setCameraStatusGranted] = useState<boolean | undefined>(undefined);
   const stylesHook = StyleSheet.create({
-    rootElevated: { backgroundColor: colors.elevated },
+    rootElevated: { backgroundColor: colors.background },
     iconCircle: { backgroundColor: colors.surfaceSubtle },
     permissionTitle: { color: colors.foregroundColor },
     primaryButton: { backgroundColor: colors.brandPrimary },

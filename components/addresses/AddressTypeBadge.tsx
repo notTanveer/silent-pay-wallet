@@ -14,7 +14,7 @@ export const AddressTypeBadge: React.FC<Props> = ({ isInternal, hasTransactions 
     receiveBadge: { backgroundColor: colors.receiveBackground },
     usedBadge: { backgroundColor: colors.buttonDisabledBackgroundColor },
     changeText: { color: colors.changeText },
-    receiveText: { color: colors.receiveText },
+    receiveText: { color: colors.successColor },
     usedText: { color: colors.alternativeTextColor },
   });
 

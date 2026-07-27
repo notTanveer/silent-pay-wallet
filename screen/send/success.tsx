@@ -36,7 +36,7 @@ const Success = () => {
 
   const stylesHook = StyleSheet.create({
     overlay: { backgroundColor: colors.scrim },
-    sheet: { backgroundColor: colors.elevated, paddingBottom: 32 + insets.bottom },
+    sheet: { backgroundColor: colors.background, paddingBottom: 32 + insets.bottom },
     checkCircle: { backgroundColor: colors.surfaceSubtle },
     sentText: { color: colors.black },
     doneButton: { backgroundColor: colors.brandPrimary },

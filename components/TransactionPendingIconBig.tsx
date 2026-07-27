@@ -9,7 +9,7 @@ export const TransactionPendingIconBig: React.FC = () => {
 
   const hookStyles = StyleSheet.create({
     ball: {
-      backgroundColor: colors.buttonBackgroundColor,
+      backgroundColor: colors.primary,
     },
   });
 

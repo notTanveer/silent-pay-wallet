@@ -31,7 +31,7 @@ const SendCreate = () => {
 
   const styleHooks = StyleSheet.create({
     transactionDetailsTitle: {
-      color: colors.feeText,
+      color: colors.placeholderTextColor,
     },
     transactionDetailsSubtitle: {
       color: colors.foregroundColor,
@@ -40,7 +40,7 @@ const SendCreate = () => {
       backgroundColor: colors.inputBorderColor,
     },
     root: {
-      backgroundColor: colors.elevated,
+      backgroundColor: colors.background,
     },
     cardText: {
       color: colors.foregroundColor,

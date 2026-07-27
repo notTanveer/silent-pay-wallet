@@ -10,7 +10,7 @@ export const Loading: React.FC<LoadingProps> = props => {
 
   return (
     <View style={styles.container} {...otherProps}>
-      <ActivityIndicator size={size} color={color || colors.buttonTextColor} />
+      <ActivityIndicator size={size} color={color || colors.white} />
     </View>
   );
 };

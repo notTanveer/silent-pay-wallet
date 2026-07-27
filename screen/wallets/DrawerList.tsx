@@ -16,9 +16,9 @@ const DrawerList: React.FC<DrawerContentComponentProps> = memo((props: DrawerCon
   const stylesHook = useMemo(
     () =>
       StyleSheet.create({
-        root: { backgroundColor: colors.elevated } as ViewStyle,
+        root: { backgroundColor: colors.background } as ViewStyle,
       }),
-    [colors.elevated],
+    [colors.background],
   );
 
   const handleClick = useCallback(

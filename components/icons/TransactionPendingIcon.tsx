@@ -22,7 +22,7 @@ const TransactionPendingIcon: React.FC = () => {
 
   const stylesHook = StyleSheet.create({
     ball: {
-      backgroundColor: colors.buttonBackgroundColor,
+      backgroundColor: colors.primary,
     },
   });
 

@@ -162,11 +162,11 @@ export const WalletCarouselItem: React.FC<WalletCarouselItemProps> = React.memo(
           delayHoverIn={0}
           delayHoverOut={0}
         >
-          <View style={[iStyles.shadowContainer, { backgroundColor: colors.background, shadowColor: colors.shadowColor }]}>
+          <View style={[iStyles.shadowContainer, { backgroundColor: colors.background, shadowColor: colors.black }]}>
             <LinearGradient colors={WalletGradient.gradientsFor(item.type)} style={iStyles.grad}>
               <ImageBackground source={image} style={iStyles.image} />
               <Text style={iStyles.br} />
-              <Text numberOfLines={1} style={[iStyles.label, { color: colors.inverseForegroundColor }]}>
+              <Text numberOfLines={1} style={[iStyles.label, { color: colors.white }]}>
                 {item.getLabel()}
               </Text>
               <View style={iStyles.balanceContainer}>
@@ -176,21 +176,16 @@ export const WalletCarouselItem: React.FC<WalletCarouselItemProps> = React.memo(
                     <BlurredBalanceView />
                   </>
                 ) : (
-                  <Text
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    key={`${balance}`}
-                    style={[iStyles.balance, { color: colors.inverseForegroundColor }]}
-                  >
+                  <Text numberOfLines={1} adjustsFontSizeToFit key={`${balance}`} style={[iStyles.balance, { color: colors.white }]}>
                     {`${balance} `}
                   </Text>
                 )}
               </View>
               <Text style={iStyles.br} />
-              <Text numberOfLines={1} style={[iStyles.latestTx, { color: colors.inverseForegroundColor }]}>
+              <Text numberOfLines={1} style={[iStyles.latestTx, { color: colors.white }]}>
                 {loc.wallets.list_latest_transaction}
               </Text>
-              <Text numberOfLines={1} style={[iStyles.latestTxTime, { color: colors.inverseForegroundColor }]}>
+              <Text numberOfLines={1} style={[iStyles.latestTxTime, { color: colors.white }]}>
                 {latestTransactionText}
               </Text>
             </LinearGradient>

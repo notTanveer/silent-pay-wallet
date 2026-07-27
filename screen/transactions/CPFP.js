@@ -169,9 +169,7 @@ export default class CPFP extends Component {
     return (
       <View style={styles.root}>
         <ShroudCard style={styles.center}>
-          <ShroudText style={[styles.hex, { color: BlueCurrentTheme.colors.buttonAlternativeTextColor }]}>
-            {loc.send.create_this_is_hex}
-          </ShroudText>
+          <ShroudText style={[styles.hex, { color: BlueCurrentTheme.colors.white }]}>{loc.send.create_this_is_hex}</ShroudText>
           <TextInput style={styles.hexInput} height={112} multiline editable value={this.state.txhex} />
 
           <TouchableOpacity accessibilityRole="button" style={styles.action} onPress={() => Clipboard.setString(this.state.txhex)}>

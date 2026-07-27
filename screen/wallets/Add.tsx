@@ -31,10 +31,10 @@ const WalletsAdd: React.FC = () => {
       backgroundColor: colors.inputBackgroundColor,
     },
     root: {
-      backgroundColor: colors.elevated,
+      backgroundColor: colors.background,
     },
     helperText: {
-      color: colors.feeText,
+      color: colors.placeholderTextColor,
     },
   };
 

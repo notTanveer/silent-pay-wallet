@@ -52,14 +52,9 @@ const lightOnly = (v: string): ColorToken => ({ light: v, dark: v, todoDark: tru
 
 const tokens = {
   brandingColor: pair(palette.white, palette.black),
-  customHeader: pair(palette.white, palette.gray950),
   foregroundColor: pair('#0C2550', palette.white),
-  buttonBackgroundColor: same(palette.violet600),
-  buttonTextColor: same(palette.white),
   secondButtonTextColor: same('#50555C'),
-  buttonAlternativeTextColor: same(palette.white),
   buttonDisabledBackgroundColor: pair(palette.gray100, palette.gray800),
-  buttonDisabledTextColor: same(palette.gray400),
   inputBorderColor: same(palette.gray300),
   inputBackgroundColor: pair('#F5F5F5', '#262626'),
   alternativeTextColor: same(palette.gray400),
@@ -69,8 +64,6 @@ const tokens = {
   successColor: same(palette.teal500),
   warningColor: same('#F5A623'),
   placeholderTextColor: same(palette.gray500),
-  shadowColor: same(palette.black),
-  inverseForegroundColor: same(palette.white),
   hdborderColor: same('#68BBE1'),
   background: pair(palette.white, palette.gray950),
   lightButton: pair(palette.gray100, 'rgba(255,255,255,.1)'),
@@ -80,12 +73,8 @@ const tokens = {
   formBorder: pair(palette.gray300, palette.gray900),
   darkGray: pair(palette.gray400, palette.gray800),
   scanLabel: pair(palette.gray400, 'rgba(255,255,255,.2)'),
-  feeText: same(palette.gray500),
   feeLabel: same(palette.violet200),
-  feeValue: same(palette.violet600),
   labelText: pair(palette.gray500, palette.white),
-  elevated: pair(palette.white, palette.gray950),
-  mainColor: same(palette.violet600),
   success: pair(palette.violet600, palette.gray900),
   successCheck: same(palette.green500),
   redBG: pair(palette.pink200, palette.maroon900),
@@ -93,11 +82,10 @@ const tokens = {
   changeBackground: pair('#FDF2DA', palette.maroon900),
   changeText: same(palette.orange400),
   receiveBackground: pair('#D1F9D6', 'rgba(210,248,214,.2)'),
-  receiveText: same(palette.teal500),
   navigationBarColor: pair(palette.white, palette.gray800),
   androidRippleColor: pair('#CCCCCC', '#444444'),
-  // Brand violet in both modes, matching master #123 which set dark primary/mainColor to
-  // violet600 (previously dark `primary` fell through to RN's blue and `mainColor` was blue).
+  // Brand violet in both modes, matching master #123. Also the canonical token for the former
+  // buttonBackgroundColor / mainColor / feeValue, which were identical in both schemes.
   primary: same(palette.violet600),
 
   // --- Revamp design tokens (Sync/scan UI) ---
@@ -112,8 +100,6 @@ const tokens = {
   surfaceCaution: same('#FDFBF5'), // caution banner background (address-reuse warning)
   iconCaution: same('#F1AF63'), // caution banner icon (warm amber)
   segmentTrack: same('#F8F8FA'), // pill toggle track background
-  segmentTrackBorder: same(palette.gray150), // pill toggle track border
-  segmentSelectedBg: same(palette.white), // selected pill background
   segmentSelectedBorder: same('#CFCFCF'), // selected pill border
   qrCardBg: same('#F9FAFB'), // QR code card background
   copyHint: same(palette.gray450), // "tap to copy" icon + label
@@ -138,21 +124,16 @@ const tokens = {
   receiveBtnBackground: pair('#EAE4FB', '#110732'),
   bannerBackground: pair(palette.violet50, palette.violet900),
   payBtnDisabledBackground: pair('#00000052', '#FFFFFF52'),
-  requestBtnTextColor: pair(palette.violet600, palette.violet500),
   requestBtnBorderColor: pair(palette.violet600, palette.violet500Alpha),
-  payBtnTextColor: same(palette.white),
   bannerBorderColor: pair(palette.violet100, '#2D264F'),
   scanBtnBorderColor: pair(palette.violet100, '#241F3B'),
   settingsBtnBackground: pair('#F6F7F9', '#141414'),
   settingsBtnIconColor: pair('#545454', '#AAAAAA'),
   searchIconBackground: pair(palette.white, '#0D0D0D'),
-  searchIconStroke: pair(palette.violet600, palette.violet500),
   shieldIconBackground: pair('#FAF5FF', palette.violet900),
   shieldIconBorder: pair('#F3E8FF', '#181818'),
-  shieldIconAccent: pair(palette.violet600, palette.violet500),
   shareAddrBorderColor: pair(palette.violet100, palette.violet500Alpha),
   shareAddrBackground: pair('transparent', palette.violet900),
-  zeroBalanceRequestTextColor: same(palette.white),
   cardBackground: pair('#FDFCFE', '#1A1A1A'),
 
   // --- Send redesign tokens. Ones using lightOnly() still need real dark values (see todoDark, #3). ---
@@ -171,7 +152,6 @@ const tokens = {
   transactionCardBorder: pair(palette.gray200, palette.gray850),
   txIconHaloBorder: pair(palette.violet100, palette.violet850),
   incomingIconBackground: pair('#E7E6F5', '#322361'),
-  incomingIconBorder: pair(palette.violet100, palette.violet850),
   outgoingIconBackground: pair(palette.gray50, '#161616'),
   outgoingIconBorder: pair('#D9D9D9', palette.violet850),
 } satisfies Record<string, ColorToken>;

@@ -805,13 +805,13 @@ const SendDetails = () => {
 
   const stylesHook = StyleSheet.create({
     root: {
-      backgroundColor: colors.elevated,
+      backgroundColor: colors.background,
     },
     selectLabel: {
-      color: colors.buttonTextColor,
+      color: colors.white,
     },
     fieldInput: { color: colors.textPrimary },
-    scanBtn: { backgroundColor: colors.white, shadowColor: colors.shadowColor, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
+    scanBtn: { backgroundColor: colors.white, shadowColor: colors.black, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
     feeSummary: { borderColor: colors.summaryBorder },
     feeSummaryLabel: { color: colors.textSecondary },
     feeSummaryValue: { color: colors.black },

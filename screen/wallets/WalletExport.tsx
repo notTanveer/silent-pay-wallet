@@ -61,7 +61,7 @@ const WalletExport: React.FC = () => {
   const [qrCodeSize, setQRCodeSize] = useState(90);
   const { currentAppState, previousAppState } = useAppState();
   const stylesHook = StyleSheet.create({
-    root: { backgroundColor: colors.elevated },
+    root: { backgroundColor: colors.background },
   });
 
   const secret: string = useMemo(() => {

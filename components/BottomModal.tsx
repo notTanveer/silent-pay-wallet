@@ -106,12 +106,7 @@ const BottomModal = forwardRef<BottomModalHandle, BottomModalProps>(
               testID="ModalShareButton"
               key="ModalShareButton"
             >
-              <Icon
-                name={Platform.OS === 'android' ? 'share' : 'file-upload'}
-                type="font-awesome6"
-                size={20}
-                color={colors.buttonTextColor}
-              />
+              <Icon name={Platform.OS === 'android' ? 'share' : 'file-upload'} type="font-awesome6" size={20} color={colors.white} />
             </SaveFileButton>,
           );
         } else if (shareButtonOnPress) {
@@ -122,12 +117,7 @@ const BottomModal = forwardRef<BottomModalHandle, BottomModalProps>(
               style={({ pressed }) => [pressed && styles.pressed, styles.topRightButton, stylesHook.barButton]}
               onPress={shareButtonOnPress}
             >
-              <Icon
-                name={Platform.OS === 'android' ? 'share' : 'file-upload'}
-                type="font-awesome6"
-                size={20}
-                color={colors.buttonTextColor}
-              />
+              <Icon name={Platform.OS === 'android' ? 'share' : 'file-upload'} type="font-awesome6" size={20} color={colors.white} />
             </Pressable>,
           );
         }

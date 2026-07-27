@@ -11,9 +11,9 @@ export const Header: React.FC<HeaderProps> = ({ leftText, isDrawerList }) => {
   const { colors } = useTheme();
   const styleWithProps = StyleSheet.create({
     root: {
-      backgroundColor: isDrawerList ? colors.elevated : colors.background,
-      borderTopColor: isDrawerList ? colors.elevated : colors.background,
-      borderBottomColor: isDrawerList ? colors.elevated : colors.background,
+      backgroundColor: isDrawerList ? colors.background : colors.background,
+      borderTopColor: isDrawerList ? colors.background : colors.background,
+      borderBottomColor: isDrawerList ? colors.background : colors.background,
     },
     text: {
       color: colors.foregroundColor,

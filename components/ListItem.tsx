@@ -94,7 +94,7 @@ const ListItem: React.FC<ListItemProps> = React.memo(
     const { colors } = useTheme();
     const stylesHook = StyleSheet.create({
       title: {
-        color: disabled ? colors.buttonDisabledTextColor : colors.foregroundColor,
+        color: disabled ? colors.alternativeTextColor : colors.foregroundColor,
         fontSize: 16,
         fontFamily: ClashFont.medium,
       },

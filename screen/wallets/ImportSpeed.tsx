@@ -25,12 +25,12 @@ const ImportSpeed = () => {
   const styles = StyleSheet.create({
     root: {
       paddingTop: 40,
-      backgroundColor: colors.elevated,
+      backgroundColor: colors.background,
     },
     center: {
       flex: 1,
       marginHorizontal: 16,
-      backgroundColor: colors.elevated,
+      backgroundColor: colors.background,
     },
     pathInput: {
       flexDirection: 'row',

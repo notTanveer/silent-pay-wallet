@@ -21,7 +21,7 @@ export const getTransactionIconColors = (colors: Theme['colors'], value?: number
         haloBackground: colors.background,
         haloBorder: colors.txIconHaloBorder,
         background: colors.incomingIconBackground,
-        borderColor: colors.incomingIconBorder,
+        borderColor: colors.txIconHaloBorder,
         arrowColor: colors.brandPrimary,
       }
     : {
