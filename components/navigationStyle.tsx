@@ -135,7 +135,7 @@ const navigationStyle = (
           color: theme.colors.foregroundColor,
         },
         headerTintColor: theme.colors.foregroundColor,
-        headerBackButtonDisplayMode: 'minimal',
+        headerBackButtonDisplayMode: 'minimal' as const,
       };
       const isLeftCloseButtonAndroid = closeButton === CloseButtonPosition.Left && Platform.OS === 'android';
 
@@ -144,7 +144,6 @@ const navigationStyle = (
       let options: NativeStackNavigationOptions = {
         ...baseHeaderStyle,
         ...leftCloseButtonStyle,
-        headerBackButtonDisplayMode: 'minimal',
         headerRight,
         ...opts,
       };
