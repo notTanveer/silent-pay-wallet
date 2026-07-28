@@ -77,4 +77,27 @@ describe('unit - useDeleteWallet', () => {
       payload: { index: 0, routes: [{ name: 'Onboarding' }] },
     });
   });
+
+  it('deletes and resets navigation when biometrics is enabled and auth succeeds', async () => {
+    isBiometricUseCapableAndEnabled.mockResolvedValue(true);
+    mockUnlockWithBiometrics.mockResolvedValue(true);
+    handleWalletDeletion.mockResolvedValue(true);
+
+    const { destructive } = getDestructiveButtonPress();
+    await destructive.onPress();
+
+    assert.strictEqual(handleWalletDeletion.mock.calls[0][0], 'wallet-id');
+    assert.strictEqual(dispatch.mock.calls.length, 1);
+  });
+
+  it('does not reset navigation when wallet deletion fails', async () => {
+    isBiometricUseCapableAndEnabled.mockResolvedValue(false);
+    handleWalletDeletion.mockResolvedValue(false);
+
+    const { destructive } = getDestructiveButtonPress();
+    await destructive.onPress();
+
+    assert.strictEqual(handleWalletDeletion.mock.calls.length, 1);
+    assert.strictEqual(dispatch.mock.calls.length, 0);
+  });
 });

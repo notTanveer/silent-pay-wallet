@@ -67,6 +67,7 @@ jest.mock('react-native-device-info', () => {
     isTablet: jest.fn().mockReturnValue(false),
     getVersion: jest.fn().mockReturnValue('0.0.1'),
     getBuildNumber: jest.fn().mockReturnValue('1'),
+    getPowerState: jest.fn().mockResolvedValue({ lowPowerMode: false }),
   };
 });
 

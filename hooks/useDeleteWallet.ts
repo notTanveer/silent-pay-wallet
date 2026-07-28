@@ -5,6 +5,7 @@ import { useBiometrics, unlockWithBiometrics } from './useBiometrics';
 import { useExtendedNavigation } from './useExtendedNavigation';
 import loc from '../loc';
 import presentAlert from '../components/Alert';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../modules/hapticFeedback';
 
 export const useDeleteWallet = () => {
   const { wallets, handleWalletDeletion } = useStorage();
@@ -28,6 +29,7 @@ export const useDeleteWallet = () => {
             if (biometricsEnabled && !(await unlockWithBiometrics())) return;
             const ok = await handleWalletDeletion(wallet.getID());
             if (ok) {
+              triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
               navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Onboarding' }] }));
             }
           },
