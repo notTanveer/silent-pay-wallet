@@ -8,15 +8,16 @@ describe('Settings', () => {
 
   it('navigates through visible settings entries', async () => {
     await element(by.id('SettingsButton')).tap();
-    await waitFor(element(by.id('Currency')))
+    await waitFor(element(by.id('CurrencyButton')))
       .toBeVisible()
       .withTimeout(10_000);
 
-    await element(by.id('Currency')).tap();
+    await element(by.id('CurrencyButton')).tap();
     await device.pressBack();
     await waitFor(element(by.id('AboutButton')))
       .toBeVisible()
-      .withTimeout(5_000);
+      .whileElement(by.id('SettingsScrollView'))
+      .scroll(200, 'down');
 
     await element(by.id('AboutButton')).tap();
     await waitFor(element(by.id('AboutScrollView')))

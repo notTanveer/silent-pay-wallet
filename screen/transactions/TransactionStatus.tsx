@@ -431,7 +431,12 @@ const TransactionStatus: React.FC<TransactionStatusProps> = ({ transaction, txid
     } else if (isRBFCancelPossible === ButtonStatus.Possible) {
       return (
         <>
-          <TouchableOpacity accessibilityRole="button" style={styles.cancel}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={loc._.cancel}
+            style={styles.cancel}
+            testID="CancelTransactionButton"
+          >
             <Text onPress={navigateToRBFCancel} style={styles.cancelText}>
               {loc.transactions.status_cancel}
             </Text>

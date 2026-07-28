@@ -20,8 +20,8 @@ import SelectFeeScreen from '../screen/SelectFeeScreen';
 
 const Stack = createNativeStackNavigator<SendDetailsStackParamList>();
 
-// these two screens are reached as steps in a flow, not standalone modals, so they get a back
-// chevron instead of the "X" close button the rest of this stack's screens use
+// SendDetails is the initial route of this nested stack (index 0), so navigationStyle's
+// default back chevron doesn't apply to it and it needs its own headerLeft.
 const withBackChevron = (
   options: NativeStackNavigationOptions,
   { theme, navigation }: { theme: Theme; navigation: any },
@@ -55,16 +55,8 @@ const SendDetailsStack = () => {
         )(theme)}
         initialParams={{ isEditable: true, feeUnit: BitcoinUnit.BTC, amountUnit: BitcoinUnit.BTC }} // Correctly typed now
       />
-      <Stack.Screen
-        name="SelectFee"
-        component={SelectFeeScreen}
-        options={navigationStyle({ title: loc.send.network_fee_header }, withBackChevron)(theme)}
-      />
-      <Stack.Screen
-        name="Confirm"
-        component={ConfirmComponent}
-        options={navigationStyle({ title: loc.send.confirm_header }, withBackChevron)(theme)}
-      />
+      <Stack.Screen name="SelectFee" component={SelectFeeScreen} options={navigationStyle({ title: loc.send.network_fee_header })(theme)} />
+      <Stack.Screen name="Confirm" component={ConfirmComponent} options={navigationStyle({ title: loc.send.confirm_header })(theme)} />
       <Stack.Screen
         name="PsbtWithHardwareWallet"
         component={PsbtWithHardwareWalletComponent}

@@ -5,6 +5,7 @@ import { Image, Keyboard, Platform, StyleSheet, TouchableOpacity } from 'react-n
 import { ClashFont } from '../constants/fonts';
 import loc from '../loc';
 import { Theme } from './themes';
+import HeaderBackButton from './HeaderBackButton';
 
 const styles = StyleSheet.create({
   button: {
@@ -112,6 +113,19 @@ const navigationStyle = (
           </TouchableOpacity>
         );
       }
+
+      if (!headerLeft && !isFirstRouteInStack) {
+        headerLeft = () => (
+          <HeaderBackButton
+            color={theme.colors.foregroundColor}
+            onPress={() => {
+              Keyboard.dismiss();
+              navigation.goBack();
+            }}
+          />
+        );
+      }
+
       const baseHeaderStyle = {
         headerShadowVisible: false,
         headerTitleAlign: 'center' as const,

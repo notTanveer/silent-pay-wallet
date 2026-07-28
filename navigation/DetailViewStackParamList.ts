@@ -39,6 +39,9 @@ export type DetailViewStackParamList = {
   WalletExportRoot: undefined;
   Settings: undefined;
   Currency: undefined;
+  General: undefined;
+  Contact: undefined;
+  Tools: undefined;
   PlausibleDeniability: undefined;
   Licensing: undefined;
   About: undefined;
@@ -51,7 +54,6 @@ export type DetailViewStackParamList = {
   };
   ScanQRCode: ScanQRCodeParamList;
   Onboarding: undefined;
-  DeleteWallet: undefined;
   TrackPayment: undefined;
   PaymentFound: { txid: string; blockHeight: number; tipHeight: number };
   NoPaymentFound: undefined;

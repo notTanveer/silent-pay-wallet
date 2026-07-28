@@ -227,21 +227,19 @@ const ImportWallet = () => {
 
   // Adding the ToolTipMenu to the header
   useEffect(() => {
+    if (navigation.getState().index !== 0) return;
     navigation.setOptions({
-      headerLeft:
-        navigation.getState().index === 0
-          ? () => (
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel={loc._.close}
-                style={styles.button}
-                onPress={() => navigation.goBack()}
-                testID="NavigationCloseButton"
-              >
-                <Image source={closeImage} />
-              </TouchableOpacity>
-            )
-          : undefined,
+      headerLeft: () => (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={loc._.close}
+          style={styles.button}
+          onPress={() => navigation.goBack()}
+          testID="NavigationCloseButton"
+        >
+          <Image source={closeImage} />
+        </TouchableOpacity>
+      ),
     });
   }, [colors, navigation, closeImage]);
 
