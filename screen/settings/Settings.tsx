@@ -14,6 +14,7 @@ import AboutIcon from '../../components/icons/AboutIcon';
 import { useTheme } from '../../components/themes';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useDeleteWallet } from '../../hooks/useDeleteWallet';
+import { useStorage } from '../../hooks/context/useStorage';
 import loc from '../../loc';
 import { ClashFont } from '../../constants/fonts';
 import { IconProps } from '../../components/icons/types';
@@ -141,6 +142,7 @@ const SECONDARY_ROWS: RowConfig[] = [
 const Settings: React.FC = () => {
   const { colors } = useTheme();
   const navigation = useExtendedNavigation();
+  const { wallets } = useStorage();
   const handleDeleteWallet = useDeleteWallet();
 
   const cardStyle = [styles.card, { borderColor: colors.settingsCardBorder, backgroundColor: colors.settingsCardBackground }];
@@ -180,16 +182,18 @@ const Settings: React.FC = () => {
         ))}
       </View>
 
-      <TouchableOpacity
-        accessibilityRole="button"
-        accessibilityLabel={loc.settings.delete_wallet}
-        style={[styles.deleteWalletButton, styles.cardGap, { borderColor: colors.settingsDeleteWallet }]}
-        onPress={handleDeleteWallet}
-        testID="DeleteWalletButton"
-        activeOpacity={0.7}
-      >
-        <Text style={[styles.deleteWalletText, { color: colors.settingsDeleteWallet }]}>{loc.settings.delete_wallet}</Text>
-      </TouchableOpacity>
+      {wallets.length > 0 && (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={loc.settings.delete_wallet}
+          style={[styles.deleteWalletButton, styles.cardGap, { borderColor: colors.settingsDeleteWallet }]}
+          onPress={handleDeleteWallet}
+          testID="DeleteWalletButton"
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.deleteWalletText, { color: colors.settingsDeleteWallet }]}>{loc.settings.delete_wallet}</Text>
+        </TouchableOpacity>
+      )}
     </SafeAreaScrollView>
   );
 };
