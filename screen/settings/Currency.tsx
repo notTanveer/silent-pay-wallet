@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getPreferredCurrency, initCurrencyDaemon, setPreferredCurrency } from '../../modules/currency';
 import presentAlert from '../../components/Alert';
@@ -19,25 +20,30 @@ const TOP_CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD', 'CHF'];
 
 const currencyShortName = (item: FiatUnitType) => item.country.match(/\(([^)]+)\)/)?.[1] ?? item.country;
 
+const ALL_CURRENCIES = Object.values(FiatUnit);
+const SHORT_NAMES: Record<string, string> = Object.fromEntries(ALL_CURRENCIES.map(item => [item.endPointKey, currencyShortName(item)]));
+const DEFAULT_ORDER = [
+  ...TOP_CURRENCIES.map(code => FiatUnit[code]),
+  ...ALL_CURRENCIES.filter(item => !TOP_CURRENCIES.includes(item.endPointKey)),
+];
+
 const Currency: React.FC = () => {
   const { setPreferredFiatCurrencyStorage } = useSettings();
   const [isSavingNewPreferredCurrency, setIsSavingNewPreferredCurrency] = useState<FiatUnitType | undefined>();
   const [selectedCurrency, setSelectedCurrency] = useState<FiatUnitType>(FiatUnit.USD);
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');
 
   const data = useMemo(() => {
-    const all = Object.values(FiatUnit);
     const query = search.trim().toLowerCase();
+    if (!query) return DEFAULT_ORDER;
 
-    if (!query) {
-      const rest = all.filter(item => !TOP_CURRENCIES.includes(item.endPointKey));
-      return [...TOP_CURRENCIES.map(code => FiatUnit[code]), ...rest];
-    }
-
-    const codeMatches = all.filter(item => item.endPointKey.toLowerCase().startsWith(query));
-    const nameMatches = all.filter(
-      item => !item.endPointKey.toLowerCase().startsWith(query) && currencyShortName(item).toLowerCase().includes(query),
+    const codeMatches = ALL_CURRENCIES.filter(item => item.endPointKey.toLowerCase().startsWith(query));
+    const nameMatches = ALL_CURRENCIES.filter(
+      item =>
+        !item.endPointKey.toLowerCase().startsWith(query) &&
+        (SHORT_NAMES[item.endPointKey].toLowerCase().includes(query) || item.country.toLowerCase().includes(query)),
     );
     return [...codeMatches, ...nameMatches];
   }, [search]);
@@ -68,34 +74,38 @@ const Currency: React.FC = () => {
   );
 
   const renderItem = useCallback(
-    // eslint-disable-next-line react/no-unused-prop-types
-    ({ item }: { item: FiatUnitType }) => {
-      const isSelected = selectedCurrency.endPointKey === item.endPointKey;
-      const isDisabled = isSavingNewPreferredCurrency === item || isSelected;
+    (p: { item: FiatUnitType; index: number }) => {
+      const isSelected = selectedCurrency.endPointKey === p.item.endPointKey;
+      const isLoading = isSavingNewPreferredCurrency === p.item;
+      const isDisabled = isLoading || isSelected;
 
       return (
         <Row
           disabled={isDisabled}
+          selected={isSelected}
+          isLoading={isLoading}
+          showSeparator={p.index < data.length - 1}
           roundIcon
           icon={
             <Text style={[styles.symbol, { color: colors.settingsRowTitle }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>
-              {item.symbol}
+              {p.item.symbol}
             </Text>
           }
-          title={item.endPointKey}
-          subtitle={currencyShortName(item)}
+          title={p.item.endPointKey}
+          subtitle={SHORT_NAMES[p.item.endPointKey]}
           rightElement={isSelected ? <CheckmarkIcon color={colors.successCheck} size={20} /> : null}
           onPress={async () => {
             if (isDisabled) return;
 
-            setIsSavingNewPreferredCurrency(item);
+            Keyboard.dismiss();
+            setIsSavingNewPreferredCurrency(p.item);
             try {
-              await getFiatRate(item.endPointKey);
-              await setPreferredCurrency(item);
+              await getFiatRate(p.item.endPointKey);
+              await setPreferredCurrency(p.item);
               await initCurrencyDaemon(true);
               await fetchCurrency();
-              setSelectedCurrency(item);
-              setPreferredFiatCurrencyStorage(FiatUnit[item.endPointKey]);
+              setSelectedCurrency(p.item);
+              setPreferredFiatCurrencyStorage(FiatUnit[p.item.endPointKey]);
             } catch (error: any) {
               console.log(error);
               presentAlert({
@@ -111,6 +121,7 @@ const Currency: React.FC = () => {
     [
       isSavingNewPreferredCurrency,
       selectedCurrency,
+      data.length,
       colors.settingsRowTitle,
       colors.successCheck,
       fetchCurrency,
@@ -123,7 +134,7 @@ const Currency: React.FC = () => {
   return (
     <View style={[styles.flex, { backgroundColor: colors.background }]}>
       <View style={[styles.searchBar, { backgroundColor: colors.background, borderColor: colors.settingsCardBorder }]}>
-        <SearchIcon background="transparent" stroke={colors.alternativeTextColor} />
+        <SearchIcon size={20} background="transparent" stroke={colors.alternativeTextColor} />
         <TextInput
           style={[styles.searchInput, { color: colors.settingsRowTitle }]}
           placeholder={loc.settings.search_currency}
@@ -133,9 +144,11 @@ const Currency: React.FC = () => {
           autoCorrect={false}
         />
       </View>
-      <View style={[styles.listCard, { backgroundColor: colors.settingsCardBackground }]}>
+      <View style={[styles.listCard, { backgroundColor: colors.settingsCardBackground, marginBottom: insets.bottom }]}>
         <SafeAreaFlatList
           style={styles.transparent}
+          keyboardShouldPersistTaps="always"
+          automaticallyAdjustKeyboardInsets
           keyExtractor={keyExtractor}
           data={data}
           extraData={selectedCurrency}

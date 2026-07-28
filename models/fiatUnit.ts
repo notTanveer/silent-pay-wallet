@@ -3,7 +3,6 @@ import untypedFiatUnit from './fiatUnits.json';
 
 export const FiatUnitSource = {
   Coinbase: 'Coinbase',
-  CoinDesk: 'CoinDesk',
   CoinGecko: 'CoinGecko',
   Kraken: 'Kraken',
   Yadio: 'Yadio',
@@ -34,10 +33,6 @@ interface CoinbaseResponse {
   };
 }
 
-interface CoinDeskResponse {
-  [ticker: string]: number;
-}
-
 interface CoinGeckoResponse {
   bitcoin: {
     [ticker: string]: number;
@@ -50,6 +45,7 @@ interface KrakenResponse {
       c: [string];
     };
   };
+  error: string[];
 }
 
 interface YadioResponse {
@@ -87,20 +83,6 @@ const RateExtractors = {
     }
   },
 
-  CoinDesk: async (ticker: string): Promise<number> => {
-    try {
-      const json = (await fetchRate(
-        `https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=${ticker.toUpperCase()}`,
-      )) as CoinDeskResponse;
-      const rate = json?.[ticker.toUpperCase()];
-      if (!(rate >= 0)) throw new Error('Invalid data received');
-      return rate;
-    } catch (error: any) {
-      handleError('CoinDesk', ticker, error);
-      return undefined as never;
-    }
-  },
-
   CoinGecko: async (ticker: string): Promise<number> => {
     try {
       const json = (await fetchRate(
@@ -118,6 +100,7 @@ const RateExtractors = {
   Kraken: async (ticker: string): Promise<number> => {
     try {
       const json = (await fetchRate(`https://api.kraken.com/0/public/Ticker?pair=XXBTZ${ticker.toUpperCase()}`)) as KrakenResponse;
+      if (json?.error?.length) throw new Error(json.error[0]);
       const rate = Number(json?.result?.[`XXBTZ${ticker.toUpperCase()}`]?.c?.[0]);
       if (!(rate >= 0)) throw new Error('Invalid data received');
       return rate;
@@ -200,7 +183,7 @@ export type TFiatUnit = {
   symbol: string;
   locale: string;
   country: string;
-  source: 'Coinbase' | 'CoinDesk' | 'CoinGecko' | 'Kraken' | 'Yadio' | 'YadioConvert' | 'Exir' | 'coinpaprika' | 'BNR';
+  source: 'Coinbase' | 'CoinGecko' | 'Kraken' | 'Yadio' | 'YadioConvert' | 'Exir' | 'coinpaprika' | 'BNR';
 };
 
 type TFiatUnits = {
