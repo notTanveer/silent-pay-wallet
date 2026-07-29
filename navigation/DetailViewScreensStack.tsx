@@ -17,9 +17,6 @@ import SettingsButton from '../components/icons/SettingsButton';
 import { ShroudApp } from '../class';
 import Settings from '../screen/settings/Settings';
 import Currency from '../screen/settings/Currency';
-import GeneralSettings from '../screen/settings/GeneralSettings';
-import ContactBook from '../screen/settings/ContactBook';
-import ToolsSettings from '../screen/settings/ToolsSettings';
 import PlausibleDeniability from '../screen/PlausibleDeniability';
 import Licensing from '../screen/settings/Licensing';
 import About from '../screen/settings/About';
@@ -126,13 +123,6 @@ const DetailViewStackScreensStack = () => {
       />
       <DetailViewStack.Screen name="Settings" component={Settings} options={navigationStyle({ title: loc.settings.header })(theme)} />
       <DetailViewStack.Screen name="Currency" component={Currency} options={navigationStyle({ title: loc.settings.currency })(theme)} />
-      <DetailViewStack.Screen
-        name="General"
-        component={GeneralSettings}
-        options={navigationStyle({ title: loc.settings.general })(theme)}
-      />
-      <DetailViewStack.Screen name="Contact" component={ContactBook} options={navigationStyle({ title: loc.settings.contact })(theme)} />
-      <DetailViewStack.Screen name="Tools" component={ToolsSettings} options={navigationStyle({ title: loc.settings.tools })(theme)} />
       <DetailViewStack.Screen
         name="PlausibleDeniability"
         component={PlausibleDeniability}

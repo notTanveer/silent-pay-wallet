@@ -4,12 +4,9 @@ import DeviceInfo from 'react-native-device-info';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 import SettingsIconWrapper from '../../components/icons/SettingsIconWrapper';
 import ChevronRightIcon from '../../components/icons/ChevronRightIcon';
-import GeneralIcon from '../../components/icons/GeneralIcon';
 import CurrencyIcon from '../../components/icons/CurrencyIcon';
-import ContactIcon from '../../components/icons/ContactIcon';
 import SecurityIcon from '../../components/icons/SecurityIcon';
 import NetworkIcon from '../../components/icons/NetworkIcon';
-import ToolsIcon from '../../components/icons/ToolsIcon';
 import AboutIcon from '../../components/icons/AboutIcon';
 import { useTheme } from '../../components/themes';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
@@ -79,28 +76,12 @@ const Row: React.FC<RowProps> = ({ icon, title, subtitle, onPress, testID, showS
 
 const MAIN_ROWS: RowConfig[] = [
   {
-    Icon: GeneralIcon,
-    colorToken: 'settingsGeneralIconColor',
-    title: loc.settings.general,
-    subtitle: loc.settings.general_subtitle,
-    route: 'General',
-    testID: 'GeneralButton',
-  },
-  {
     Icon: CurrencyIcon,
     colorToken: 'settingsCurrencyIconColor',
     title: loc.settings.currency,
     subtitle: loc.settings.currency_subtitle,
     route: 'Currency',
     testID: 'CurrencyButton',
-  },
-  {
-    Icon: ContactIcon,
-    colorToken: 'settingsContactIconColor',
-    title: loc.settings.contact,
-    subtitle: loc.settings.contact_subtitle,
-    route: 'Contact',
-    testID: 'ContactButton',
   },
   {
     Icon: SecurityIcon,
@@ -121,14 +102,6 @@ const MAIN_ROWS: RowConfig[] = [
 ];
 
 const SECONDARY_ROWS: RowConfig[] = [
-  {
-    Icon: ToolsIcon,
-    colorToken: 'settingsToolsIconColor',
-    title: loc.settings.tools,
-    subtitle: loc.settings.tools_subtitle,
-    route: 'Tools',
-    testID: 'ToolsButton',
-  },
   {
     Icon: AboutIcon,
     colorToken: 'settingsAboutIconColor',
