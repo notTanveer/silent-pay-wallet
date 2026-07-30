@@ -17,6 +17,7 @@ const palette = {
   gray400: '#9AA0AA',
   gray450: '#99A1AF',
   gray500: '#81868E',
+  gray700: '#545454',
   gray800: '#3A3A3C',
   gray850: '#313030',
   gray900: '#202020',
@@ -84,6 +85,7 @@ const tokens = {
   receiveBackground: pair('#D1F9D6', 'rgba(210,248,214,.2)'),
   navigationBarColor: pair(palette.white, palette.gray800),
   androidRippleColor: pair('#CCCCCC', '#444444'),
+  backButtonIcon: pair(palette.black, palette.gray700),
   // Brand violet in both modes, matching master #123. Also the canonical token for the former
   // buttonBackgroundColor / mainColor / feeValue, which were identical in both schemes.
   primary: same(palette.violet600),
@@ -128,7 +130,7 @@ const tokens = {
   bannerBorderColor: pair(palette.violet100, '#2D264F'),
   scanBtnBorderColor: pair(palette.violet100, '#241F3B'),
   settingsBtnBackground: pair('#F6F7F9', '#141414'),
-  settingsBtnIconColor: pair('#545454', '#AAAAAA'),
+  settingsBtnIconColor: pair(palette.gray700, '#AAAAAA'),
   searchIconBackground: pair(palette.white, '#0D0D0D'),
   shieldIconBackground: pair('#FAF5FF', palette.violet900),
   shieldIconBorder: pair('#F3E8FF', '#181818'),

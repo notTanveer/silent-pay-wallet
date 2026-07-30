@@ -1,9 +1,7 @@
 import React from 'react';
-import { Keyboard } from 'react-native';
-import { NativeStackNavigationOptions, createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import navigationStyle from '../components/navigationStyle';
-import HeaderBackButton from '../components/HeaderBackButton';
-import { Theme, useTheme } from '../components/themes';
+import { useTheme } from '../components/themes';
 import loc from '../loc';
 import {
   CoinControlComponent,
@@ -20,24 +18,6 @@ import SelectFeeScreen from '../screen/SelectFeeScreen';
 
 const Stack = createNativeStackNavigator<SendDetailsStackParamList>();
 
-// SendDetails is the initial route of this nested stack (index 0), so navigationStyle's
-// default back chevron doesn't apply to it and it needs its own headerLeft.
-const withBackChevron = (
-  options: NativeStackNavigationOptions,
-  { theme, navigation }: { theme: Theme; navigation: any },
-): NativeStackNavigationOptions => ({
-  ...options,
-  headerLeft: () => (
-    <HeaderBackButton
-      color={theme.colors.foregroundColor}
-      onPress={() => {
-        Keyboard.dismiss();
-        navigation.goBack();
-      }}
-    />
-  ),
-});
-
 const SendDetailsStack = () => {
   const theme = useTheme();
 
@@ -46,25 +26,14 @@ const SendDetailsStack = () => {
       <Stack.Screen
         name="SendDetails"
         component={SendDetailsComponent}
-        options={navigationStyle(
-          {
-            title: loc.send.header,
-            statusBarStyle: 'light',
-          },
-          withBackChevron,
-        )(theme)}
+        options={navigationStyle({
+          title: loc.send.header,
+          statusBarStyle: 'light',
+        })(theme)}
         initialParams={{ isEditable: true, feeUnit: BitcoinUnit.BTC, amountUnit: BitcoinUnit.BTC }} // Correctly typed now
       />
-      <Stack.Screen
-        name="SelectFee"
-        component={SelectFeeScreen}
-        options={navigationStyle({ title: loc.send.network_fee_header }, withBackChevron)(theme)}
-      />
-      <Stack.Screen
-        name="Confirm"
-        component={ConfirmComponent}
-        options={navigationStyle({ title: loc.send.confirm_header }, withBackChevron)(theme)}
-      />
+      <Stack.Screen name="SelectFee" component={SelectFeeScreen} options={navigationStyle({ title: loc.send.network_fee_header })(theme)} />
+      <Stack.Screen name="Confirm" component={ConfirmComponent} options={navigationStyle({ title: loc.send.confirm_header })(theme)} />
       <Stack.Screen
         name="PsbtWithHardwareWallet"
         component={PsbtWithHardwareWalletComponent}
