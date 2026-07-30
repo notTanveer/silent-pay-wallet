@@ -105,7 +105,7 @@ const tokens = {
   copyHint: same(palette.gray450), // "tap to copy" icon + label
   progressTrack: same('#EAECF0'),
   buttonBorder: same('#EBEBEB'),
-  textPrimary: same('#1A1A1A'), // titles, primary copy
+  textPrimary: pair('#1A1A1A', palette.white), // titles, primary copy
   textSecondary: same('#8E8E93'), // subtitles, privacy copy
   textMeta: same('#92929B'), // ETA / "%" meta text
   textMuted: same('#7B7A7E'), // card row labels
@@ -137,8 +137,8 @@ const tokens = {
   cardBackground: pair('#FDFCFE', '#1A1A1A'),
 
   // --- Send redesign tokens. Ones using lightOnly() still need real dark values (see todoDark, #3). ---
-  fieldBackground: lightOnly(palette.gray50), // Address / Note field background
-  amountMeta: lightOnly('#9B9BA5'), // BTC unit, fiat estimate, slow/medium ETA
+  fieldBackground: pair(palette.gray50, '#1E1E1E'), // Address / Note field background
+  amountMeta: pair('#9B9BA5', '#AEAEB2'), // BTC unit, fiat estimate, slow/medium ETA
   amountPlaceholder: lightOnly('rgba(0,0,0,0.32)'), // AmountHero empty/placeholder digits
   scrim: lightOnly('rgba(10, 13, 19, 0.8)'), // Success bottom-sheet backdrop
   ctaDisabled: lightOnly(palette.gray450), // disabled primary button background
@@ -146,9 +146,9 @@ const tokens = {
   feeCardSelectedBorder: lightOnly('#B9BAF9'), // selected fee card border
   useMaxBorder: lightOnly('#E8E4FA'), // "Use Max" pill border
   useMaxText: lightOnly('#6E55E0'), // "Use Max" pill text
-  copyButtonBorder: lightOnly(palette.gray200), // Confirm copy-button border
-  divider: lightOnly(palette.gray200), // Confirm section dividers
-  summaryBorder: lightOnly(palette.gray200), // SendDetails fee summary card border
+  copyButtonBorder: pair(palette.gray200, palette.gray800), // Confirm copy-button border
+  divider: pair(palette.gray200, palette.gray850), // Confirm section dividers
+  summaryBorder: pair(palette.gray200, palette.gray850), // SendDetails fee summary card border
   transactionCardBorder: pair(palette.gray200, palette.gray850),
   txIconHaloBorder: pair(palette.violet100, palette.violet850),
   incomingIconBackground: pair('#E7E6F5', '#322361'),

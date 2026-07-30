@@ -1,190 +1,118 @@
 import React, { useCallback, useState } from 'react';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { RouteProp, useFocusEffect, usePreventRemove, useRoute } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import assert from 'assert';
+import { RouteProp, usePreventRemove, useRoute } from '@react-navigation/native';
 import dayjs from 'dayjs';
-import { InteractionManager, StyleSheet, TextInput, View } from 'react-native';
-import { ShroudCard, ShroudText } from '../../ShroudComponents';
-import { Transaction, TWallet } from '../../class/wallets/types';
-import CopyToClipboardButton from '../../components/CopyToClipboardButton';
+import { Pressable, StyleSheet, TextInput, View, Text, Linking } from 'react-native';
 import { useTheme } from '../../components/themes';
-import ToolTipMenu from '../../components/TooltipMenu';
-import loc from '../../loc';
-import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
+import loc, { formatBalanceWithoutSuffix } from '../../loc';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { useStorage } from '../../hooks/context/useStorage';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import { Loading } from '../../components/Loading';
+import TransactionDirectionIcon from '../../components/icons/TransactionDirectionIcon';
+import { getTransactionIconColors } from '../../components/icons/getTransactionIconColors';
+import { isIncomingTransaction, getRelevantAddress } from '../../utils/transactionHelpers';
+import { BitcoinUnit } from '../../models/bitcoinUnits';
+import { ClashFont } from '../../constants/fonts';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
+import ExternalLinkIcon from '../../components/icons/ExternalLinkIcon';
+import DetailRow from '../../components/DetailRow';
 
-const actionKeys = {
-  CopyToClipboard: 'copyToClipboard',
-  GoToWallet: 'goToWallet',
-};
-
-const actionIcons = {
-  Clipboard: {
-    iconValue: 'doc.on.doc',
-  },
-  GoToWallet: {
-    iconValue: 'wallet.pass',
-  },
-};
-
-function onlyUnique(value: any, index: number, self: any[]) {
-  return self.indexOf(value) === index;
-}
-
-function arrDiff(a1: any[], a2: any[]) {
-  const ret = [];
-  for (const v of a2) {
-    if (a1.indexOf(v) === -1) {
-      ret.push(v);
-    }
-  }
-  return ret;
-}
-
-type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'TransactionDetails'>;
 type RouteProps = RouteProp<DetailViewStackParamList, 'TransactionDetails'>;
 
 const TransactionDetails = () => {
-  const { navigate } = useExtendedNavigation<NavigationProps>();
-  const { hash, walletID } = useRoute<RouteProps>().params;
-  const { saveToDisk, txMetadata, wallets, getTransactions } = useStorage();
-  const [from, setFrom] = useState<string[]>([]);
-  const [to, setTo] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [tx, setTX] = useState<Transaction>();
-  const [memo, setMemo] = useState<string>('');
+  const { tx, hash, walletID } = useRoute<RouteProps>().params;
+  const { saveToDisk, txMetadata, wallets } = useStorage();
+  const [memo, setMemo] = useState<string>(txMetadata[hash]?.memo ?? '');
   const { colors } = useTheme();
-  const stylesHooks = StyleSheet.create({
-    memoTextInput: {
-      borderColor: colors.formBorder,
-      borderBottomColor: colors.formBorder,
-      backgroundColor: colors.inputBackgroundColor,
-    },
-  });
+  const wallet = wallets.find(w => w.getID() === walletID);
+  const [copiedAddr, setCopiedAddr] = useState(false);
+  const [copiedTxid, setCopiedTxid] = useState(false);
 
   const saveTransactionDetails = useCallback(() => {
-    if (tx) {
-      txMetadata[tx.hash] = { memo };
-      saveToDisk();
-    }
-  }, [tx, txMetadata, memo, saveToDisk]);
+    txMetadata[hash] = { memo };
+    saveToDisk();
+  }, [hash, txMetadata, memo, saveToDisk]);
 
   usePreventRemove(false, () => {
     saveTransactionDetails();
   });
 
-  useFocusEffect(
-    useCallback(() => {
-      const task = InteractionManager.runAfterInteractions(() => {
-        let foundTx: Transaction | false = false;
-        let newFrom: string[] = [];
-        let newTo: string[] = [];
-        for (const transaction of getTransactions(undefined, Infinity, true)) {
-          if (transaction.hash === hash) {
-            foundTx = transaction;
-            for (const input of foundTx.inputs) {
-              newFrom = newFrom.concat(input?.addresses ?? []);
-            }
-            for (const output of foundTx.outputs) {
-              if (output?.scriptPubKey?.addresses) newTo = newTo.concat(output.scriptPubKey.addresses);
-            }
-          }
-        }
-
-        assert(foundTx, 'Internal error: could not find transaction');
-
-        const wallet = wallets.find(w => w.getID() === walletID);
-        assert(wallet, 'Internal error: could not find wallet');
-
-        setMemo(txMetadata[foundTx.hash]?.memo ?? '');
-        setTX(foundTx);
-        setFrom(newFrom);
-        setTo(newTo);
-        setIsLoading(false);
-      });
-      return () => {
-        task.cancel();
-      };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hash, wallets]),
-  );
-
   const handleMemoBlur = useCallback(() => {
     saveTransactionDetails();
   }, [saveTransactionDetails]);
 
-  const handleCopyPress = (stringToCopy: string) => {
-    Clipboard.setString(stringToCopy);
+  const handleCopy = (text: string, setFlag: (b: boolean) => void) => {
+    Clipboard.setString(text);
+    triggerHapticFeedback(HapticFeedbackTypes.Selection);
+    setFlag(true);
+    setTimeout(() => setFlag(false), 1000);
   };
 
-  if (isLoading || !tx) {
-    return <Loading />;
-  }
-
-  const weOwnAddress = (address: string): TWallet | null => {
-    for (const w of wallets) {
-      if (w.weOwnAddress(address)) {
-        return w;
-      }
-    }
-    return null;
-  };
-
-  const onPressMenuItem = (key: string) => {
-    if (key === actionKeys.CopyToClipboard) {
-      handleCopyPress(key);
-    } else if (key === actionKeys.GoToWallet) {
-      const wallet = weOwnAddress(key);
-      if (wallet) {
-        navigate('WalletsList', {});
-      }
+  const viewInBlockExplorer = () => {
+    if (tx?.hash) {
+      Linking.openURL(`https://mempool.space/tx/${tx.hash}`);
     }
   };
 
-  const renderSection = (array: any[]) => {
-    const fromArray = [];
+  const isIncoming = isIncomingTransaction(tx.value);
+  const amount = formatBalanceWithoutSuffix(tx.value ?? 0, BitcoinUnit.BTC, true);
+  const address = getRelevantAddress(tx, wallet);
+  const confirmations = tx.confirmations;
 
-    for (const [index, address] of array.entries()) {
-      const actions = [];
-      actions.push({
-        id: actionKeys.CopyToClipboard,
-        text: loc.transactions.details_copy,
-        icon: actionIcons.Clipboard,
-      });
-      const isWeOwnAddress = weOwnAddress(address);
-      if (isWeOwnAddress) {
-        actions.push({
-          id: actionKeys.GoToWallet,
-          text: loc.formatString(loc.transactions.view_wallet, { walletLabel: isWeOwnAddress.getLabel() }),
-          icon: actionIcons.GoToWallet,
-        });
-      }
+  // TODO: Add actual split transaction check logic when available in the wallet
+  const isSplit = false;
 
-      fromArray.push(
-        <ToolTipMenu key={address} isButton title={address} isMenuPrimaryAction actions={actions} onPressMenuItem={onPressMenuItem}>
-          <ShroudText style={isWeOwnAddress ? [styles.rowValue, styles.weOwnAddress] : styles.rowValue}>
-            {address}
-            {index === array.length - 1 ? null : ','}
-          </ShroudText>
-        </ToolTipMenu>,
-      );
-    }
-
-    return fromArray;
-  };
+  const stylesHooks = StyleSheet.create({
+    headerStatus: { color: colors.brandPrimary },
+    amountValue: { color: colors.foregroundColor },
+    amountUnit: { color: colors.amountMeta },
+    dateText: { color: colors.chevron },
+    noteLabel: { color: colors.textSecondary },
+    memoTextInput: {
+      backgroundColor: colors.fieldBackground,
+      color: colors.textPrimary,
+    },
+    divider: { backgroundColor: colors.divider },
+    summaryTitle: { color: colors.textPrimary },
+    summaryTitleSecondary: { color: colors.textSecondary },
+    summaryValueConfirmations: { color: colors.brandPrimary },
+    explorerButton: {
+      backgroundColor: colors.background,
+      borderColor: colors.copyButtonBorder,
+    },
+    splitTag: {
+      backgroundColor: colors.incomingIconBackground,
+    },
+  });
 
   return (
-    <SafeAreaScrollView>
-      <ShroudCard>
-        <View>
+    <SafeAreaScrollView contentContainerStyle={styles.scrollContent}>
+      <View style={styles.content}>
+        {/* Header: Icon + Status + Amount + Date */}
+        <View style={styles.headerContainer}>
+          <TransactionDirectionIcon size={44} {...getTransactionIconColors(colors, tx.value)} />
+          <View style={styles.statusContainer}>
+            <Text style={[styles.headerStatus, stylesHooks.headerStatus]}>{isIncoming ? 'RECEIVED' : 'SENT'}</Text>
+            {isSplit && (
+              <View style={[styles.splitTag, stylesHooks.splitTag]}>
+                <Text style={[styles.splitTagText, { color: colors.brandPrimary }]}>SPLIT</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.amountContainer}>
+            <Text style={[styles.amountValue, stylesHooks.amountValue]}>{amount}</Text>
+            <Text style={[styles.amountUnit, stylesHooks.amountUnit]}>BTC</Text>
+          </View>
+          <Text style={[styles.dateText, stylesHooks.dateText]}>{dayjs(tx.timestamp * 1000).format('MMMM D, YYYY [·] h:mm A')}</Text>
+        </View>
+
+        {/* Note Section */}
+        <View style={styles.noteContainer}>
+          <Text style={[styles.noteLabel, stylesHooks.noteLabel]}>Note</Text>
           <TextInput
-            placeholder={loc.send.details_note_placeholder}
+            placeholder="Only visible to you"
             value={memo}
-            placeholderTextColor="#81868e"
+            placeholderTextColor={colors.placeholderTextColor}
             clearButtonMode="while-editing"
             style={[styles.memoTextInput, stylesHooks.memoTextInput]}
             onChangeText={setMemo}
@@ -193,103 +121,196 @@ const TransactionDetails = () => {
           />
         </View>
 
-        {from && (
-          <>
-            <View style={styles.rowHeader}>
-              <ShroudText style={styles.rowCaption}>{loc.transactions.details_from}</ShroudText>
-              <CopyToClipboardButton stringToCopy={from.filter(onlyUnique).join(', ')} />
-            </View>
-            {renderSection(from.filter(onlyUnique))}
-            <View style={styles.marginBottom18} />
-          </>
-        )}
+        {/* Info Rows: Address + Transaction ID */}
+        <View style={styles.infoSection}>
+          <DetailRow
+            label={isIncoming ? 'Received at' : 'Sent to'}
+            value={address || 'Unknown'}
+            mono
+            copied={copiedAddr}
+            onCopy={address ? () => handleCopy(address, setCopiedAddr) : undefined}
+            accessibilityLabel={loc.transactions.details_copy}
+          />
 
-        {to && (
-          <>
-            <View style={styles.rowHeader}>
-              <ShroudText style={styles.rowCaption}>{loc.transactions.details_to}</ShroudText>
-              <CopyToClipboardButton stringToCopy={to.filter(onlyUnique).join(', ')} />
-            </View>
-            {renderSection(arrDiff(from, to.filter(onlyUnique)))}
-            <View style={styles.marginBottom18} />
-          </>
-        )}
+          <View style={[styles.divider, stylesHooks.divider]} />
 
-        {tx.hash && (
-          <>
-            <View style={styles.rowHeader}>
-              <ShroudText style={styles.txid}>{loc.transactions.txid}</ShroudText>
-              <CopyToClipboardButton stringToCopy={tx.hash} />
-            </View>
-            <ShroudText style={styles.rowValue}>{tx.hash}</ShroudText>
-            <View style={styles.marginBottom18} />
-          </>
-        )}
+          <DetailRow
+            label="Transaction ID"
+            value={tx.hash}
+            mono
+            copied={copiedTxid}
+            onCopy={() => handleCopy(tx.hash, setCopiedTxid)}
+            accessibilityLabel={loc.transactions.details_copy_txid}
+          />
+        </View>
 
-        {tx.timestamp && (
-          <>
-            <ShroudText style={styles.rowCaption}>{loc.transactions.details_received}</ShroudText>
-            <ShroudText style={styles.rowValue}>{dayjs(tx.timestamp * 1000).format('LLL')}</ShroudText>
-            <View style={styles.marginBottom18} />
-          </>
-        )}
+        <View style={[styles.divider, stylesHooks.divider]} />
 
-        {tx.inputs && (
-          <>
-            <ShroudText style={styles.rowCaption}>{loc.transactions.details_inputs}</ShroudText>
-            <ShroudText style={styles.rowValue}>{tx.inputs.length}</ShroudText>
-            <View style={styles.marginBottom18} />
-          </>
-        )}
+        {/* Summary: Confirmations, Outputs, Fee */}
+        <View style={styles.summarySection}>
+          <View style={styles.summaryItem}>
+            <Text style={[styles.summaryTitle, stylesHooks.summaryTitle]}>Confirmations</Text>
+            <Text style={[styles.summaryValue, stylesHooks.summaryValueConfirmations]}>{confirmations > 6 ? '6+' : confirmations}</Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text style={[styles.summaryTitle, stylesHooks.summaryTitle]}>Outputs</Text>
+            <Text style={[styles.summaryTitleLight, stylesHooks.summaryTitleSecondary]}>{tx.outputs?.length || 0}</Text>
+          </View>
+          {/* TODO: plugin actual fee value (we don't store the fee rn, in txn) */}
+          <View style={styles.summaryItem}>
+            <Text style={[styles.summaryTitle, stylesHooks.summaryTitle]}>Fee</Text>
+            <Text style={[styles.summaryTitleLight, stylesHooks.summaryTitleSecondary]}>-</Text>
+          </View>
+        </View>
 
-        {tx.outputs?.length > 0 && (
-          <>
-            <ShroudText style={styles.rowCaption}>{loc.transactions.details_outputs}</ShroudText>
-            <ShroudText style={styles.rowValue}>{tx.outputs.length}</ShroudText>
-            <View style={styles.marginBottom18} />
-          </>
-        )}
-      </ShroudCard>
+        {/* Block Explorer Button */}
+        <View style={styles.actionContainer}>
+          <Pressable accessibilityRole="button" style={[styles.explorerButton, stylesHooks.explorerButton]} onPress={viewInBlockExplorer}>
+            <ExternalLinkIcon size={24} color={colors.foregroundColor} />
+            <Text style={[styles.explorerButtonText, { color: colors.foregroundColor }]}>View In Block Explorer</Text>
+          </Pressable>
+        </View>
+      </View>
     </SafeAreaScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  rowHeader: {
+  scrollContent: {
+    flexGrow: 1,
+  },
+  content: {
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    alignItems: 'center',
+    paddingBottom: 24,
     flex: 1,
+  },
+  headerContainer: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  statusContainer: {
     flexDirection: 'row',
-    marginBottom: 4,
-    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  rowCaption: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
+  headerStatus: {
+    fontFamily: ClashFont.medium,
+    fontSize: 14,
+    lineHeight: 24,
+    textTransform: 'uppercase',
+    textAlign: 'center',
   },
-  rowValue: {
-    color: 'grey',
+  splitTag: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 8,
   },
-  marginBottom18: {
-    marginBottom: 18,
+  splitTagText: {
+    fontFamily: ClashFont.semibold,
+    fontSize: 11,
+    textTransform: 'uppercase',
   },
-  txid: {
-    fontSize: 16,
-    fontWeight: '500',
+  amountContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: 8,
   },
-  weOwnAddress: {
-    fontWeight: '700',
+  amountValue: {
+    fontFamily: ClashFont.medium,
+    fontSize: 32,
+    lineHeight: 39,
+    letterSpacing: -1.2,
+    textAlign: 'center',
+  },
+  amountUnit: {
+    fontFamily: ClashFont.regular,
+    fontSize: 15,
+    lineHeight: 18,
+    marginBottom: 5,
+    textAlign: 'center',
+  },
+  dateText: {
+    fontFamily: ClashFont.regular,
+    fontSize: 14,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  noteContainer: {
+    width: '100%',
+    marginTop: 14,
+    gap: 8,
+  },
+  noteLabel: {
+    fontFamily: ClashFont.regular,
+    fontSize: 14,
+    lineHeight: 20,
   },
   memoTextInput: {
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    fontFamily: ClashFont.regular,
+    fontSize: 13,
+    lineHeight: 20,
+    minHeight: 48,
+  },
+  infoSection: {
+    width: '100%',
+    marginTop: 14,
+  },
+  divider: {
+    width: '100%',
+    height: StyleSheet.hairlineWidth,
+    marginVertical: 4,
+  },
+  summarySection: {
+    width: '100%',
     flexDirection: 'row',
-    borderWidth: 1,
-    borderBottomWidth: 0.5,
-    minHeight: 44,
-    height: 44,
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 8,
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    color: '#81868e',
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+  },
+  summaryItem: {
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  summaryTitle: {
+    fontFamily: ClashFont.medium,
+    fontSize: 14,
+    lineHeight: 18,
+    letterSpacing: -0.1,
+  },
+  summaryTitleLight: {
+    fontFamily: ClashFont.regular,
+    fontSize: 14,
+    lineHeight: 18,
+    letterSpacing: -0.1,
+  },
+  summaryValue: {
+    fontFamily: ClashFont.medium,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  actionContainer: {
+    width: '100%',
+    marginTop: 'auto',
+  },
+  explorerButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 16,
+    height: 56,
+    gap: 9,
+  },
+  explorerButtonText: {
+    fontFamily: ClashFont.medium,
+    fontSize: 16,
   },
 });
 
