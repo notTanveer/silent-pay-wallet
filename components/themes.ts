@@ -154,6 +154,21 @@ const tokens = {
   incomingIconBackground: pair('#E7E6F5', '#322361'),
   outgoingIconBackground: pair(palette.gray50, '#161616'),
   outgoingIconBorder: pair('#D9D9D9', palette.violet850),
+
+  // --- Settings screen tokens ---
+  settingsCardBorder: pair('#F0F0F0', '#2C2C2E'),
+  settingsCardBackground: pair('#F9F9FB', '#1C1C1E'),
+  settingsRowTitle: pair('#101828', palette.white),
+  settingsDeleteWallet: pair('#E53935', '#FF453A'),
+  settingsIconWrapperBg: pair(palette.white, '#2C2C2E'),
+  settingsRipple: pair('rgba(0,0,0,0.06)', 'rgba(255,255,255,0.06)'),
+  settingsAboutIconColor: same('#E7000B'),
+  settingsGeneralIconColor: same('#3B80F9'),
+  settingsToolsIconColor: same('#3B80F9'),
+  settingsSecurityIconColor: same('#FF3B30'),
+  settingsContactIconColor: same('#6366F1'),
+  settingsNetworkIconColor: same('#00A63E'),
+  settingsCurrencyIconColor: same('#F7931A'),
 } satisfies Record<string, ColorToken>;
 
 type Scheme = 'light' | 'dark';

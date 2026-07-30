@@ -121,17 +121,7 @@ const DetailViewStackScreensStack = () => {
           gestureEnabled: false,
         }}
       />
-      <DetailViewStack.Screen
-        name="Settings"
-        component={Settings}
-        options={navigationStyle({
-          title: loc.settings.header,
-          headerBackButtonDisplayMode: 'default',
-          headerShadowVisible: false,
-          headerLargeTitle: true,
-          animationTypeForReplace: 'push',
-        })(theme)}
-      />
+      <DetailViewStack.Screen name="Settings" component={Settings} options={navigationStyle({ title: loc.settings.header })(theme)} />
       <DetailViewStack.Screen name="Currency" component={Currency} options={navigationStyle({ title: loc.settings.currency })(theme)} />
       <DetailViewStack.Screen
         name="PlausibleDeniability"
