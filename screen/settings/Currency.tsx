@@ -1,20 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Keyboard, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Keyboard, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getPreferredCurrency, initCurrencyDaemon, setPreferredCurrency } from '../../modules/currency';
 import presentAlert from '../../components/Alert';
-import Row from '../../components/SettingsRow';
+import SettingsRow from '../../components/SettingsRow';
 import SearchIcon from '../../components/icons/SearchIcon';
 import CheckmarkIcon from '../../components/icons/CheckmarkIcon';
 import { useTheme } from '../../components/themes';
 import loc from '../../loc';
 import { FiatUnit, FiatUnitType, getFiatRate } from '../../models/fiatUnit';
 import { useSettings } from '../../hooks/context/useSettings';
-import SafeAreaFlatList from '../../components/SafeAreaFlatList';
 import { ClashFont } from '../../constants/fonts';
 
-const ITEM_HEIGHT = 88;
+// 88 (20 + 48 + 20) plus the hairline separator SettingsRow draws on all but the last row
+const ITEM_HEIGHT = 89;
 
 const TOP_CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD', 'CHF'];
 
@@ -48,6 +48,27 @@ const Currency: React.FC = () => {
     return [...codeMatches, ...nameMatches];
   }, [search]);
 
+  const symbolIcons = useMemo(
+    () =>
+      Object.fromEntries(
+        ALL_CURRENCIES.map(item => [
+          item.endPointKey,
+          <Text
+            key={item.endPointKey}
+            style={[styles.symbol, { color: colors.settingsRowTitle }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.5}
+          >
+            {item.symbol}
+          </Text>,
+        ]),
+      ),
+    [colors.settingsRowTitle],
+  );
+
+  const checkmarkElement = useMemo(() => <CheckmarkIcon color={colors.successCheck} size={20} />, [colors.successCheck]);
+
   const fetchCurrency = useCallback(async () => {
     try {
       const preferredCurrency = await getPreferredCurrency();
@@ -80,20 +101,16 @@ const Currency: React.FC = () => {
       const isDisabled = isLoading || isSelected;
 
       return (
-        <Row
+        <SettingsRow
           disabled={isDisabled}
           selected={isSelected}
           isLoading={isLoading}
           showSeparator={p.index < data.length - 1}
-          roundIcon
-          icon={
-            <Text style={[styles.symbol, { color: colors.settingsRowTitle }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>
-              {p.item.symbol}
-            </Text>
-          }
+          circle
+          icon={symbolIcons[p.item.endPointKey]}
           title={p.item.endPointKey}
           subtitle={SHORT_NAMES[p.item.endPointKey]}
-          rightElement={isSelected ? <CheckmarkIcon color={colors.successCheck} size={20} /> : null}
+          rightElement={isSelected ? checkmarkElement : null}
           onPress={async () => {
             if (isDisabled) return;
 
@@ -122,8 +139,8 @@ const Currency: React.FC = () => {
       isSavingNewPreferredCurrency,
       selectedCurrency,
       data.length,
-      colors.settingsRowTitle,
-      colors.successCheck,
+      symbolIcons,
+      checkmarkElement,
       fetchCurrency,
       setPreferredFiatCurrencyStorage,
     ],
@@ -145,8 +162,7 @@ const Currency: React.FC = () => {
         />
       </View>
       <View style={[styles.listCard, { backgroundColor: colors.settingsCardBackground, marginBottom: insets.bottom }]}>
-        <SafeAreaFlatList
-          style={styles.transparent}
+        <FlatList
           keyboardShouldPersistTaps="always"
           automaticallyAdjustKeyboardInsets
           keyExtractor={keyExtractor}
@@ -194,9 +210,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     borderRadius: 16,
     overflow: 'hidden',
-  },
-  transparent: {
-    backgroundColor: 'transparent',
   },
   symbol: {
     fontSize: 16,

@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import Row from '../../components/SettingsRow';
+import SettingsRow from '../../components/SettingsRow';
 import CurrencyIcon from '../../components/icons/CurrencyIcon';
 import SecurityIcon from '../../components/icons/SecurityIcon';
 import NetworkIcon from '../../components/icons/NetworkIcon';
@@ -84,6 +84,9 @@ const Settings: React.FC = () => {
 
   const cardStyle = [styles.card, { borderColor: colors.settingsCardBorder, backgroundColor: colors.settingsCardBackground }];
 
+  const mainRowIcons = useMemo(() => MAIN_ROWS.map(row => <row.Icon key={row.route} color={colors[row.colorToken]} />), [colors]);
+  const secondaryRowIcons = useMemo(() => SECONDARY_ROWS.map(row => <row.Icon key={row.route} color={colors[row.colorToken]} />), [colors]);
+
   return (
     <SafeAreaScrollView
       contentContainerStyle={styles.content}
@@ -93,9 +96,9 @@ const Settings: React.FC = () => {
     >
       <View style={cardStyle}>
         {MAIN_ROWS.map((row, index) => (
-          <Row
+          <SettingsRow
             key={row.route}
-            icon={<row.Icon color={colors[row.colorToken]} />}
+            icon={mainRowIcons[index]}
             title={row.title}
             subtitle={row.subtitle}
             onPress={() => navigation.navigate(row.route)}
@@ -107,9 +110,9 @@ const Settings: React.FC = () => {
 
       <View style={[cardStyle, styles.cardGap]}>
         {SECONDARY_ROWS.map((row, index) => (
-          <Row
+          <SettingsRow
             key={row.route}
-            icon={<row.Icon color={colors[row.colorToken]} />}
+            icon={secondaryRowIcons[index]}
             title={row.title}
             subtitle={row.subtitle}
             onPress={() => navigation.navigate(row.route)}

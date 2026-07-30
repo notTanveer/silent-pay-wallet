@@ -99,6 +99,8 @@ const RateExtractors = {
 
   Kraken: async (ticker: string): Promise<number> => {
     try {
+      // XXBTZ is Kraken's legacy naming for its Z-class quote assets (USD/EUR/GBP today).
+      // A currency outside that class (e.g. AUD) would need a different pair prefix.
       const json = (await fetchRate(`https://api.kraken.com/0/public/Ticker?pair=XXBTZ${ticker.toUpperCase()}`)) as KrakenResponse;
       if (json?.error?.length) throw new Error(json.error[0]);
       const rate = Number(json?.result?.[`XXBTZ${ticker.toUpperCase()}`]?.c?.[0]);

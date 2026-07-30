@@ -5,7 +5,7 @@ import ChevronRightIcon from './icons/ChevronRightIcon';
 import { useTheme } from './themes';
 import { ClashFont } from '../constants/fonts';
 
-interface RowProps {
+interface SettingsRowProps {
   icon: React.ReactNode;
   title: string;
   subtitle?: string;
@@ -15,11 +15,13 @@ interface RowProps {
   isLoading?: boolean;
   testID?: string;
   showSeparator?: boolean;
-  roundIcon?: boolean;
+  circle?: boolean;
   rightElement?: React.ReactNode;
 }
 
-const Row: React.FC<RowProps> = ({
+const DEFAULT_CHEVRON = <ChevronRightIcon />;
+
+const SettingsRow: React.FC<SettingsRowProps> = ({
   icon,
   title,
   subtitle,
@@ -29,8 +31,8 @@ const Row: React.FC<RowProps> = ({
   isLoading,
   testID,
   showSeparator = true,
-  roundIcon = false,
-  rightElement = <ChevronRightIcon />,
+  circle = false,
+  rightElement = DEFAULT_CHEVRON,
 }) => {
   const { colors } = useTheme();
   return (
@@ -48,7 +50,7 @@ const Row: React.FC<RowProps> = ({
       testID={testID}
       android_ripple={{ color: colors.settingsRipple }}
     >
-      <SettingsIconWrapper circle={roundIcon}>{icon}</SettingsIconWrapper>
+      <SettingsIconWrapper circle={circle}>{icon}</SettingsIconWrapper>
       <View style={styles.rowText}>
         <Text style={[styles.rowTitle, { color: colors.settingsRowTitle }]} numberOfLines={1}>
           {title}
@@ -60,7 +62,7 @@ const Row: React.FC<RowProps> = ({
   );
 };
 
-export default Row;
+export default React.memo(SettingsRow);
 
 const styles = StyleSheet.create({
   row: {
