@@ -79,8 +79,8 @@ const navigationStyle = (
   return theme =>
     ({ navigation, route }) => {
       const isFirstRouteInStack = navigation.getState().index === 0;
-      const isModal = route.params?.presentation === 'modal' || route.params?.presentation === 'transparentModal';
-      const isFormSheet = route.params?.presentation === 'formSheet';
+      const isModal = opts.presentation === 'modal' || opts.presentation === 'transparentModal';
+      const isFormSheet = opts.presentation === 'formSheet';
 
       const closeButton = getCloseButtonPosition(closeButtonPosition, isFirstRouteInStack, isModal);
       const handleClose = getHandleCloseAction(onCloseButtonPressed, navigation, route);
@@ -88,42 +88,35 @@ const navigationStyle = (
       let headerRight;
       let headerLeft;
 
+      const renderCloseButton = () => (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={loc._.close}
+          style={isFormSheet ? [styles.buttonFormSheet, { backgroundColor: theme.colors.lightButton }] : styles.button}
+          onPress={handleClose}
+          testID="NavigationCloseButton"
+        >
+          <Image source={theme.closeImage} />
+        </TouchableOpacity>
+      );
+
       if (closeButton === CloseButtonPosition.Right) {
-        headerRight = () => (
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={loc._.close}
-            style={isFormSheet ? [styles.buttonFormSheet, { backgroundColor: theme.colors.lightButton }] : styles.button}
-            onPress={handleClose}
-            testID="NavigationCloseButton"
-          >
-            <Image source={theme.closeImage} />
-          </TouchableOpacity>
-        );
+        headerRight = renderCloseButton;
       } else if (closeButton === CloseButtonPosition.Left) {
-        headerLeft = () => (
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={loc._.close}
-            style={isFormSheet ? [styles.buttonFormSheet, { backgroundColor: theme.colors.lightButton }] : styles.button}
-            onPress={handleClose}
-            testID="NavigationCloseButton"
-          >
-            <Image source={theme.closeImage} />
-          </TouchableOpacity>
-        );
+        headerLeft = renderCloseButton;
       }
 
-      if (!headerLeft && !isFirstRouteInStack) {
-        headerLeft = () => (
-          <HeaderBackButton
-            color={theme.colors.foregroundColor}
-            onPress={() => {
-              Keyboard.dismiss();
-              navigation.goBack();
-            }}
-          />
-        );
+      if (closeButton === CloseButtonPosition.None) {
+        headerLeft = (props: any) =>
+          props.canGoBack ? (
+            <HeaderBackButton
+              color={theme.colors.backButtonIcon}
+              onPress={() => {
+                Keyboard.dismiss();
+                navigation.goBack();
+              }}
+            />
+          ) : null;
       }
 
       const baseHeaderStyle = {
@@ -135,7 +128,6 @@ const navigationStyle = (
           color: theme.colors.foregroundColor,
         },
         headerTintColor: theme.colors.foregroundColor,
-        headerBackButtonDisplayMode: 'minimal' as const,
       };
       const isLeftCloseButtonAndroid = closeButton === CloseButtonPosition.Left && Platform.OS === 'android';
 
