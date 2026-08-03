@@ -255,6 +255,12 @@ const tokens = {
   emptyStateTitle: pair('#0A0A0A', palette.white),
   tabDivider: pair('#EAECF0', palette.gray850), // hairline rule under the whole tab strip
   tabInactiveText: pair('#667085', palette.gray400), // unselected tab label
+
+  // --- Contact detail tokens ---
+  noticeText: lightOnly('#343437'), // reuse-notice banner copy
+  removeSurface: lightOnly('#FBE1DF'), // Remove Contact button background
+  removeBorder: lightOnly('#FFC9C9'), // Remove Contact button border
+  removeText: lightOnly('#E7000B'), // Remove Contact button label + trash glyph
 } satisfies Record<string, ColorToken>;
 
 type Scheme = 'light' | 'dark';
