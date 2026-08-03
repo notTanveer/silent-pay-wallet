@@ -36,11 +36,19 @@ export const isValidContactAddress = (addr: string): boolean => SilentPayment.is
 
 export const getContact = (contacts: TContacts, address: string): TContact | undefined => contacts[normalizeAddress(address)];
 
+/**
+ * Both validate and upsert start by trimming the name and normalizing the addresses. Doing it
+ * in one place is what keeps them agreeing on what counts as "the same input".
+ */
+const normalizeInput = (input: ContactInput): ContactInput => ({
+  name: input.name.trim(),
+  address: normalizeAddress(input.address),
+  editingAddress: input.editingAddress === undefined ? undefined : normalizeAddress(input.editingAddress),
+});
+
 export const validateContact = (contacts: TContacts, input: ContactInput): ContactError[] => {
   const errors: ContactError[] = [];
-  const name = input.name.trim();
-  const address = normalizeAddress(input.address);
-  const editingAddress = input.editingAddress === undefined ? undefined : normalizeAddress(input.editingAddress);
+  const { name, address, editingAddress } = normalizeInput(input);
 
   if (name.length === 0) errors.push({ field: 'name', code: 'empty' });
 
@@ -62,9 +70,7 @@ export const upsertContact = (contacts: TContacts, input: ContactInput): TContac
   const errors = validateContact(contacts, input);
   if (errors.length > 0) throw new ContactValidationError(errors);
 
-  const address = normalizeAddress(input.address);
-  const editingAddress = input.editingAddress === undefined ? undefined : normalizeAddress(input.editingAddress);
-
+  const { name, address, editingAddress } = normalizeInput(input);
   const next: TContacts = { ...contacts };
 
   // The address is the primary key, so changing it is a delete-then-insert. createdAt has to
@@ -72,7 +78,7 @@ export const upsertContact = (contacts: TContacts, input: ContactInput): TContac
   const createdAt = (editingAddress === undefined ? undefined : next[editingAddress]?.createdAt) ?? Date.now();
   if (editingAddress !== undefined && editingAddress !== address) delete next[editingAddress];
 
-  next[address] = { name: input.name.trim(), createdAt };
+  next[address] = { name, createdAt };
   return next;
 };
 
@@ -113,3 +119,32 @@ export const readContacts = (bucket: unknown): TContacts => {
   }
   return out;
 };
+
+export const contactInitials = (name: string): string =>
+  name
+    .trim()
+    .split(/\s+/)
+    .filter(word => word.length > 0)
+    .slice(0, 2)
+    .map(word => word[0].toUpperCase())
+    .join('');
+
+/**
+ * Derived from the address rather than the name so a rename keeps the colour the user
+ * already associates with this contact.
+ */
+export const contactAvatarColorIndex = (address: string, paletteSize: number): number => {
+  const normalized = normalizeAddress(address);
+  let hash = 0;
+  for (let i = 0; i < normalized.length; i++) {
+    hash = (hash * 31 + normalized.charCodeAt(i)) % 100000007;
+  }
+  return hash % paletteSize;
+};
+
+/**
+ * Shortened form for list rows. Deliberately longer than utils/transactionHelpers.ts's
+ * shortenAddress (4+4): silent payment addresses share a long common bech32m prefix, so a
+ * short preview would make most contacts indistinguishable from one another.
+ */
+export const truncateContactAddress = (address: string): string => `${address.slice(0, 8)}…${address.slice(-4)}`;

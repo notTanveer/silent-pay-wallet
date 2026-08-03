@@ -4,6 +4,8 @@ import {
   ContactValidationError,
   MAX_CONTACT_NAME_LENGTH,
   TContacts,
+  contactAvatarColorIndex,
+  contactInitials,
   getContact,
   isValidContactAddress,
   listContacts,
@@ -11,6 +13,7 @@ import {
   readContacts,
   removeContact,
   searchContacts,
+  truncateContactAddress,
   upsertContact,
   validateContact,
 } from '../../class/contacts';
@@ -237,5 +240,46 @@ describe('readContacts', () => {
 describe('MAX_CONTACT_NAME_LENGTH', () => {
   it('is 50', () => {
     assert.strictEqual(MAX_CONTACT_NAME_LENGTH, 50);
+  });
+});
+
+describe('contactInitials', () => {
+  it('takes the first letter of the first two words', () => {
+    assert.strictEqual(contactInitials('Anmol Sharma'), 'AS');
+  });
+
+  it('uses one letter for a single-word name', () => {
+    assert.strictEqual(contactInitials('Anmol'), 'A');
+  });
+
+  it('ignores extra words and surrounding whitespace', () => {
+    assert.strictEqual(contactInitials('  lena marie fischer  '), 'LM');
+  });
+
+  it('returns an empty string for an empty name', () => {
+    assert.strictEqual(contactInitials('   '), '');
+  });
+});
+
+describe('contactAvatarColorIndex', () => {
+  it('is stable for the same address', () => {
+    assert.strictEqual(contactAvatarColorIndex(ADDR_A, 5), contactAvatarColorIndex(ADDR_A, 5));
+  });
+
+  it('ignores letter case, matching the normalized key', () => {
+    assert.strictEqual(contactAvatarColorIndex(ADDR_A.toUpperCase(), 5), contactAvatarColorIndex(ADDR_A, 5));
+  });
+
+  it('stays within the palette bounds', () => {
+    for (const addr of [ADDR_A, ADDR_B, 'sp1zzz']) {
+      const index = contactAvatarColorIndex(addr, 5);
+      assert.ok(index >= 0 && index < 5, `${index} out of bounds`);
+    }
+  });
+});
+
+describe('truncateContactAddress', () => {
+  it('keeps the first 8 and last 4 characters, joined by an ellipsis', () => {
+    assert.strictEqual(truncateContactAddress(ADDR_A), 'sp1qqfqn…6t0g');
   });
 });
