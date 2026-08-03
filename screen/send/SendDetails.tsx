@@ -653,6 +653,10 @@ const SendDetails = () => {
       tx: tx.toHex(),
       recipients,
       satoshiPerByte: requestedSatPerByte,
+      // `recipients` (above) is post-createTransaction: for a silent-payment target its
+      // address has already been replaced by the derived one-time on-chain output. Capture
+      // the address as the user actually entered/picked it, before that substitution.
+      recipientAddress: addresses.length === 1 ? addresses[0].address : undefined,
     });
     setIsLoading(false);
   };

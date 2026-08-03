@@ -15,6 +15,8 @@ import { BitcoinUnit } from '../../models/bitcoinUnits';
 import { SendDetailsStackParamList } from '../../navigation/SendDetailsStackParamList.ts';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation.ts';
 import { btcToSatoshi, satoshiToLocalCurrency } from '../../modules/currency';
+import { isValidContactAddress } from '../../class/contacts';
+import { useContacts } from '../../hooks/context/useContacts';
 
 type RouteProps = RouteProp<SendDetailsStackParamList, 'Success'>;
 
@@ -23,11 +25,20 @@ const Success = () => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const route = useRoute<RouteProps>();
-  const { amount } = route.params || {};
+  const { amount, recipientAddress } = route.params || {};
+  const { getContact } = useContacts();
 
   const amountStr = amount != null ? String(amount) : '0';
   const amountSats = amount != null ? btcToSatoshi(amount) : 0;
   const fiat = `≈ ${satoshiToLocalCurrency(amountSats)}`;
+
+  // Offer the button only for a single silent payment recipient that is not already saved.
+  const canSaveContact =
+    recipientAddress !== undefined && isValidContactAddress(recipientAddress) && getContact(recipientAddress) === undefined;
+
+  const onSaveAsContactPressed = () => {
+    navigation.navigate('ContactEdit', { mode: 'add', address: recipientAddress, origin: 'success' });
+  };
 
   const onDonePressed = () => {
     // @ts-ignore getParent() typing doesn't expose pop()
@@ -53,6 +64,17 @@ const Success = () => {
         <Text style={[styles.sentText, stylesHook.sentText]}>{loc.send.sent_successfully}</Text>
 
         <AmountHero amount={amountStr} fiat={fiat} />
+
+        {canSaveContact && (
+          <Pressable
+            accessibilityRole="button"
+            testID="successSaveContactButton"
+            onPress={onSaveAsContactPressed}
+            style={[styles.saveContactButton, { backgroundColor: colors.surfaceSubtle }]}
+          >
+            <Text style={[styles.doneButtonText, { color: colors.brandPrimary }]}>{loc.contacts.save_as_contact}</Text>
+          </Pressable>
+        )}
 
         <Pressable
           accessibilityRole="button"
@@ -177,6 +199,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 4,
+  },
+  saveContactButton: {
+    width: '100%',
+    height: 56,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   doneButtonText: {
     fontFamily: ClashFont.medium,

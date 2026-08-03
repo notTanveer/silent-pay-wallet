@@ -47,7 +47,8 @@
         "remove_confirm_title": "Remove contact?",
         "remove_confirm_message": "This only removes the contact from this wallet. It does not affect any payments you have already made.",
         "pick_header": "Pick Contacts",
-        "manage": "Manage Contact"
+        "manage": "Manage Contact",
+        "save_as_contact": "Save as a Contact"
     },
     "errors": {
         "broadcast": "Broadcast failed.",
