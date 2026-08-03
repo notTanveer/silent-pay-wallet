@@ -41,7 +41,7 @@
         "address_invalid": "That doesn't look like a valid address",
         "address_duplicate": "This address is already saved as \"{name}\"",
         "save": "Save Contact",
-        "settings_subtitle": "Saved silent payment addresses",
+        "settings_subtitle": "Manage Silent payment Contacts",
         "pay": "Pay",
         "reuse_notice": "You can reuse this address as often as you like. Each payment lands at a fresh on-chain address, so no one can link them.",
         "reuse_notice_emphasis": "on-chain address",
@@ -49,7 +49,9 @@
         "remove_confirm_title": "Remove contact?",
         "remove_confirm_message": "This only removes the contact from this wallet. It does not affect any payments you have already made.",
         "pick_header": "Pick Contacts",
-        "manage": "Manage Contact"
+        "save_as_contact": "Save as Contact",
+        "saved_to_contacts": "Saved to Contacts",
+        "to_name": "to {name}"
     },
     "errors": {
         "broadcast": "Broadcast failed.",

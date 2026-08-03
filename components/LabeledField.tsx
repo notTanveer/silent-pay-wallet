@@ -57,6 +57,8 @@ const styles = StyleSheet.create({
   inputWrap: {
     flex: 1,
     width: '100%',
+    // stacks anything rendered above the input (e.g. the send screen's contact chip)
+    gap: 10,
   },
 });
 

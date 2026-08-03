@@ -9,7 +9,6 @@ import { Keyboard, LayoutAnimation, ScrollView, StyleSheet, Text, Pressable, Vie
 import { SilentPayment } from 'silent-payments';
 import { btcToSatoshi, satoshiToBTC, satoshiToLocalCurrency } from '../../modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes, triggerSelectionHapticFeedback } from '../../modules/hapticFeedback';
-import { isValidContactAddress } from '../../class/contacts';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import { CreateTransactionTarget, CreateTransactionUtxo, TWallet } from '../../class/wallets/types';
@@ -22,8 +21,9 @@ import HeaderMenuButton from '../../components/HeaderMenuButton';
 import ChevronRightIcon from '../../components/icons/ChevronRightIcon';
 import ScanQRIcon from '../../components/icons/ScanQRIcon';
 import ContactIcon from '../../components/icons/ContactIcon';
-import SaveIcon from '../../components/icons/SaveIcon';
+import ContactChip from '../../components/ContactChip';
 import ContactPickerSheet from '../../components/ContactPickerSheet';
+import SaveContactRow from '../../components/SaveContactRow';
 import { BottomModalHandle } from '../../components/BottomModal';
 import FieldTextInput, { FieldAddressInput } from '../../components/FieldTextInput';
 import LabeledField from '../../components/LabeledField';
@@ -561,32 +561,10 @@ const SendDetails = () => {
   const { contactList, getContact } = useContacts();
   const contactSheetRef = useRef<BottomModalHandle>(null);
 
-  // Offer the affordance only for a valid silent payment address that isn't already saved.
-  const canSaveContact = isValidContactAddress(recipient?.address ?? '') && getContact(recipient?.address ?? '') === undefined;
+  // A saved payee is named by the chip above the address; an unsaved one gets the save affordance.
+  const contact = getContact(recipient?.address ?? '');
 
-  const navigateToContactEdit = useCallback(
-    (address?: string) => {
-      // @ts-ignore: DrawerRoot/DetailViewStackScreensStack aren't in SendDetailsStackParamList
-      navigation.navigate('DrawerRoot', {
-        screen: 'DetailViewStackScreensStack',
-        params: { screen: 'ContactEdit', params: { mode: 'add', address } },
-      });
-    },
-    [navigation],
-  );
-
-  const onSaveAsContactPressed = useCallback(() => {
-    navigateToContactEdit(recipient?.address);
-  }, [navigateToContactEdit, recipient?.address]);
-
-  const onContactsPressed = useCallback(() => {
-    // With nothing saved yet, an empty sheet is a dead end — go straight to adding one.
-    if (contactList.length === 0) {
-      navigateToContactEdit();
-      return;
-    }
-    contactSheetRef.current?.present();
-  }, [contactList.length, navigateToContactEdit]);
+  const onContactsPressed = useCallback(() => contactSheetRef.current?.present(), []);
 
   const onContactPicked = useCallback(
     (address: string) => {
@@ -672,6 +650,10 @@ const SendDetails = () => {
       tx: tx.toHex(),
       recipients,
       satoshiPerByte: requestedSatPerByte,
+      // `recipients` (above) is post-createTransaction: for a silent-payment target its
+      // address has already been replaced by the derived one-time on-chain output. Capture
+      // the address as the user actually entered/picked it, before that substitution.
+      recipientAddress: addresses.length === 1 ? addresses[0].address : undefined,
     });
     setIsLoading(false);
   };
@@ -864,8 +846,6 @@ const SendDetails = () => {
     feeSummaryValue: { color: colors.textEmphasis },
     feeSummaryTextDisabled: { color: colors.textDisabled },
     feeSummaryValueMeta: { color: colors.amountMeta },
-    saveContactRow: { backgroundColor: colors.cardBackground, borderColor: colors.dashedBorder },
-    saveContactText: { color: colors.brandPrimary },
   });
 
   const renderCoinsSelected = () => {
@@ -913,19 +893,23 @@ const SendDetails = () => {
                       <Pressable accessibilityRole="button" onPress={navigateToQRCodeScanner} style={[styles.scanBtn, stylesHook.scanBtn]}>
                         <ScanQRIcon color={colors.brandStrong} size={20} />
                       </Pressable>
-                      <Pressable
-                        accessibilityRole="button"
-                        onPress={onContactsPressed}
-                        style={[styles.contactBtn, stylesHook.scanBtn]}
-                        testID="SendDetailsContactsButton"
-                        accessibilityLabel={loc.contacts.header}
-                      >
-                        <ContactIcon color={colors.brandStrong} size={24} />
-                      </Pressable>
+                      {/* Nothing to pick from means the button can only open an empty sheet. */}
+                      {contactList.length > 0 && (
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={onContactsPressed}
+                          style={[styles.contactBtn, stylesHook.scanBtn]}
+                          testID="SendDetailsContactsButton"
+                          accessibilityLabel={loc.contacts.header}
+                        >
+                          <ContactIcon color={colors.brandStrong} size={24} />
+                        </Pressable>
+                      )}
                     </View>
                   ) : undefined
                 }
               >
+                {contact && <ContactChip name={contact.name} colorIndex={contact.colorIndex} testID="SendDetailsContactChip" />}
                 <FieldAddressInput
                   placeholder={loc.send.paste_or_scan}
                   value={recipient?.address}
@@ -935,18 +919,8 @@ const SendDetails = () => {
                 />
               </LabeledField>
 
-              {canSaveContact && (
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={onSaveAsContactPressed}
-                  style={[styles.saveContactRow, stylesHook.saveContactRow]}
-                  testID="SendDetailsSaveContactButton"
-                >
-                  <SaveIcon size={20} color={colors.brandPrimary} />
-                  <Text style={[styles.saveContactText, stylesHook.saveContactText]}>{loc.contacts.save_as_contact}</Text>
-                  <ChevronRightIcon color={colors.chevron} />
-                </Pressable>
-              )}
+              {/* The chip above already names a saved payee, so nothing stands in once this retires. */}
+              <SaveContactRow address={recipient?.address} />
             </View>
 
             <LabeledField label={loc.send.label_note}>
@@ -1036,23 +1010,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addressGroup: { gap: 8 },
-  saveContactRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 44,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    gap: 10,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: 16,
-  },
-  saveContactText: {
-    flex: 1,
-    fontFamily: ClashFont.medium,
-    fontSize: 14,
-    lineHeight: 20,
-  },
   select: {
     marginBottom: 24,
     marginHorizontal: 24,

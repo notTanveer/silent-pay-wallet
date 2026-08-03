@@ -58,13 +58,6 @@ const ContactEdit: React.FC = () => {
   // Where a save lands depends on how the screen was reached. Kept out of onSave so the save
   // itself reads as save-then-navigate rather than three returns inside a try block.
   const navigateAfterSave = () => {
-    if (params.origin === 'success') {
-      // Returning to the success sheet of an already-sent payment is a dead end, so drop
-      // the send stack entirely and land on the list with back going Home.
-      navigation.reset({ index: 1, routes: [{ name: 'WalletsList' }, { name: 'Contacts' }] });
-      return;
-    }
-
     const normalized = normalizeAddress(address);
     if (editingAddress !== undefined && normalized !== normalizeAddress(editingAddress)) {
       // The old key is gone, so the ContactDetail below this form is holding a stale route param.

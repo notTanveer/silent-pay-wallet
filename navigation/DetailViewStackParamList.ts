@@ -49,7 +49,7 @@ export type DetailViewStackParamList = {
   DenominationSettings: undefined;
   Contacts: undefined;
   ContactDetail: { address: string };
-  ContactEdit: { mode: 'add' | 'edit'; address?: string; origin?: 'success' };
+  ContactEdit: { mode: 'add' | 'edit'; address?: string };
   Tools: undefined;
   PlausibleDeniability: undefined;
   Licensing: undefined;
