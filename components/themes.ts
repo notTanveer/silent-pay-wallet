@@ -172,6 +172,11 @@ const tokens = {
 
   // --- Contacts empty state tokens ---
   contactsEmptyTitle: pair('#0A0A0A', palette.white),
+
+  // --- Contact detail tokens ---
+  noticeText: lightOnly('#343437'), // reuse-notice banner copy
+  removeSurface: lightOnly('#FBE1DF'), // Remove Contact button background
+  removeBorder: lightOnly('#FFC9C9'), // Remove Contact button border
 } satisfies Record<string, ColorToken>;
 
 type Scheme = 'light' | 'dark';

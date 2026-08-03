@@ -32,6 +32,7 @@ import SyncScreen from '../screen/wallets/SyncScreen';
 import OnboardingStack from './OnboardingStack';
 import ContactList from '../screen/contacts/ContactList';
 import ContactEdit from '../screen/contacts/ContactEdit';
+import ContactDetail from '../screen/contacts/ContactDetail';
 
 const DetailViewStackScreensStack = () => {
   const theme = useTheme();
@@ -110,6 +111,11 @@ const DetailViewStackScreensStack = () => {
         name="ContactEdit"
         component={ContactEdit}
         options={navigationStyle({ title: loc.contacts.add_header })(theme)}
+      />
+      <DetailViewStack.Screen
+        name="ContactDetail"
+        component={ContactDetail}
+        options={navigationStyle({ title: loc.contacts.header })(theme)}
       />
       <DetailViewStack.Screen
         name="PlausibleDeniability"

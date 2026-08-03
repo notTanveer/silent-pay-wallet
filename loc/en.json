@@ -21,7 +21,8 @@
         "unlock": "Unlock",
         "port": "Port",
         "ssl_port": "SSL Port",
-        "suggested": "Suggested"
+        "suggested": "Suggested",
+        "edit": "Edit"
     },
     "contacts": {
         "header": "Contacts",
@@ -39,7 +40,12 @@
         "address_invalid": "That doesn't look like a valid address",
         "address_duplicate": "This address is already saved as \"{name}\"",
         "save": "Save Contact",
-        "settings_subtitle": "Saved silent payment addresses"
+        "settings_subtitle": "Saved silent payment addresses",
+        "pay": "Pay",
+        "reuse_notice": "You can reuse this address as often as you like. Each payment lands at a fresh on-chain address, so no one can link them.",
+        "remove": "Remove Contact",
+        "remove_confirm_title": "Remove contact?",
+        "remove_confirm_message": "This only removes the contact from this wallet. It does not affect any payments you have already made."
     },
     "errors": {
         "broadcast": "Broadcast failed.",
