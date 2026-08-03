@@ -7,7 +7,7 @@ import { useTheme } from './themes';
 
 interface LabeledFieldProps {
   label: string;
-  children: React.ReactNode; // the input element
+  children: React.ReactNode; // the input element, normally a FieldTextInput
   trailing?: React.ReactNode; // e.g. a scan button
   testID?: string;
   /** Tinted variant for the Address field: light purple background + border. */

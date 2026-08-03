@@ -47,7 +47,9 @@ export type DetailViewStackParamList = {
   General: undefined;
   ThemeSettings: undefined;
   DenominationSettings: undefined;
-  Contact: undefined;
+  Contacts: undefined;
+  ContactDetail: { address: string };
+  ContactEdit: { mode: 'add' | 'edit'; address?: string; origin?: 'success' };
   Tools: undefined;
   PlausibleDeniability: undefined;
   Licensing: undefined;

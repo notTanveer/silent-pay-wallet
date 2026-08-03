@@ -24,15 +24,15 @@ describe('ContactsProvider', () => {
     renderHook(() => useContacts(), { wrapper: ({ children }) => <ContactsProvider>{children}</ContactsProvider> });
 
   it('syncs from the shroudApp singleton once wallets are initialized', () => {
-    shroudApp.contacts = { [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000 } };
+    shroudApp.contacts = { [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000, colorIndex: 2 } };
 
     const { result } = renderContacts();
 
-    assert.deepStrictEqual(result.current.contacts, { [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000 } });
+    assert.deepStrictEqual(result.current.contacts, { [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000, colorIndex: 2 } });
   });
 
   it('resetContacts re-syncs from the singleton after it is mutated directly', () => {
-    shroudApp.contacts = { [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000 } };
+    shroudApp.contacts = { [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000, colorIndex: 2 } };
     const { result } = renderContacts();
     assert.notDeepStrictEqual(result.current.contacts, {});
 

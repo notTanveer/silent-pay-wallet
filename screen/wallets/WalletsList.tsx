@@ -33,13 +33,33 @@ import ShieldReceiveIcon from '../../components/icons/ShieldReceiveIcon';
 import ReceiveArrowIcon from '../../components/icons/ReceiveArrowIcon';
 import PayArrowIcon from '../../components/icons/PayArrowIcon';
 import ChevronRightIcon from '../../components/icons/ChevronRightIcon';
+import AddIcon from '../../components/icons/AddIcon';
+import ContactRow from '../../components/ContactRow';
+import ContactsEmptyState from '../../components/ContactsEmptyState';
+import EmptyStateCard from '../../components/EmptyStateCard';
+import UnderlineTabs from '../../components/UnderlineTabs';
+import { ContactListItem } from '../../class/contacts';
+import { useContacts } from '../../hooks/context/useContacts';
 
-const WalletsListSections = { WALLET: 'WALLET', TRANSACTIONS: 'TRANSACTIONS' };
+// The second section holds whichever tab is selected, so it is named for the role, not the content.
+const WalletsListSections = { WALLET: 'WALLET', LIST: 'LIST' };
+
+enum HomeTab {
+  Transactions,
+  Contacts,
+}
+
+// The wallet section's single row is its own key string; the list section holds whichever tab
+// is selected.
+type SectionItem = ExtendedTransaction | ContactListItem | string;
 
 type SectionData = {
   key: string;
-  data: Transaction[] | string[];
+  data: Transaction[] | ContactListItem[] | string[];
 };
+
+// Rows arrive from the section list untyped, and only a contact carries an address.
+const isContactItem = (item: SectionItem): item is ContactListItem => typeof item === 'object' && 'address' in item;
 
 enum ActionTypes {
   SET_LOADING,
@@ -110,7 +130,9 @@ const WalletsList: React.FC = () => {
   const wasAutoPausedRef = useRef(false);
   const { colors } = useTheme();
   const navigation = useExtendedNavigation<NavigationProps>();
+  const { contactList } = useContacts();
   const sendToAddress = useSendToAddress();
+  const [activeTab, setActiveTab] = useState(HomeTab.Transactions);
   const dataSource = getTransactions(undefined, Infinity);
   const walletsCount = useRef<number>(wallets.length);
   const [showZeroBalanceToast, setShowZeroBalanceToast] = useState(false);
@@ -167,10 +189,6 @@ const WalletsList: React.FC = () => {
       },
       cardStyle: {
         backgroundColor: colors.background,
-        borderColor: colors.lightBorder,
-      },
-      emptyCardStyle: {
-        backgroundColor: colors.cardBackground,
         borderColor: colors.lightBorder,
       },
       foregroundText: {
@@ -308,6 +326,10 @@ const WalletsList: React.FC = () => {
     [navigation],
   );
 
+  const openAddContact = useCallback(() => {
+    navigation.navigate('ContactEdit', { mode: 'add' });
+  }, [navigation]);
+
   const renderListHeaderComponent = useCallback(() => {
     const wallet = wallets.length > 0 ? wallets[0] : null;
     return (
@@ -329,7 +351,26 @@ const WalletsList: React.FC = () => {
             <ChevronRightIcon color={colors.chevron} />
           </TouchableOpacity>
         )}
-        {dataSource.length > 0 && <Text style={[styles.transactionsLabel, stylesHook.alternativeText]}>{loc.transactions.list_title}</Text>}
+        <View style={styles.tabRow}>
+          <UnderlineTabs
+            values={[loc.transactions.list_title, loc.contacts.header]}
+            selectedIndex={activeTab}
+            onChange={setActiveTab}
+            testIDPrefix="HomeTab"
+          />
+          {/* The empty state carries its own add button, so this one would be the second on screen. */}
+          {activeTab === HomeTab.Contacts && contactList.length > 0 && (
+            <TouchableOpacity
+              style={styles.addContactButton}
+              onPress={openAddContact}
+              accessibilityRole="button"
+              testID="HomeAddContactButton"
+            >
+              <AddIcon size={24} color={colors.brandPrimary} />
+              <Text style={[styles.addContactLabel, { color: colors.brandPrimary }]}>{loc.contacts.add}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     );
   }, [
@@ -339,7 +380,9 @@ const WalletsList: React.FC = () => {
     stylesHook.alternativeText,
     navigation,
     wallets,
-    dataSource.length,
+    activeTab,
+    contactList.length,
+    openAddContact,
     colors.searchIconBackground,
     colors.brandPrimary,
     colors.chevron,
@@ -350,6 +393,20 @@ const WalletsList: React.FC = () => {
       <TransactionListItem key={item.hash} item={item} itemPriceUnit={item.walletPreferredBalanceUnit} walletID={item.walletID} />
     ),
     [],
+  );
+
+  const renderContactRow = useCallback(
+    (item: ContactListItem) => (
+      <ContactRow
+        key={item.address}
+        variant="card"
+        contact={item}
+        onPress={() => navigation.navigate('ContactDetail', { address: item.address })}
+        onPay={() => sendToAddress(item.address)}
+        testID={`Contact-${item.address}`}
+      />
+    ),
+    [navigation, sendToAddress],
   );
 
   const changeWalletBalanceUnit = useCallback(async () => {
@@ -507,17 +564,17 @@ const WalletsList: React.FC = () => {
   ]);
 
   const renderSectionItem = useCallback(
-    (item: { section: any; item: ExtendedTransaction }) => {
+    (item: { section: any; item: SectionItem }) => {
       switch (item.section.key) {
         case WalletsListSections.WALLET:
           return sizeClass === SizeClass.Large ? null : renderWalletItem();
-        case WalletsListSections.TRANSACTIONS:
-          return renderTransactionListsRow(item.item);
+        case WalletsListSections.LIST:
+          return isContactItem(item.item) ? renderContactRow(item.item) : renderTransactionListsRow(item.item as ExtendedTransaction);
         default:
           return null;
       }
     },
-    [sizeClass, renderTransactionListsRow, renderWalletItem],
+    [sizeClass, renderContactRow, renderTransactionListsRow, renderWalletItem],
   );
 
   const renderSectionHeader = useCallback(
@@ -527,7 +584,7 @@ const WalletsList: React.FC = () => {
       }
 
       switch (section.section.key) {
-        case WalletsListSections.TRANSACTIONS:
+        case WalletsListSections.LIST:
           return renderListHeaderComponent();
         default:
           return null;
@@ -537,20 +594,26 @@ const WalletsList: React.FC = () => {
   );
 
   const renderEmptyCard = useCallback(() => {
+    if (activeTab === HomeTab.Contacts) {
+      return contactList.length === 0 ? <ContactsEmptyState onAdd={openAddContact} /> : null;
+    }
+
     if (dataSource.length !== 0 || isLoading) return null;
     const wallet = wallets.length > 0 ? wallets[0] : null;
     return (
-      <View style={[styles.emptyCard, stylesHook.emptyCardStyle]} testID="NoTransactionsMessage">
-        <View style={styles.emptyIconOuter}>
+      <EmptyStateCard
+        icon={
           <ShieldReceiveIcon
             size={94}
             background={colors.shieldIconBackground}
             borderColor={colors.shieldIconBorder}
             accent={colors.brandPrimary}
           />
-        </View>
-        <Text style={[styles.emptyTitle, stylesHook.foregroundText]}>{loc.wallets.no_transactions_title}</Text>
-        <Text style={[styles.emptySubtitle, stylesHook.alternativeText]}>{loc.wallets.no_transactions_subtitle}</Text>
+        }
+        title={loc.wallets.no_transactions_title}
+        subtitle={loc.wallets.no_transactions_subtitle}
+        testID="NoTransactionsMessage"
+      >
         {wallet && (
           <TouchableOpacity
             style={[styles.shareAddressButton, stylesHook.shareAddrStyle]}
@@ -561,16 +624,16 @@ const WalletsList: React.FC = () => {
             <Text style={[styles.shareAddressText, stylesHook.shareAddrText]}>{loc.wallets.share_address}</Text>
           </TouchableOpacity>
         )}
-      </View>
+      </EmptyStateCard>
     );
   }, [
+    activeTab,
+    contactList.length,
+    openAddContact,
     dataSource.length,
     isLoading,
     wallets,
     navigation,
-    stylesHook.emptyCardStyle,
-    stylesHook.foregroundText,
-    stylesHook.alternativeText,
     stylesHook.shareAddrStyle,
     stylesHook.shareAddrText,
     colors.shieldIconBackground,
@@ -578,24 +641,28 @@ const WalletsList: React.FC = () => {
     colors.brandPrimary,
   ]);
 
-  const sectionListKeyExtractor = useCallback((item: any, index: any) => {
-    return `${item}${index}`;
-  }, []);
+  // Contacts are keyed by address so switching tabs can't reuse a transaction's row identity.
+  const sectionListKeyExtractor = useCallback(
+    (item: SectionItem, index: number) => (isContactItem(item) ? `contact-${item.address}` : `${item}${index}`),
+    [],
+  );
 
   const refreshProps = isDesktop ? {} : { refreshing: isLoading, onRefresh };
 
   const sections: SectionData[] = useMemo(() => {
-    // On large screens, only show transactions section
+    const listData = activeTab === HomeTab.Contacts ? contactList : dataSource;
+
+    // On large screens, only show the list section
     if (sizeClass === SizeClass.Large) {
-      return [{ key: WalletsListSections.TRANSACTIONS, data: dataSource }];
+      return [{ key: WalletsListSections.LIST, data: listData }];
     }
 
-    // On smaller screens, show both wallet and transactions
+    // On smaller screens, show both wallet and list
     return [
       { key: WalletsListSections.WALLET, data: [WalletsListSections.WALLET] },
-      { key: WalletsListSections.TRANSACTIONS, data: dataSource },
+      { key: WalletsListSections.LIST, data: listData },
     ];
-  }, [sizeClass, dataSource]);
+  }, [sizeClass, activeTab, contactList, dataSource]);
 
   return (
     <>
@@ -737,44 +804,27 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: ClashFont.regular,
   },
-  transactionsLabel: {
-    fontSize: 16,
-    lineHeight: 20,
-    letterSpacing: 0.48,
-    marginBottom: 12,
+  tabRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 16,
     marginTop: 8,
+    marginBottom: 16,
+  },
+  addContactButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+  },
+  addContactLabel: {
+    fontSize: 16,
+    lineHeight: 26,
     fontFamily: ClashFont.medium,
   },
   emptyCardOuter: {
     flex: 1,
-  },
-  emptyCard: {
-    flex: 1,
-    margin: 16,
-    marginTop: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 32,
-    alignItems: 'center',
-  },
-  emptyIconOuter: {
-    marginBottom: 37,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    lineHeight: 32,
-    letterSpacing: 0.07,
-    textAlign: 'center',
-    marginBottom: 23,
-    fontFamily: ClashFont.medium,
-  },
-  emptySubtitle: {
-    fontSize: 16,
-    lineHeight: 20,
-    letterSpacing: -0.08,
-    textAlign: 'center',
-    marginBottom: 30,
-    fontFamily: ClashFont.regular,
   },
   shareAddressButton: {
     borderRadius: 16,

@@ -1,16 +1,21 @@
 import assert from 'assert';
 
 import {
+  CONTACT_AVATAR_PALETTE,
   ContactValidationError,
   MAX_CONTACT_NAME_LENGTH,
   TContacts,
+  contactInitials,
   getContact,
   isValidContactAddress,
+  legacyContactColorIndex,
   listContacts,
   normalizeAddress,
+  randomContactColorIndex,
   readContacts,
   removeContact,
   searchContacts,
+  truncateContactAddress,
   upsertContact,
   validateContact,
 } from '../../class/contacts';
@@ -18,7 +23,7 @@ import {
 const ADDR_A = 'sp1qqfqnnv8czppwysafq3uwgwvsc638hc8rx3hscuddh0xa2yd746s7xqh6yy9ncjnqhqxazct0fzh98w7lpkm5fvlepqec2yy0sxlq4j6ccc3h6t0g';
 const ADDR_B = 'sp1qqvchcnrcqpdutxhpf57ptn3wajj0ymqxwzu9g6vj9uxx3wuvlykhyqh99hyh33y5593802pzw5rtw040zrw9f8re52tgcwngc5974w5evuufdy0m';
 
-const withA = (): TContacts => ({ [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000 } });
+const withA = (): TContacts => ({ [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000, colorIndex: 2 } });
 
 describe('normalizeAddress', () => {
   it('trims surrounding whitespace', () => {
@@ -85,8 +90,8 @@ describe('validateContact', () => {
 
   it('still flags a collision with a different contact while editing', () => {
     const contacts: TContacts = {
-      [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000 },
-      [ADDR_B]: { name: 'Lena Fischer', createdAt: 2000 },
+      [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000, colorIndex: 2 },
+      [ADDR_B]: { name: 'Lena Fischer', createdAt: 2000, colorIndex: 3 },
     };
     const errors = validateContact(contacts, { name: 'Lena Fischer', address: ADDR_A, editingAddress: ADDR_B });
     assert.deepStrictEqual(errors, [{ field: 'address', code: 'duplicate', conflictName: 'Anmol Sharma' }]);
@@ -117,18 +122,38 @@ describe('upsertContact', () => {
     assert.deepStrictEqual(Object.keys(contacts), [ADDR_A]);
   });
 
-  it('keeps the key and createdAt when only the name changes', () => {
+  it('keeps the key, createdAt and colour when only the name changes', () => {
     const next = upsertContact(withA(), { name: 'Anmol S.', address: ADDR_A, editingAddress: ADDR_A });
     assert.deepStrictEqual(Object.keys(next), [ADDR_A]);
     assert.strictEqual(next[ADDR_A].name, 'Anmol S.');
     assert.strictEqual(next[ADDR_A].createdAt, 1000);
+    assert.strictEqual(next[ADDR_A].colorIndex, 2);
   });
 
-  it('moves the record and preserves createdAt when the address changes', () => {
+  it('moves the record and preserves createdAt and the colour when the address changes', () => {
     const next = upsertContact(withA(), { name: 'Anmol Sharma', address: ADDR_B, editingAddress: ADDR_A });
     assert.strictEqual(next[ADDR_A], undefined);
     assert.strictEqual(next[ADDR_B].name, 'Anmol Sharma');
     assert.strictEqual(next[ADDR_B].createdAt, 1000);
+    assert.strictEqual(next[ADDR_B].colorIndex, 2);
+  });
+
+  it('will not repaint an existing contact, even when handed a colour', () => {
+    const next = upsertContact(withA(), { name: 'Anmol Sharma', address: ADDR_A, editingAddress: ADDR_A, colorIndex: 4 });
+    assert.strictEqual(next[ADDR_A].colorIndex, 2);
+  });
+
+  it('stores the caller-chosen colour for a new contact, so a preview matches what is saved', () => {
+    const next = upsertContact({}, { name: 'Lena Fischer', address: ADDR_B, colorIndex: 3 });
+    assert.strictEqual(next[ADDR_B].colorIndex, 3);
+  });
+
+  it('draws a colour for a new contact when the caller offers none or an unusable one', () => {
+    for (const colorIndex of [undefined, -1, 1.5, CONTACT_AVATAR_PALETTE.length]) {
+      const next = upsertContact({}, { name: 'Lena Fischer', address: ADDR_B, colorIndex });
+      const index = next[ADDR_B].colorIndex;
+      assert.ok(Number.isInteger(index) && index >= 0 && index < CONTACT_AVATAR_PALETTE.length, `${index} out of bounds`);
+    }
   });
 
   it('throws ContactValidationError carrying the errors when input is invalid', () => {
@@ -142,8 +167,8 @@ describe('upsertContact', () => {
 describe('removeContact', () => {
   it('removes the addressed contact and leaves the rest', () => {
     const contacts: TContacts = {
-      [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000 },
-      [ADDR_B]: { name: 'Lena Fischer', createdAt: 2000 },
+      [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000, colorIndex: 2 },
+      [ADDR_B]: { name: 'Lena Fischer', createdAt: 2000, colorIndex: 3 },
     };
     const next = removeContact(contacts, ADDR_A.toUpperCase());
     assert.deepStrictEqual(Object.keys(next), [ADDR_B]);
@@ -164,8 +189,8 @@ describe('getContact', () => {
 describe('listContacts', () => {
   it('sorts by name, case-insensitively', () => {
     const contacts: TContacts = {
-      [ADDR_A]: { name: 'yuki Tanaka', createdAt: 1000 },
-      [ADDR_B]: { name: 'Anmol Sharma', createdAt: 2000 },
+      [ADDR_A]: { name: 'yuki Tanaka', createdAt: 1000, colorIndex: 0 },
+      [ADDR_B]: { name: 'Anmol Sharma', createdAt: 2000, colorIndex: 1 },
     };
     assert.deepStrictEqual(
       listContacts(contacts).map(c => c.name),
@@ -180,8 +205,8 @@ describe('listContacts', () => {
 
 describe('searchContacts', () => {
   const list = listContacts({
-    [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000 },
-    [ADDR_B]: { name: 'Lena Fischer', createdAt: 2000 },
+    [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000, colorIndex: 2 },
+    [ADDR_B]: { name: 'Lena Fischer', createdAt: 2000, colorIndex: 3 },
   });
 
   it('returns everything for an empty query', () => {
@@ -219,8 +244,8 @@ describe('readContacts', () => {
   });
 
   it('reads well-formed contacts and normalizes their keys', () => {
-    const out = readContacts({ contacts: { [ADDR_A.toUpperCase()]: { name: 'Anmol Sharma', createdAt: 1000 } } });
-    assert.deepStrictEqual(out, { [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000 } });
+    const out = readContacts({ contacts: { [ADDR_A.toUpperCase()]: { name: 'Anmol Sharma', createdAt: 1000, colorIndex: 2 } } });
+    assert.deepStrictEqual(out, { [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000, colorIndex: 2 } });
   });
 
   it('skips entries without a string name and defaults a missing createdAt', () => {
@@ -230,12 +255,83 @@ describe('readContacts', () => {
         [ADDR_B]: { name: 'Lena Fischer' },
       },
     });
-    assert.deepStrictEqual(out, { [ADDR_B]: { name: 'Lena Fischer', createdAt: 0 } });
+    assert.deepStrictEqual(out, { [ADDR_B]: { name: 'Lena Fischer', createdAt: 0, colorIndex: legacyContactColorIndex(ADDR_B) } });
+  });
+
+  it('derives a colour for records stored before colours were persisted', () => {
+    const out = readContacts({ contacts: { [ADDR_A.toUpperCase()]: { name: 'Anmol Sharma', createdAt: 1000 } } });
+    assert.strictEqual(out[ADDR_A].colorIndex, legacyContactColorIndex(ADDR_A));
+  });
+
+  it('replaces a colour index that is out of the palette, or not an index at all', () => {
+    const out = readContacts({
+      contacts: {
+        [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000, colorIndex: 99 },
+        [ADDR_B]: { name: 'Lena Fischer', createdAt: 2000, colorIndex: 'blue' },
+      },
+    });
+    assert.strictEqual(out[ADDR_A].colorIndex, legacyContactColorIndex(ADDR_A));
+    assert.strictEqual(out[ADDR_B].colorIndex, legacyContactColorIndex(ADDR_B));
   });
 });
 
 describe('MAX_CONTACT_NAME_LENGTH', () => {
   it('is 50', () => {
     assert.strictEqual(MAX_CONTACT_NAME_LENGTH, 50);
+  });
+});
+
+describe('contactInitials', () => {
+  it('takes the first letter of the first two words', () => {
+    assert.strictEqual(contactInitials('Anmol Sharma'), 'AS');
+  });
+
+  it('uses one letter for a single-word name', () => {
+    assert.strictEqual(contactInitials('Anmol'), 'A');
+  });
+
+  it('ignores extra words and surrounding whitespace', () => {
+    assert.strictEqual(contactInitials('  lena marie fischer  '), 'LM');
+  });
+
+  it('returns an empty string for an empty name', () => {
+    assert.strictEqual(contactInitials('   '), '');
+  });
+});
+
+describe('randomContactColorIndex', () => {
+  it('only ever returns a slot the palette has', () => {
+    for (let i = 0; i < 500; i++) {
+      const index = randomContactColorIndex();
+      assert.ok(Number.isInteger(index) && index >= 0 && index < CONTACT_AVATAR_PALETTE.length, `${index} out of bounds`);
+    }
+  });
+
+  it('does not always return the same slot', () => {
+    const seen = new Set(Array.from({ length: 500 }, () => randomContactColorIndex()));
+    assert.ok(seen.size > 1, 'expected more than one colour across 500 draws');
+  });
+});
+
+describe('legacyContactColorIndex', () => {
+  it('is stable for the same address', () => {
+    assert.strictEqual(legacyContactColorIndex(ADDR_A), legacyContactColorIndex(ADDR_A));
+  });
+
+  it('ignores letter case, matching the normalized key', () => {
+    assert.strictEqual(legacyContactColorIndex(ADDR_A.toUpperCase()), legacyContactColorIndex(ADDR_A));
+  });
+
+  it('stays within the palette bounds', () => {
+    for (const addr of [ADDR_A, ADDR_B, 'sp1zzz']) {
+      const index = legacyContactColorIndex(addr);
+      assert.ok(index >= 0 && index < CONTACT_AVATAR_PALETTE.length, `${index} out of bounds`);
+    }
+  });
+});
+
+describe('truncateContactAddress', () => {
+  it('keeps the first 8 and last 4 characters, joined by an ellipsis', () => {
+    assert.strictEqual(truncateContactAddress(ADDR_A), 'sp1qqfqn…6t0g');
   });
 });

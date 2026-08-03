@@ -36,6 +36,8 @@ import PaymentFound from '../screen/wallets/PaymentFound';
 import NoPaymentFound from '../screen/wallets/NoPaymentFound';
 import SyncScreen from '../screen/wallets/SyncScreen';
 import OnboardingStack from './OnboardingStack';
+import ContactList from '../screen/contacts/ContactList';
+import ContactEdit from '../screen/contacts/ContactEdit';
 
 const DetailViewStackScreensStack = () => {
   const theme = useTheme();
@@ -103,6 +105,12 @@ const DetailViewStackScreensStack = () => {
       />
       <DetailViewStack.Screen name="Settings" component={Settings} options={navigationStyle({ title: loc.settings.header })(theme)} />
       <DetailViewStack.Screen name="Currency" component={Currency} options={navigationStyle({ title: loc.settings.currency })(theme)} />
+      <DetailViewStack.Screen name="Contacts" component={ContactList} options={navigationStyle({ title: loc.contacts.header })(theme)} />
+      <DetailViewStack.Screen
+        name="ContactEdit"
+        component={ContactEdit}
+        options={navigationStyle({ title: loc.contacts.add_header })(theme)}
+      />
       <DetailViewStack.Screen
         name="General"
         component={GeneralSettings}

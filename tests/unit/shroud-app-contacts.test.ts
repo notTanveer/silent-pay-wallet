@@ -17,12 +17,12 @@ describe('ShroudApp persistence', () => {
 
   it('round-trips contacts through storage', async () => {
     const app = new ShroudApp();
-    app.contacts = { [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000 } };
+    app.contacts = { [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000, colorIndex: 2 } };
     await app.saveToDisk();
 
     const reloaded = new ShroudApp();
     assert.strictEqual(await reloaded.loadFromDisk(), true);
-    assert.deepStrictEqual(reloaded.contacts, { [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000 } });
+    assert.deepStrictEqual(reloaded.contacts, { [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000, colorIndex: 2 } });
   });
 
   it('starts with an empty contacts map', () => {
@@ -42,7 +42,7 @@ describe('ShroudApp persistence', () => {
 
   it('blanks contacts in the plausible-deniability decoy bucket', async () => {
     const app = new ShroudApp();
-    app.contacts = { [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000 } };
+    app.contacts = { [ADDR_A]: { name: 'Anmol Sharma', createdAt: 1000, colorIndex: 2 } };
     // createFakeStorage appends a decoy bucket to an already-encrypted `data` array, matching
     // how screen/PlausibleDeniability.tsx only reaches this call once storage is encrypted.
     await app.encryptStorage('real-password');

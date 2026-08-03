@@ -18,6 +18,7 @@ const palette = {
   gray75: '#F0F0F5',
   gray100: '#EEF0F4',
   gray150: '#EEEEEE',
+  gray175: '#E5E7EB',
   gray200: '#E6E4E4',
   gray200Alpha: '#E6E4E499',
   gray250: '#E5E5EA',
@@ -217,6 +218,9 @@ const tokens = {
   textBrand: pair(palette.violet600, palette.violet175),
   copyButtonBorder: pair(palette.gray200, palette.gray800), // Confirm copy-button border
   transactionCardBorder: pair(palette.gray200, palette.gray850),
+  searchFieldBorder: pair(palette.gray175, palette.gray850), // SearchField border
+  searchFieldIcon: same(palette.gray450), // SearchField magnifier stroke
+  searchFieldPlaceholder: pair('rgba(16, 24, 40, 0.5)', 'rgba(255, 255, 255, 0.5)'), // SearchField hint, primary copy at 50%
   txIconHaloBorder: pair(palette.violet100, palette.violet850),
   incomingIconBackground: pair('#E7E6F5', '#322361'),
   outgoingIconBackground: pair(palette.gray50, '#161616'),
@@ -247,6 +251,10 @@ const tokens = {
   settingsContactIconColor: same('#6366F1'),
   settingsNetworkIconColor: same('#00A63E'),
   settingsCurrencyIconColor: same('#F7931A'),
+
+  emptyStateTitle: pair('#0A0A0A', palette.white),
+  tabDivider: pair('#EAECF0', palette.gray850), // hairline rule under the whole tab strip
+  tabInactiveText: pair('#667085', palette.gray400), // unselected tab label
 } satisfies Record<string, ColorToken>;
 
 type Scheme = 'light' | 'dark';
