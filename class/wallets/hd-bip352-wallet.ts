@@ -3,6 +3,7 @@ import { Buffer } from 'buffer';
 import { ECPairFactory } from 'ecpair';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet.ts';
 import { getDefaultIndexer } from '../../modules/SilentPaymentIndexer';
+import * as Electrum from '../../modules/Electrum';
 import ecc from '../../modules/noble_ecc';
 import {
   getSilentPaymentAddress,
@@ -30,6 +31,9 @@ const ECPair = ECPairFactory(ecc);
 const SCAN_PROGRESS_THROTTLE_MS = 500;
 // Number of recent progress samples kept for the windowed ETA throughput estimate.
 const SCAN_ETA_ROLLING_WINDOW = 10;
+// Floor on how often the Electrum spent-status recheck may hit the network. The scan poll runs
+// every 30s, so this only suppresses bursts (e.g. a scan and a coin-control refresh coinciding).
+const SPENT_RECHECK_MIN_INTERVAL_MS = 15000;
 
 export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannableWallet {
   static readonly type = 'HDSilentPaymentsWallet';
@@ -53,6 +57,8 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
   private onPersistCallback: (() => void) | null = null;
   private _sp_spending_txs: Transaction[] = [];
   private _sp_pending_inputs: Set<string> = new Set(); // "txid:vout"
+  private _spentRecheckInFlight: Promise<void> | null = null;
+  private _lastSpentRecheckAt: number = 0;
 
   private _scanState: ScanStateInfo = IDLE_SCAN_STATE;
   private _scanPaused: boolean = false;
@@ -139,6 +145,8 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         key !== 'cachedSeed' &&
         key !== 'spUTXOsCache' &&
         key !== 'activeScanPromise' &&
+        key !== '_spentRecheckInFlight' &&
+        key !== '_lastSpentRecheckAt' &&
         key !== '_sp_pending_inputs' &&
         key !== '_sp_spending_txs'
       ) {
@@ -225,6 +233,135 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     this.onPersistCallback?.();
 
     return true;
+  }
+
+  private deriveAddressFromPubKey(pubKey: string): string | null {
+    try {
+      return bitcoin.payments.p2tr({ pubkey: Buffer.from(pubKey, 'hex') }).address ?? null;
+    } catch (error) {
+      console.warn(`[SP] spent recheck: cannot derive address for pubkey ${pubKey}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Re-verify our SP UTXOs against Electrum so that a UTXO spent from *another* wallet on the same
+   * seed (e.g. Sparrow) stops counting toward the balance and stops being offered to coin
+   * selection. The indexer scan cannot do this on its own: it is forward-only and reports each
+   * block's outputs, never its inputs, so a spend of an already-discovered UTXO is invisible to it.
+   *
+   * Trade-offs:
+   * - Privacy: this reveals our one-off silent-payment output addresses to the Electrum server.
+   */
+  private async recheckSpentStatusViaElectrum(): Promise<void> {
+    if (this._spentRecheckInFlight !== null) {
+      return this._spentRecheckInFlight;
+    }
+
+    if (Date.now() - this._lastSpentRecheckAt < SPENT_RECHECK_MIN_INTERVAL_MS) {
+      return;
+    }
+
+    this._spentRecheckInFlight = this.performSpentRecheck();
+
+    try {
+      await this._spentRecheckInFlight;
+    } finally {
+      this._lastSpentRecheckAt = Date.now();
+      this._spentRecheckInFlight = null;
+    }
+  }
+
+  private async performSpentRecheck(): Promise<void> {
+    if (await Electrum.isDisabled()) return;
+    if (!(await Electrum.ping())) return;
+
+    // Unspent UTXOs are checked for new spends; UTXOs previously marked spent by an *unconfirmed*
+    // tx are re-checked so an RBF-replaced or dropped spend can be reverted. UTXOs marked spent by
+    // our own broadcastTx carry no spentByTxid, so they are never candidates and this pass cannot
+    // interfere with _sp_pending_inputs.
+    const candidates = this.getSilentPaymentUTXOs().filter(u => !u.isSpent || (u.spentByTxid !== undefined && (u.spentHeight ?? 0) <= 0));
+  
+    if (candidates.length === 0) return;
+
+    const byAddress = new Map<string, SilentPaymentUTXO[]>();
+
+    for (const utxo of candidates) {
+      const address = utxo.address || this.deriveAddressFromPubKey(utxo.pubKey);
+      if (!address) continue;
+
+      const group = byAddress.get(address);
+      if (group) {
+        group.push(utxo);
+      } else {
+        byAddress.set(address, [utxo]);
+      }
+    }
+
+    if (byAddress.size === 0) return;
+
+    const histories = await Electrum.multiGetHistoryByAddress([...byAddress.keys()]);
+
+    // Gather every possible spender across all addresses so they can be fetched in one batch.
+    const spenderTxids = new Set<string>();
+
+    for (const [address, utxos] of byAddress) {
+      const history = histories[address] ?? [];
+
+      for (const utxo of utxos) {
+        if (!history.some(entry => entry.tx_hash === utxo.txid)) continue; // inconclusive
+
+        for (const entry of history) {
+          if (entry.tx_hash !== utxo.txid) spenderTxids.add(entry.tx_hash);
+        }
+      }
+    }
+
+    const txs: Record<string, Electrum.ElectrumTransaction> =
+      spenderTxids.size > 0 ? await Electrum.multiGetTransactionByTxid([...spenderTxids], true) : {};
+
+    let changed = false;
+
+    for (const [address, utxos] of byAddress) {
+      const history = histories[address] ?? [];
+
+      for (const utxo of utxos) {
+        // The server has no record of the funding tx (behind, errored, or not indexed): we cannot
+        // tell "spent" from "unknown", so leave the UTXO exactly as it is.
+        if (!history.some(entry => entry.tx_hash === utxo.txid)) continue;
+
+        const spender = history.find(
+          entry => entry.tx_hash !== utxo.txid && txs[entry.tx_hash]?.vin?.some(vin => vin.txid === utxo.txid && vin.vout === utxo.vout),
+        );
+
+        if (spender) {
+          if (!utxo.isSpent) {
+            utxo.spentByTxid = spender.tx_hash;
+            utxo.spentHeight = spender.height;
+            changed = this.markUTXOAsSpent(utxo.txid, utxo.vout) || changed;
+          } else if (utxo.spentHeight !== spender.height || utxo.spentByTxid !== spender.tx_hash) {
+            // e.g. a mempool spend that just confirmed — record it so it stops being re-verified
+            utxo.spentByTxid = spender.tx_hash;
+            utxo.spentHeight = spender.height;
+            changed = true;
+          }
+        } else if (utxo.isSpent && utxo.spentByTxid !== undefined) {
+          // We had recorded an unconfirmed spender and nothing in the history spends this outpoint
+          // any more — the spend was replaced or dropped, so the coin is ours again.
+          console.log(`[SP] spent recheck: ${utxo.txid}:${utxo.vout} unspent again (spender ${utxo.spentByTxid} gone)`);
+          utxo.isSpent = false;
+          utxo.spentByTxid = undefined;
+          utxo.spentHeight = undefined;
+          this.invalidateUTXOCache();
+          changed = true;
+        }
+      }
+    }
+
+    if (changed) {
+      this.onBalanceChangeCallback?.();
+      this.onPersistCallback?.();
+    }
   }
 
   private ensurePendingInputsInitialized(): void {
@@ -430,6 +567,15 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         throw new Error(`Invalid latest block height: ${latestHeight}`);
       }
 
+      // Detect UTXOs spent from another wallet. Runs before the "no new blocks" early-returns
+      // below, because that is exactly the steady state in which an external spend shows up. Never
+      // let a recheck failure fail the scan.
+      try {
+        await this.recheckSpentStatusViaElectrum();
+      } catch (error) {
+        console.warn('[SP] Spent-status recheck failed:', error);
+      }
+
       let startHeight: number;
       const endHeight: number = latestHeight;
 
@@ -566,6 +712,14 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
   }
 
   async fetchUtxo(): Promise<void> {
+    // Refresh spent status first so coin control (which calls this) never lists an outpoint that
+    // another wallet already spent. Throttled internally, so this stays cheap.
+    try {
+      await this.recheckSpentStatusViaElectrum();
+    } catch (error) {
+      console.warn('[SP] Spent-status recheck failed:', error);
+    }
+
     const spUtxos = this.getSilentPaymentUTXOs();
 
     try {
@@ -1046,6 +1200,8 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
 
     this.stopPolling();
     this.invalidateUTXOCache();
+    this._spentRecheckInFlight = null;
+    this._lastSpentRecheckAt = 0;
     this._sp_pending_inputs = new Set();
     this.onBalanceChangeCallback = null;
     this.onPersistCallback = null;

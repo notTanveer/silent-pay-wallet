@@ -27,7 +27,7 @@ type Utxo = {
   wif?: string;
 };
 
-type ElectrumTransaction = {
+export type ElectrumTransaction = {
   txid: string;
   hash: string;
   version: number;

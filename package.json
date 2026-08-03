@@ -71,7 +71,7 @@
     "lint": "node scripts/find-unused-loc.js && eslint --ext .js,.ts,.tsx '*.@(js|ts|tsx)' screen 'modules/*.@(js|ts|tsx)' class models loc tests components navigation typings helpers hooks util utils",
     "lint:fix": "npm run lint -- --fix",
     "lint:quickfix": "git status --porcelain | grep -v '\\.json' | grep -E '\\.js|\\.ts' --color=never |  awk '{print $2}' | xargs eslint --fix; exit 0",
-    "unit": "jest -b -w tests/unit/*",
+    "unit": "jest -b tests/unit/*",
     "rust:build": "bash rust-native-setup.sh",
     "rust:rebuild": "cd rust_jsi_bridge && cargo clean && cd .. && npm run rust:build",
     "android:rust": "npm run rust:build && cd android && ./gradlew clean && cd .. && npm run android"

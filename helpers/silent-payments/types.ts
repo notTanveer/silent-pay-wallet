@@ -36,6 +36,13 @@ export interface SilentPaymentUTXO extends Utxo {
   blockHash: string;
   blockTime: number;
   isSpent: boolean;
+  /**
+   * Txid of the transaction that spends this outpoint, when the spend was discovered on-chain
+   * rather than created by this wallet. Absent for UTXOs marked spent by our own broadcastTx.
+   */
+  spentByTxid?: string;
+  /** Height of `spentByTxid`. > 0 means confirmed; 0 or -1 means it is still in the mempool. */
+  spentHeight?: number;
 }
 
 export interface SilentPaymentUTXOSerializable extends Omit<SilentPaymentUTXO, 'tweak'> {
