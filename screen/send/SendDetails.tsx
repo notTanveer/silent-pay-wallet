@@ -5,10 +5,11 @@ import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { TOptions } from 'bip21';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Keyboard, LayoutAnimation, ScrollView, StyleSheet, Text, TextInput, Pressable, View } from 'react-native';
+import { Keyboard, LayoutAnimation, ScrollView, StyleSheet, Text, Pressable, View } from 'react-native';
 import { SilentPayment } from 'silent-payments';
 import { btcToSatoshi, satoshiToBTC, satoshiToLocalCurrency } from '../../modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes, triggerSelectionHapticFeedback } from '../../modules/hapticFeedback';
+import { isValidContactAddress } from '../../class/contacts';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import { CreateTransactionTarget, CreateTransactionUtxo, TWallet } from '../../class/wallets/types';
@@ -20,6 +21,11 @@ import { DismissKeyboardInputAccessory } from '../../components/DismissKeyboardI
 import HeaderMenuButton from '../../components/HeaderMenuButton';
 import ChevronRightIcon from '../../components/icons/ChevronRightIcon';
 import ScanQRIcon from '../../components/icons/ScanQRIcon';
+import ContactIcon from '../../components/icons/ContactIcon';
+import SaveIcon from '../../components/icons/SaveIcon';
+import ContactPickerSheet from '../../components/ContactPickerSheet';
+import { BottomModalHandle } from '../../components/BottomModal';
+import FieldTextInput, { FieldAddressInput } from '../../components/FieldTextInput';
 import LabeledField from '../../components/LabeledField';
 import SafeArea from '../../components/SafeArea';
 import { caretProps, shadowSm, useTheme } from '../../components/themes';
@@ -27,6 +33,7 @@ import { Action } from '../../components/types';
 import { ClashFont } from '../../constants/fonts';
 import { isAmountEmpty, sanitizeAmountInput, displayAmountForUnit, feeSpeedTierForRate } from '../../helpers/send/format';
 import { useStorage } from '../../hooks/context/useStorage';
+import { useContacts } from '../../hooks/context/useContacts';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useKeyboard } from '../../hooks/useKeyboard';
 import loc, { formatBalance } from '../../loc';
@@ -551,6 +558,44 @@ const SendDetails = () => {
     });
   }, [navigation]);
 
+  const { contactList, getContact } = useContacts();
+  const contactSheetRef = useRef<BottomModalHandle>(null);
+
+  // Offer the affordance only for a valid silent payment address that isn't already saved.
+  const canSaveContact = isValidContactAddress(recipient?.address ?? '') && getContact(recipient?.address ?? '') === undefined;
+
+  const navigateToContactEdit = useCallback(
+    (address?: string) => {
+      // @ts-ignore: DrawerRoot/DetailViewStackScreensStack aren't in SendDetailsStackParamList
+      navigation.navigate('DrawerRoot', {
+        screen: 'DetailViewStackScreensStack',
+        params: { screen: 'ContactEdit', params: { mode: 'add', address } },
+      });
+    },
+    [navigation],
+  );
+
+  const onSaveAsContactPressed = useCallback(() => {
+    navigateToContactEdit(recipient?.address);
+  }, [navigateToContactEdit, recipient?.address]);
+
+  const onContactsPressed = useCallback(() => {
+    // With nothing saved yet, an empty sheet is a dead end — go straight to adding one.
+    if (contactList.length === 0) {
+      navigateToContactEdit();
+      return;
+    }
+    contactSheetRef.current?.present();
+  }, [contactList.length, navigateToContactEdit]);
+
+  const onContactPicked = useCallback(
+    (address: string) => {
+      contactSheetRef.current?.dismiss();
+      onChangeAddress(address);
+    },
+    [onChangeAddress],
+  );
+
   const createPsbtTransaction = async () => {
     if (!wallet) return;
 
@@ -812,7 +857,6 @@ const SendDetails = () => {
     root: {
       backgroundColor: colors.background,
     },
-    fieldInput: { color: colors.textPrimary },
     scanBtn: { backgroundColor: colors.background },
     feeSummary: { borderColor: colors.accentSubtle, backgroundColor: colors.surfaceSubtle },
     feeSummaryDisabled: { borderColor: colors.borderDefault, backgroundColor: colors.surfaceBrandSubtle },
@@ -820,6 +864,8 @@ const SendDetails = () => {
     feeSummaryValue: { color: colors.textEmphasis },
     feeSummaryTextDisabled: { color: colors.textDisabled },
     feeSummaryValueMeta: { color: colors.amountMeta },
+    saveContactRow: { backgroundColor: colors.cardBackground, borderColor: colors.dashedBorder },
+    saveContactText: { color: colors.brandPrimary },
   });
 
   const renderCoinsSelected = () => {
@@ -857,43 +903,58 @@ const SendDetails = () => {
 
         <View style={styles.fieldsGroup}>
           <View style={styles.fieldsPair}>
-            <LabeledField
-              label={loc.send.label_address}
-              tinted={!!recipient?.address}
-              trailing={
-                !recipient?.address ? (
-                  <Pressable accessibilityRole="button" onPress={navigateToQRCodeScanner} style={[styles.scanBtn, stylesHook.scanBtn]}>
-                    <ScanQRIcon color={colors.brandStrong} size={20} />
-                  </Pressable>
-                ) : undefined
-              }
-            >
-              <TextInput
-                style={[styles.fieldInput, stylesHook.fieldInput, styles.addressFieldInput]}
-                placeholder={loc.send.paste_or_scan}
-                placeholderTextColor={colors.textSecondary}
-                value={recipient?.address}
-                onChangeText={onChangeAddress}
-                editable={isEditable}
-                autoCapitalize="none"
-                autoCorrect={false}
-                multiline
-                {...caretProps(colors)}
-                underlineColorAndroid="transparent"
-                testID="AddressInput"
-              />
-            </LabeledField>
+            <View style={styles.addressGroup}>
+              <LabeledField
+                label={loc.send.label_address}
+                tinted={!!recipient?.address}
+                trailing={
+                  !recipient?.address ? (
+                    <View style={styles.addressActions}>
+                      <Pressable accessibilityRole="button" onPress={navigateToQRCodeScanner} style={[styles.scanBtn, stylesHook.scanBtn]}>
+                        <ScanQRIcon color={colors.brandStrong} size={20} />
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={onContactsPressed}
+                        style={[styles.contactBtn, stylesHook.scanBtn]}
+                        testID="SendDetailsContactsButton"
+                        accessibilityLabel={loc.contacts.header}
+                      >
+                        <ContactIcon color={colors.brandStrong} size={24} />
+                      </Pressable>
+                    </View>
+                  ) : undefined
+                }
+              >
+                <FieldAddressInput
+                  placeholder={loc.send.paste_or_scan}
+                  value={recipient?.address}
+                  onChangeText={onChangeAddress}
+                  editable={isEditable}
+                  testID="AddressInput"
+                />
+              </LabeledField>
+
+              {canSaveContact && (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={onSaveAsContactPressed}
+                  style={[styles.saveContactRow, stylesHook.saveContactRow]}
+                  testID="SendDetailsSaveContactButton"
+                >
+                  <SaveIcon size={20} color={colors.brandPrimary} />
+                  <Text style={[styles.saveContactText, stylesHook.saveContactText]}>{loc.contacts.save_as_contact}</Text>
+                  <ChevronRightIcon color={colors.chevron} />
+                </Pressable>
+              )}
+            </View>
 
             <LabeledField label={loc.send.label_note}>
-              <TextInput
-                style={[styles.fieldInput, stylesHook.fieldInput]}
+              <FieldTextInput
                 placeholder={loc.send.note_visible_to_you}
-                placeholderTextColor={colors.textSecondary}
                 value={transactionMemo}
                 onChangeText={setTransactionMemo}
                 editable={!isLoading}
-                {...caretProps(colors)}
-                underlineColorAndroid="transparent"
                 testID="NoteInput"
               />
             </LabeledField>
@@ -954,6 +1015,8 @@ const SendDetails = () => {
           textStyle={styles.nextButtonText}
         />
       </View>
+
+      <ContactPickerSheet ref={contactSheetRef} onPick={onContactPicked} />
     </SafeArea>
   );
 };
@@ -964,6 +1027,31 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     justifyContent: 'space-between',
+  },
+  addressActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  contactBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addressGroup: { gap: 8 },
+  saveContactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 44,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    gap: 10,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: 16,
+  },
+  saveContactText: {
+    flex: 1,
+    fontFamily: ClashFont.medium,
+    fontSize: 14,
+    lineHeight: 20,
   },
   select: {
     marginBottom: 24,
@@ -983,20 +1071,6 @@ const styles = StyleSheet.create({
   },
   fieldsPair: {
     gap: 12,
-  },
-  fieldInput: {
-    flex: 1,
-    width: '100%',
-    fontFamily: ClashFont.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    padding: 0,
-  },
-  addressFieldInput: {
-    // grows with wrapped text up to ~5 lines (comfortably fits a full silent-payment
-    // address with no scrolling); caps further growth for pathological pastes instead
-    // of letting the screen layout balloon
-    maxHeight: 100,
   },
   scanBtn: {
     width: 32,

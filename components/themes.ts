@@ -216,6 +216,8 @@ const tokens = {
   // text/brand. Brand-tinted *text*: "Use Max" pill, amount hints, Confirm total. Distinct from
   // brandStrong, which fills surfaces — this one has to stay readable *on* the background.
   textBrand: pair(palette.violet600, palette.violet175),
+  sheetBackIcon: pair(palette.gray700, palette.slate400), // bottom-sheet header back chevron
+  dashedBorder: pair('#E7E7E7', palette.whiteAlpha08), // "Save as Contact" affordance border (border/default)
   copyButtonBorder: pair(palette.gray200, palette.gray800), // Confirm copy-button border
   transactionCardBorder: pair(palette.gray200, palette.gray850),
   searchFieldBorder: pair(palette.gray175, palette.gray850), // SearchField border
@@ -257,10 +259,10 @@ const tokens = {
   tabInactiveText: pair('#667085', palette.gray400), // unselected tab label
 
   // --- Contact detail tokens ---
-  noticeText: lightOnly('#343437'), // reuse-notice banner copy
-  removeSurface: lightOnly('#FBE1DF'), // Remove Contact button background
-  removeBorder: lightOnly('#FFC9C9'), // Remove Contact button border
-  removeText: lightOnly('#E7000B'), // Remove Contact button label + trash glyph
+  noticeText: pair('#343437', palette.gray375), // reuse-notice banner copy (info card = text/secondary)
+  removeSurface: pair('#FBE1DF', palette.slate950), // Remove Contact button background
+  removeBorder: pair('#FFC9C9', palette.red500), // Remove Contact button border
+  removeText: pair('#E7000B', palette.red500), // Remove Contact button label + trash glyph
 } satisfies Record<string, ColorToken>;
 
 type Scheme = 'light' | 'dark';

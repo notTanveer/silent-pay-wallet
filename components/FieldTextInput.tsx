@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, TextInput, TextInputProps } from 'react-native';
 
 import { ClashFont } from '../constants/fonts';
-import { useTheme } from './themes';
+import { caretProps, useTheme } from './themes';
 
 // The input that goes inside a LabeledField. It owns the typography and the themed colours so
 // the text stays in step with the field chrome around it wherever the pair is used.
@@ -12,8 +12,9 @@ const FieldTextInput: React.FC<TextInputProps> = ({ style, ...props }) => {
   return (
     <TextInput
       style={[styles.input, { color: colors.textPrimary }, style]}
-      placeholderTextColor={colors.placeholderTextColor}
+      placeholderTextColor={colors.textSecondary}
       underlineColorAndroid="transparent"
+      {...caretProps(colors)}
       {...props}
     />
   );

@@ -47,7 +47,9 @@
         "reuse_notice_emphasis": "on-chain address",
         "remove": "Remove Contact",
         "remove_confirm_title": "Remove contact?",
-        "remove_confirm_message": "This only removes the contact from this wallet. It does not affect any payments you have already made."
+        "remove_confirm_message": "This only removes the contact from this wallet. It does not affect any payments you have already made.",
+        "pick_header": "Pick Contacts",
+        "manage": "Manage Contact"
     },
     "errors": {
         "broadcast": "Broadcast failed.",
