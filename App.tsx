@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SizeClassProvider } from './components/Context/SizeClassProvider';
 import { SettingsProvider } from './components/Context/SettingsProvider';
+import { ContactsProvider } from './components/Context/ContactsProvider';
 import { ShroudDefaultTheme, ShroudDarkTheme } from './components/themes';
 import MasterView from './navigation/MasterView';
 import { navigationRef } from './NavigationService';
@@ -33,7 +34,9 @@ const App = () => {
         <SafeAreaProvider>
           <StorageProvider>
             <SettingsProvider>
-              <MasterView />
+              <ContactsProvider>
+                <MasterView />
+              </ContactsProvider>
             </SettingsProvider>
           </StorageProvider>
         </SafeAreaProvider>
