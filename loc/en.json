@@ -23,6 +23,24 @@
         "ssl_port": "SSL Port",
         "suggested": "Suggested"
     },
+    "contacts": {
+        "header": "Contacts",
+        "add_header": "Add Contact",
+        "edit_header": "Edit Contact",
+        "empty_title": "No Contacts yet",
+        "empty_subtitle": "Save an address once and pay it again anytime — every payment still stays private.",
+        "empty_cta": "Add a Contact",
+        "search_placeholder": "Search Contact",
+        "label_name": "Name",
+        "name_placeholder": "e.g John Doe",
+        "label_address": "Silent Payment Address",
+        "address_placeholder": "sp1...",
+        "address_valid": "Valid silent payment address",
+        "address_invalid": "That doesn't look like a valid address",
+        "address_duplicate": "This address is already saved as \"{name}\"",
+        "save": "Save Contact",
+        "settings_subtitle": "Saved silent payment addresses"
+    },
     "errors": {
         "broadcast": "Broadcast failed.",
         "error": "Error",
@@ -302,7 +320,7 @@
         "zero_balance_toast_subtitle": "Receive your first payment to get started",
         "request_button": "Request",
         "pay_button": "Pay",
-        "scan_qr_code": "Scan QR code",
+        "scan_button": "Scan",
         "no_balance_hint": "No balance yet"
     },
     "total_balance_view": {

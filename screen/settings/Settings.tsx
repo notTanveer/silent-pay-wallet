@@ -4,6 +4,7 @@ import DeviceInfo from 'react-native-device-info';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 import SettingsRow from '../../components/SettingsRow';
 import CurrencyIcon from '../../components/icons/CurrencyIcon';
+import ContactIcon from '../../components/icons/ContactIcon';
 import SecurityIcon from '../../components/icons/SecurityIcon';
 import NetworkIcon from '../../components/icons/NetworkIcon';
 import AboutIcon from '../../components/icons/AboutIcon';
@@ -18,7 +19,7 @@ import { IconProps } from '../../components/icons/types';
 const APP_VERSION = DeviceInfo.getVersion();
 const BUILD_NUMBER = DeviceInfo.getBuildNumber();
 
-type SettingsRoute = 'General' | 'Currency' | 'Contact' | 'EncryptStorage' | 'ElectrumSettings' | 'Tools' | 'About';
+type SettingsRoute = 'General' | 'Currency' | 'Contacts' | 'EncryptStorage' | 'ElectrumSettings' | 'Tools' | 'About';
 
 type SettingsIconColorToken =
   | 'settingsGeneralIconColor'
@@ -46,6 +47,14 @@ const MAIN_ROWS: RowConfig[] = [
     subtitle: loc.settings.currency_subtitle,
     route: 'Currency',
     testID: 'CurrencyButton',
+  },
+  {
+    Icon: ContactIcon,
+    colorToken: 'settingsContactIconColor',
+    title: loc.contacts.header,
+    subtitle: loc.contacts.settings_subtitle,
+    route: 'Contacts',
+    testID: 'ContactsButton',
   },
   {
     Icon: SecurityIcon,

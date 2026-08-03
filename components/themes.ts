@@ -123,12 +123,10 @@ const tokens = {
   syncRingError: same('#FDF1F2'),
   syncFillError: same('#FBE9EB'),
   // Legacy / existing tokens (keep for compatibility)
-  receiveBtnBackground: pair('#EAE4FB', '#110732'),
+  actionChipBackground: pair('#EEEAFE', '#110732'), // Contacts/Request/Scan chip fill on the home action row
   bannerBackground: pair(palette.violet50, palette.violet900),
   payBtnDisabledBackground: pair('#00000052', '#FFFFFF52'),
-  requestBtnBorderColor: pair(palette.violet600, palette.violet500Alpha),
   bannerBorderColor: pair(palette.violet100, '#2D264F'),
-  scanBtnBorderColor: pair(palette.violet100, '#241F3B'),
   settingsBtnBackground: pair('#F6F7F9', '#141414'),
   settingsBtnIconColor: pair(palette.gray700, '#AAAAAA'),
   searchIconBackground: pair(palette.white, '#0D0D0D'),
@@ -171,6 +169,9 @@ const tokens = {
   settingsContactIconColor: same('#6366F1'),
   settingsNetworkIconColor: same('#00A63E'),
   settingsCurrencyIconColor: same('#F7931A'),
+
+  // --- Contacts empty state tokens ---
+  contactsEmptyTitle: pair('#0A0A0A', palette.white),
 } satisfies Record<string, ColorToken>;
 
 type Scheme = 'light' | 'dark';

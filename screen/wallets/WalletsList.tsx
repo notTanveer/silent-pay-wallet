@@ -33,6 +33,8 @@ import ShieldReceiveIcon from '../../components/icons/ShieldReceiveIcon';
 import ReceiveArrowIcon from '../../components/icons/ReceiveArrowIcon';
 import PayArrowIcon from '../../components/icons/PayArrowIcon';
 import ChevronRightIcon from '../../components/icons/ChevronRightIcon';
+import ContactIcon from '../../components/icons/ContactIcon';
+import HomeActionButton from '../../components/HomeActionButton';
 
 const WalletsListSections = { WALLET: 'WALLET', TRANSACTIONS: 'TRANSACTIONS' };
 
@@ -150,15 +152,6 @@ const WalletsList: React.FC = () => {
         backgroundColor: colors.bannerBackground,
         borderColor: colors.bannerBorderColor,
       },
-      receiveBtnStyle: {
-        backgroundColor: colors.receiveBtnBackground,
-        borderColor: colors.requestBtnBorderColor,
-      },
-      scanBtnStyle: {
-        backgroundColor: colors.background,
-        borderColor: colors.scanBtnBorderColor,
-        borderWidth: 1,
-      },
       payBtnActive: {
         backgroundColor: colors.primary,
       },
@@ -178,12 +171,6 @@ const WalletsList: React.FC = () => {
       },
       alternativeText: {
         color: colors.alternativeTextColor,
-      },
-      requestBtnLabel: {
-        color: colors.brandPrimary,
-      },
-      payBtnLabel: {
-        color: colors.white,
       },
       toastRequestBtn: {
         backgroundColor: colors.primary,
@@ -377,6 +364,10 @@ const WalletsList: React.FC = () => {
     scanQrHelper().then(onBarScanned);
   }, [onBarScanned]);
 
+  const onContactsButtonPressed = useCallback(() => {
+    navigation.navigate('Contacts');
+  }, [navigation]);
+
   const onSendButtonPressed = useCallback(() => {
     if (wallets.length > 0) {
       const wallet = wallets[0];
@@ -463,37 +454,36 @@ const WalletsList: React.FC = () => {
 
         {scanWallet && <ScanProgressBar scanState={scanState} onResume={() => scanWallet.resumeScan()} />}
         <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={[styles.actionBtnWide, stylesHook.receiveBtnStyle]}
+          <HomeActionButton
+            icon={<ContactIcon color={colors.brandPrimary} size={22} />}
+            label={loc.contacts.header}
+            onPress={onContactsButtonPressed}
+            testID="HomeScreenContactsButton"
+          />
+
+          <HomeActionButton
+            icon={<ReceiveArrowIcon color={colors.brandPrimary} size={26} />}
+            label={loc.wallets.request_button}
             onPress={onReceiveButtonPressed}
             testID="HomeScreenReceiveButton"
-            accessibilityRole="button"
-          >
-            <ReceiveArrowIcon color={colors.brandPrimary} size={28} />
-            <Text style={[styles.actionBtnLabel, stylesHook.requestBtnLabel]}>{loc.wallets.request_button}</Text>
-          </TouchableOpacity>
+          />
 
-          <TouchableOpacity
-            style={[styles.actionBtnSquare, stylesHook.scanBtnStyle]}
-            onPress={onScanButtonPressed}
-            testID="HomeScreenScanButton"
-            accessibilityRole="button"
-            accessibilityLabel={loc.wallets.scan_qr_code}
-          >
-            <QRScanIcon color={colors.primary} size={22} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionBtnWide, styles.actionBtnNoBorder, hasBalance ? stylesHook.payBtnActive : stylesHook.payBtnDisabled]}
+          <HomeActionButton
+            icon={<PayArrowIcon color={colors.white} size={26} />}
+            label={loc.wallets.pay_button}
             onPress={hasBalance ? onSendButtonPressed : triggerZeroBalanceToast}
             onLongPress={hasBalance ? sendButtonLongPress : undefined}
             testID="HomeScreenSendButton"
-            accessibilityRole="button"
             accessibilityHint={hasBalance ? undefined : loc.wallets.no_balance_hint}
-          >
-            <PayArrowIcon color={colors.white} size={28} />
-            <Text style={[styles.actionBtnLabel, stylesHook.payBtnLabel]}>{loc.wallets.pay_button}</Text>
-          </TouchableOpacity>
+            chipStyle={hasBalance ? [stylesHook.payBtnActive, styles.actionChipPrimary] : stylesHook.payBtnDisabled}
+          />
+
+          <HomeActionButton
+            icon={<QRScanIcon color={colors.primary} size={22} />}
+            label={loc.wallets.scan_button}
+            onPress={onScanButtonPressed}
+            testID="HomeScreenScanButton"
+          />
         </View>
       </View>
     );
@@ -507,6 +497,7 @@ const WalletsList: React.FC = () => {
     triggerZeroBalanceToast,
     onReceiveButtonPressed,
     onScanButtonPressed,
+    onContactsButtonPressed,
     onSendButtonPressed,
     sendButtonLongPress,
   ]);
@@ -685,33 +676,16 @@ const styles = StyleSheet.create({
   },
   actionRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+    alignItems: 'flex-start',
+    gap: 15,
     marginBottom: 8,
   },
-  actionBtnWide: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    height: 60,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  actionBtnNoBorder: {
-    borderWidth: 0,
-  },
-  actionBtnSquare: {
-    width: 60,
-    height: 60,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionBtnLabel: {
-    fontSize: 15,
-    fontFamily: ClashFont.medium,
+  actionChipPrimary: {
+    shadowColor: '#5B4EE8',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    elevation: 8,
   },
   trackPaymentBanner: {
     flexDirection: 'row',
