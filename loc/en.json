@@ -45,7 +45,9 @@
         "reuse_notice": "You can reuse this address as often as you like. Each payment lands at a fresh on-chain address, so no one can link them.",
         "remove": "Remove Contact",
         "remove_confirm_title": "Remove contact?",
-        "remove_confirm_message": "This only removes the contact from this wallet. It does not affect any payments you have already made."
+        "remove_confirm_message": "This only removes the contact from this wallet. It does not affect any payments you have already made.",
+        "pick_header": "Pick Contacts",
+        "manage": "Manage Contact"
     },
     "errors": {
         "broadcast": "Broadcast failed.",

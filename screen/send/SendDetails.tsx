@@ -20,6 +20,9 @@ import { DismissKeyboardInputAccessory } from '../../components/DismissKeyboardI
 import HeaderMenuButton from '../../components/HeaderMenuButton';
 import ChevronRightIcon from '../../components/icons/ChevronRightIcon';
 import ScanQRIcon from '../../components/icons/ScanQRIcon';
+import ContactIcon from '../../components/icons/ContactIcon';
+import ContactPickerSheet from '../../components/ContactPickerSheet';
+import { BottomModalHandle } from '../../components/BottomModal';
 import LabeledField from '../../components/LabeledField';
 import SafeArea from '../../components/SafeArea';
 import { useTheme } from '../../components/themes';
@@ -27,6 +30,7 @@ import { Action } from '../../components/types';
 import { ClashFont } from '../../constants/fonts';
 import { isAmountEmpty, sanitizeAmountInput, displayAmountForUnit, feeSpeedTierForRate } from '../../helpers/send/format';
 import { useStorage } from '../../hooks/context/useStorage';
+import { useContacts } from '../../hooks/context/useContacts';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useKeyboard } from '../../hooks/useKeyboard';
 import loc, { formatBalance } from '../../loc';
@@ -556,6 +560,33 @@ const SendDetails = () => {
     });
   }, [navigation]);
 
+  const { contactList } = useContacts();
+  const contactSheetRef = useRef<BottomModalHandle>(null);
+
+  const onContactsPressed = useCallback(() => {
+    // With nothing saved yet, an empty sheet is a dead end — go straight to adding one.
+    // ContactEdit lives on the parent DetailViewStack, not this SendDetailsStack.
+    if (contactList.length === 0) {
+      navigation.getParent()?.navigate('ContactEdit', { mode: 'add' });
+      return;
+    }
+    contactSheetRef.current?.present();
+  }, [contactList.length, navigation]);
+
+  const onContactPicked = useCallback(
+    (address: string) => {
+      contactSheetRef.current?.dismiss();
+      onChangeAddress(address);
+    },
+    [onChangeAddress],
+  );
+
+  const onManageContacts = useCallback(() => {
+    contactSheetRef.current?.dismiss();
+    // SendDetailsRoot is a screen inside DetailViewStack, so Contacts lives on the parent.
+    navigation.getParent()?.navigate('Contacts');
+  }, [navigation]);
+
   const createPsbtTransaction = async () => {
     if (!wallet) return;
     const change = await getChangeAddressAsync();
@@ -866,9 +897,20 @@ const SendDetails = () => {
           tinted={!!recipient?.address}
           trailing={
             !recipient?.address ? (
-              <Pressable accessibilityRole="button" onPress={navigateToQRCodeScanner} style={[styles.scanBtn, stylesHook.scanBtn]}>
-                <ScanQRIcon color={colors.brandPrimary} size={20} />
-              </Pressable>
+              <View style={styles.addressActions}>
+                <Pressable accessibilityRole="button" onPress={navigateToQRCodeScanner} style={[styles.scanBtn, stylesHook.scanBtn]}>
+                  <ScanQRIcon color={colors.brandPrimary} size={20} />
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={onContactsPressed}
+                  style={[styles.scanBtn, stylesHook.scanBtn]}
+                  testID="SendDetailsContactsButton"
+                  accessibilityLabel={loc.contacts.header}
+                >
+                  <ContactIcon color={colors.brandPrimary} size={20} />
+                </Pressable>
+              </View>
             ) : undefined
           }
         >
@@ -954,6 +996,8 @@ const SendDetails = () => {
           textStyle={styles.nextButtonText}
         />
       </View>
+
+      <ContactPickerSheet ref={contactSheetRef} onPick={onContactPicked} onManage={onManageContacts} />
     </SafeArea>
   );
 };
@@ -965,6 +1009,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
   },
+  addressActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   select: {
     marginBottom: 24,
     marginHorizontal: 24,
