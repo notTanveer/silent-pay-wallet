@@ -21,6 +21,7 @@ import ActionSheet from '../ActionSheet';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
+import { useSendToAddress } from '../../hooks/useSendToAddress';
 import { useStorage } from '../../hooks/context/useStorage';
 import SafeAreaSectionList from '../../components/SafeAreaSectionList';
 import { scanQrHelper } from '../../helpers/scan-qr.ts';
@@ -109,6 +110,7 @@ const WalletsList: React.FC = () => {
   const wasAutoPausedRef = useRef(false);
   const { colors } = useTheme();
   const navigation = useExtendedNavigation<NavigationProps>();
+  const sendToAddress = useSendToAddress();
   const dataSource = getTransactions(undefined, Infinity);
   const walletsCount = useRef<number>(wallets.length);
   const [showZeroBalanceToast, setShowZeroBalanceToast] = useState(false);
@@ -374,14 +376,9 @@ const WalletsList: React.FC = () => {
     scanQrHelper().then(onBarScanned);
   }, [onBarScanned]);
 
-  const onSendButtonPressed = useCallback(() => {
-    if (wallets.length > 0) {
-      const wallet = wallets[0];
-      navigation.navigate('SendDetailsRoot', {
-        walletID: wallet.getID(),
-      });
-    }
-  }, [navigation, wallets]);
+  // Wrapped rather than passed straight to onPress, which would hand the touch event to the
+  // recipient parameter.
+  const onSendButtonPressed = useCallback(() => sendToAddress(), [sendToAddress]);
 
   const onReceiveButtonPressed = useCallback(() => {
     if (wallets.length > 0) {

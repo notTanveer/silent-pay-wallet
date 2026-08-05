@@ -1,7 +1,9 @@
+import { NavigatorScreenParams } from '@react-navigation/native';
+
 import { Transaction, TWallet } from '../class/wallets/types';
 import { OwnedOutput } from '../class/wallets/hd-bip352-wallet';
 import { ElectrumServerItem } from '../modules/Electrum';
-import { SendDetailsParams } from './SendDetailsStackParamList';
+import { SendDetailsStackParamList } from './SendDetailsStackParamList';
 import { AddWalletStackParamList } from './AddWalletStack';
 
 export type ScanQRCodeParamList = {
@@ -36,7 +38,9 @@ export type DetailViewStackParamList = {
     screen?: keyof AddWalletStackParamList;
     params?: AddWalletStackParamList[keyof AddWalletStackParamList];
   };
-  SendDetailsRoot: SendDetailsParams;
+  // A nested navigator: params have to name their target screen, or they stop at the navigator
+  // and the screen renders with its initialParams instead.
+  SendDetailsRoot: NavigatorScreenParams<SendDetailsStackParamList>;
   WalletExportRoot: undefined;
   Settings: undefined;
   Currency: undefined;
