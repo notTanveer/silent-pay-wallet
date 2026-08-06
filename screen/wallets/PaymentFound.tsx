@@ -21,34 +21,29 @@ const CONFIRMATIONS_THRESHOLD = 6;
 type PaymentFoundProps = NativeStackScreenProps<DetailViewStackParamList, 'PaymentFound'>;
 
 const PaymentFound: React.FC<PaymentFoundProps> = ({ route }) => {
-  const { txid, blockHeight, tipHeight } = route.params;
+  const { txid, totalValue, confirmations } = route.params;
   const { wallets } = useStorage();
   const wallet = wallets.length > 0 ? (wallets[0] as HDSilentPaymentsWallet) : null;
   const navigation = useExtendedNavigation();
   const { colors } = useTheme();
 
-  const txData = useMemo(() => {
-    if (!wallet) return null;
+  // Only needed for the "View Details" button, which needs a full Transaction object.
+  // The amount/status shown on this screen comes straight from the scan result above,
+  // since a tx can pay multiple owned outputs across both SP and regular addresses,
+  // which a single getTransactions() entry can't represent.
+  const tx = useMemo(() => wallet?.getTransactions().find(t => t.txid === txid) ?? null, [wallet, txid]);
 
-    const tx = wallet.getTransactions().find(t => t.txid === txid);
-    if (!tx) return null;
-
-    const confirmations = tipHeight > 0 && blockHeight > 0 ? Math.max(tipHeight - blockHeight + 1, 0) : 0;
-
-    return { tx, value: tx.value, confirmations };
-  }, [wallet, txid, blockHeight, tipHeight]);
-
-  const isConfirmed = (txData?.confirmations ?? 0) >= CONFIRMATIONS_THRESHOLD;
-  const confirmationsDisplay = Math.min(txData?.confirmations ?? 0, CONFIRMATIONS_THRESHOLD);
+  const isConfirmed = confirmations >= CONFIRMATIONS_THRESHOLD;
+  const confirmationsDisplay = Math.min(confirmations, CONFIRMATIONS_THRESHOLD);
   const remaining = CONFIRMATIONS_THRESHOLD - confirmationsDisplay;
-  const progressRatio = txData ? confirmationsDisplay / CONFIRMATIONS_THRESHOLD : 0;
+  const progressRatio = confirmationsDisplay / CONFIRMATIONS_THRESHOLD;
 
-  const formattedBTC = txData?.value != null ? formatBalance(txData.value, BitcoinUnit.BTC) : '';
-  const formattedFiat = txData?.value != null ? satoshiToLocalCurrency(txData.value) : '';
+  const formattedBTC = formatBalance(totalValue, BitcoinUnit.BTC);
+  const formattedFiat = satoshiToLocalCurrency(totalValue);
 
   const handleViewDetails = () => {
-    if (!txData?.tx) return;
-    navigation.navigate('TransactionDetails', { tx: txData.tx, hash: txid, walletID: wallet?.getID() ?? '' });
+    if (!tx) return;
+    navigation.navigate('TransactionDetails', { tx, hash: txid, walletID: wallet?.getID() ?? '' });
   };
 
   const handleDone = () => {

@@ -1,4 +1,5 @@
 import { Transaction, TWallet } from '../class/wallets/types';
+import { OwnedOutput } from '../class/wallets/hd-bip352-wallet';
 import { ElectrumServerItem } from '../screen/settings/ElectrumSettings';
 import { SendDetailsParams } from './SendDetailsStackParamList';
 import { AddWalletStackParamList } from './AddWalletStack';
@@ -57,7 +58,7 @@ export type DetailViewStackParamList = {
   ScanQRCode: ScanQRCodeParamList;
   Onboarding: undefined;
   TrackPayment: undefined;
-  PaymentFound: { txid: string; blockHeight: number; tipHeight: number };
+  PaymentFound: { txid: string; outputs: OwnedOutput[]; totalValue: number; confirmations: number };
   NoPaymentFound: undefined;
   SyncScreen: undefined;
 };

@@ -892,6 +892,31 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
   }
 
   /**
+   * Same as weOwnAddress(), but returns the derivation index and chain instead of a boolean.
+   *
+   * @param address {string} Address that belongs to this wallet
+   * @returns {{internal: boolean, index: number} | null}
+   */
+  findAddressIndex(address: string): { internal: boolean; index: number } | null {
+    if (!address) return null;
+    let cleanAddress = address;
+
+    const isBech32Address = isValidBech32Address(address);
+
+    if (isBech32Address) {
+      cleanAddress = address.toLocaleLowerCase();
+    }
+
+    for (let c = 0; c < this.next_free_address_index + this.gap_limit; c++) {
+      if (this._getExternalAddressByIndex(c) === cleanAddress) return { internal: false, index: c };
+    }
+    for (let c = 0; c < this.next_free_change_address_index + this.gap_limit; c++) {
+      if (this._getInternalAddressByIndex(c) === cleanAddress) return { internal: true, index: c };
+    }
+    return null;
+  }
+
+  /**
    *
    * @param utxos {Array.<{vout: Number, value: Number, txid: String, address: String}>} List of spendable utxos
    * @param targets {Array.<{value: Number, address: String}>} Where coins are going. If theres only 1 target and that target has no value - this will send MAX to that address (respecting fee rate)
