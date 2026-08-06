@@ -667,6 +667,7 @@ const WalletsList: React.FC = () => {
   return (
     <>
       <SafeAreaSectionList<any | string, SectionData>
+        testID="WalletsListScrollView"
         contentContainerStyle={styles.sectionListContent}
         renderItem={renderSectionItem}
         keyExtractor={sectionListKeyExtractor}

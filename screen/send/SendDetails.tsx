@@ -866,7 +866,12 @@ const SendDetails = () => {
 
   return (
     <SafeArea style={[styles.root, stylesHook.root]}>
-      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        testID="SendDetailsScrollView"
+        style={styles.body}
+        contentContainerStyle={styles.bodyContent}
+        keyboardShouldPersistTaps="handled"
+      >
         <AmountHero
           editable
           amount={displayAmount}

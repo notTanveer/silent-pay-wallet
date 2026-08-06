@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { RouteProp, useRoute } from '@react-navigation/native';
+import { RouteProp, useIsFocused, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Clipboard from '@react-native-clipboard/clipboard';
@@ -36,12 +36,15 @@ const ContactDetail: React.FC = () => {
 
   const contact = getContact(params.address);
 
+  // Only while focused: goBack() carries this screen's route key, so firing it from underneath
+  // ContactEdit would pop this route out from below the form the user is still filling in.
+  const isFocused = useIsFocused();
   const hasLeft = useRef(false);
   useEffect(() => {
-    if (contact !== undefined || hasLeft.current) return;
+    if (contact !== undefined || !isFocused || hasLeft.current) return;
     hasLeft.current = true;
     navigation.goBack();
-  }, [contact, navigation]);
+  }, [contact, isFocused, navigation]);
 
   const HeaderRight = useMemo(
     () => (
@@ -80,7 +83,7 @@ const ContactDetail: React.FC = () => {
   };
 
   return (
-    <SafeAreaScrollView contentContainerStyle={styles.content}>
+    <SafeAreaScrollView testID="ContactDetailScrollView" contentContainerStyle={styles.content}>
       <View style={styles.body}>
         <View style={styles.header}>
           <ContactAvatar name={contact.name} colorIndex={contact.colorIndex} size={72} borderRadius={24} />
