@@ -319,7 +319,7 @@ export class HDSegwitBech32Transaction {
     if (newFeerate <= feeRate) throw new Error('New feerate should be bigger than the old one');
     const myAddress = await this._wallet.getChangeAddressAsync();
 
-    return await this._wallet.createTransaction(
+    return this._wallet.createTransaction(
       utxos,
       [{ address: myAddress }],
       newFeerate,
@@ -357,7 +357,7 @@ export class HDSegwitBech32Transaction {
       // not checking emptiness on purpose: it could unpredictably generate too far address because of unconfirmed tx.
     }
 
-    return await this._wallet.createTransaction(utxos, targets, newFeerate, myAddress, (await this.getMaxUsedSequence()) + 1, false, 0);
+    return this._wallet.createTransaction(utxos, targets, newFeerate, myAddress, (await this.getMaxUsedSequence()) + 1, false, 0);
   }
 
   /**
@@ -383,7 +383,7 @@ export class HDSegwitBech32Transaction {
     let add = 0;
     let tx: bitcoin.Transaction | undefined, inputs: CoinSelectReturnInput[], outputs: CoinSelectOutput[], fee: number;
     while (add <= 128) {
-      const createdTx = await this._wallet.createTransaction(
+      const createdTx = this._wallet.createTransaction(
         unconfirmedUtxos,
         [{ address: myAddress }],
         targetFeeRate + add,

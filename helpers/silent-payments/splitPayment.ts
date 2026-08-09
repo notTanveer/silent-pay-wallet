@@ -11,7 +11,7 @@ export const SPLIT_ROUND_MODULUS = 1000;
 export const DEFAULT_DUST_THRESHOLD = 330;
 const MAX_CHANGE_OUTPUTS = 4;
 
-export type RandomSource = (size: number) => Promise<Buffer>;
+export type RandomSource = (size: number) => Buffer;
 
 function floatFromBytes(buf: Buffer, offset: number): number {
   return buf.readUInt32BE(offset) / 0x100000000;
@@ -22,9 +22,9 @@ export function baseFloor(feeRate: number): number {
   return Math.max(SPLIT_MIN_OUTPUT_SATS, FLOOR_K * inputCost);
 }
 
-export async function economicFloor(feeRate: number, rng: RandomSource = randomBytes): Promise<number> {
+export function economicFloor(feeRate: number, rng: RandomSource = randomBytes): number {
   const base = baseFloor(feeRate);
-  const buf = await rng(4);
+  const buf = rng(4);
   const jitter = Math.floor(floatFromBytes(buf, 0) * 0.1 * base);
   return base + jitter;
 }
@@ -34,7 +34,7 @@ export function maxFeasibleCount(paymentValue: number, floor: number): number {
   return Math.min(SPLIT_MAX_OUTPUTS, byFloor);
 }
 
-export async function logUniformPartition(total: number, n: number, floor: number, rng: RandomSource = randomBytes): Promise<number[]> {
+export function logUniformPartition(total: number, n: number, floor: number, rng: RandomSource = randomBytes): number[] {
   if (n <= 0) throw new Error('n must be at least 1');
   // defensive, deal with floating point imprecision in caller's total
   total = Math.round(total);
@@ -42,7 +42,7 @@ export async function logUniformPartition(total: number, n: number, floor: numbe
   const budget = total - n * floor;
   if (budget < 0) throw new Error('total too small to split into n parts above the floor');
 
-  const buf = await rng(n * 4 + 1);
+  const buf = rng(n * 4 + 1);
   const lnR = Math.log(SPLIT_SPREAD_RATIO);
   const weights: number[] = [];
   for (let i = 0; i < n; i++) {
@@ -56,13 +56,13 @@ export async function logUniformPartition(total: number, n: number, floor: numbe
   return parts;
 }
 
-export async function deRound(amounts: number[], floor: number, rng: RandomSource = randomBytes): Promise<number[]> {
+export function deRound(amounts: number[], floor: number, rng: RandomSource = randomBytes): number[] {
   const out = amounts.slice();
   if (out.length < 2) return out;
 
   for (let i = 0; i < out.length; i++) {
     if (out[i] % SPLIT_ROUND_MODULUS !== 0) continue;
-    const buf = await rng(3);
+    const buf = rng(3);
     const delta = 1 + (buf.readUInt16BE(0) % (SPLIT_ROUND_MODULUS - 1));
     const start = buf.readUInt8(2) % out.length;
     let partner = -1;
@@ -112,7 +112,7 @@ export async function deRound(amounts: number[], floor: number, rng: RandomSourc
   return out;
 }
 
-export async function planChangeOutputs(params: {
+export function planChangeOutputs(params: {
   change: number;
   pMax: number;
   floor: number;
@@ -122,7 +122,7 @@ export async function planChangeOutputs(params: {
   outputVBytes?: number;
   dustThreshold?: number;
   rng?: RandomSource;
-}): Promise<number[]> {
+}): number[] {
   const { change, pMax, floor, feeRate, paymentCount } = params;
   const outputVBytes = params.outputVBytes ?? OUTPUT_VBYTES;
   const dustThreshold = params.dustThreshold ?? DEFAULT_DUST_THRESHOLD;
@@ -143,19 +143,13 @@ export async function planChangeOutputs(params: {
   return [];
 }
 
-
 // partition a total value into `n` randomised, non-round amounts.
-export async function partitionPaymentAmounts(
-  value: number,
-  n: number,
-  feeRate: number,
-  rng: RandomSource = randomBytes,
-): Promise<number[]> {
-  const floor = await economicFloor(feeRate, rng);
-  return deRound(await logUniformPartition(value, n, floor, rng), floor, rng);
+export function partitionPaymentAmounts(value: number, n: number, feeRate: number, rng: RandomSource = randomBytes): number[] {
+  const floor = economicFloor(feeRate, rng);
+  return deRound(logUniformPartition(value, n, floor, rng), floor, rng);
 }
 
-export async function planSplitOutputs(params: {
+export function planSplitOutputs(params: {
   paymentValue: number;
   changeValue: number;
   feeRate: number;
@@ -164,14 +158,14 @@ export async function planSplitOutputs(params: {
   dustThreshold?: number;
   rng?: RandomSource;
   precalculatedPaymentAmounts?: number[];
-}): Promise<{ paymentAmounts: number[]; changeAmounts: number[] }> {
+}): { paymentAmounts: number[]; changeAmounts: number[] } {
   const { paymentValue, changeValue, feeRate } = params;
   const rng = params.rng ?? randomBytes;
   const outputVBytes = params.outputVBytes ?? OUTPUT_VBYTES;
   const dustThreshold = params.dustThreshold ?? DEFAULT_DUST_THRESHOLD;
   const coinSelectOutputCount = params.coinSelectOutputCount ?? 2;
 
-  const floor = await economicFloor(feeRate, rng);
+  const floor = economicFloor(feeRate, rng);
   const feePerOutput = Math.ceil(outputVBytes * feeRate);
 
   const pinnedAmounts =
@@ -203,11 +197,11 @@ export async function planSplitOutputs(params: {
   ) {
     paymentAmounts = params.precalculatedPaymentAmounts;
   } else {
-    paymentAmounts = await partitionPaymentAmounts(paymentValue, n, feeRate, rng);
+    paymentAmounts = partitionPaymentAmounts(paymentValue, n, feeRate, rng);
   }
 
   const pMax = Math.max(...paymentAmounts);
-  let changeAmounts = await planChangeOutputs({
+  let changeAmounts = planChangeOutputs({
     change: changeValue,
     pMax,
     floor,
@@ -219,7 +213,7 @@ export async function planSplitOutputs(params: {
     rng,
   });
   if (changeAmounts.length > 1) {
-    changeAmounts = await deRound(changeAmounts, floor, rng);
+    changeAmounts = deRound(changeAmounts, floor, rng);
   }
   return { paymentAmounts, changeAmounts };
 }

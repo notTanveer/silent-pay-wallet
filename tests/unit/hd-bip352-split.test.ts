@@ -30,19 +30,19 @@ describe('getChangeAddresses', () => {
 });
 
 describe('shuffleOutputs', () => {
-  it('preserves the multiset of elements', async () => {
+  it('preserves the multiset of elements', () => {
     const w = makeWallet();
     const input = [{ v: 1 }, { v: 2 }, { v: 3 }, { v: 4 }, { v: 5 }];
-    const out = await (w as any).shuffleOutputs(input);
+    const out = (w as any).shuffleOutputs(input);
     expect(out).toHaveLength(5);
     expect(out.map((o: any) => o.v).sort()).toEqual([1, 2, 3, 4, 5]);
   });
 
-  it('reorders across trials (not always identity)', async () => {
+  it('reorders across trials (not always identity)', () => {
     const w = makeWallet();
     let reordered = false;
     for (let trial = 0; trial < 20 && !reordered; trial++) {
-      const out = await (w as any).shuffleOutputs([1, 2, 3, 4, 5]);
+      const out = (w as any).shuffleOutputs([1, 2, 3, 4, 5]);
       if (out.join(',') !== '1,2,3,4,5') reordered = true;
     }
     expect(reordered).toBe(true);
@@ -52,32 +52,32 @@ describe('shuffleOutputs', () => {
 describe('planSplitTransaction', () => {
   const SP = 'sp1qexamplerecipientaddressxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 
-  it('payment outputs all carry the sp address and sum to the payment value', async () => {
+  it('payment outputs all carry the sp address and sum to the payment value', () => {
     const w = makeWallet();
-    const { outputs } = await (w as any).planSplitTransaction(SP, 500_000, 120_000, 2);
+    const { outputs } = (w as any).planSplitTransaction(SP, 500_000, 120_000, 2);
     const payments = outputs.filter((o: any) => o.address === SP);
     expect(payments.length).toBeGreaterThanOrEqual(2);
     expect(payments.reduce((a: number, o: any) => a + o.value, 0)).toBe(500_000);
   });
 
-  it('change outputs use distinct internal addresses (no reuse)', async () => {
+  it('change outputs use distinct internal addresses (no reuse)', () => {
     const w = makeWallet();
-    const { outputs, changeAddresses } = await (w as any).planSplitTransaction(SP, 300_000, 5_000_000, 2);
+    const { outputs, changeAddresses } = (w as any).planSplitTransaction(SP, 300_000, 5_000_000, 2);
     const changeOuts = outputs.filter((o: any) => o.address !== SP);
     expect(changeOuts.length).toBe(changeAddresses.length);
     expect(new Set(changeAddresses).size).toBe(changeAddresses.length);
   });
 
-  it('returns a single payment output when not splittable', async () => {
+  it('returns a single payment output when not splittable', () => {
     const w = makeWallet();
-    const { outputs } = await (w as any).planSplitTransaction(SP, 60_000, 0, 500);
+    const { outputs } = (w as any).planSplitTransaction(SP, 60_000, 0, 500);
     const payments = outputs.filter((o: any) => o.address === SP);
     expect(payments).toEqual([{ address: SP, value: 60_000 }]);
   });
 
-  it('splits at high fee rates if change is sufficient to fund extra output', async () => {
+  it('splits at high fee rates if change is sufficient to fund extra output', () => {
     const w = makeWallet();
-    const funded = await (w as any).planSplitTransaction(SP, 500_000, 200_000, 50, 2);
+    const funded = (w as any).planSplitTransaction(SP, 500_000, 200_000, 50, 2);
     const fundedPayments = funded.outputs.filter((o: any) => o.address === SP);
     expect(fundedPayments.length).toBeGreaterThanOrEqual(2);
   });
@@ -111,9 +111,9 @@ describe('createTransaction (Case 2: plain, non-SP-tagged UTXOs) with splitPayme
     };
   }
 
-  it('splits and signs a payment to an sp1 recipient funded by plain P2TR UTXOs', async () => {
+  it('splits and signs a payment to an sp1 recipient funded by plain P2TR UTXOs', () => {
     const w = makeRegularWallet();
-    const result: any = await w.createTransaction(
+    const result: any = w.createTransaction(
       [withWif(w) as any],
       [{ address: SP_ADDRESS, value: 150_000 }],
       1,
@@ -132,9 +132,9 @@ describe('createTransaction (Case 2: plain, non-SP-tagged UTXOs) with splitPayme
     expect(new Set(paymentOutputs.map((o: any) => o.address)).size).toBe(paymentOutputs.length); // BIP-352 k-increment gives distinct addresses
   });
 
-  it('falls back to a plain single-output send when the payment is too small to split', async () => {
+  it('falls back to a plain single-output send when the payment is too small to split', () => {
     const w = makeRegularWallet();
-    const result: any = await w.createTransaction(
+    const result: any = w.createTransaction(
       [withWif(w) as any],
       [{ address: SP_ADDRESS, value: 10_000 }], // below the economic floor
       1,
@@ -153,7 +153,7 @@ describe('createTransaction (Case 2: plain, non-SP-tagged UTXOs) with splitPayme
 describe('createTransaction (Case 1: SP-tagged UTXOs) with splitPayment', () => {
   const SP_ADDRESS = 'sp1qqgste7k9hx0qftg6qmwlkqtwuy6cycyavzmzj85c6qdfhjdpdjtdgqjuexzk6murw56suy3e0rd2cgqvycxttddwsvgxe2usfpxumr70xc9pkqwv';
 
-  it('splits and signs a payment to an sp1 recipient funded by SP UTXOs', async () => {
+  it('splits and signs a payment to an sp1 recipient funded by SP UTXOs', () => {
     const w = makeWallet();
 
     const spendPubKey = w.getSpendPublicKey();
@@ -178,7 +178,7 @@ describe('createTransaction (Case 1: SP-tagged UTXOs) with splitPayment', () => 
       pubKey: expectedOutputKey.toString('hex'),
     };
 
-    const result: any = await w.createTransaction(
+    const result: any = w.createTransaction(
       [spUtxo as any],
       [{ address: SP_ADDRESS, value: 150_000 }],
       1,

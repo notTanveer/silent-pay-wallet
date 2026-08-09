@@ -874,10 +874,10 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
 
   // Cryptographic Fisher–Yates shuffle so the change output is not positionally
   // identifiable among the transaction outputs.
-  private async shuffleOutputs<T>(arr: T[]): Promise<T[]> {
+  private shuffleOutputs<T>(arr: T[]): T[] {
     const out = arr.slice();
     if (out.length < 2) return out;
-    const buf = await randomBytes(out.length * 4);
+    const buf = randomBytes(out.length * 4);
     for (let i = out.length - 1; i > 0; i--) {
       const j = buf.readUInt32BE(i * 4) % (i + 1);
       [out[i], out[j]] = [out[j], out[i]];
@@ -888,15 +888,15 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
   // Build the blended output set for a split silent payment: payment outputs to
   // the recipient's sp address plus adaptive, distinct-addressed change outputs,
   // all shuffled.
-  private async planSplitTransaction(
+  private planSplitTransaction(
     spAddress: string,
     paymentValue: number,
     changeValue: number,
     feeRate: number,
     coinSelectOutputCount: number,
     precalculatedPaymentAmounts?: number[],
-  ): Promise<{ outputs: CoinSelectOutput[]; changeAddresses: string[] }> {
-    const { paymentAmounts, changeAmounts } = await planSplitOutputs({
+  ): { outputs: CoinSelectOutput[]; changeAddresses: string[] } {
+    const { paymentAmounts, changeAmounts } = planSplitOutputs({
       paymentValue,
       changeValue,
       feeRate,
@@ -912,7 +912,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       address: changeAddresses[i],
       value,
     }));
-    const outputs = await this.shuffleOutputs([...paymentOutputs, ...changeOutputs]);
+    const outputs = this.shuffleOutputs([...paymentOutputs, ...changeOutputs]);
     return { outputs, changeAddresses };
   }
 
@@ -997,8 +997,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     return keyPair.tweak(tweakHash).toWIF();
   }
   
-  // @ts-expect-error TS2416: base class returns sync CreateTransactionResult but this override is async; callers use TWallet which is typed as this class
-  async createTransaction(
+  createTransaction(
     utxos: CreateTransactionUtxo[],
     targets: CreateTransactionTarget[],
     feeRate: number,
@@ -1008,7 +1007,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     masterFingerprint: number = 0,
     splitPayment = false,
     precalculatedPaymentAmounts?: number[],
-  ): Promise<CreateTransactionResult> {
+  ): CreateTransactionResult {
     if (targets.length === 0) throw new Error('No destination provided');
     if (utxos.length === 0) throw new Error('No UTXOs provided');
 
@@ -1042,7 +1041,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     if (spUtxos.length === 0 && regularUtxos.length > 0) {
       const canSplit = splitPayment && targets.length === 1 && !!targets[0].address?.startsWith('sp1') && !!targets[0].value;
       if (canSplit) {
-        const split = await this.createSplitRegularToSPTransaction(
+        const split = this.createSplitRegularToSPTransaction(
           regularUtxos,
           targets,
           feeRate,
@@ -1069,7 +1068,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
   // BIP-352 receive key. Returns null when the planner declines to split
   // (below the economic floor, fee cap, or no change budget), so the caller
   // can fall back to the plain (proven, non-split) parent implementation.
-  private async createSplitRegularToSPTransaction(
+  private createSplitRegularToSPTransaction(
     regularUtxos: CreateTransactionUtxo[],
     targets: CreateTransactionTarget[],
     feeRate: number,
@@ -1078,7 +1077,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     skipSigning: boolean,
     masterFingerprint: number,
     precalculatedPaymentAmounts?: number[],
-  ): Promise<CreateTransactionResult | null> {
+  ): CreateTransactionResult | null {
     const spAddress = targets[0].address!;
     let { inputs, outputs: rawOutputs } = this.coinselect(regularUtxos, targets, feeRate);
 
@@ -1089,7 +1088,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     const changeValue = rawOutputs.find(o => !o.address)?.value ?? 0;
     if (changeValue <= 0) return null;
 
-    const planned = await this.planSplitTransaction(
+    const split = this.planSplitTransaction(
       spAddress,
       targets[0].value!,
       changeValue,
@@ -1097,7 +1096,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       rawOutputs.length,
       precalculatedPaymentAmounts,
     );
-    const paymentCount = planned.outputs.filter(o => o.address === spAddress).length;
+    const paymentCount = split.outputs.filter(o => o.address === spAddress).length;
     if (paymentCount < 2) return null; // planner declined to split; let the caller fall back
 
     const inputWifs = inputs.map(input => ({
@@ -1105,7 +1104,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       vout: input.vout,
       wif: this.getTweakedWIF(this._getWifForAddress(String(input.address))),
     }));
-    const outputs = this.resolveSPOutputs(inputWifs, planned.outputs);
+    const outputs = this.resolveSPOutputs(inputWifs, split.outputs);
 
     let masterFingerprintBuffer: Buffer;
     if (masterFingerprint) {
@@ -1155,11 +1154,11 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         value: o.value,
       })),
       fee: totalIn - totalOut,
-      changeAddresses: planned.changeAddresses,
+      changeAddresses: split.changeAddresses,
     };
   }
 
-  private async createSPTransaction(
+  private createSPTransaction(
     spUtxos: SilentPaymentUTXO[],
     targets: CreateTransactionTarget[],
     feeRate: number,
@@ -1168,7 +1167,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     skipSigning: boolean,
     splitPayment = false,
     precalculatedPaymentAmounts?: number[],
-  ): Promise<CreateTransactionResult> {
+  ): CreateTransactionResult {
     if (targets.length === 0) throw new Error('No destination provided');
 
     let { inputs, outputs: rawOutputs } = this.coinselect(spUtxos as CreateTransactionUtxo[], targets, feeRate);
@@ -1187,7 +1186,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       rawOutputs = obf.rawOutputs;
 
       const coinSelectOutputCount = rawOutputs.length;
-      const planned = await this.planSplitTransaction(
+      const planned = this.planSplitTransaction(
         targets[0].address!,
         targets[0].value!,
         obf.rawOutputs.find(o => !o.address)?.value ?? 0,
