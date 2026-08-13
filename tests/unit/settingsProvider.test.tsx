@@ -34,30 +34,6 @@ describe('unit - SettingsProvider', () => {
     await DefaultPreference.clearAll();
   });
 
-  it('defaults isWalletShortcutsEnabled to true when nothing is persisted', async () => {
-    const { result } = renderHook(() => useSettings(), { wrapper });
-
-    await waitFor(() => assert.strictEqual(result.current.settingsLoaded, true));
-
-    assert.strictEqual(result.current.isWalletShortcutsEnabled, true);
-  });
-
-  it('persists isWalletShortcutsEnabled=false and reads it back after a remount', async () => {
-    const { result, unmount } = renderHook(() => useSettings(), { wrapper });
-    await waitFor(() => assert.strictEqual(result.current.settingsLoaded, true));
-
-    await act(async () => {
-      await result.current.setIsWalletShortcutsEnabledStorage(false);
-    });
-    assert.strictEqual(result.current.isWalletShortcutsEnabled, false);
-    unmount();
-
-    const { result: remounted } = renderHook(() => useSettings(), { wrapper });
-    await waitFor(() => assert.strictEqual(remounted.current.settingsLoaded, true));
-
-    assert.strictEqual(remounted.current.isWalletShortcutsEnabled, false);
-  });
-
   it('defaults themePreference to system and persists a change across a remount', async () => {
     const { result, unmount } = renderHook(() => useSettings(), { wrapper });
     await waitFor(() => assert.strictEqual(result.current.settingsLoaded, true));

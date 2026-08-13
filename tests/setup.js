@@ -200,18 +200,6 @@ jest.mock('@react-native-documents/picker', () => ({}));
 
 jest.mock('react-native-haptic-feedback', () => ({}));
 
-jest.mock('@rn-org/react-native-shortcuts', () => ({
-  isShortcutSupported: jest.fn().mockResolvedValue(true),
-  addShortcut: jest.fn(),
-  updateShortcut: jest.fn(),
-  removeShortcut: jest.fn(),
-  removeAllShortcuts: jest.fn(),
-  getShortcutById: jest.fn(),
-  isShortcutExists: jest.fn(),
-  getInitialShortcutId: jest.fn().mockResolvedValue(''),
-  addOnShortcutUsedListener: jest.fn().mockReturnValue({ remove: jest.fn() }),
-}));
-
 const realmInstanceMock = {
   create: function () {},
   delete: function () {},

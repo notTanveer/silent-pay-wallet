@@ -85,8 +85,6 @@ const GeneralSettings: React.FC = () => {
   const {
     isClipboardGetContentEnabled,
     setIsClipboardGetContentEnabledStorage,
-    isWalletShortcutsEnabled,
-    setIsWalletShortcutsEnabledStorage,
     isScreenCaptureAllowed,
     setIsScreenCaptureAllowed,
     themePreference,
@@ -120,13 +118,6 @@ const GeneralSettings: React.FC = () => {
           value={isClipboardGetContentEnabled}
           onValueChange={setIsClipboardGetContentEnabledStorage}
           testID="ReadClipboardSwitch"
-        />
-        <ToggleRow
-          title={loc.settings.general_wallet_shortcuts_title}
-          subtitle={loc.settings.general_wallet_shortcuts_subtitle}
-          value={isWalletShortcutsEnabled}
-          onValueChange={setIsWalletShortcutsEnabledStorage}
-          testID="WalletShortcutsSwitch"
         />
         <ToggleRow
           title={loc.settings.general_screen_capture_title}

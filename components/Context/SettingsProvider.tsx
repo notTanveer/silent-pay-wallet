@@ -12,7 +12,6 @@ import { BitcoinUnit } from '../../models/bitcoinUnits';
 const TotalWalletsBalanceKey = 'TotalWalletsBalance';
 const TotalWalletsBalancePreferredUnit = 'TotalWalletsBalancePreferredUnit';
 const ThemePreferenceKey = 'ThemePreference';
-const WalletShortcutsEnabledKey = 'WalletShortcutsEnabled';
 
 export type ThemePreference = 'system' | 'light' | 'dark';
 
@@ -40,11 +39,6 @@ const getThemePreferenceStorage = (): Promise<ThemePreference> =>
 
 const persistThemePreference = (value: ThemePreference): Promise<void> => writePref(ThemePreferenceKey, value);
 
-const getIsWalletShortcutsEnabledStorage = (): Promise<boolean> =>
-  readPref(WalletShortcutsEnabledKey, value => (value === null ? true : value === 'true'), true);
-
-const persistIsWalletShortcutsEnabled = (value: boolean): Promise<void> => writePref(WalletShortcutsEnabledKey, value ? 'true' : 'false');
-
 const getDoNotTrackStorage = (): Promise<boolean> => readPref(ShroudApp.DO_NOT_TRACK, value => value === '1', false);
 
 const getIsTotalBalanceViewEnabled = (): Promise<boolean> => readPref(TotalWalletsBalanceKey, value => (value ?? 'true') === 'true', true);
@@ -69,8 +63,6 @@ interface SettingsContextType {
   setIsElectrumDisabled: (value: boolean) => void;
   themePreference: ThemePreference;
   setThemePreferenceStorage: (value: ThemePreference) => Promise<void>;
-  isWalletShortcutsEnabled: boolean;
-  setIsWalletShortcutsEnabledStorage: (value: boolean) => Promise<void>;
   settingsLoaded: boolean;
 }
 
@@ -89,8 +81,6 @@ const defaultSettingsContext: SettingsContextType = {
   setIsElectrumDisabled: () => {},
   themePreference: 'system',
   setThemePreferenceStorage: async () => {},
-  isWalletShortcutsEnabled: true,
-  setIsWalletShortcutsEnabledStorage: async () => {},
   settingsLoaded: false,
 };
 
@@ -106,7 +96,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
   const [totalBalancePreferredUnit, setTotalBalancePreferredUnit] = useState<BitcoinUnit>(BitcoinUnit.BTC);
   const [isElectrumDisabled, setIsElectrumDisabled] = useState<boolean>(true);
   const [themePreference, setThemePreference] = useState<ThemePreference>('system');
-  const [isWalletShortcutsEnabled, setIsWalletShortcutsEnabled] = useState<boolean>(true);
   const [settingsLoaded, setSettingsLoaded] = useState<boolean>(false);
 
   const { walletsInitialized } = useStorage();
@@ -137,9 +126,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
         }),
         getThemePreferenceStorage().then(preference => {
           setThemePreference(preference);
-        }),
-        getIsWalletShortcutsEnabledStorage().then(enabled => {
-          setIsWalletShortcutsEnabled(enabled);
         }),
       ];
 
@@ -211,15 +197,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
     }
   }, []);
 
-  const setIsWalletShortcutsEnabledStorage = useCallback(async (value: boolean): Promise<void> => {
-    try {
-      await persistIsWalletShortcutsEnabled(value);
-      setIsWalletShortcutsEnabled(value);
-    } catch (e) {
-      console.error('Error setting isWalletShortcutsEnabled:', e);
-    }
-  }, []);
-
   const value = useMemo(
     () => ({
       preferredFiatCurrency,
@@ -236,8 +213,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
       setIsElectrumDisabled,
       themePreference,
       setThemePreferenceStorage,
-      isWalletShortcutsEnabled,
-      setIsWalletShortcutsEnabledStorage,
       settingsLoaded,
     }),
     [
@@ -253,8 +228,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
       isElectrumDisabled,
       themePreference,
       setThemePreferenceStorage,
-      isWalletShortcutsEnabled,
-      setIsWalletShortcutsEnabledStorage,
       settingsLoaded,
     ],
   );

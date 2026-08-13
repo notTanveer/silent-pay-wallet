@@ -42,9 +42,6 @@ describe('Settings', () => {
       .toBeVisible()
       .withTimeout(10_000);
 
-    await element(by.id('WalletShortcutsSwitch')).tap();
-    await element(by.id('WalletShortcutsSwitch')).tap();
-
     await element(by.id('ThemeRow')).tap();
     await waitFor(element(by.id('ThemeDarkOption')))
       .toBeVisible()
