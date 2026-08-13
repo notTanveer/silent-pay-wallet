@@ -60,8 +60,18 @@ class AppDelegate: RCTAppDelegate, UNUserNotificationCenterDelegate {
         // Access the singleton via the class method
         _ = MenuElementsEmitter.sharedInstance()
         NSLog("[MenuElements] AppDelegate: Initialized emitter singleton")
-        
-        return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+
+        // A shortcut tap that cold-launches the app delivers the item here, not via
+        // performActionFor (that only fires when the app was already running/backgrounded).
+        // Returning false below skips performActionFor for this launch (per Apple's docs),
+        // which avoids handling the same shortcut item twice.
+        var shouldPerformAdditionalDelegateHandling = true
+        if let shortcutItem = launchOptions?[.shortcutItem] as? UIApplicationShortcutItem {
+            RNShortcuts.handle(shortcutItem)
+            shouldPerformAdditionalDelegateHandling = false
+        }
+
+        return super.application(application, didFinishLaunchingWithOptions: launchOptions) && shouldPerformAdditionalDelegateHandling
     }
 
     override func sourceURL(for bridge: RCTBridge) -> URL? {
@@ -320,6 +330,11 @@ class AppDelegate: RCTAppDelegate, UNUserNotificationCenterDelegate {
 
     override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         return RCTLinkingManager.application(app, open: url, options: options)
+    }
+
+    override func application(_ application: UIApplication, performActionFor shortcutItem: UIApplicationShortcutItem, completionHandler: @escaping (Bool) -> Void) {
+        RNShortcuts.handle(shortcutItem)
+        completionHandler(true)
     }
 
     override func applicationWillTerminate(_ application: UIApplication) {

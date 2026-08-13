@@ -23,5 +23,44 @@ describe('Settings', () => {
     await waitFor(element(by.id('AboutScrollView')))
       .toBeVisible()
       .withTimeout(5_000);
+
+    await device.pressBack();
+    await device.pressBack();
+    await waitFor(element(by.id('SettingsButton')))
+      .toBeVisible()
+      .withTimeout(5_000);
+  });
+
+  it('toggles general settings and changes theme and denomination', async () => {
+    await element(by.id('SettingsButton')).tap();
+    await waitFor(element(by.id('GeneralButton')))
+      .toBeVisible()
+      .withTimeout(10_000);
+
+    await element(by.id('GeneralButton')).tap();
+    await waitFor(element(by.id('GeneralSettingsScrollView')))
+      .toBeVisible()
+      .withTimeout(10_000);
+
+    await element(by.id('WalletShortcutsSwitch')).tap();
+    await element(by.id('WalletShortcutsSwitch')).tap();
+
+    await element(by.id('ThemeRow')).tap();
+    await waitFor(element(by.id('ThemeDarkOption')))
+      .toBeVisible()
+      .withTimeout(5_000);
+    await element(by.id('ThemeDarkOption')).tap();
+    await device.pressBack();
+
+    await waitFor(element(by.id('DenominationRow')))
+      .toBeVisible()
+      .whileElement(by.id('GeneralSettingsScrollView'))
+      .scroll(200, 'down');
+    await element(by.id('DenominationRow')).tap();
+    await waitFor(element(by.id('DenominationSatsOption')))
+      .toBeVisible()
+      .withTimeout(5_000);
+    await element(by.id('DenominationSatsOption')).tap();
+    await device.pressBack();
   });
 });

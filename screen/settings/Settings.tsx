@@ -3,6 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 import SettingsRow from '../../components/SettingsRow';
+import GeneralIcon from '../../components/icons/GeneralIcon';
 import CurrencyIcon from '../../components/icons/CurrencyIcon';
 import SecurityIcon from '../../components/icons/SecurityIcon';
 import NetworkIcon from '../../components/icons/NetworkIcon';
@@ -39,6 +40,14 @@ interface RowConfig {
 }
 
 const MAIN_ROWS: RowConfig[] = [
+  {
+    Icon: GeneralIcon,
+    colorToken: 'settingsGeneralIconColor',
+    title: loc.settings.general,
+    subtitle: loc.settings.general_subtitle,
+    route: 'General',
+    testID: 'GeneralButton',
+  },
   {
     Icon: CurrencyIcon,
     colorToken: 'settingsCurrencyIconColor',

@@ -1,5 +1,6 @@
 import { DarkTheme, DefaultTheme, useTheme as useThemeBase } from '@react-navigation/native';
-import { Appearance } from 'react-native';
+import { Appearance, ColorSchemeName } from 'react-native';
+import { ThemePreference } from './Context/SettingsProvider';
 
 // Primitive palette: raw color values, each declared exactly once.
 // The semantic tokens below alias these, so a value change happens in one place
@@ -13,14 +14,20 @@ const palette = {
   gray100: '#EEF0F4',
   gray150: '#EEEEEE',
   gray200: '#E6E4E4',
+  gray250: '#E5E5EA',
   gray300: '#D2D2D2',
+  gray325: '#D1D1D6',
+  gray350: '#D1D5DC',
   gray400: '#9AA0AA',
   gray450: '#99A1AF',
+  gray480: '#8E8E93',
   gray500: '#81868E',
+  gray600: '#787878',
   gray700: '#545454',
   gray800: '#3A3A3C',
   gray850: '#313030',
   gray900: '#202020',
+  gray925: '#1C1C1E',
   gray950: '#121212',
   maroon900: '#5A4E4E',
 
@@ -32,6 +39,7 @@ const palette = {
   violet850: '#473F71',
   violet900: '#1D1A2B',
   violet500Alpha: '#8763EB8F',
+  indigo500: '#5856D6',
 
   blue500: '#0A84FF',
   teal500: '#37C0A1',
@@ -60,6 +68,8 @@ const tokens = {
   inputBackgroundColor: pair('#F5F5F5', '#262626'),
   alternativeTextColor: same(palette.gray400),
   alternativeTextColor2: pair(palette.violet600, palette.blue500),
+  accentColor: same(palette.indigo500),
+  toggleTrackOff: same(palette.gray350),
   buttonGrayBackgroundColor: same(palette.gray150),
   incomingBackgroundColor: same('#D2F8D6'),
   successColor: same(palette.teal500),
@@ -161,6 +171,16 @@ const tokens = {
   settingsCardBorder: pair('#F0F0F0', '#2C2C2E'),
   settingsCardBackground: pair('#F9F9FB', '#1C1C1E'),
   settingsRowTitle: pair('#101828', palette.white),
+  settingsDescriptionText: pair('#3C3C43', palette.white),
+  settingsDenominationIconColor: same(palette.gray600),
+  // Fixed swatch colors for the Theme screen's Light/Dark preview cards — these must render
+  // as literal light/dark regardless of the app's active theme, so they're same() not pair().
+  themePreviewLightBg: same(palette.white),
+  themePreviewBorderInactive: same(palette.gray250),
+  themePreviewDarkBg: same(palette.gray925),
+  themePreviewBarLight: same(palette.gray325),
+  themePreviewBarDark: same(palette.gray800),
+  themePreviewLabelInactive: same(palette.gray480),
   settingsDeleteWallet: pair('#E53935', '#FF453A'),
   settingsIconWrapperBg: pair(palette.white, '#2C2C2E'),
   settingsRipple: pair('rgba(0,0,0,0.06)', 'rgba(255,255,255,0.06)'),
@@ -209,6 +229,11 @@ export const ShroudDarkTheme: Theme = {
 
 // Casting theme value to get autocompletion
 export const useTheme = (): Theme => useThemeBase() as Theme;
+
+export const getEffectiveTheme = (themePreference: ThemePreference, colorScheme: ColorSchemeName): Theme => {
+  const effectiveScheme = themePreference === 'system' ? colorScheme : themePreference;
+  return effectiveScheme === 'dark' ? ShroudDarkTheme : ShroudDefaultTheme;
+};
 
 export class BlueCurrentTheme {
   static colors: Theme['colors'];

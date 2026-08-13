@@ -2,6 +2,22 @@ import { createNavigationContainerRef, NavigationAction, ParamListBase, StackAct
 
 export const navigationRef = createNavigationContainerRef<ParamListBase>();
 
+let isContainerReady = false;
+const readyCallbacks: Array<() => void> = [];
+
+export function markNavigationReady() {
+  isContainerReady = true;
+  readyCallbacks.splice(0).forEach(callback => callback());
+}
+
+export function onNavigationReady(callback: () => void) {
+  if (isContainerReady) {
+    callback();
+  } else {
+    readyCallbacks.push(callback);
+  }
+}
+
 export function navigate(name: string, params?: ParamListBase, options?: { merge: boolean }) {
   if (navigationRef.isReady()) {
     navigationRef.current?.navigate({ name, params, merge: options?.merge });
