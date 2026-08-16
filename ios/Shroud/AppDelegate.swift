@@ -60,7 +60,7 @@ class AppDelegate: RCTAppDelegate, UNUserNotificationCenterDelegate {
         // Access the singleton via the class method
         _ = MenuElementsEmitter.sharedInstance()
         NSLog("[MenuElements] AppDelegate: Initialized emitter singleton")
-        
+
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
 

@@ -55,7 +55,7 @@ const WalletExport: React.FC = () => {
   const { wallets } = useStorage();
   const { walletID } = useRoute<RouteProps>().params;
   const navigation = useNavigation();
-  const { isPrivacyBlurEnabled } = useSettings();
+  const { isScreenCaptureAllowed } = useSettings();
   const { colors } = useTheme();
   const wallet = wallets.find(w => w.getID() === walletID)!;
   const [qrCodeSize, setQRCodeSize] = useState(90);
@@ -88,13 +88,13 @@ const WalletExport: React.FC = () => {
   }, [currentAppState, previousAppState, navigation]);
 
   useEffect(() => {
-    if (isPrivacyBlurEnabled) {
+    if (!isScreenCaptureAllowed) {
       enableScreenProtect();
     }
     return () => {
       disableScreenProtect();
     };
-  }, [isPrivacyBlurEnabled, enableScreenProtect, disableScreenProtect]);
+  }, [isScreenCaptureAllowed, enableScreenProtect, disableScreenProtect]);
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     const { height, width } = e.nativeEvent.layout;

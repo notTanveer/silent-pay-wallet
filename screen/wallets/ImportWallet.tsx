@@ -85,7 +85,7 @@ const ImportWallet = () => {
   const [isToolbarVisibleForAndroid, setIsToolbarVisibleForAndroid] = useState<boolean>(false);
   const [, setSpeedBackdoor] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { isPrivacyBlurEnabled } = useSettings();
+  const { isScreenCaptureAllowed } = useSettings();
   const { enableScreenProtect, disableScreenProtect } = useScreenProtect();
   const { addAndSaveWallet, wallets } = useStorage();
   const stylesHook = StyleSheet.create({
@@ -225,13 +225,13 @@ const ImportWallet = () => {
   };
 
   useEffect(() => {
-    if (isPrivacyBlurEnabled) {
+    if (!isScreenCaptureAllowed) {
       enableScreenProtect();
     }
     return () => {
       disableScreenProtect();
     };
-  }, [isPrivacyBlurEnabled, enableScreenProtect, disableScreenProtect]);
+  }, [isScreenCaptureAllowed, enableScreenProtect, disableScreenProtect]);
 
   useEffect(() => {
     if (triggerImport) handleImport();

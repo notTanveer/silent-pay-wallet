@@ -125,6 +125,7 @@
     "react-native-capture-protection": "github:BlueWallet/react-native-capture-protection#54d900",
     "react-native-default-preference": "https://github.com/BlueWallet/react-native-default-preference.git#6338a1f1235e4130b8cfc2dd3b53015eeff2870c",
     "react-native-device-info": "14.0.4",
+    "react-native-dotenv": "^3.4.11",
     "react-native-fs": "2.20.0",
     "react-native-gesture-handler": "2.25.0",
     "react-native-get-random-values": "1.11.0",
@@ -150,7 +151,6 @@
     "silent-payments": "github:BlueWallet/SilentPayments#7ac4d17",
     "stream-browserify": "3.0.0",
     "url": "0.11.4",
-    "wif": "2.0.6",
-    "react-native-dotenv": "^3.4.11"
+    "wif": "2.0.6"
   }
 }

@@ -3,19 +3,33 @@ import React, { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SizeClassProvider } from './components/Context/SizeClassProvider';
 import { SettingsProvider } from './components/Context/SettingsProvider';
-import { ShroudDefaultTheme, ShroudDarkTheme } from './components/themes';
+import { getEffectiveTheme } from './components/themes';
 import MasterView from './navigation/MasterView';
-import { navigationRef } from './NavigationService';
+import { markNavigationReady, navigationRef } from './NavigationService';
 import { useLogger } from '@react-navigation/devtools';
 import { StorageProvider } from './components/Context/StorageProvider';
+import { useSettings } from './hooks/context/useSettings';
 import { initializeIndexer } from './modules/SilentPaymentIndexer';
 import { initializeRustJsiBridge } from './modules/RustJsiBridge';
 import { INDEXER_BASE_URL } from '@env';
 import { useColorScheme } from 'react-native';
 
-const App = () => {
+const ThemedNavigationContainer = () => {
   const colorScheme = useColorScheme();
+  const { themePreference, settingsLoaded } = useSettings();
 
+  useLogger(navigationRef);
+
+  if (!settingsLoaded) return null;
+
+  return (
+    <NavigationContainer ref={navigationRef} onReady={markNavigationReady} theme={getEffectiveTheme(themePreference, colorScheme)}>
+      <MasterView />
+    </NavigationContainer>
+  );
+};
+
+const App = () => {
   useEffect(() => {
     if (!INDEXER_BASE_URL) throw new Error('INDEXER_BASE_URL is not set');
     initializeRustJsiBridge();
@@ -25,19 +39,15 @@ const App = () => {
     });
   }, []);
 
-  useLogger(navigationRef);
-
   return (
     <SizeClassProvider>
-      <NavigationContainer ref={navigationRef} theme={colorScheme === 'dark' ? ShroudDarkTheme : ShroudDefaultTheme}>
-        <SafeAreaProvider>
-          <StorageProvider>
-            <SettingsProvider>
-              <MasterView />
-            </SettingsProvider>
-          </StorageProvider>
-        </SafeAreaProvider>
-      </NavigationContainer>
+      <SafeAreaProvider>
+        <StorageProvider>
+          <SettingsProvider>
+            <ThemedNavigationContainer />
+          </SettingsProvider>
+        </StorageProvider>
+      </SafeAreaProvider>
     </SizeClassProvider>
   );
 };

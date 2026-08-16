@@ -1,9 +1,11 @@
 import { createNativeStackNavigator, NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import React, { lazy, Suspense } from 'react';
+import { useColorScheme } from 'react-native';
 import UnlockWith from '../screen/UnlockWith';
 import { LazyLoadingIndicator } from './LazyLoadingIndicator';
 import { DetailViewStackParamList } from './DetailViewStackParamList';
 import { useStorage } from '../hooks/context/useStorage';
+import { useSettings } from '../hooks/context/useSettings';
 
 // Lazy load all components except UnlockWith
 const DrawerRoot = lazy(() => import('./DrawerRoot'));
@@ -60,9 +62,12 @@ const LazyScanQRCodeComponent = () => (
 
 const MainRoot = () => {
   const { walletsInitialized } = useStorage();
+  const colorScheme = useColorScheme();
+  const { themePreference } = useSettings();
+  const effectiveScheme = themePreference === 'system' ? colorScheme : themePreference;
 
   return (
-    <DetailViewStack.Navigator screenOptions={{ headerShown: false }}>
+    <DetailViewStack.Navigator screenOptions={{ headerShown: false, statusBarStyle: effectiveScheme === 'dark' ? 'light' : 'dark' }}>
       {!walletsInitialized ? (
         <DetailViewStack.Screen name="UnlockWithScreen" component={UnlockWith} />
       ) : (

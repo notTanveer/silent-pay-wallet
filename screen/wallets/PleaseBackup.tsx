@@ -36,7 +36,7 @@ const PleaseBackup: React.FC = () => {
   const wallet = wallets.find(w => w.getID() === walletID)!;
   const seedPhrase = wallet.getSecret();
   const navigation = useExtendedNavigation();
-  const { isPrivacyBlurEnabled } = useSettings();
+  const { isScreenCaptureAllowed } = useSettings();
   const { enableScreenProtect, disableScreenProtect } = useScreenProtect();
   const [currentStep, setCurrentStep] = useState<BackupStep>(BackupStep.SHOW_SEED);
   const [skipVerifyTaps, setSkipVerifyTaps] = useState(0);
@@ -69,11 +69,11 @@ const PleaseBackup: React.FC = () => {
 
   useFocusEffect(
     useCallback(() => {
-      if (isPrivacyBlurEnabled) enableScreenProtect();
+      if (!isScreenCaptureAllowed) enableScreenProtect();
       return () => {
         disableScreenProtect();
       };
-    }, [disableScreenProtect, enableScreenProtect, isPrivacyBlurEnabled]),
+    }, [disableScreenProtect, enableScreenProtect, isScreenCaptureAllowed]),
   );
 
   return (

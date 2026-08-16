@@ -40,6 +40,8 @@ export type DetailViewStackParamList = {
   Settings: undefined;
   Currency: undefined;
   General: undefined;
+  ThemeSettings: undefined;
+  DenominationSettings: undefined;
   Contact: undefined;
   Tools: undefined;
   PlausibleDeniability: undefined;
