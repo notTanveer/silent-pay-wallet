@@ -1270,6 +1270,9 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
     for (const t of _targets) {
       if (t.address?.startsWith('bc1')) {
         t.script = { length: bitcoin.address.toOutputScript(t.address).length + 3 };
+      } else if (t.address?.startsWith('sp1')) {
+        // silent payment targets become P2TR outputs (34-byte script)
+        t.script = { length: 34 + 3 };
       }
 
       if (t.script?.hex) {
