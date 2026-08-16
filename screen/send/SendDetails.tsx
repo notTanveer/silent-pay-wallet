@@ -558,11 +558,21 @@ const SendDetails = () => {
 
   const createPsbtTransaction = async () => {
     if (!wallet) return;
-    const change = await getChangeAddressAsync();
-    assert(change, 'Could not get change address');
+
     const requestedSatPerByte = Number(feeRate);
     const lutxo: CreateTransactionUtxo[] = (utxos || (wallet?.getUtxo() ?? [])) as CreateTransactionUtxo[];
     console.log({ requestedSatPerByte, lutxo: lutxo.length });
+
+    let change: string | undefined = await getChangeAddressAsync();
+
+    // An SP wallet sends change to its label-0 silent payment address, but only when the
+    // silent payment builder will actually run — the regular builder can't encode an sp1
+    // change output. The wallet owns that decision so this screen and the builder agree.
+    if (wallet.type === HDSilentPaymentsWallet.type) {
+      change = (wallet as HDSilentPaymentsWallet).getChangeAddressForUtxos(lutxo, change);
+    }
+
+    assert(change, 'Could not get change address');
 
     const targets: CreateTransactionTarget[] = [];
     for (const transaction of addresses) {

@@ -1,23 +1,31 @@
 import { Buffer } from 'buffer';
 import * as bitcoin from 'bitcoinjs-lib';
-import { getScanPrivateKey, getSpendPublicKey } from './SilentPaymentKeyDerivation';
+import {
+  getScanPrivateKey,
+  getSpendPublicKey,
+  getSilentPaymentAddress,
+  getSilentPaymentChangeSpendPublicKey,
+} from './SilentPaymentKeyDerivation';
 import { IndexerTransaction, SilentPaymentUTXO } from './types';
 import { spScanTransactions, RustMatchedUTXO, RustBatchScanResult } from '../../modules/RustJsiBridge';
 import { hexToUint8Array } from '../../modules/uint8array-extras';
 
 export class RustTransactionProcessor {
   private scanPrivkeyHex: string;
-  private spendPubkeyHex: string;
+  /** Main spend pubkey plus the label-0 (change) spend pubkey — the scanner tries both. */
+  private spendPubkeysHex: string[];
+  private silentPaymentAddress: string;
 
   constructor(seed: Buffer) {
-    const scanPrivkey = getScanPrivateKey(seed);
-    const spendPubkey = getSpendPublicKey(seed);
-
-    this.scanPrivkeyHex = Buffer.from(scanPrivkey).toString('hex');
-    this.spendPubkeyHex = Buffer.from(spendPubkey).toString('hex');
+    this.scanPrivkeyHex = Buffer.from(getScanPrivateKey(seed)).toString('hex');
+    this.spendPubkeysHex = [
+      Buffer.from(getSpendPublicKey(seed)).toString('hex'),
+      Buffer.from(getSilentPaymentChangeSpendPublicKey(seed)).toString('hex'),
+    ];
+    this.silentPaymentAddress = getSilentPaymentAddress(seed);
   }
 
-  private convertToSilentPaymentUTXO(rustUtxo: RustMatchedUTXO, silentPaymentAddress: string): SilentPaymentUTXO {
+  private convertToSilentPaymentUTXO(rustUtxo: RustMatchedUTXO): SilentPaymentUTXO {
     return {
       txid: rustUtxo.txid,
       vout: rustUtxo.vout,
@@ -28,7 +36,10 @@ export class RustTransactionProcessor {
       }).address!,
 
       // sp specific fields
-      silentPaymentAddress,
+      // Always the main address, including for label-0 change: which spend key a UTXO
+      // belongs to is derived from `pubKey`/`tweak` at spend time, and showing the user a
+      // label-0 address they never published is meaningless.
+      silentPaymentAddress: this.silentPaymentAddress,
       pubKey: rustUtxo.pubKey,
       tweak: hexToUint8Array(rustUtxo.tweakHex),
       blockHash: rustUtxo.blockHash,
@@ -37,11 +48,7 @@ export class RustTransactionProcessor {
     };
   }
 
-  async processBatch(
-    transactions: IndexerTransaction[],
-    silentPaymentAddress: string,
-    cancelScanCallback?: () => boolean,
-  ): Promise<SilentPaymentUTXO[]> {
+  async processBatch(transactions: IndexerTransaction[], cancelScanCallback?: () => boolean): Promise<SilentPaymentUTXO[]> {
     if (transactions.length === 0) {
       return [];
     }
@@ -51,14 +58,14 @@ export class RustTransactionProcessor {
     }
 
     try {
-      const result: RustBatchScanResult = spScanTransactions(this.scanPrivkeyHex, this.spendPubkeyHex, transactions);
+      const result: RustBatchScanResult = spScanTransactions(this.scanPrivkeyHex, this.spendPubkeysHex, transactions);
 
       console.log(
         `[RustTransactionProcessor] Scanned ${result.transactionsScanned} txs, ` +
           `${result.outputsScanned} outputs, found ${result.matchedUtxos.length} matches`,
       );
 
-      return result.matchedUtxos.map(utxo => this.convertToSilentPaymentUTXO(utxo, silentPaymentAddress));
+      return result.matchedUtxos.map(utxo => this.convertToSilentPaymentUTXO(utxo));
     } catch (error) {
       console.error('[RustTransactionProcessor] Batch processing error:', error);
       throw error;
@@ -66,10 +73,11 @@ export class RustTransactionProcessor {
   }
 
   clear(): void {
-    this.scanPrivkeyHex = '0'.repeat(64);
-    this.spendPubkeyHex = '0'.repeat(66);
+    // Note: this only drops our references. JS strings are immutable, so the original
+    // bytes stay wherever the engine put them until GC — this is not a secure wipe.
     this.scanPrivkeyHex = '';
-    this.spendPubkeyHex = '';
+    this.spendPubkeysHex = [];
+    this.silentPaymentAddress = '';
   }
 }
 
