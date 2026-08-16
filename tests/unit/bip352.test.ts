@@ -66,33 +66,15 @@ describe('BIP-352 Silent Payments', () => {
       const spendPubKey = wallet.getSpendPublicKey();
       expect(spendPubKey[0]).toBe(expectedParity);
 
-      const tweak = new Uint8Array(32);
-      tweak[31] = 0x07;
-      const tweakedPub = ecc.pointAddScalar(spendPubKey, tweak, true);
-      if (!tweakedPub) throw new Error('synthetic tweak produced invalid point');
-      const expectedOutputKey = Buffer.from(tweakedPub.subarray(1, 33));
-      const p2trAddress = bitcoin.payments.p2tr({ pubkey: expectedOutputKey }).address!;
-
-      const utxo: SilentPaymentUTXO = {
-        txid: '1111111111111111111111111111111111111111111111111111111111111111',
-        vout: 0,
-        value: 100_000,
-        height: 800_000,
-        address: p2trAddress,
-        silentPaymentAddress: wallet.getSilentPaymentAddress() || '',
-        pubKey: expectedOutputKey.toString('hex'),
-        tweak,
-        blockHash: '',
-        blockTime: 0,
-        isSpent: false,
-      };
+      const utxo = buildUtxo(spendPubKey, wallet.getSilentPaymentAddress()!, 0x07);
+      const expectedOutputKey = Buffer.from(utxo.pubKey, 'hex');
 
       const targetAddress = 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr';
       const result = wallet.createTransaction(
         [utxo as never],
         [{ address: targetAddress, value: 50_000 }],
         2,
-        p2trAddress,
+        utxo.address,
         0xfffffffd,
         false,
         0,
@@ -115,6 +97,60 @@ describe('BIP-352 Silent Payments', () => {
       );
       const sig64 = sig.length === 65 ? Buffer.from(sig.subarray(0, 64)) : Buffer.from(sig);
       expect(ecc.verifySchnorr!(sighash, expectedOutputKey, sig64)).toBe(true);
+    });
+  });
+
+  describe('createSPTransaction verifies Schnorr signatures locally before returning', () => {
+    const targetAddress = 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr';
+
+    // produce a structurally valid Schnorr signature over the WRONG sighash: it parses fine
+    // but cannot verify against the input's real sighash, like a signing bug would produce
+    const mockBadSignature = () => {
+      const realSignSchnorr = ecc.signSchnorr!;
+      const wrongSighash = new Uint8Array(32).fill(0xaa);
+      return jest.spyOn(ecc, 'signSchnorr').mockImplementation((_h, d, e) => realSignSchnorr(wrongSighash, d, e));
+    };
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('throws instead of returning a transaction when the signature does not verify', () => {
+      const wallet = new HDSilentPaymentsWallet();
+      wallet.setSecret(TEST_SEED);
+      const utxo = buildUtxo(wallet.getSpendPublicKey(), wallet.getSilentPaymentAddress()!, 0x07);
+      mockBadSignature();
+
+      expect(() =>
+        wallet.createTransaction([utxo as never], [{ address: targetAddress, value: 50_000 }], 2, utxo.address, 0xfffffffd, false, 0),
+      ).toThrow(/Schnorr signature verification failed/);
+    });
+
+    it('releases reserved UTXOs when verification fails, so the inputs are not stuck pending', () => {
+      const wallet = new HDSilentPaymentsWallet();
+      wallet.setSecret(TEST_SEED);
+      const utxo = buildUtxo(wallet.getSpendPublicKey(), wallet.getSilentPaymentAddress()!, 0x07);
+      mockBadSignature();
+
+      expect(() =>
+        wallet.createTransaction([utxo as never], [{ address: targetAddress, value: 50_000 }], 2, utxo.address, 0xfffffffd, false, 0),
+      ).toThrow();
+
+      const pendingInputs = (wallet as any)._sp_pending_inputs as Set<string>;
+      expect(pendingInputs.has(`${utxo.txid}:${utxo.vout}`)).toBe(false);
+
+      jest.restoreAllMocks();
+
+      const result = wallet.createTransaction(
+        [utxo as never],
+        [{ address: targetAddress, value: 50_000 }],
+        2,
+        utxo.address,
+        0xfffffffd,
+        false,
+        0,
+      );
+      expect(result.tx).toBeDefined();
     });
   });
 

@@ -34,6 +34,10 @@ import { HDTaprootWallet } from './hd-taproot-wallet.ts';
 
 const ECPair = ECPairFactory(ecc);
 
+// Psbt validators receive (pubkey, msghash, signature); ecc.verifySchnorr expects (msghash, pubkey, signature)
+const verifySchnorrSig = (pubkey: Uint8Array, msghash: Uint8Array, signature: Uint8Array): boolean =>
+  ecc.verifySchnorr!(msghash, pubkey, signature);
+
 /** A spend keypair a silent payment output can belong to (main, or label-0 change). */
 interface SpendKeyPair {
   spendPriv: Uint8Array;
@@ -963,10 +967,15 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       let tx: bitcoin.Transaction | undefined;
 
       if (!skipSigning) {
-        // sign each input with its tweaked key pair
-        resolvedInputs.forEach(({ tweakedPriv }, idx) => {
+        // sign each input with its tweaked key pair, then round-trip verify the signature
+        // we just produced (both sides trust witnessUtxo, so this catches a bad signature,
+        // not a bad prevout); must run before finalizeAllInputs(), which strips tapKeySig
+        resolvedInputs.forEach(({ input, tweakedPriv }, idx) => {
           const tweakedKeyPair = ECPair.fromPrivateKey(Buffer.from(tweakedPriv), { compressed: true });
           psbt.signTaprootInput(idx, tweakedKeyPair);
+          if (!psbt.validateSignaturesOfInput(idx, verifySchnorrSig)) {
+            throw new Error(`UTXO ${input.txid}:${input.vout}: Schnorr signature verification failed`);
+          }
         });
 
         psbt.finalizeAllInputs();
