@@ -428,6 +428,11 @@ describe('BIP-352 Silent Payments', () => {
         0,
       );
       expect(result.fee).toBe(p2trEquivalent.fee);
+
+      // Both outputs are taproot, so the reserved fee has to cover the transaction that was
+      // actually built — coinselect sizes its change output as P2PKH and would leave this
+      // 12 sats short.
+      expect(result.fee).toBeGreaterThanOrEqual(tx.virtualSize() * feeRate);
     });
   });
 });

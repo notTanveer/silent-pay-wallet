@@ -7,6 +7,7 @@ import { Psbt } from 'bitcoinjs-lib';
 import b58 from 'bs58check';
 import coinSelect, { CoinSelectOutput, CoinSelectReturnInput, CoinSelectTarget } from 'coinselect';
 import coinSelectSplit from 'coinselect/split';
+import * as utils from 'coinselect/utils';
 import { ECPairFactory, ECPairInterface } from 'ecpair';
 
 import * as Electrum from '../../modules/Electrum';
@@ -1284,6 +1285,23 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
 
     if (!inputs || !outputs) {
       throw new Error('Not enough balance. Try sending smaller amount or decrease the fee.');
+    }
+
+    // coinselect sizes the change output it appends as P2PKH (a 25-byte script), but our
+    // change goes to this wallet's own script type. Left uncorrected, every spend that
+    // produces change pays under the requested feeRate — 1.92 instead of 2 for a taproot
+    // wallet. Take the difference out of the change rather than out of the fee.
+    const changeScriptLength = this.segwitType ? { p2wpkh: 22, 'p2sh(p2wpkh)': 23, p2tr: 34 }[this.segwitType] : 25;
+    const shortfall = Math.round(feeRate * (changeScriptLength - 25));
+    const change = outputs.find(o => !o.address); // coinselect's change output is the one without an address
+    if (change && shortfall > 0) {
+      // coinselect only adds change worth more than it costs to spend later; re-check that
+      // after taking our share, so we never leave an unspendable dust output behind.
+      if (change.value - shortfall > utils.dustThreshold({}, feeRate)) {
+        change.value -= shortfall;
+        return { inputs, outputs, fee: fee + shortfall };
+      }
+      return { inputs, outputs: outputs.filter(o => o !== change), fee: fee + change.value };
     }
 
     return { inputs, outputs, fee };

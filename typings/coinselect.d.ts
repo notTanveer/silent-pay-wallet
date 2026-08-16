@@ -52,6 +52,11 @@ declare module 'coinselect' {
   };
 }
 
+declare module 'coinselect/utils' {
+  /** an output is not worth creating if it costs more than this to spend later */
+  export function dustThreshold(output: { script?: { length: number } }, feeRate: number): number;
+}
+
 declare module 'coinselect/split' {
   type Utxo = {
     vout: number;
