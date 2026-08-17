@@ -4,7 +4,12 @@ import * as crypto from 'crypto';
 import { decodeSilentPaymentAddress } from '@silent-pay/core';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet.ts';
 import ecc from '../../modules/noble_ecc.ts';
-import { getScanPrivateKey, getSilentPaymentChangeSpendPublicKey, getSpendPublicKey } from '../../helpers/silent-payments';
+import {
+  getScanPrivateKey,
+  getSilentPaymentAddress,
+  getSilentPaymentChangeSpendPublicKey,
+  getSpendPublicKey,
+} from '../../helpers/silent-payments';
 import { type SilentPaymentUTXO } from '../../helpers/silent-payments/types.ts';
 import { type CreateTransactionUtxo } from '../../class/wallets/types.ts';
 
@@ -294,7 +299,7 @@ describe('BIP-352 Silent Payments', () => {
   });
 
   describe('sending to a silent payment (sp1) address from SP-received coins', () => {
-    const senderSeed = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+    const senderSeed = TEST_SEED;
     const recipientSeed = 'zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo glue';
     const recipientSpAddress =
       'sp1qqvchcnrcqpdutxhpf57ptn3wajj0ymqxwzu9g6vj9uxx3wuvlykhyqh99hyh33y5593802pzw5rtw040zrw9f8re52tgcwngc5974w5evuufdy0m';
@@ -357,6 +362,10 @@ describe('BIP-352 Silent Payments', () => {
       const P0 = ecc.pointAdd(ecc.pointFromScalar(t0, true)!, BSpend, true)!;
       return Buffer.from(P0.subarray(1, 33));
     }
+
+    it('uses a recipient address that really belongs to the recipient seed', () => {
+      expect(getSilentPaymentAddress(bip39.mnemonicToSeedSync(recipientSeed))).toBe(recipientSpAddress);
+    });
 
     it('unwraps the sp1 target into the recipient taproot output on a MAX send of two SP coins', () => {
       const wallet = new HDSilentPaymentsWallet();
@@ -431,8 +440,10 @@ describe('BIP-352 Silent Payments', () => {
 
       // Both outputs are taproot, so the reserved fee has to cover the transaction that was
       // actually built — coinselect sizes its change output as P2PKH and would leave this
-      // 12 sats short.
+      // 18 sats short. Pinned exactly: the fee is deterministic, and an over-estimate is a
+      // regression too.
       expect(result.fee).toBeGreaterThanOrEqual(tx.virtualSize() * feeRate);
+      expect(result.fee).toBe(314);
     });
   });
 });

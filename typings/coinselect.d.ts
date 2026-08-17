@@ -36,8 +36,14 @@ declare module 'coinselect' {
   };
 
   export type CoinSelectOutput = {
-    address?: string; // if output has no address - this is a change output
+    // no address and no script.hex - this is the change output coinselect appended;
+    // no address but a script.hex - a custom script target (like OP_RETURN) passed through
+    address?: string;
     value: number;
+    script?: {
+      length?: number;
+      hex?: string;
+    };
   };
 
   export default function coinSelect(
