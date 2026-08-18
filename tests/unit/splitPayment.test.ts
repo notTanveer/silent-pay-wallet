@@ -179,6 +179,21 @@ describe('planChangeOutputs', () => {
     for (const v of out) expect(v).toBeGreaterThanOrEqual(25_000);
   });
 
+  it('falls back to fewer parts rather than a zero-headroom partition', () => {
+    // change == 2 * floor exactly: partitioning it in two would put both parts on the floor, and
+    // deRound cannot move value out of a set that is entirely at the floor — both would ship as
+    // the round floor value. One roomier output is the right call.
+    const out = planChangeOutputs({
+      change: 50_000,
+      pMax: 20_000, // forces the loop to start at m = 3
+      floor: 25_000,
+      feeRate: 0,
+      paymentCount: 2,
+      coinSelectOutputCount: 2,
+    });
+    expect(out).toEqual([50_000]);
+  });
+
   it('accounts for the extra-output fee in the distributed total', () => {
     const change = 1_000_000;
     const feeRate = 10;
@@ -341,11 +356,12 @@ describe('partitionPaymentAmounts', () => {
     expect(amounts.reduce((a, b) => a + b, 0)).toBe(500_000);
   });
   it('returns non-round amounts (de-rounded)', () => {
-    let allNonRound = true;
-    for (let trial = 0; trial < 20; trial++) {
-      const amounts = partitionPaymentAmounts(400_000, 2, 3);
-      if (amounts.some(a => a % 1000 === 0)) allNonRound = false;
+    // Seeded through the RandomSource seam: live entropy would make this a flaky CI failure
+    // rather than a caught bug.
+    for (let seed = 0; seed < 20; seed++) {
+      const amounts = partitionPaymentAmounts(400_000, 2, 3, fixedRng(seed));
+      expect(amounts.some(a => a % SPLIT_ROUND_MODULUS === 0)).toBe(false);
+      expect(amounts.reduce((a, b) => a + b, 0)).toBe(400_000);
     }
-    expect(allNonRound).toBe(true);
   });
 });

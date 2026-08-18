@@ -179,6 +179,10 @@ const Confirm: React.FC = () => {
 
   const recipient = recipients[0];
   const amountSats = spRecipientAddress ? recipients.reduce((acc, curr) => acc + (curr.value ?? 0), 0) : (recipient?.value ?? 0);
+  // Display order only. The on-chain order is deliberately shuffled (change must not be
+  // positionally identifiable), so sorting by value — the same rule SendDetails previews with —
+  // is what keeps "Output 1" the same row on both screens instead of contradicting itself.
+  const splitOutputs = useMemo(() => recipients.slice().sort((a, b) => (b.value ?? 0) - (a.value ?? 0)), [recipients]);
   const displayAddress = spRecipientAddress ?? recipient?.address ?? '';
   const txid = useMemo(() => {
     try {
@@ -218,7 +222,7 @@ const Confirm: React.FC = () => {
                   </Text>
 
                   <View style={[styles.splitOutputsCard, stylesHook.splitOutputsCard]}>
-                    {recipients.map((r, i) => (
+                    {splitOutputs.map((r, i) => (
                       <React.Fragment key={`output-${i}`}>
                         <View style={styles.outputGroup}>
                           <View style={styles.outputHeaderRow}>
@@ -245,7 +249,7 @@ const Confirm: React.FC = () => {
                             </Text>
                           </View>
                         </View>
-                        {i < recipients.length - 1 && <View style={[styles.lightDivider, stylesHook.lightDivider]} />}
+                        {i < splitOutputs.length - 1 && <View style={[styles.lightDivider, stylesHook.lightDivider]} />}
                       </React.Fragment>
                     ))}
 

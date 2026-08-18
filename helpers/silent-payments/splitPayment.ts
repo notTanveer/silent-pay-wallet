@@ -60,29 +60,10 @@ export function deRound(amounts: number[], floor: number, rng: RandomSource = ra
   const out = amounts.slice();
   if (out.length < 2) return out;
 
-  for (let i = 0; i < out.length; i++) {
-    if (out[i] % SPLIT_ROUND_MODULUS !== 0) continue;
-    const buf = rng(3);
-    const delta = 1 + (buf.readUInt16BE(0) % (SPLIT_ROUND_MODULUS - 1));
-    const start = buf.readUInt8(2) % out.length;
-    let partner = -1;
-    for (let k = 0; k < out.length; k++) {
-      const j = (start + k) % out.length;
-      if (j !== i && out[j] - delta >= floor) {
-        partner = j;
-        break;
-      }
-    }
-    if (partner === -1) continue;
-    out[i] += delta;
-    out[partner] -= delta;
-  }
-
-  // Re-check pass(es): near-floor partitions routinely leave no partner with `delta` free on
-  // the first pass (measured: 89.9%-100% round-amount rate for realistic near-floor inputs),
-  // and a compensating subtraction above can re-land a partner exactly on a round value.
-  // Iterate to a fixed point (bounded) using the partner with the MOST headroom and a delta
-  // shrunk to fit whatever's actually available, instead of giving up after one retry.
+  // Iterate to a fixed point (bounded): near-floor partitions routinely leave no partner with a
+  // full `delta` of headroom, and a compensating subtraction can re-land a partner exactly on a
+  // round value. Each pass takes from the partner with the MOST headroom and shrinks the delta to
+  // fit whatever is actually available, so a single sat of slack anywhere is enough to de-round.
   for (let pass = 0; pass < out.length + 1; pass++) {
     let changed = false;
     for (let i = 0; i < out.length; i++) {
@@ -137,7 +118,10 @@ export function planChangeOutputs(params: {
     const distributable = change - extraFee;
     if (distributable < dustThreshold) continue;
     if (m === 1) return [distributable];
-    if (distributable < m * floor) continue;
+    // Needs a modulus of slack above m * floor, not just m * floor: with zero budget every part
+    // lands exactly on the floor, and deRound can't move value between parts that are all at the
+    // floor — the whole set ships round. Fall back to fewer, roomier parts instead.
+    if (distributable < m * floor + SPLIT_ROUND_MODULUS) continue;
     return logUniformPartition(distributable, m, floor, rng);
   }
   return [];

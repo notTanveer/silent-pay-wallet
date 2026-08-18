@@ -85,6 +85,10 @@ const SendDetails = () => {
   const [dumb, setDumb] = useState(false);
   const [isSplitEnabled, setIsSplitEnabled] = useState(false);
   const [splitPreview, setSplitPreview] = useState<{ paymentAmounts: number[]; fee: number; feeDelta: number } | null>(null);
+  // The toggle's eligibility gate only knows the amount; the builder also needs a change budget it
+  // can pay the extra outputs from. When it declines, say so here instead of silently sending one
+  // output after showing the user a split card.
+  const [splitDeclined, setSplitDeclined] = useState(false);
   const [displayUnit, setDisplayUnit] = useState<BitcoinUnit>(BitcoinUnit.BTC);
   const { isEditable } = routeParams;
   // if utxo is limited we use it to calculate available balance
@@ -210,6 +214,7 @@ const SendDetails = () => {
   useEffect(() => {
     if (!(isSplitEnabled && isSplitEligible && wallet && amountSatsNum > 0 && recipient?.address)) {
       setSplitPreview(null);
+      setSplitDeclined(false);
       return;
     }
 
@@ -218,6 +223,7 @@ const SendDetails = () => {
     // the fee rate keeps the amount (so the pin's sum check still passes) while shrinking the
     // change — enough to push the plan below the change budget.
     setSplitPreview(null);
+    setSplitDeclined(false);
 
     let cancelled = false;
     const handle = setTimeout(async () => {
@@ -242,13 +248,17 @@ const SendDetails = () => {
           // Subsumes the eligibility gate: the builder declined to split this payment (below
           // the floor, fee cap, no change budget), so don't show a preview it won't honor.
           setSplitPreview(null);
+          setSplitDeclined(true);
           return;
         }
 
         setSplitPreview({ paymentAmounts, fee: split.fee, feeDelta: split.fee - baseline.fee });
       } catch (e) {
         // coinselect throws "Not enough balance..." at the margins; treat as "no preview"
-        if (!cancelled) setSplitPreview(null);
+        if (!cancelled) {
+          setSplitPreview(null);
+          setSplitDeclined(true);
+        }
       }
     }, 400);
 
@@ -1100,6 +1110,13 @@ const SendDetails = () => {
                     <Text style={styles.splitInfoTextEmphasis}>{loc.send.split_payment_info_emphasis}</Text>
                   </Text>
                 </View>
+
+                {splitDeclined && (
+                  <View style={[styles.splitInfoBox, stylesHook.splitInfoBox]}>
+                    <InfoIcon color={colors.brandPrimary} size={20} />
+                    <Text style={[styles.splitInfoText, stylesHook.splitInfoText]}>{loc.send.split_payment_unavailable}</Text>
+                  </View>
+                )}
 
                 {/* Output preview + fee increase — from the dry-run above, not a separate
                     estimate, so these numbers exactly match what gets signed. Outputs are

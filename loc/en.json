@@ -150,6 +150,7 @@
         "split_payment_info_emphasis": "The recipient still receives the total bitcoin sent.",
         "split_into_outputs": "Split into {count} payment outputs",
         "split_output_label": "Output {number}",
+        "split_payment_unavailable": "This payment can't be split — it will be sent as a single output.",
         "recipients_sp_address": "Recipient's SP address",
         "fee_increase": "Fee increase",
         "label_address": "Address",
