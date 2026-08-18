@@ -929,6 +929,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     feeRate: number,
     coinSelectOutputCount: number,
     precalculatedPaymentAmounts?: number[],
+    splitChange?: boolean,
   ): { outputs: CoinSelectOutput[]; changeAddresses: string[] } {
     const { paymentAmounts, changeAmounts } = planSplitOutputs({
       paymentValue,
@@ -936,6 +937,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       feeRate,
       coinSelectOutputCount,
       precalculatedPaymentAmounts,
+      splitChange,
     });
     const paymentOutputs: CoinSelectOutput[] = paymentAmounts.map(value => ({
       address: spAddress,
@@ -1049,6 +1051,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     if (utxos.length === 0) throw new Error('No UTXOs provided');
 
     const splitPayment = splitOptions?.enabled ?? false;
+    const splitChange = splitOptions?.splitChange;
     const precalculatedPaymentAmounts = splitOptions?.precalculatedPaymentAmounts;
     const dryRun = splitOptions?.dryRun ?? false;
 
@@ -1075,6 +1078,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         splitPayment,
         precalculatedPaymentAmounts,
         dryRun,
+        splitChange,
       );
     }
 
@@ -1092,6 +1096,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
           skipSigning,
           masterFingerprint,
           precalculatedPaymentAmounts,
+          splitChange,
         );
         if (split) return split;
       }
@@ -1119,6 +1124,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     skipSigning: boolean,
     masterFingerprint: number,
     precalculatedPaymentAmounts?: number[],
+    splitChange?: boolean,
   ): CreateTransactionResult | null {
     const spAddress = targets[0].address!;
     let { inputs, outputs: rawOutputs } = this.coinselect(regularUtxos, targets, feeRate);
@@ -1137,6 +1143,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       feeRate,
       rawOutputs.length,
       precalculatedPaymentAmounts,
+      splitChange,
     );
     const paymentCount = split.outputs.filter(o => o.address === spAddress).length;
     if (paymentCount < 2) return null; // planner declined to split; let the caller fall back
@@ -1188,6 +1195,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     splitPayment = false,
     precalculatedPaymentAmounts?: number[],
     dryRun = false,
+    splitChange?: boolean,
   ): CreateTransactionResult {
     if (targets.length === 0) throw new Error('No destination provided');
 
@@ -1214,6 +1222,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         feeRate,
         coinSelectOutputCount,
         precalculatedPaymentAmounts,
+        splitChange,
       );
 
       const paymentCount = planned.outputs.filter(o => o.address === targets[0].address).length;

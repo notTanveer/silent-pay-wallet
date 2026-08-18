@@ -102,6 +102,7 @@ export function planChangeOutputs(params: {
   coinSelectOutputCount?: number;
   outputVBytes?: number;
   dustThreshold?: number;
+  splitChange?: boolean;
   rng?: RandomSource;
 }): number[] {
   const { change, pMax, floor, feeRate, paymentCount } = params;
@@ -112,8 +113,11 @@ export function planChangeOutputs(params: {
 
   const PRICED_OUTPUTS = params.coinSelectOutputCount ?? 2;
   const feePerOutput = Math.ceil(outputVBytes * feeRate);
+  // Splitting change is the sender's choice. Declining caps the plan at the single change output
+  // the plain builder would have produced; the payment itself still splits.
+  const maxChangeOutputs = params.splitChange === false ? 1 : MAX_CHANGE_OUTPUTS;
 
-  for (let m = Math.min(MAX_CHANGE_OUTPUTS, Math.max(1, Math.ceil(change / pMax))); m >= 1; m--) {
+  for (let m = Math.min(maxChangeOutputs, Math.max(1, Math.ceil(change / pMax))); m >= 1; m--) {
     const extraFee = Math.max(0, paymentCount + m - PRICED_OUTPUTS) * feePerOutput;
     const distributable = change - extraFee;
     if (distributable < dustThreshold) continue;
@@ -140,6 +144,7 @@ export function planSplitOutputs(params: {
   coinSelectOutputCount?: number;
   outputVBytes?: number;
   dustThreshold?: number;
+  splitChange?: boolean;
   rng?: RandomSource;
   precalculatedPaymentAmounts?: number[];
 }): { paymentAmounts: number[]; changeAmounts: number[] } {
@@ -194,6 +199,7 @@ export function planSplitOutputs(params: {
     coinSelectOutputCount,
     outputVBytes,
     dustThreshold,
+    splitChange: params.splitChange,
     rng,
   });
   if (changeAmounts.length > 1) {

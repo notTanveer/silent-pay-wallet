@@ -84,7 +84,12 @@ const SendDetails = () => {
   const [changeAddress, setChangeAddress] = useState<string | null>(null);
   const [dumb, setDumb] = useState(false);
   const [isSplitEnabled, setIsSplitEnabled] = useState(false);
-  const [splitPreview, setSplitPreview] = useState<{ paymentAmounts: number[]; fee: number; feeDelta: number } | null>(null);
+  // Splitting change is opt-out: it's the privacy-preserving default, but it leaves the wallet with
+  // more (smaller) UTXOs to spend later, so the sender gets to decline.
+  const [isChangeSplitEnabled, setIsChangeSplitEnabled] = useState(true);
+  const [splitPreview, setSplitPreview] = useState<{ paymentAmounts: number[]; changeCount: number; fee: number; feeDelta: number } | null>(
+    null,
+  );
   // The toggle's eligibility gate only knows the amount; the builder also needs a change budget it
   // can pay the extra outputs from. When it declines, say so here instead of silently sending one
   // output after showing the user a split card.
@@ -238,10 +243,15 @@ const SendDetails = () => {
         const spWallet = wallet as HDSilentPaymentsWallet;
 
         const baseline = spWallet.createTransaction(lutxo, targets, feeR, change, sequence, true, 0, { enabled: false, dryRun: true });
-        const split = spWallet.createTransaction(lutxo, targets, feeR, change, sequence, true, 0, { enabled: true, dryRun: true });
+        const split = spWallet.createTransaction(lutxo, targets, feeR, change, sequence, true, 0, {
+          enabled: true,
+          splitChange: isChangeSplitEnabled,
+          dryRun: true,
+        });
         if (cancelled) return;
 
-        const changeSet = new Set(split.changeAddresses ?? [change]);
+        const changeAddresses = split.changeAddresses ?? [change];
+        const changeSet = new Set(changeAddresses);
         const paymentAmounts = split.outputs.filter(o => o.address && !changeSet.has(o.address)).map(o => o.value);
 
         if (paymentAmounts.length < 2) {
@@ -252,7 +262,7 @@ const SendDetails = () => {
           return;
         }
 
-        setSplitPreview({ paymentAmounts, fee: split.fee, feeDelta: split.fee - baseline.fee });
+        setSplitPreview({ paymentAmounts, changeCount: changeAddresses.length, fee: split.fee, feeDelta: split.fee - baseline.fee });
       } catch (e) {
         // coinselect throws "Not enough balance..." at the margins; treat as "no preview"
         if (!cancelled) {
@@ -267,7 +277,17 @@ const SendDetails = () => {
       clearTimeout(handle);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSplitEnabled, isSplitEligible, wallet, amountSatsNum, feeRate, recipient?.address, utxos, isTransactionReplaceable]);
+  }, [
+    isSplitEnabled,
+    isChangeSplitEnabled,
+    isSplitEligible,
+    wallet,
+    amountSatsNum,
+    feeRate,
+    recipient?.address,
+    utxos,
+    isTransactionReplaceable,
+  ]);
 
   // Ordinals ("Output 1"/"Output 2") don't match `shuffleOutputs`, which is correct and stays —
   // display-order only, sorted by value; the on-chain output order is never touched.
@@ -687,6 +707,7 @@ const SendDetails = () => {
       0,
       {
         enabled: isSplitEnabled,
+        splitChange: isChangeSplitEnabled,
         // Pin the actual signed tx to what the dry-run preview showed the user — otherwise a
         // different economicFloor draw at send time could flip the split count and silently
         // re-randomize the amounts the user already approved.
@@ -933,6 +954,8 @@ const SendDetails = () => {
     splitInfoText: { color: colors.splitInfoBoxTextColor },
     splitCardTitle: { color: colors.textPrimary },
     splitToggleThumb: { backgroundColor: isSplitEnabled ? colors.white : colors.searchIconBackground },
+    changeToggleTrack: { backgroundColor: isChangeSplitEnabled ? colors.brandPrimary : colors.splitToggleDisabledBGColor },
+    changeToggleThumb: { backgroundColor: isChangeSplitEnabled ? colors.white : colors.searchIconBackground },
     splitOutputAmount: { color: colors.textPrimary },
     splitOutputLabel: { color: colors.textSecondary },
     splitFeeIncreaseRow: {
@@ -1118,38 +1141,81 @@ const SendDetails = () => {
                   </View>
                 )}
 
-                {/* Output preview + fee increase — from the dry-run above, not a separate
-                    estimate, so these numbers exactly match what gets signed. Outputs are
-                    display-sorted by value (never the on-chain order, which stays shuffled). */}
+                {/* Output preview — from the dry-run above, not a separate estimate, so these
+                    numbers exactly match what gets signed. Outputs are display-sorted by value
+                    (never the on-chain order, which stays shuffled). */}
                 {previewOutputs.length > 0 && (
-                  <>
-                    <View style={styles.splitOutputsSection}>
-                      {previewOutputs.map((output, i) => (
-                        <React.Fragment key={i}>
-                          <View style={styles.splitOutputRow}>
-                            <Text style={[styles.splitOutputLabel, stylesHook.splitOutputLabel]}>
-                              {loc.formatString(loc.send.split_output_label, { number: i + 1 })}
-                            </Text>
-                            <Text style={[styles.splitOutputAmount, stylesHook.splitOutputAmount]}>
-                              {satoshiToBTC(output.sats)} {loc.units[BitcoinUnit.BTC]}
-                            </Text>
-                          </View>
-                          {i < previewOutputs.length - 1 && <View style={styles.splitOutputDivider} />}
-                        </React.Fragment>
-                      ))}
-                    </View>
+                  <View style={styles.splitOutputsSection}>
+                    {previewOutputs.map((output, i) => (
+                      <React.Fragment key={i}>
+                        <View style={styles.splitOutputRow}>
+                          <Text style={[styles.splitOutputLabel, stylesHook.splitOutputLabel]}>
+                            {loc.formatString(loc.send.split_output_label, { number: i + 1 })}
+                          </Text>
+                          <Text style={[styles.splitOutputAmount, stylesHook.splitOutputAmount]}>
+                            {satoshiToBTC(output.sats)} {loc.units[BitcoinUnit.BTC]}
+                          </Text>
+                        </View>
+                        {i < previewOutputs.length - 1 && <View style={styles.splitOutputDivider} />}
+                      </React.Fragment>
+                    ))}
+                  </View>
+                )}
 
-                    <View style={[styles.splitFeeIncreaseRow, stylesHook.splitFeeIncreaseRow]}>
-                      <Text style={[styles.splitFeeIncreaseLabel, stylesHook.splitFeeIncreaseLabel]}>{loc.send.fee_increase}</Text>
-                      <Text style={[styles.splitFeeIncreaseValue, stylesHook.splitFeeIncreaseValue]}>
-                        {`+${satoshiToBTC(splitPreview?.feeDelta ?? 0)} ${loc.units[BitcoinUnit.BTC]}`}
-                      </Text>
+                {/* Splitting the change is a second, separate choice — it only applies once the
+                    split builder is running, so it lives inside this card. */}
+                <View style={styles.splitChangeSection}>
+                  <View style={styles.splitChangeHeader}>
+                    <View style={styles.splitTitleRow}>
+                      <Text style={[styles.splitChangeTitle, stylesHook.splitCardTitle]}>{loc.send.split_change}</Text>
+                      <Pressable
+                        accessibilityRole="switch"
+                        accessibilityLabel={loc.send.split_change}
+                        accessibilityState={{ checked: isChangeSplitEnabled }}
+                        testID="splitChangeToggle"
+                        onPress={() => setIsChangeSplitEnabled(v => !v)}
+                        style={[styles.splitToggleTrack, stylesHook.changeToggleTrack]}
+                      >
+                        <View
+                          style={[styles.splitToggleThumb, stylesHook.changeToggleThumb, isChangeSplitEnabled && styles.splitToggleThumbOn]}
+                        />
+                      </Pressable>
                     </View>
-                  </>
+                    <Text style={[styles.splitCardSubtitle, stylesHook.splitCardSubtitle]}>{loc.send.split_change_subtitle}</Text>
+                  </View>
+
+                  {isChangeSplitEnabled && (
+                    <View style={[styles.splitInfoBox, styles.splitChangeInfoBox, stylesHook.splitInfoBox]}>
+                      <View style={styles.splitChangeInfoRow}>
+                        <InfoIcon color={colors.brandPrimary} size={20} />
+                        <Text style={[styles.splitInfoText, stylesHook.splitInfoText]}>{loc.send.split_change_info}</Text>
+                      </View>
+                      {/* The count comes from the same dry run as the amounts above — the planner
+                          picks it from the change budget, so there is nothing here to set. */}
+                      {splitPreview && (
+                        <View style={styles.splitOutputRow}>
+                          <Text style={[styles.splitOutputLabel, stylesHook.splitOutputLabel]}>
+                            {splitPreview.changeCount === 1
+                              ? loc.send.split_change_output_single
+                              : loc.formatString(loc.send.split_change_outputs, { count: splitPreview.changeCount })}
+                          </Text>
+                          <Text style={[styles.splitOutputAmount, stylesHook.splitOutputAmount]}>{loc.send.split_change_auto}</Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </View>
+
+                {previewOutputs.length > 0 && (
+                  <View style={[styles.splitFeeIncreaseRow, stylesHook.splitFeeIncreaseRow]}>
+                    <Text style={[styles.splitFeeIncreaseLabel, stylesHook.splitFeeIncreaseLabel]}>{loc.send.fee_increase}</Text>
+                    <Text style={[styles.splitFeeIncreaseValue, stylesHook.splitFeeIncreaseValue]}>
+                      {`+${satoshiToBTC(splitPreview?.feeDelta ?? 0)} ${loc.units[BitcoinUnit.BTC]}`}
+                    </Text>
+                  </View>
                 )}
               </>
             )}
-            {/* TODO: add a similar toggle for split change */}
           </View>
         )}
       </ScrollView>
@@ -1248,6 +1314,26 @@ const styles = StyleSheet.create({
   },
   splitOutputsSection: {
     gap: 8,
+  },
+  splitChangeSection: {
+    gap: 12,
+  },
+  splitChangeHeader: {
+    gap: 4,
+  },
+  splitChangeTitle: {
+    fontFamily: ClashFont.semibold,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  splitChangeInfoBox: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+  },
+  splitChangeInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
   },
   splitOutputRow: {
     flexDirection: 'row',

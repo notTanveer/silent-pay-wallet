@@ -179,6 +179,16 @@ describe('planChangeOutputs', () => {
     for (const v of out) expect(v).toBeGreaterThanOrEqual(25_000);
   });
 
+  it('keeps change in one output when the sender declines to split it', () => {
+    const out = planChangeOutputs({
+      ...common,
+      change: 1_000_000,
+      pMax: 80_000, // same shape as the case above, which splits into multiple pieces
+      splitChange: false,
+    });
+    expect(out.length).toBe(1);
+  });
+
   it('falls back to fewer parts rather than a zero-headroom partition', () => {
     // change == 2 * floor exactly: partitioning it in two would put both parts on the floor, and
     // deRound cannot move value out of a set that is entirely at the floor — both would ship as
@@ -254,6 +264,17 @@ describe('planSplitOutputs', () => {
       feeRate: 2,
     });
     expect(changeAmounts.length).toBeLessThanOrEqual(4);
+  });
+
+  it('still splits the payment when the sender declines to split change', () => {
+    const { paymentAmounts, changeAmounts } = planSplitOutputs({
+      paymentValue: 300_000,
+      changeValue: 5_000_000,
+      feeRate: 2,
+      splitChange: false,
+    });
+    expect(paymentAmounts.length).toBe(2);
+    expect(changeAmounts.length).toBe(1);
   });
 
   it('never burns change: when it splits, a change output survives above dust', () => {

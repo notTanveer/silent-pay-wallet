@@ -42,6 +42,8 @@ export type CreateTransactionTarget = {
  */
 export type SplitOptions = {
   enabled: boolean;
+  /** Split the change too, not just the payment. Defaults to true. */
+  splitChange?: boolean;
   precalculatedPaymentAmounts?: number[];
   dryRun?: boolean;
 };
