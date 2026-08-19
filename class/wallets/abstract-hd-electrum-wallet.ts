@@ -873,22 +873,7 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
   }
 
   weOwnAddress(address: string) {
-    if (!address) return false;
-    let cleanAddress = address;
-
-    const isBech32Address = isValidBech32Address(address);
-
-    if (isBech32Address) {
-      cleanAddress = address.toLocaleLowerCase();
-    }
-
-    for (let c = 0; c < this.next_free_address_index + this.gap_limit; c++) {
-      if (this._getExternalAddressByIndex(c) === cleanAddress) return true;
-    }
-    for (let c = 0; c < this.next_free_change_address_index + this.gap_limit; c++) {
-      if (this._getInternalAddressByIndex(c) === cleanAddress) return true;
-    }
-    return false;
+    return this.findAddressIndex(address) !== null;
   }
 
   /**

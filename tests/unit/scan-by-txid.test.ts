@@ -233,8 +233,8 @@ describe('detectRegularOutputs', () => {
     const result = await (wallet as any).detectRegularOutputs(TXID);
 
     expect(result.outputs).toEqual([
-      { vout: 0, value: 100000, kind: 'regular', address: addr0, isChange: false },
-      { vout: 1, value: 200000, kind: 'regular', address: addr1, isChange: false },
+      { vout: 0, value: 100000, kind: 'regular', address: addr0, isChange: false, index: 0 },
+      { vout: 1, value: 200000, kind: 'regular', address: addr1, isChange: false, index: 1 },
     ]);
     expect(result.confirmations).toBe(3);
   });
@@ -246,7 +246,7 @@ describe('detectRegularOutputs', () => {
 
     const result = await (wallet as any).detectRegularOutputs(TXID);
 
-    expect(result.outputs).toEqual([{ vout: 0, value: 30000, kind: 'regular', address: changeAddr, isChange: true }]);
+    expect(result.outputs).toEqual([{ vout: 0, value: 30000, kind: 'regular', address: changeAddr, isChange: true, index: 0 }]);
   });
 
   it('detects our output even when the tx also spends a larger UTXO of ours, netting negative', async () => {
@@ -264,7 +264,7 @@ describe('detectRegularOutputs', () => {
 
     const result = await (wallet as any).detectRegularOutputs(TXID);
 
-    expect(result.outputs).toEqual([{ vout: 0, value: 50000000, kind: 'regular', address: addr0, isChange: false }]);
+    expect(result.outputs).toEqual([{ vout: 0, value: 50000000, kind: 'regular', address: addr0, isChange: false, index: 0 }]);
   });
 
   it('detects a payment to the address at next_free_address_index, one past the last known used index', async () => {
@@ -275,7 +275,7 @@ describe('detectRegularOutputs', () => {
 
     const result = await (wallet as any).detectRegularOutputs(TXID);
 
-    expect(result.outputs).toEqual([{ vout: 0, value: 100000, kind: 'regular', address: matchedAddress, isChange: false }]);
+    expect(result.outputs).toEqual([{ vout: 0, value: 100000, kind: 'regular', address: matchedAddress, isChange: false, index: 5 }]);
   });
 
   it('ignores outputs paying an address we do not own', async () => {
@@ -307,7 +307,14 @@ describe('ingestRegularOutputs', () => {
     const fetchTransactions = jest.spyOn(AbstractHDElectrumWallet.prototype, 'fetchTransactions').mockResolvedValue();
     const fetchUtxo = jest.spyOn(AbstractHDElectrumWallet.prototype, 'fetchUtxo').mockResolvedValue();
 
-    const output: OwnedOutput = { vout: 0, value: 100000, kind: 'regular', address: matchedAddress, isChange: false };
+    const output: OwnedOutput & { index: number } = {
+      vout: 0,
+      value: 100000,
+      kind: 'regular',
+      address: matchedAddress,
+      isChange: false,
+      index: 5,
+    };
     await (wallet as any).ingestRegularOutputs([output]);
 
     expect((wallet as any).next_free_address_index).toBe(6);
@@ -325,7 +332,14 @@ describe('ingestRegularOutputs', () => {
     jest.spyOn(AbstractHDElectrumWallet.prototype, 'fetchTransactions').mockResolvedValue();
     jest.spyOn(AbstractHDElectrumWallet.prototype, 'fetchUtxo').mockResolvedValue();
 
-    const output: OwnedOutput = { vout: 0, value: 30000, kind: 'regular', address: matchedAddress, isChange: true };
+    const output: OwnedOutput & { index: number } = {
+      vout: 0,
+      value: 30000,
+      kind: 'regular',
+      address: matchedAddress,
+      isChange: true,
+      index: 2,
+    };
     await (wallet as any).ingestRegularOutputs([output]);
 
     expect((wallet as any).next_free_change_address_index).toBe(3);

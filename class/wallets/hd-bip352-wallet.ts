@@ -67,6 +67,12 @@ export type ScanByTxidResult = {
   bothBranchesFailed: boolean;
 };
 
+// A regular output matched against this wallet's addresses, plus the derivation index needed to
+// advance the discovery frontier. Internal handoff between detectRegularOutputs and
+// ingestRegularOutputs only — never returned from scanByTxid, so OwnedOutput itself stays free of
+// wallet-internal detail.
+type RegularOutputMatch = OwnedOutput & { index: number };
+
 export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannableWallet {
   static readonly type = 'HDSilentPaymentsWallet';
   static readonly typeReadable = 'HD Silent Payments';
@@ -688,7 +694,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         regularConfirmations = detected.confirmations;
         if (detected.outputs.length > 0) {
           await this.ingestRegularOutputs(detected.outputs);
-          regularOutputs = detected.outputs;
+          regularOutputs = detected.outputs.map(({ index, ...output }) => output);
         }
       }
     } catch (error) {
@@ -755,12 +761,12 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
    * wallet's derived (external + change) addresses. Read-only: never touches wallet state.
    * Returns null only if Electrum doesn't know the txid at all.
    */
-  private async detectRegularOutputs(txid: string): Promise<{ outputs: OwnedOutput[]; confirmations: number } | null> {
+  private async detectRegularOutputs(txid: string): Promise<{ outputs: RegularOutputMatch[]; confirmations: number } | null> {
     const result = await Electrum.multiGetTransactionByTxid([txid], true);
     const tx = result[txid];
     if (!tx) return null;
 
-    const outputs: OwnedOutput[] = [];
+    const outputs: RegularOutputMatch[] = [];
     for (const vout of tx.vout) {
       const address = vout.scriptPubKey?.addresses?.[0];
       if (!address) continue;
@@ -772,10 +778,11 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         kind: 'regular',
         address,
         isChange: owned.internal,
+        index: owned.index,
       });
     }
 
-    return { outputs, confirmations: tx.confirmations ?? 0 };
+    return { outputs, confirmations: tx.confirmations };
   }
 
   /**
@@ -783,21 +790,19 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
    * matched address(es), then runs the normal balance/tx/utxo sync so the payment shows up in
    * getTransactions() and becomes spendable.
    */
-  private async ingestRegularOutputs(outputs: OwnedOutput[]): Promise<void> {
+  private async ingestRegularOutputs(outputs: RegularOutputMatch[]): Promise<void> {
     for (const output of outputs) {
-      if (!output.address) continue;
-      const owned = this.findAddressIndex(output.address);
-      if (!owned) continue;
-
-      if (owned.internal) {
-        this.next_free_change_address_index = Math.max(this.next_free_change_address_index, owned.index + 1);
+      if (output.isChange) {
+        this.next_free_change_address_index = Math.max(this.next_free_change_address_index, output.index + 1);
       } else {
-        this.next_free_address_index = Math.max(this.next_free_address_index, owned.index + 1);
+        this.next_free_address_index = Math.max(this.next_free_address_index, output.index + 1);
       }
     }
 
     // fetchUtxo() only queries addresses with a known balance, so fetchBalance() must run first.
     await super.fetchBalance();
+    // super, not this.fetchTransactions(): the SP branch already ran earlier in this scanByTxid
+    // call, so re-triggering scanForSilentPayments() here would just be a redundant SP scan.
     await super.fetchTransactions();
     await this.fetchUtxo();
 
