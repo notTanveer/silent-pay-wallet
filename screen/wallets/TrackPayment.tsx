@@ -11,6 +11,7 @@ import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import loc from '../../loc';
+import presentAlert from '../../components/Alert';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import { Spacing20 } from '../../components/Spacing';
 
@@ -79,6 +80,9 @@ const TrackPayment: React.FC<TrackPaymentProps> = () => {
           totalValue: result.totalValue,
           confirmations: result.confirmations,
         });
+      } else if (result.bothBranchesFailed) {
+        triggerHapticFeedback(HapticFeedbackTypes.NotificationWarning);
+        presentAlert({ title: loc.errors.network, message: loc.wallet_birth.error_network });
       } else {
         triggerHapticFeedback(HapticFeedbackTypes.NotificationWarning);
         navigate('NoPaymentFound');

@@ -401,6 +401,7 @@
         "status": "Status",
         "confirming_label": "Confirming",
         "confirmed": "Confirmed",
+        "change_note": "This is change returned to your own wallet, not a payment from someone else.",
         "attention_highlight": "Almost there!",
         "attention": "This payment needs {count} more confirmations before it's fully settled.",
         "view_details": "View Details",

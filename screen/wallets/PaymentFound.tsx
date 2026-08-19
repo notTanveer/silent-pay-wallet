@@ -21,7 +21,7 @@ const CONFIRMATIONS_THRESHOLD = 6;
 type PaymentFoundProps = NativeStackScreenProps<DetailViewStackParamList, 'PaymentFound'>;
 
 const PaymentFound: React.FC<PaymentFoundProps> = ({ route }) => {
-  const { txid, totalValue, confirmations } = route.params;
+  const { txid, outputs, totalValue, confirmations } = route.params;
   const { wallets } = useStorage();
   const wallet = wallets.length > 0 ? (wallets[0] as HDSilentPaymentsWallet) : null;
   const navigation = useExtendedNavigation();
@@ -40,6 +40,9 @@ const PaymentFound: React.FC<PaymentFoundProps> = ({ route }) => {
 
   const formattedBTC = formatBalance(totalValue, BitcoinUnit.BTC);
   const formattedFiat = satoshiToLocalCurrency(totalValue);
+
+  // A self-send shows up here as a wallet-owned change output, not a payment from someone else.
+  const isOwnChange = outputs.length > 0 && outputs.every(output => output.isChange);
 
   const handleViewDetails = () => {
     if (!tx) return;
@@ -82,6 +85,7 @@ const PaymentFound: React.FC<PaymentFoundProps> = ({ route }) => {
 
           <Text style={[styles.amount, stylesHook.amount]}>+{formattedBTC}</Text>
           <Text style={[styles.fiat, stylesHook.fiat]}>≈ {formattedFiat}</Text>
+          {isOwnChange && <Text style={[styles.changeNote, stylesHook.fiat]}>{loc.payment_found.change_note}</Text>}
 
           <Spacing20 />
 
@@ -163,6 +167,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginTop: 4,
+  },
+  changeNote: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 8,
   },
   detailsCard: {
     borderRadius: 12,

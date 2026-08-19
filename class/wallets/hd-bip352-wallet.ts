@@ -60,6 +60,9 @@ export type ScanByTxidResult = {
   outputs: OwnedOutput[];
   totalValue: number;
   confirmations: number;
+  // True when both the SP and regular branches threw, as opposed to running cleanly and finding
+  // nothing — lets the caller tell "couldn't check" apart from "checked, no payment there".
+  bothBranchesFailed: boolean;
 };
 
 export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannableWallet {
@@ -644,16 +647,19 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
   async scanByTxid(txid: string): Promise<ScanByTxidResult> {
     let spOutputs: OwnedOutput[] = [];
     let spConfirmations = 0;
+    let spFailed = false;
     try {
       const sp = await this.scanTxidForSilentPayment(txid);
       spOutputs = sp.outputs;
       spConfirmations = sp.confirmations;
     } catch (error) {
+      spFailed = true;
       console.warn('[SP] scanByTxid: silent payment branch failed:', error);
     }
 
     let regularOutputs: OwnedOutput[] = [];
     let regularConfirmations: number | null = null;
+    let regularFailed = false;
     try {
       // Sequential on purpose: this only calls fetchUtxo() (via ingestRegularOutputs) after the
       // SP branch above has finished committing, so its snapshot-restore of SP UTXOs can't race
@@ -667,6 +673,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         }
       }
     } catch (error) {
+      regularFailed = true;
       console.warn('[regular] scanByTxid: regular payment branch failed:', error);
     }
 
@@ -685,6 +692,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       outputs,
       totalValue,
       confirmations,
+      bothBranchesFailed: spFailed && regularFailed,
     };
   }
 
@@ -764,6 +772,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       }
     }
 
+    // fetchUtxo() only queries addresses with a known balance, so fetchBalance() must run first.
     await super.fetchBalance();
     await super.fetchTransactions();
     await this.fetchUtxo();

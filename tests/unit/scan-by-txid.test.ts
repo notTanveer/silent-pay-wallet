@@ -49,7 +49,13 @@ describe('scanByTxid merge of SP and regular branches', () => {
   it('returns not-found when both branches miss', async () => {
     const wallet = makeWallet();
     stubBranches(wallet, SP_MISS, REGULAR_MISS);
-    expect(await wallet.scanByTxid(TXID)).toEqual({ found: false, outputs: [], totalValue: 0, confirmations: REGULAR_MISS.confirmations });
+    expect(await wallet.scanByTxid(TXID)).toEqual({
+      found: false,
+      outputs: [],
+      totalValue: 0,
+      confirmations: REGULAR_MISS.confirmations,
+      bothBranchesFailed: false,
+    });
   });
 
   it('returns the SP outputs when only the SP branch hits, but prefers the regular branch real confirmations', async () => {
@@ -60,6 +66,23 @@ describe('scanByTxid merge of SP and regular branches', () => {
       outputs: SP_HIT.outputs,
       totalValue: 100000,
       confirmations: REGULAR_MISS.confirmations, // Electrum's real confirmations win over the indexer approximation
+      bothBranchesFailed: false,
+    });
+  });
+
+  it('returns both outputs when the SP branch reports two outputs in the same tx', async () => {
+    const wallet = makeWallet();
+    const spOutputs = [
+      { vout: 0, value: 60000, kind: 'silent-payment' as const },
+      { vout: 2, value: 40000, kind: 'silent-payment' as const },
+    ];
+    stubBranches(wallet, { outputs: spOutputs, confirmations: 3 }, REGULAR_MISS);
+    expect(await wallet.scanByTxid(TXID)).toEqual({
+      found: true,
+      outputs: spOutputs,
+      totalValue: 100000,
+      confirmations: REGULAR_MISS.confirmations,
+      bothBranchesFailed: false,
     });
   });
 
@@ -71,6 +94,7 @@ describe('scanByTxid merge of SP and regular branches', () => {
       outputs: REGULAR_HIT.outputs,
       totalValue: 50000,
       confirmations: REGULAR_HIT.confirmations,
+      bothBranchesFailed: false,
     });
     expect(ingestSpy).toHaveBeenCalledWith(REGULAR_HIT.outputs);
   });
@@ -83,6 +107,7 @@ describe('scanByTxid merge of SP and regular branches', () => {
       outputs: [...SP_HIT.outputs, ...REGULAR_HIT.outputs],
       totalValue: 150000,
       confirmations: REGULAR_HIT.confirmations,
+      bothBranchesFailed: false,
     });
     expect(ingestSpy).toHaveBeenCalledWith(REGULAR_HIT.outputs);
   });
@@ -114,6 +139,7 @@ describe('scanByTxid merge of SP and regular branches', () => {
       outputs: REGULAR_HIT.outputs,
       totalValue: 50000,
       confirmations: REGULAR_HIT.confirmations,
+      bothBranchesFailed: false,
     });
   });
 
@@ -125,6 +151,7 @@ describe('scanByTxid merge of SP and regular branches', () => {
       outputs: SP_HIT.outputs,
       totalValue: 100000,
       confirmations: SP_HIT.confirmations,
+      bothBranchesFailed: false,
     });
   });
 
@@ -136,13 +163,20 @@ describe('scanByTxid merge of SP and regular branches', () => {
       outputs: SP_HIT.outputs,
       totalValue: 100000,
       confirmations: SP_HIT.confirmations,
+      bothBranchesFailed: false,
     });
   });
 
   it('returns not-found without throwing when both branches throw', async () => {
     const wallet = makeWallet();
     stubBranches(wallet, new Error('indexer down'), new Error('electrum down'));
-    expect(await wallet.scanByTxid(TXID)).toEqual({ found: false, outputs: [], totalValue: 0, confirmations: 0 });
+    expect(await wallet.scanByTxid(TXID)).toEqual({
+      found: false,
+      outputs: [],
+      totalValue: 0,
+      confirmations: 0,
+      bothBranchesFailed: true,
+    });
   });
 
   it('awaits the SP branch before starting the regular branch', async () => {
