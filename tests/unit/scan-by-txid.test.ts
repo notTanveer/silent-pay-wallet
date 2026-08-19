@@ -1,6 +1,7 @@
 import * as Electrum from '../../modules/Electrum';
 import { HDSilentPaymentsWallet, OwnedOutput } from '../../class/wallets/hd-bip352-wallet.ts';
 import { AbstractHDElectrumWallet } from '../../class/wallets/abstract-hd-electrum-wallet.ts';
+import ecc from '../../modules/noble_ecc';
 
 jest.mock('../../modules/Electrum', () => ({
   ...jest.requireActual('../../modules/Electrum'),
@@ -328,5 +329,50 @@ describe('ingestRegularOutputs', () => {
     await (wallet as any).ingestRegularOutputs([output]);
 
     expect((wallet as any).next_free_change_address_index).toBe(3);
+  });
+});
+
+describe('isLabelChangeOutput', () => {
+  // Builds a fake SP UTXO whose pubKey is spendPub tweaked by `tweak`, the way the Rust scanner
+  // would report a real match against that key.
+  function makeSpUtxo(spendPub: Uint8Array, tweak: Uint8Array): any {
+    const tweakedPub = ecc.pointAddScalar(spendPub, tweak, true)!;
+    return {
+      txid: TXID,
+      vout: 0,
+      value: 1000,
+      height: 0,
+      address: '',
+      silentPaymentAddress: '',
+      pubKey: Buffer.from(tweakedPub.subarray(1, 33)).toString('hex'),
+      tweak,
+      blockHash: '',
+      isSpent: false,
+      blockTime: 0,
+    };
+  }
+
+  const TWEAK = new Uint8Array(32).fill(7);
+
+  it('returns false for a UTXO that matches the main spend key', () => {
+    const wallet = makeWallet();
+    const [main] = (wallet as any).getSpendKeyCandidates();
+
+    expect((wallet as any).isLabelChangeOutput(makeSpUtxo(main.spendPub, TWEAK))).toBe(false);
+  });
+
+  it('returns true for a UTXO that matches the label-0 change spend key', () => {
+    const wallet = makeWallet();
+    const [, change] = (wallet as any).getSpendKeyCandidates();
+
+    expect((wallet as any).isLabelChangeOutput(makeSpUtxo(change.spendPub, TWEAK))).toBe(true);
+  });
+
+  it('returns false when the tweak reproduces neither spend key', () => {
+    const wallet = makeWallet();
+    const [main] = (wallet as any).getSpendKeyCandidates();
+    const utxo = { ...makeSpUtxo(main.spendPub, TWEAK), pubKey: 'ff'.repeat(32) };
+
+    expect((wallet as any).isLabelChangeOutput(utxo)).toBe(false);
   });
 });

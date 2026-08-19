@@ -52,7 +52,9 @@ export type OwnedOutput = {
   value: number; // sats
   kind: 'silent-payment' | 'regular';
   address?: string; // regular only
-  isChange?: boolean; // regular, from the internal (change) chain
+  // regular: an internal (change) chain address. silent-payment: a label-0 change match.
+  // Either way, it's our own change, not a payment from someone else.
+  isChange?: boolean;
 };
 
 export type ScanByTxidResult = {
@@ -380,6 +382,23 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       `UTXO ${spUtxo.txid}:${spUtxo.vout}: no spend key reproduces the stored output key ` +
         `(tried the main key and label-${SP_CHANGE_LABEL} change) — its tweak or pubKey is wrong`,
     );
+  }
+
+  /**
+   * True when an SP UTXO matches the label-0 change spend key rather than the main one — i.e.
+   * it's our own change from an SP-to-SP send, not a payment from someone else. `resolveSpendKeys`
+   * throws for a UTXO whose tweak doesn't reproduce either key, which shouldn't happen for
+   * anything the scanner itself just matched; treated as "not change" rather than propagated,
+   * since this only affects how scanByTxid labels the output for display.
+   */
+  private isLabelChangeOutput(spUtxo: SilentPaymentUTXO): boolean {
+    try {
+      const { spendPub } = this.resolveSpendKeys(spUtxo);
+      const changeSpendPub = this.getSpendKeyCandidates()[1].spendPub;
+      return Buffer.from(spendPub).equals(Buffer.from(changeSpendPub));
+    } catch {
+      return false;
+    }
   }
 
   private getSeed(): Buffer {
@@ -721,7 +740,12 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     const confirmations = tx.blockHeight > 0 ? Math.max(tipResponse.height - tx.blockHeight + 1, 0) : 0;
 
     return {
-      outputs: result.utxos.map(utxo => ({ vout: utxo.vout, value: utxo.value, kind: 'silent-payment' as const })),
+      outputs: result.utxos.map(utxo => ({
+        vout: utxo.vout,
+        value: utxo.value,
+        kind: 'silent-payment' as const,
+        isChange: this.isLabelChangeOutput(utxo),
+      })),
       confirmations,
     };
   }
