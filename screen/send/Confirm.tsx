@@ -226,7 +226,9 @@ const Confirm: React.FC = () => {
                       <React.Fragment key={`output-${i}`}>
                         <View style={styles.outputGroup}>
                           <View style={styles.outputHeaderRow}>
-                            <Text style={[styles.outputLabel, stylesHook.outputLabel]}>{`Output ${i + 1}`}</Text>
+                            <Text style={[styles.outputLabel, stylesHook.outputLabel]}>
+                              {loc.formatString(loc.send.split_output_label, { number: i + 1 })}
+                            </Text>
                             <Text style={[styles.outputAmount, stylesHook.outputAmount]}>
                               {`${satoshiToBTC(r.value ?? 0)} ${loc.units[BitcoinUnit.BTC]}`}
                             </Text>

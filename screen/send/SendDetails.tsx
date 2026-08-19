@@ -731,7 +731,7 @@ const SendDetails = () => {
     await saveToDisk();
 
     const changeSet = new Set([...(changeAddresses ?? []), change]);
-    let recipients = outputs.filter((out: any) => !changeSet.has(out.address));
+    let recipients = outputs.filter(({ address }) => !!address && !changeSet.has(address));
 
     if (recipients.length === 0) {
       // special case. maybe the only destination in this transaction is our own change address..?

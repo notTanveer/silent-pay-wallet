@@ -25,9 +25,6 @@ export { RustTransactionProcessor, createTransactionProcessor } from './RustTran
 export {
   planSplitOutputs,
   canSplitPayment,
-  partitionPaymentAmounts,
-  estimateSplitExtraFee,
-  SPLIT_MIN_OUTPUT_SATS,
   SPEND_INPUT_VBYTES,
   OUTPUT_VBYTES,
 } from './splitPayment';
