@@ -21,34 +21,32 @@ const CONFIRMATIONS_THRESHOLD = 6;
 type PaymentFoundProps = NativeStackScreenProps<DetailViewStackParamList, 'PaymentFound'>;
 
 const PaymentFound: React.FC<PaymentFoundProps> = ({ route }) => {
-  const { txid, blockHeight, tipHeight } = route.params;
+  const { txid, outputs, totalValue, confirmations } = route.params;
   const { wallets } = useStorage();
   const wallet = wallets.length > 0 ? (wallets[0] as HDSilentPaymentsWallet) : null;
   const navigation = useExtendedNavigation();
   const { colors } = useTheme();
 
-  const txData = useMemo(() => {
-    if (!wallet) return null;
+  // Only needed for the "View Details" button, which needs a full Transaction object.
+  // The amount/status shown on this screen comes straight from the scan result above,
+  // since a tx can pay multiple owned outputs across both SP and regular addresses,
+  // which a single getTransactions() entry can't represent.
+  const tx = useMemo(() => wallet?.getTransactions().find(t => t.txid === txid) ?? null, [wallet, txid]);
 
-    const tx = wallet.getTransactions().find(t => t.txid === txid);
-    if (!tx) return null;
-
-    const confirmations = tipHeight > 0 && blockHeight > 0 ? Math.max(tipHeight - blockHeight + 1, 0) : 0;
-
-    return { tx, value: tx.value, confirmations };
-  }, [wallet, txid, blockHeight, tipHeight]);
-
-  const isConfirmed = (txData?.confirmations ?? 0) >= CONFIRMATIONS_THRESHOLD;
-  const confirmationsDisplay = Math.min(txData?.confirmations ?? 0, CONFIRMATIONS_THRESHOLD);
+  const isConfirmed = confirmations >= CONFIRMATIONS_THRESHOLD;
+  const confirmationsDisplay = Math.min(confirmations, CONFIRMATIONS_THRESHOLD);
   const remaining = CONFIRMATIONS_THRESHOLD - confirmationsDisplay;
-  const progressRatio = txData ? confirmationsDisplay / CONFIRMATIONS_THRESHOLD : 0;
+  const progressRatio = confirmationsDisplay / CONFIRMATIONS_THRESHOLD;
 
-  const formattedBTC = txData?.value != null ? formatBalance(txData.value, BitcoinUnit.BTC) : '';
-  const formattedFiat = txData?.value != null ? satoshiToLocalCurrency(txData.value) : '';
+  const formattedBTC = formatBalance(totalValue, BitcoinUnit.BTC);
+  const formattedFiat = satoshiToLocalCurrency(totalValue);
+
+  // A self-send shows up here as a wallet-owned change output, not a payment from someone else.
+  const isOwnChange = outputs.length > 0 && outputs.every(output => output.isChange);
 
   const handleViewDetails = () => {
-    if (!txData?.tx) return;
-    navigation.navigate('TransactionDetails', { tx: txData.tx, hash: txid, walletID: wallet?.getID() ?? '' });
+    if (!tx) return;
+    navigation.navigate('TransactionDetails', { tx, hash: txid, walletID: wallet?.getID() ?? '' });
   };
 
   const handleDone = () => {
@@ -87,6 +85,7 @@ const PaymentFound: React.FC<PaymentFoundProps> = ({ route }) => {
 
           <Text style={[styles.amount, stylesHook.amount]}>+{formattedBTC}</Text>
           <Text style={[styles.fiat, stylesHook.fiat]}>≈ {formattedFiat}</Text>
+          {isOwnChange && <Text style={[styles.changeNote, stylesHook.fiat]}>{loc.payment_found.change_note}</Text>}
 
           <Spacing20 />
 
@@ -168,6 +167,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginTop: 4,
+  },
+  changeNote: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 8,
   },
   detailsCard: {
     borderRadius: 12,

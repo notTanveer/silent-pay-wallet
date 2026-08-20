@@ -1,7 +1,9 @@
+import BigNumber from 'bignumber.js';
 import * as bip39 from 'bip39';
 import { Buffer } from 'buffer';
 import { ECPairFactory } from 'ecpair';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet.ts';
+import * as Electrum from '../../modules/Electrum';
 import { getDefaultIndexer } from '../../modules/SilentPaymentIndexer';
 import ecc from '../../modules/noble_ecc';
 import { SilentPayment } from 'silent-payments';
@@ -48,6 +50,32 @@ interface SpendKeyPair {
 const SCAN_PROGRESS_THROTTLE_MS = 500;
 // Number of recent progress samples kept for the windowed ETA throughput estimate.
 const SCAN_ETA_ROLLING_WINDOW = 10;
+
+export type OwnedOutput = {
+  vout: number;
+  value: number; // sats
+  kind: 'silent-payment' | 'regular';
+  address?: string; // regular only
+  // regular: an internal (change) chain address. silent-payment: a label-0 change match.
+  // Either way, it's our own change, not a payment from someone else.
+  isChange?: boolean;
+};
+
+export type ScanByTxidResult = {
+  found: boolean;
+  outputs: OwnedOutput[];
+  totalValue: number;
+  confirmations: number;
+  // True when both the SP and regular branches threw, as opposed to running cleanly and finding
+  // nothing — lets the caller tell "couldn't check" apart from "checked, no payment there".
+  bothBranchesFailed: boolean;
+};
+
+// A regular output matched against this wallet's addresses, plus the derivation index needed to
+// advance the discovery frontier. Internal handoff between detectRegularOutputs and
+// ingestRegularOutputs only — never returned from scanByTxid, so OwnedOutput itself stays free of
+// wallet-internal detail.
+type RegularOutputMatch = OwnedOutput & { index: number };
 
 export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannableWallet {
   static readonly type = 'HDSilentPaymentsWallet';
@@ -366,6 +394,23 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     );
   }
 
+  /**
+   * True when an SP UTXO matches the label-0 change spend key rather than the main one — i.e.
+   * it's our own change from an SP-to-SP send, not a payment from someone else. `resolveSpendKeys`
+   * throws for a UTXO whose tweak doesn't reproduce either key, which shouldn't happen for
+   * anything the scanner itself just matched; treated as "not change" rather than propagated,
+   * since this only affects how scanByTxid labels the output for display.
+   */
+  private isLabelChangeOutput(spUtxo: SilentPaymentUTXO): boolean {
+    try {
+      const { spendPub } = this.resolveSpendKeys(spUtxo);
+      const changeSpendPub = this.getSpendKeyCandidates()[1].spendPub;
+      return Buffer.from(spendPub).equals(Buffer.from(changeSpendPub));
+    } catch {
+      return false;
+    }
+  }
+
   private getSeed(): Buffer {
     if (this.cachedSeed) return this.cachedSeed;
 
@@ -621,13 +666,75 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     }
   }
 
-  async scanByTxid(txid: string): Promise<{ found: boolean; utxosFound: number; blockHeight: number; tipHeight: number }> {
+  /**
+   * Answers "did this txid pay me?" by detecting owned outputs directly from the transaction,
+   * on both the Silent Payment side (indexer) and the regular-address side (Electrum), then
+   * merging what each side found. Detection never depends on the wallet already having synced
+   * the paying address; the regular branch only triggers a wallet sync once it has confirmed
+   * there's something to ingest.
+   */
+  async scanByTxid(txid: string): Promise<ScanByTxidResult> {
+    let spOutputs: OwnedOutput[] = [];
+    let spConfirmations = 0;
+    let spFailed = false;
+    try {
+      const sp = await this.scanTxidForSilentPayment(txid);
+      spOutputs = sp.outputs;
+      spConfirmations = sp.confirmations;
+    } catch (error) {
+      spFailed = true;
+      console.warn('[SP] scanByTxid: silent payment branch failed:', error);
+    }
+
+    let regularOutputs: OwnedOutput[] = [];
+    let regularConfirmations: number | null = null;
+    let regularFailed = false;
+    try {
+      // Sequential on purpose: this only calls fetchUtxo() (via ingestRegularOutputs) after the
+      // SP branch above has finished committing, so its snapshot-restore of SP UTXOs can't race
+      // a concurrent SP write.
+      const detected = await this.detectRegularOutputs(txid);
+      if (detected) {
+        regularConfirmations = detected.confirmations;
+        if (detected.outputs.length > 0) {
+          await this.ingestRegularOutputs(detected.outputs);
+          regularOutputs = detected.outputs.map(({ index, ...output }) => output);
+        }
+      }
+    } catch (error) {
+      regularFailed = true;
+      console.warn('[regular] scanByTxid: regular payment branch failed:', error);
+    }
+
+    const merged = new Map<number, OwnedOutput>();
+    for (const output of [...spOutputs, ...regularOutputs]) {
+      merged.set(output.vout, output);
+    }
+    const outputs = Array.from(merged.values());
+    const totalValue = outputs.reduce((sum, output) => sum + output.value, 0);
+    // Prefer Electrum's real confirmations (the regular-branch lookup runs regardless of
+    // ownership) over the SP branch's indexer-height-diff approximation.
+    const confirmations = regularConfirmations ?? spConfirmations;
+
+    return {
+      found: outputs.length > 0,
+      outputs,
+      totalValue,
+      confirmations,
+      bothBranchesFailed: spFailed && regularFailed,
+    };
+  }
+
+  private async scanTxidForSilentPayment(txid: string): Promise<{ outputs: OwnedOutput[]; confirmations: number }> {
     const indexer = getDefaultIndexer();
     const [response, tipResponse] = await Promise.all([indexer.getTransactionByTxid(txid), indexer.getLatestBlockHeight()]);
     const tx = response.transaction;
 
     const result = await this.processTransactions([tx]);
 
+    // Deliberately not commitUTXOs(): this is a single-txid lookup, not a range scan, so it must
+    // not move lastScannedBlock forward (that would let a later forward scan skip over blocks
+    // that were never actually scanned) or persist when nothing new was found.
     let newlyAdded = false;
     for (const utxo of result.utxos) {
       if (this.addUTXO(utxo)) {
@@ -640,12 +747,71 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       this.onPersistCallback?.();
     }
 
+    const confirmations = tx.blockHeight > 0 ? Math.max(tipResponse.height - tx.blockHeight + 1, 0) : 0;
+
     return {
-      found: result.utxos.length > 0,
-      utxosFound: result.utxos.length,
-      blockHeight: tx.blockHeight,
-      tipHeight: tipResponse.height,
+      outputs: result.utxos.map(utxo => ({
+        vout: utxo.vout,
+        value: utxo.value,
+        kind: 'silent-payment' as const,
+        isChange: this.isLabelChangeOutput(utxo),
+      })),
+      confirmations,
     };
+  }
+
+  /**
+   * Looks the txid up directly on Electrum and checks each output's address against this
+   * wallet's derived (external + change) addresses. Read-only: never touches wallet state.
+   * Returns null only if Electrum doesn't know the txid at all.
+   */
+  private async detectRegularOutputs(txid: string): Promise<{ outputs: RegularOutputMatch[]; confirmations: number } | null> {
+    const result = await Electrum.multiGetTransactionByTxid([txid], true);
+    const tx = result[txid];
+    if (!tx) return null;
+
+    const outputs: RegularOutputMatch[] = [];
+    for (const vout of tx.vout) {
+      const address = vout.scriptPubKey?.addresses?.[0];
+      if (!address) continue;
+      const owned = this.findAddressIndex(address);
+      if (!owned) continue;
+      outputs.push({
+        vout: vout.n,
+        value: new BigNumber(vout.value).multipliedBy(100000000).toNumber(), // verbose value is BTC
+        kind: 'regular',
+        address,
+        isChange: owned.internal,
+        index: owned.index,
+      });
+    }
+
+    return { outputs, confirmations: tx.confirmations };
+  }
+
+  /**
+   * Brings detected regular outputs into the wallet: advances the discovery frontier past the
+   * matched address(es), then runs the normal balance/tx/utxo sync so the payment shows up in
+   * getTransactions() and becomes spendable.
+   */
+  private async ingestRegularOutputs(outputs: RegularOutputMatch[]): Promise<void> {
+    for (const output of outputs) {
+      if (output.isChange) {
+        this.next_free_change_address_index = Math.max(this.next_free_change_address_index, output.index + 1);
+      } else {
+        this.next_free_address_index = Math.max(this.next_free_address_index, output.index + 1);
+      }
+    }
+
+    // fetchUtxo() only queries addresses with a known balance, so fetchBalance() must run first.
+    await super.fetchBalance();
+    // super, not this.fetchTransactions(): the SP branch already ran earlier in this scanByTxid
+    // call, so re-triggering scanForSilentPayments() here would just be a redundant SP scan.
+    await super.fetchTransactions();
+    await this.fetchUtxo();
+
+    this.onBalanceChangeCallback?.();
+    this.onPersistCallback?.();
   }
 
   async fetchUtxo(): Promise<void> {

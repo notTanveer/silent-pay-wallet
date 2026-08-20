@@ -873,7 +873,17 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
   }
 
   weOwnAddress(address: string) {
-    if (!address) return false;
+    return this.findAddressIndex(address) !== null;
+  }
+
+  /**
+   * Same as weOwnAddress(), but returns the derivation index and chain instead of a boolean.
+   *
+   * @param address {string} Address that belongs to this wallet
+   * @returns {{internal: boolean, index: number} | null}
+   */
+  findAddressIndex(address: string): { internal: boolean; index: number } | null {
+    if (!address) return null;
     let cleanAddress = address;
 
     const isBech32Address = isValidBech32Address(address);
@@ -883,12 +893,12 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
     }
 
     for (let c = 0; c < this.next_free_address_index + this.gap_limit; c++) {
-      if (this._getExternalAddressByIndex(c) === cleanAddress) return true;
+      if (this._getExternalAddressByIndex(c) === cleanAddress) return { internal: false, index: c };
     }
     for (let c = 0; c < this.next_free_change_address_index + this.gap_limit; c++) {
-      if (this._getInternalAddressByIndex(c) === cleanAddress) return true;
+      if (this._getInternalAddressByIndex(c) === cleanAddress) return { internal: true, index: c };
     }
-    return false;
+    return null;
   }
 
   /**
