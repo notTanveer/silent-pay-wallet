@@ -146,7 +146,7 @@ const ImportWallet = () => {
 
         wallet.setDerivationPath("m/84'/0'/0'");
 
-        if (!wallet.validateMnemonic() && !wallet.getSecret()) {
+        if (!wallet.validateMnemonic()) {
           presentAlert({ title: loc.errors.error, message: loc.wallet_birth.error_invalid_mnemonic });
           setIsLoading(false);
           return;
