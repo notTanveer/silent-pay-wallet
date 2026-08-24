@@ -187,6 +187,7 @@
         "electrum_saved": "Your changes have been saved successfully. Restarting Shroud may be required for the changes to take effect.",
         "set_electrum_server_as_default": "Set {server} as the default Electrum server?",
         "electrum_settings_server": "Electrum Server",
+        "tor_open_link_failed": "Couldn't open the link. No app is available to handle it.",
         "electrum_status": "Status",
         "electrum_preferred_server": "Preferred Server",
         "electrum_preferred_server_description": "Enter the server you want your wallet to use for all Bitcoin activities. Once set, your wallet will exclusively use this server to check balances, send transactions, and fetch network data. Ensure you trust this server before setting it.",
