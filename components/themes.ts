@@ -33,9 +33,12 @@ const palette = {
 
   violet50: '#F6F5FD',
   violet100: '#E6E2FA',
+  violet150: '#DCD2F9',
+  violet150Alpha: '#DCD2F999',
   violet200: '#D0C0FAFF',
   violet500: '#8763EB',
   violet600: '#754CE8',
+  violet600Alpha: '#754CE866',
   violet850: '#473F71',
   violet900: '#1D1A2B',
   violet500Alpha: '#8763EB8F',
@@ -109,6 +112,8 @@ const tokens = {
   statusError: same(palette.red600),
   surfaceSubtle: same(palette.violet50), // banner / card background
   accentSubtle: same(palette.violet100), // banner & card border, "check again" button bg, scanning icon ring
+  accentSubtleDisabled: pair(palette.violet150Alpha, palette.violet850), // disabled bg for accentSubtle/brandPrimary "soft" buttons
+  brandPrimaryDisabled: pair(palette.violet600Alpha, palette.gray400), // disabled text for accentSubtle/brandPrimary "soft" buttons
   surfaceCaution: same('#FDFBF5'), // caution banner background (address-reuse warning)
   iconCaution: same('#F1AF63'), // caution banner icon (warm amber)
   segmentTrack: same('#F8F8FA'), // pill toggle track background
@@ -172,6 +177,7 @@ const tokens = {
   settingsCardBackground: pair('#F9F9FB', '#1C1C1E'),
   settingsRowTitle: pair('#101828', palette.white),
   settingsDescriptionText: pair('#3C3C43', palette.white),
+  settingsCheckmark: pair(palette.violet600, palette.violet500), // mirrors brandPrimary's light/dark split for contrast on dark backgrounds
   settingsDenominationIconColor: same(palette.gray600),
   // Fixed swatch colors for the Theme screen's Light/Dark preview cards — these must render
   // as literal light/dark regardless of the app's active theme, so they're same() not pair().

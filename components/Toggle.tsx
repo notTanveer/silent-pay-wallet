@@ -70,7 +70,7 @@ const Toggle: React.FC<ToggleProps> = ({ value, onValueChange, accessibilityLabe
       testID={testID}
       hitSlop={8}
     >
-      <Animated.View style={[styles.track, { backgroundColor: trackColor }]}>
+      <Animated.View style={[styles.track, disabled && styles.trackDisabled, { backgroundColor: trackColor }]}>
         <Animated.View style={[styles.thumbWrapper, { transform: [{ translateX: thumbTranslateX }, { scale: thumbScale }] }]}>
           <Animated.View style={[styles.thumb, { shadowOpacity: thumbShadowOpacity }]} />
         </Animated.View>
@@ -86,6 +86,9 @@ const styles = StyleSheet.create({
     width: TRACK_WIDTH,
     height: TRACK_HEIGHT,
     borderRadius: TRACK_RADIUS,
+  },
+  trackDisabled: {
+    opacity: 0.5,
   },
   thumbWrapper: {
     position: 'absolute',

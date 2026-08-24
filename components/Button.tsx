@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   },
   text: {
     marginHorizontal: 8,
-    fontFamily: ClashFont.semibold,
+    fontFamily: ClashFont.medium,
     fontSize: 16,
   },
   pressableWrapper: {
