@@ -2,6 +2,7 @@ import bip21, { TOptions } from 'bip21';
 import * as bitcoin from 'bitcoinjs-lib';
 import URL from 'url';
 import { Chain } from '../models/bitcoinUnits';
+import { ElectrumServerItem, parseElectrumServerString } from '../modules/Electrum';
 import type { TWallet } from './wallets/types';
 
 type TCompletionHandlerParams = [string, object];
@@ -67,9 +68,11 @@ class DeeplinkSchemaMatch {
     const urlObject = URL.parse(event.url, true); // eslint-disable-line n/no-deprecated-api
     if (urlObject.protocol === 'shroud:') {
       switch (urlObject.host) {
-        case 'setelectrumserver':
-          completionHandler(['ElectrumSettings', { server: DeeplinkSchemaMatch.getServerFromSetElectrumServerAction(event.url) }]);
+        case 'setelectrumserver': {
+          const server = DeeplinkSchemaMatch.getServerFromSetElectrumServerAction(event.url);
+          completionHandler(['ElectrumServerSettings', { server: server || undefined }]);
           break;
+        }
       }
     }
   }
@@ -78,13 +81,14 @@ class DeeplinkSchemaMatch {
    * Extracts the server from a deeplink like `shroud:setelectrumserver?server=electrum.example.com%3A443%3As`.
    * Returns false if the URL is not a valid setelectrumserver action.
    */
-  static getServerFromSetElectrumServerAction(url: string): string | false {
+  static getServerFromSetElectrumServerAction(url: string): ElectrumServerItem | false {
     const lower = url.toLowerCase();
     if (!lower.startsWith('shroud:setelectrumserver') && !lower.startsWith('setelectrumserver')) {
       return false;
     }
     const parts = url.split('server=');
-    return parts[1] ? decodeURIComponent(parts[1]) : false;
+    if (!parts[1]) return false;
+    return parseElectrumServerString(decodeURIComponent(parts[1])) ?? false;
   }
 
   static isBitcoinAddress(address: string): boolean {

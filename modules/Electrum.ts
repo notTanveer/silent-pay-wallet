@@ -9,10 +9,9 @@ import { sha256 as _sha256 } from '@noble/hashes/sha256';
 import presentAlert from '../components/Alert';
 import loc from '../loc';
 import { GROUP_IO_SHROUD } from './currency';
-import { ElectrumServerItem } from '../screen/settings/ElectrumSettings';
-import { triggerWarningHapticFeedback } from './hapticFeedback';
-import { AlertButton } from 'react-native';
 import { uint8ArrayToHex } from './uint8array-extras/index';
+import TorManager, { DEFAULT_SOCKS_HOST } from './torManager';
+import { createSocksNet } from './socksSocket';
 
 const ElectrumClient = require('electrum-client');
 const net = require('net');
@@ -101,11 +100,28 @@ type Peer = {
   tcp?: number;
 };
 
+export type ElectrumServerItem = Peer;
+
+export const formatServerAddress = (server: ElectrumServerItem): string =>
+  server.ssl !== undefined ? `ssl://${server.host}:${server.ssl}` : `tcp://${server.host}:${server.tcp}`;
+
+// Parses the `host:port:s` / `host:port:t` wire format used by the `setelectrumserver` deeplink
+// (e.g. `shroud:setelectrumserver?server=electrum.example.com%3A443%3As`). Distinct from the
+// `ssl://host:port` format the Network Settings custom-server input accepts.
+export const parseElectrumServerString = (value: string): ElectrumServerItem | null => {
+  const parts = value.split(':');
+  if (parts.length !== 3) return null;
+  const [host, portStr, protocol] = parts;
+  const port = Number(portStr);
+  if (!host || !Number.isInteger(port) || port <= 0 || port > 65535) return null;
+  if (protocol === 's') return { host, ssl: port };
+  if (protocol === 't') return { host, tcp: port };
+  return null;
+};
+
 export const ELECTRUM_HOST = 'electrum_host';
 export const ELECTRUM_TCP_PORT = 'electrum_tcp_port';
 export const ELECTRUM_SSL_PORT = 'electrum_ssl_port';
-export const ELECTRUM_SERVER_HISTORY = 'electrum_server_history';
-const ELECTRUM_CONNECTION_DISABLED = 'electrum_disabled';
 const storageKey = 'ELECTRUM_PEERS';
 const defaultPeer = { host: 'electrum1.bluewallet.io', ssl: 443 };
 export const hardcodedPeers: Peer[] = [
@@ -192,30 +208,6 @@ export const getPreferredServer = async (): Promise<ElectrumServerItem | undefin
   }
 };
 
-export async function isDisabled(): Promise<boolean> {
-  let result;
-  try {
-    await DefaultPreference.setName(GROUP_IO_SHROUD);
-    const savedValue = await DefaultPreference.get(ELECTRUM_CONNECTION_DISABLED);
-    console.log('Getting Electrum connection disabled state:', savedValue);
-    if (savedValue === null) {
-      result = false;
-    } else {
-      result = savedValue;
-    }
-  } catch (error) {
-    console.error('Error getting Electrum connection disabled state:', error);
-    result = false;
-  }
-  return !!result;
-}
-
-export async function setDisabled(disabled = true) {
-  await DefaultPreference.setName(GROUP_IO_SHROUD);
-  console.log('Setting Electrum connection disabled state to:', disabled);
-  return DefaultPreference.set(ELECTRUM_CONNECTION_DISABLED, disabled ? '1' : '');
-}
-
 function getCurrentPeer() {
   return hardcodedPeers[currentPeerIndex];
 }
@@ -259,10 +251,6 @@ async function getSavedPeer(): Promise<Peer | null> {
 }
 
 export async function connectMain(): Promise<void> {
-  if (await isDisabled()) {
-    console.log('Electrum connection disabled by user. Skipping connectMain call');
-    return;
-  }
   let usingPeer = getNextPeer();
   const savedPeer = await getSavedPeer();
   if (savedPeer && savedPeer.host && (savedPeer.tcp || savedPeer.ssl)) {
@@ -273,7 +261,11 @@ export async function connectMain(): Promise<void> {
 
   try {
     console.log('begin connection:', JSON.stringify(usingPeer));
-    mainClient = new ElectrumClient(net, tls, usingPeer.ssl || usingPeer.tcp, usingPeer.host, usingPeer.ssl ? 'tls' : 'tcp');
+    const transport = await resolveElectrumTransport(usingPeer.host, usingPeer.tcp, usingPeer.ssl);
+    if (!transport) {
+      throw new Error(`Cannot connect to ${usingPeer.host}: onion servers require Tor to be enabled with a tcp port configured`);
+    }
+    mainClient = new ElectrumClient(transport.net, tls, transport.port, usingPeer.host, transport.protocol);
 
     mainClient.onError = function (e: { message: string }) {
       console.log('electrum mainClient.onError():', e.message);
@@ -349,75 +341,7 @@ export async function connectMain(): Promise<void> {
   }
 }
 
-export async function presentResetToDefaultsAlert(): Promise<boolean> {
-  const hasPreferredServer = await getPreferredServer();
-  const serverHistoryStr = await DefaultPreference.get(ELECTRUM_SERVER_HISTORY);
-  const serverHistory = typeof serverHistoryStr === 'string' ? JSON.parse(serverHistoryStr) : [];
-  return new Promise(resolve => {
-    triggerWarningHapticFeedback();
-
-    const buttons: AlertButton[] = [];
-
-    if (hasPreferredServer?.host && (hasPreferredServer.tcp || hasPreferredServer.ssl)) {
-      buttons.push({
-        text: loc.settings.electrum_reset,
-        onPress: async () => {
-          try {
-            await DefaultPreference.setName(GROUP_IO_SHROUD);
-            await DefaultPreference.clear(ELECTRUM_HOST);
-            await DefaultPreference.clear(ELECTRUM_SSL_PORT);
-            await DefaultPreference.clear(ELECTRUM_TCP_PORT);
-          } catch (e) {
-            console.log(e); // Must be running on Android
-          }
-          resolve(true);
-        },
-        style: 'default',
-      });
-    }
-
-    if (serverHistory.length > 0) {
-      buttons.push({
-        text: loc.settings.electrum_reset_to_default_and_clear_history,
-        onPress: async () => {
-          try {
-            await DefaultPreference.setName(GROUP_IO_SHROUD);
-            await DefaultPreference.clear(ELECTRUM_SERVER_HISTORY);
-            await DefaultPreference.clear(ELECTRUM_HOST);
-            await DefaultPreference.clear(ELECTRUM_SSL_PORT);
-            await DefaultPreference.clear(ELECTRUM_TCP_PORT);
-          } catch (e) {
-            console.log(e); // Must be running on Android
-          }
-          resolve(true);
-        },
-        style: 'destructive',
-      });
-    }
-
-    buttons.push({
-      text: loc._.cancel,
-      onPress: () => resolve(false),
-      style: 'cancel',
-    });
-
-    presentAlert({
-      title: loc.settings.electrum_reset,
-      message: loc.settings.electrum_reset_to_default,
-      buttons,
-      options: { cancelable: true },
-    });
-  });
-}
-
 const presentNetworkErrorAlert = async (usingPeer?: Peer) => {
-  if (await isDisabled()) {
-    console.log(
-      'Electrum connection disabled by user. Perhaps we are attempting to show this network error alert after the user disabled connections.',
-    );
-    return;
-  }
-
   presentAlert({
     allowRepeat: false,
     title: loc.errors.network,
@@ -435,20 +359,6 @@ const presentNetworkErrorAlert = async (usingPeer?: Peer) => {
           setTimeout(connectMain, 500);
         },
         style: 'default',
-      },
-      {
-        text: loc.settings.electrum_reset,
-        onPress: () => {
-          presentResetToDefaultsAlert().then(result => {
-            if (result) {
-              connectionAttempt = 0;
-              mainClient?.close();
-              mainClient = undefined;
-              setTimeout(connectMain, 500);
-            }
-          });
-        },
-        style: 'destructive',
       },
       {
         text: loc._.cancel,
@@ -1028,10 +938,6 @@ export async function multiGetTransactionByTxid<T extends boolean>(
 export const waitTillConnected = async function (): Promise<boolean> {
   let waitTillConnectedInterval: NodeJS.Timeout | undefined;
   let retriesCounter = 0;
-  if (await isDisabled()) {
-    console.warn('Electrum connections disabled by user. waitTillConnected skipping...');
-    return false;
-  }
   return new Promise(function (resolve, reject) {
     waitTillConnectedInterval = setInterval(() => {
       if (mainConnected) {
@@ -1183,11 +1089,46 @@ const calculateBlockTime = function (height: number): number {
   return Math.floor(baseTs + (height - baseHeight) * 9.93 * 60);
 };
 
+interface ElectrumTransport {
+  net: typeof net;
+  protocol: 'tcp' | 'tls';
+  port: number;
+}
+
+/**
+ * Picks the net module + protocol + port an ElectrumClient should be constructed with for a
+ * given host. For .onion hosts, routes through the user's configured SOCKS5 proxy (Orbot)
+ * instead of dialing directly - .onion hosts have no DNS record and are only reachable through
+ * Tor. Returns null when the host can't be reached at all: no port configured, or - for .onion -
+ * no tcp port configured or Tor not enabled. TLS is not supported for .onion hosts (see
+ * socksSocket.ts - react-native-tcp-socket's TLSSocket needs a real native socket underneath,
+ * which the SOCKS5 tunnel wrapper isn't; onion Electrum servers are also typically plaintext
+ * already, since Tor provides transport encryption itself).
+ */
+const resolveElectrumTransport = async (host: string, tcpPort?: number, sslPort?: number): Promise<ElectrumTransport | null> => {
+  if (!host.endsWith('.onion')) {
+    const port = sslPort || tcpPort;
+    if (!port) return null;
+    return { net, protocol: sslPort ? 'tls' : 'tcp', port };
+  }
+
+  if (!tcpPort) return null;
+
+  const torManager = TorManager.getInstance();
+  await torManager.ensureLoaded();
+  if (!torManager.settings.enabled) return null;
+
+  return { net: createSocksNet(DEFAULT_SOCKS_HOST, torManager.socksPort), protocol: 'tcp', port: tcpPort };
+};
+
 /**
  * @returns {Promise<boolean>} Whether provided host:port is a valid electrum server
  */
 export const testConnection = async function (host: string, tcpPort?: number, sslPort?: number): Promise<boolean> {
-  const client = new ElectrumClient(net, tls, sslPort || tcpPort, host, sslPort ? 'tls' : 'tcp');
+  const transport = await resolveElectrumTransport(host, tcpPort, sslPort);
+  if (!transport) return false;
+
+  const client = new ElectrumClient(transport.net, tls, transport.port, host, transport.protocol);
 
   client.onError = () => {}; // mute
   let timeoutId: NodeJS.Timeout | undefined;

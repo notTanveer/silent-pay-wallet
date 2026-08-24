@@ -4,6 +4,15 @@ import DefaultPreference from 'react-native-default-preference';
 import { isReadClipboardAllowed, setReadClipboardAllowed } from '../../modules/clipboard';
 import { getPreferredCurrency, GROUP_IO_SHROUD, initCurrencyDaemon, setPreferredCurrency } from '../../modules/currency';
 import { ShroudApp } from '../../class';
+import TorManager, { TorStatus } from '../../modules/torManager';
+import {
+  BLOCK_EXPLORERS,
+  BlockExplorer,
+  getBlockExplorerUrl,
+  getBlockExplorersList,
+  normalizeUrl,
+  saveBlockExplorer,
+} from '../../models/blockExplorer';
 
 import { FiatUnit, TFiatUnit } from '../../models/fiatUnit';
 import { useStorage } from '../../hooks/context/useStorage';
@@ -59,11 +68,19 @@ interface SettingsContextType {
   isTotalBalanceEnabled: boolean;
   totalBalancePreferredUnit: BitcoinUnit;
   setTotalBalancePreferredUnitStorage: (unit: BitcoinUnit) => Promise<void>;
-  isElectrumDisabled: boolean;
-  setIsElectrumDisabled: (value: boolean) => void;
   themePreference: ThemePreference;
   setThemePreferenceStorage: (value: ThemePreference) => Promise<void>;
   settingsLoaded: boolean;
+  isTorEnabled: boolean;
+  setIsTorEnabled: (value: boolean) => Promise<void>;
+  isTorOnly: boolean;
+  setIsTorOnly: (value: boolean) => Promise<void>;
+  torSocksPort: number;
+  setTorSocksPort: (port: number) => Promise<boolean>;
+  torStatus: TorStatus;
+  checkTorConnection: () => Promise<boolean>;
+  selectedBlockExplorer: BlockExplorer;
+  setBlockExplorerStorage: (explorer: BlockExplorer) => Promise<boolean>;
 }
 
 const defaultSettingsContext: SettingsContextType = {
@@ -77,11 +94,19 @@ const defaultSettingsContext: SettingsContextType = {
   isTotalBalanceEnabled: true,
   totalBalancePreferredUnit: BitcoinUnit.BTC,
   setTotalBalancePreferredUnitStorage: async () => {},
-  isElectrumDisabled: false,
-  setIsElectrumDisabled: () => {},
   themePreference: 'system',
   setThemePreferenceStorage: async () => {},
   settingsLoaded: false,
+  isTorEnabled: false,
+  setIsTorEnabled: async () => {},
+  isTorOnly: false,
+  setIsTorOnly: async () => {},
+  torSocksPort: 9050,
+  setTorSocksPort: async () => false,
+  torStatus: 'disabled',
+  checkTorConnection: async () => false,
+  selectedBlockExplorer: BLOCK_EXPLORERS.default,
+  setBlockExplorerStorage: async () => false,
 };
 
 export const SettingsContext = createContext<SettingsContextType>(defaultSettingsContext);
@@ -94,9 +119,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
   const [isClipboardGetContentEnabled, setIsClipboardGetContentEnabled] = useState<boolean>(true);
   const [isTotalBalanceEnabled, setIsTotalBalanceEnabled] = useState<boolean>(true);
   const [totalBalancePreferredUnit, setTotalBalancePreferredUnit] = useState<BitcoinUnit>(BitcoinUnit.BTC);
-  const [isElectrumDisabled, setIsElectrumDisabled] = useState<boolean>(true);
   const [themePreference, setThemePreference] = useState<ThemePreference>('system');
   const [settingsLoaded, setSettingsLoaded] = useState<boolean>(false);
+  const [isTorEnabled, setIsTorEnabledState] = useState<boolean>(false);
+  const [isTorOnly, setIsTorOnlyState] = useState<boolean>(false);
+  const [torSocksPort, setTorSocksPortState] = useState<number>(9050);
+  const [torStatus, setTorStatus] = useState<TorStatus>('disabled');
+  const [selectedBlockExplorer, setSelectedBlockExplorer] = useState<BlockExplorer>(BLOCK_EXPLORERS.default);
 
   const { walletsInitialized } = useStorage();
 
@@ -109,9 +138,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
       }
 
       const promises: Promise<void>[] = [
-        Electrum.isDisabled().then(disabled => {
-          setIsElectrumDisabled(disabled);
-        }),
         isReadClipboardAllowed().then(clipboardEnabled => {
           setIsClipboardGetContentEnabled(clipboardEnabled);
         }),
@@ -126,6 +152,19 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
         }),
         getThemePreferenceStorage().then(preference => {
           setThemePreference(preference);
+        }),
+        TorManager.getInstance()
+          .ensureLoaded()
+          .then(() => {
+            const settings = TorManager.getInstance().settings;
+            setIsTorEnabledState(settings.enabled);
+            setIsTorOnlyState(settings.torOnly);
+            setTorSocksPortState(settings.socksPort);
+            setTorStatus(TorManager.getInstance().status);
+          }),
+        getBlockExplorerUrl().then(url => {
+          const found = getBlockExplorersList().find(explorer => normalizeUrl(explorer.url) === normalizeUrl(url));
+          setSelectedBlockExplorer(found ?? BLOCK_EXPLORERS.default);
         }),
       ];
 
@@ -157,9 +196,14 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
 
   useEffect(() => {
     if (walletsInitialized) {
-      isElectrumDisabled ? Electrum.forceDisconnect() : Electrum.connectMain();
+      Electrum.connectMain();
     }
-  }, [isElectrumDisabled, walletsInitialized]);
+  }, [walletsInitialized]);
+
+  useEffect(() => {
+    const unsubscribe = TorManager.getInstance().addStatusListener(setTorStatus);
+    return unsubscribe;
+  }, []);
 
   const setPreferredFiatCurrencyStorage = useCallback(async (currency: TFiatUnit): Promise<void> => {
     try {
@@ -197,6 +241,55 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
     }
   }, []);
 
+  const setIsTorEnabled = useCallback(async (value: boolean): Promise<void> => {
+    try {
+      await TorManager.getInstance().setEnabled(value);
+      setIsTorEnabledState(value);
+      if (!value) setIsTorOnlyState(false);
+      setTorStatus(TorManager.getInstance().status);
+    } catch (e) {
+      console.error('Error setting isTorEnabled:', e);
+    }
+  }, []);
+
+  const setIsTorOnly = useCallback(async (value: boolean): Promise<void> => {
+    try {
+      await TorManager.getInstance().setTorOnly(value);
+      setIsTorOnlyState(value);
+    } catch (e) {
+      console.error('Error setting isTorOnly:', e);
+    }
+  }, []);
+
+  const setTorSocksPort = useCallback(async (port: number): Promise<boolean> => {
+    try {
+      await TorManager.getInstance().setSocksPort(port);
+      setTorSocksPortState(port);
+      setTorStatus(TorManager.getInstance().status);
+      return true;
+    } catch (e) {
+      console.error('Error setting torSocksPort:', e);
+      return false;
+    }
+  }, []);
+
+  const checkTorConnection = useCallback(async (): Promise<boolean> => {
+    try {
+      const result = await TorManager.getInstance().checkConnection();
+      setTorStatus(TorManager.getInstance().status);
+      return result;
+    } catch (e) {
+      console.error('Error checking Tor connection:', e);
+      return false;
+    }
+  }, []);
+
+  const setBlockExplorerStorage = useCallback(async (explorer: BlockExplorer): Promise<boolean> => {
+    const success = await saveBlockExplorer(explorer.url);
+    if (success) setSelectedBlockExplorer(explorer);
+    return success;
+  }, []);
+
   const value = useMemo(
     () => ({
       preferredFiatCurrency,
@@ -209,11 +302,19 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
       isTotalBalanceEnabled,
       totalBalancePreferredUnit,
       setTotalBalancePreferredUnitStorage,
-      isElectrumDisabled,
-      setIsElectrumDisabled,
       themePreference,
       setThemePreferenceStorage,
       settingsLoaded,
+      isTorEnabled,
+      setIsTorEnabled,
+      isTorOnly,
+      setIsTorOnly,
+      torSocksPort,
+      setTorSocksPort,
+      torStatus,
+      checkTorConnection,
+      selectedBlockExplorer,
+      setBlockExplorerStorage,
     }),
     [
       preferredFiatCurrency,
@@ -225,10 +326,19 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = React.m
       isTotalBalanceEnabled,
       totalBalancePreferredUnit,
       setTotalBalancePreferredUnitStorage,
-      isElectrumDisabled,
       themePreference,
       setThemePreferenceStorage,
       settingsLoaded,
+      isTorEnabled,
+      setIsTorEnabled,
+      isTorOnly,
+      setIsTorOnly,
+      torSocksPort,
+      setTorSocksPort,
+      torStatus,
+      checkTorConnection,
+      selectedBlockExplorer,
+      setBlockExplorerStorage,
     ],
   );
 

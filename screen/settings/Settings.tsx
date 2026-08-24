@@ -19,7 +19,7 @@ import { IconProps } from '../../components/icons/types';
 const APP_VERSION = DeviceInfo.getVersion();
 const BUILD_NUMBER = DeviceInfo.getBuildNumber();
 
-type SettingsRoute = 'General' | 'Currency' | 'Contact' | 'EncryptStorage' | 'ElectrumSettings' | 'Tools' | 'About';
+type SettingsRoute = 'General' | 'Currency' | 'Contact' | 'EncryptStorage' | 'NetworkSettings' | 'Tools' | 'About';
 
 type SettingsIconColorToken =
   | 'settingsGeneralIconColor'
@@ -69,7 +69,7 @@ const MAIN_ROWS: RowConfig[] = [
     colorToken: 'settingsNetworkIconColor',
     title: loc.settings.network,
     subtitle: loc.settings.network_subtitle,
-    route: 'ElectrumSettings',
+    route: 'NetworkSettings',
     testID: 'NetworkButton',
   },
 ];
