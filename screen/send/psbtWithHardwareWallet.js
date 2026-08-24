@@ -16,13 +16,11 @@ import { useBiometrics, unlockWithBiometrics } from '../../hooks/useBiometrics';
 import loc from '../../loc';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
-import { useSettings } from '../../hooks/context/useSettings';
 import { openSignedTransactionRaw } from '../../modules/fs';
 import { Spacing20 } from '../../components/Spacing';
 
 const PsbtWithHardwareWallet = () => {
   const { txMetadata, fetchAndSaveWalletTransactions, wallets } = useStorage();
-  const { isElectrumDisabled } = useSettings();
   const { isBiometricUseCapableAndEnabled } = useBiometrics();
   const navigation = useExtendedNavigation();
   const route = useRoute();
@@ -181,12 +179,7 @@ const PsbtWithHardwareWallet = () => {
             <Text style={[styles.hexText, stylesHook.hexText]}>{loc.send.create_verify}</Text>
           </TouchableOpacity>
           <Spacing20 />
-          <SecondButton
-            disabled={isElectrumDisabled}
-            onPress={broadcast}
-            title={loc.send.confirm_sendNow}
-            testID="PsbtWithHardwareWalletBroadcastTransactionButton"
-          />
+          <SecondButton onPress={broadcast} title={loc.send.confirm_sendNow} testID="PsbtWithHardwareWalletBroadcastTransactionButton" />
         </ShroudCard>
       </View>
     );

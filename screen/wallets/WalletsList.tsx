@@ -22,7 +22,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useStorage } from '../../hooks/context/useStorage';
-import { useSettings } from '../../hooks/context/useSettings';
 import SafeAreaSectionList from '../../components/SafeAreaSectionList';
 import { scanQrHelper } from '../../helpers/scan-qr.ts';
 import QRScanIcon from '../../components/icons/QRScanIcon';
@@ -106,7 +105,6 @@ const WalletsList: React.FC = () => {
   const { isLoading } = state;
   const { sizeClass, isLarge } = useSizeClass();
   const { wallets, getTransactions, getBalance, refreshAllWalletTransactions, saveToDisk, scanState } = useStorage();
-  const { isElectrumDisabled } = useSettings();
   const { currentAppState } = useAppState();
   const wasAutoPausedRef = useRef(false);
   const { colors } = useTheme();
@@ -205,7 +203,6 @@ const WalletsList: React.FC = () => {
 
   const refreshWallets = useCallback(
     async (index: number | undefined, showLoadingIndicator = true, showUpdateStatusIndicator = false) => {
-      if (isElectrumDisabled) return;
       dispatch({ type: ActionTypes.SET_LOADING, payload: showLoadingIndicator });
       try {
         await refreshAllWalletTransactions(index, showUpdateStatusIndicator);
@@ -215,7 +212,7 @@ const WalletsList: React.FC = () => {
         dispatch({ type: ActionTypes.SET_LOADING, payload: false });
       }
     },
-    [isElectrumDisabled, refreshAllWalletTransactions],
+    [refreshAllWalletTransactions],
   );
 
   /**
@@ -229,7 +226,6 @@ const WalletsList: React.FC = () => {
   useEffect(() => {
     // Initial load of transactions without triggering scroll
     const initialLoad = async () => {
-      if (isElectrumDisabled) return;
       try {
         await refreshAllWalletTransactions(undefined, true);
       } catch (error) {
@@ -587,7 +583,7 @@ const WalletsList: React.FC = () => {
     return `${item}${index}`;
   }, []);
 
-  const refreshProps = isDesktop || isElectrumDisabled ? {} : { refreshing: isLoading, onRefresh };
+  const refreshProps = isDesktop ? {} : { refreshing: isLoading, onRefresh };
 
   const sections: SectionData[] = useMemo(() => {
     // On large screens, only show transactions section

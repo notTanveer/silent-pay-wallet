@@ -19,7 +19,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SendDetailsStackParamList } from '../../navigation/SendDetailsStackParamList';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useStorage } from '../../hooks/context/useStorage';
-import { useSettings } from '../../hooks/context/useSettings';
 import AmountHero from '../../components/AmountHero';
 import DetailRow from '../../components/DetailRow';
 import SendIcon from '../../components/icons/SendIcon';
@@ -59,7 +58,6 @@ type ConfirmNavigationProp = NativeStackNavigationProp<SendDetailsStackParamList
 
 const Confirm: React.FC = () => {
   const { wallets, fetchAndSaveWalletTransactions } = useStorage();
-  const { isElectrumDisabled } = useSettings();
   const { isBiometricUseCapableAndEnabled } = useBiometrics();
   const navigation = useExtendedNavigation<ConfirmNavigationProp>();
   const route = useRoute<ConfirmRouteProp>();
@@ -228,13 +226,9 @@ const Confirm: React.FC = () => {
           <Pressable
             accessibilityRole="button"
             testID="sendNowButton"
-            disabled={isElectrumDisabled || state.isButtonDisabled}
+            disabled={state.isButtonDisabled}
             onPress={handleSendTransaction}
-            style={[
-              styles.sendNowButton,
-              stylesHook.sendNowButton,
-              (isElectrumDisabled || state.isButtonDisabled) && stylesHook.sendNowButtonDisabled,
-            ]}
+            style={[styles.sendNowButton, stylesHook.sendNowButton, state.isButtonDisabled && stylesHook.sendNowButtonDisabled]}
           >
             <SendIcon size={20} color={colors.white} />
             <Text style={[styles.sendNowText, stylesHook.sendNowText]}>{loc.send.confirm_sendNow}</Text>
