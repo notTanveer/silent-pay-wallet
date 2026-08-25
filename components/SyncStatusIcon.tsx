@@ -41,7 +41,7 @@ const SyncStatusIcon: React.FC<SyncStatusIconProps> = ({ status, size = 66 }) =>
     <Svg width={size} height={size} viewBox="0 0 66 66" fill="none">
       {status === 'paused' && (
         <>
-          <Circle cx="32.9998" cy="32.9998" r="32.2464" fill={colors.white} stroke={c.ring} strokeWidth="1.50691" />
+          <Circle cx="32.9998" cy="32.9998" r="32.2464" fill={colors.background} stroke={c.ring} strokeWidth="1.50691" />
           <Rect
             x="53.3979"
             y="53.3978"
@@ -70,7 +70,7 @@ const SyncStatusIcon: React.FC<SyncStatusIconProps> = ({ status, size = 66 }) =>
 
       {status === 'done' && (
         <>
-          <Circle cx="32.9998" cy="32.9998" r="32.2464" fill={colors.white} stroke={c.ring} strokeWidth="1.50691" />
+          <Circle cx="32.9998" cy="32.9998" r="32.2464" fill={colors.background} stroke={c.ring} strokeWidth="1.50691" />
           <Rect
             x="54.3393"
             y="54.3392"
@@ -99,7 +99,7 @@ const SyncStatusIcon: React.FC<SyncStatusIconProps> = ({ status, size = 66 }) =>
 
       {status === 'scanning' && (
         <>
-          <Circle cx="32.9998" cy="32.9998" r="32.2464" fill={colors.white} stroke={c.ring} strokeWidth="1.50691" />
+          <Circle cx="32.9998" cy="32.9998" r="32.2464" fill={colors.background} stroke={c.ring} strokeWidth="1.50691" />
           <Rect
             x="54.8503"
             y="54.8502"
@@ -138,7 +138,7 @@ const SyncStatusIcon: React.FC<SyncStatusIconProps> = ({ status, size = 66 }) =>
 
       {status === 'error' && (
         <>
-          <Circle cx="32.9998" cy="32.9998" r="32.2464" fill={colors.white} stroke={c.ring} strokeWidth="1.50691" />
+          <Circle cx="32.9998" cy="32.9998" r="32.2464" fill={colors.background} stroke={c.ring} strokeWidth="1.50691" />
           <Rect
             x="54.3393"
             y="54.3392"

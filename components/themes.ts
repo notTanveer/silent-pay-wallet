@@ -11,6 +11,7 @@ const palette = {
   black: '#000000',
 
   gray50: '#F5F5F7',
+  gray75: '#F0F0F5',
   gray100: '#EEF0F4',
   gray150: '#EEEEEE',
   gray200: '#E6E4E4',
@@ -18,6 +19,7 @@ const palette = {
   gray300: '#D2D2D2',
   gray325: '#D1D1D6',
   gray350: '#D1D5DC',
+  gray375: '#C7C7CC',
   gray400: '#9AA0AA',
   gray450: '#99A1AF',
   gray480: '#8E8E93',
@@ -30,6 +32,12 @@ const palette = {
   gray925: '#1C1C1E',
   gray950: '#121212',
   maroon900: '#5A4E4E',
+  brown900: '#2E2518',
+
+  // Blue-violet tinted neutrals used by the dark scheme (distinct from the pure grays above).
+  slate400: '#8888AA',
+  slate880: '#25253A',
+  slate890: '#1A1A28',
 
   violet50: '#F6F5FD',
   violet100: '#E6E2FA',
@@ -41,14 +49,19 @@ const palette = {
   violet600Alpha: '#754CE866',
   violet850: '#473F71',
   violet900: '#1D1A2B',
+  violet920: '#1A1535',
   violet500Alpha: '#8763EB8F',
   indigo500: '#5856D6',
 
   blue500: '#0A84FF',
   teal500: '#37C0A1',
+  green400: '#66C799',
   green500: '#00A63E',
+  green900: '#1A2E22',
   orange400: '#F38C47',
   pink200: '#F8D2D2',
+  red500: '#EF4444',
+  red550: '#B24334',
   red600: '#D0021B',
 };
 
@@ -107,36 +120,38 @@ const tokens = {
   // Dedicated keys (not the React Navigation reserved primary/text/border) so DarkTheme can't recolor them.
   // Tokens using same() are intentionally identical in dark.
   brandPrimary: pair(palette.violet600, palette.violet500),
-  statusPaused: same('#9792A6'),
-  statusSuccess: same('#55B685'),
-  statusError: same(palette.red600),
-  surfaceSubtle: same(palette.violet50), // banner / card background
-  accentSubtle: same(palette.violet100), // banner & card border, "check again" button bg, scanning icon ring
+  statusPaused: pair('#9792A6', palette.slate400),
+  statusSuccess: pair('#55B685', palette.green400),
+  statusError: pair(palette.red550, palette.red500),
+  surfaceSubtle: pair(palette.violet50, palette.violet920), // banner / card background
+  accentSubtle: pair(palette.violet100, palette.slate880), // banner & card border, "check again" button bg, scanning icon ring
   accentSubtleDisabled: pair(palette.violet150Alpha, palette.violet850), // disabled bg for accentSubtle/brandPrimary "soft" buttons
   brandPrimaryDisabled: pair(palette.violet600Alpha, palette.gray400), // disabled text for accentSubtle/brandPrimary "soft" buttons
-  surfaceCaution: same('#FDFBF5'), // caution banner background (address-reuse warning)
+  surfaceCaution: pair('#FDFBF5', palette.brown900), // caution + scan-error banner background
   iconCaution: same('#F1AF63'), // caution banner icon (warm amber)
   segmentTrack: same('#F8F8FA'), // pill toggle track background
   segmentSelectedBorder: same('#CFCFCF'), // selected pill border
   qrCardBg: same('#F9FAFB'), // QR code card background
   copyHint: same(palette.gray450), // "tap to copy" icon + label
-  progressTrack: same('#EAECF0'),
-  buttonBorder: same('#EBEBEB'),
-  textPrimary: pair('#1A1A1A', palette.white), // titles, primary copy
-  textSecondary: same('#8E8E93'), // subtitles, privacy copy
-  textMeta: same('#92929B'), // ETA / "%" meta text
-  textMuted: same('#7B7A7E'), // card row labels
-  chevron: same('#C7C7CC'), // disclosure chevron
+  progressTrack: pair('#EAECF0', palette.violet920),
+  // Hairline rim on the filled brand button; in dark the design draws it in the brand color itself.
+  buttonBorder: pair('#EBEBEB', palette.violet500),
+  textPrimary: pair('#1A1A1A', palette.gray375), // titles, primary copy
+  textSecondary: pair('#8E8E93', palette.slate400), // subtitles, privacy copy
+  textMeta: pair('#92929B', palette.slate400), // ETA / "%" meta text
+  textMuted: pair('#7B7A7E', palette.slate400), // card row labels
+  textEmphasis: pair(palette.black, palette.gray75), // large display numerals (sync percentage)
+  chevron: pair(palette.gray375, palette.slate400), // disclosure chevron
   white: same(palette.white),
   black: same(palette.black), // large emphasis numerals
   // SyncStatusIcon per-status ring/fill tints (glyph color = brandPrimary / status* above)
-  syncFillScanning: same('#DCD2F9'),
-  syncRingPaused: same('#EEEEF1'),
-  syncFillPaused: same('#E4E2E8'),
-  syncRingDone: same('#E2FAEA'),
-  syncFillDone: same('#D2F9DC'),
-  syncRingError: same('#FDF1F2'),
-  syncFillError: same('#FBE9EB'),
+  syncFillScanning: pair('#DCD2F9', palette.slate880),
+  syncRingPaused: pair('#EEEEF1', '#FFFFFF14'),
+  syncFillPaused: pair('#E4E2E8', palette.slate890),
+  syncRingDone: pair('#E2FAEA', palette.slate880),
+  syncFillDone: pair('#D2F9DC', palette.green900),
+  syncRingError: pair('#FDF1F2', palette.red500),
+  syncFillError: pair('#FBE9EB', 'transparent'), // dark design draws the error ring unfilled
   // Legacy / existing tokens (keep for compatibility)
   receiveBtnBackground: pair('#EAE4FB', '#110732'),
   bannerBackground: pair(palette.violet50, palette.violet900),

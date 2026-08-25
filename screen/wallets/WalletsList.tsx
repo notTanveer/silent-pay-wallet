@@ -457,7 +457,13 @@ const WalletsList: React.FC = () => {
           <Text style={[styles.balanceFiat, stylesHook.alternativeText]}>{fiatLine}</Text>
         </TouchableOpacity>
 
-        {scanWallet && <ScanProgressBar scanState={scanState} onResume={() => scanWallet.resumeScan()} />}
+        {scanWallet && (
+          <ScanProgressBar
+            scanState={scanState}
+            onResume={() => scanWallet.resumeScan()}
+            onRetry={() => scanWallet.fetchTransactions().catch((e: any) => console.warn('[WalletsList] retry scan error:', e))}
+          />
+        )}
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={[styles.actionBtnWide, stylesHook.receiveBtnStyle]}

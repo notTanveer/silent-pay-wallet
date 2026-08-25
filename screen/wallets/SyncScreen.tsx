@@ -188,7 +188,7 @@ const SyncScreen: React.FC<SyncScreenProps> = () => {
 
         {effectiveStatus !== 'error' && (
           <View style={styles.percentRow}>
-            <Text style={[styles.percentNum, { color: colors.black }]}>{Math.round(effectivePct)}</Text>
+            <Text style={[styles.percentNum, { color: colors.textEmphasis }]}>{Math.round(effectivePct)}</Text>
             <Text style={[styles.percentSign, { color: colors.textMeta }]}>%</Text>
           </View>
         )}
