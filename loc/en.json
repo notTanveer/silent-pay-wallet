@@ -53,8 +53,8 @@
         "address_not_found": "Unable to generate receiving address.",
         "header": "Receive",
         "qrcode_for_the_address": "QR Code for the address",
-        "address_reuse_warning": "For better privacy, use a new address for each payment. Reusing this one can link your transactions together.",
-        "address_reuse_warning_emphasis": "use a new address for each payment"
+        "address_reuse_warning": "This is a standard Bitcoin address. For better privacy, use the Silent payment address tab instead.",
+        "address_reuse_warning_emphasis": "Silent payment address tab instead."
     },
     "send": {
         "broadcastButton": "Broadcast",
