@@ -7,6 +7,7 @@ import { useScreenProtect } from '../../hooks/useScreenProtect';
 import { validateMnemonic } from '../../modules/bip39';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import { ShroudText } from '../../ShroudComponents';
+import { computeResponsiveQRSize } from '../../helpers/computeResponsiveQRSize';
 import QRCodeComponent from '../../components/QRCodeComponent';
 import SeedWords from '../../components/SeedWords';
 import { useTheme } from '../../components/themes';
@@ -62,6 +63,7 @@ const WalletExport: React.FC = () => {
   const { currentAppState, previousAppState } = useAppState();
   const stylesHook = StyleSheet.create({
     root: { backgroundColor: colors.background },
+    qrCodeContainer: { backgroundColor: colors.surfaceElevated },
   });
 
   const secret: string = useMemo(() => {
@@ -98,19 +100,19 @@ const WalletExport: React.FC = () => {
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     const { height, width } = e.nativeEvent.layout;
-
     const isPortrait = height > width;
     const maxQRSize = 400;
 
-    if (isPortrait) {
-      const heightBasedSize = Math.min(height * 0.5, maxQRSize);
-      const widthBasedSize = width * 0.75 - HORIZONTAL_PADDING * 2;
-      setQRCodeSize(Math.min(heightBasedSize, widthBasedSize));
-    } else {
-      const heightBasedSize = Math.min(height * 0.6, maxQRSize);
-      const widthBasedSize = width * 0.35;
-      setQRCodeSize(Math.min(heightBasedSize, widthBasedSize));
-    }
+    const size = isPortrait
+      ? computeResponsiveQRSize({ height, width }, { heightRatio: 0.5, widthRatio: 0.75 }, maxQRSize, HORIZONTAL_PADDING)
+      : computeResponsiveQRSize(
+          { height, width },
+          { heightRatio: 0.6, widthRatio: 0.35, subtractPadding: false },
+          maxQRSize,
+          HORIZONTAL_PADDING,
+        );
+
+    setQRCodeSize(size);
   }, []);
 
   const handleCopy = useCallback(() => {
@@ -135,7 +137,7 @@ const WalletExport: React.FC = () => {
 
       <ShroudText style={styles.scanText}>{loc.wallets.scan_import}</ShroudText>
 
-      <View style={styles.qrCodeContainer}>
+      <View style={[styles.qrCodeContainer, stylesHook.qrCodeContainer]}>
         <QRCodeComponent isMenuAvailable={false} value={secret} size={qrCodeSize} />
       </View>
 
@@ -222,6 +224,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
+    paddingVertical: 22,
+    borderRadius: 16,
   },
   pressed: {
     opacity: 0.6,

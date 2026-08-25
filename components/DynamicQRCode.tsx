@@ -8,8 +8,6 @@ import loc from '../loc';
 import QRCodeComponent from './QRCodeComponent';
 import { Spacing20 } from './Spacing';
 
-const { height, width } = Dimensions.get('window');
-
 interface DynamicQRCodeProps {
   value: string;
   capacity?: number;
@@ -28,6 +26,7 @@ interface DynamicQRCodeState {
 export class DynamicQRCode extends Component<DynamicQRCodeProps, DynamicQRCodeState> {
   constructor(props: DynamicQRCodeProps) {
     super(props);
+    const { height, width } = Dimensions.get('window');
     const qrCodeHeight = height > width ? width - 40 : width / 3;
     const qrCodeMaxHeight = 370;
     this.state = {
@@ -130,7 +129,7 @@ export class DynamicQRCode extends Component<DynamicQRCodeProps, DynamicQRCodeSt
           }}
         >
           {this.state.displayQRCode && (
-            <View style={animatedQRCodeStyle.qrcodeContainer}>
+            <View style={[animatedQRCodeStyle.qrcodeContainer, { backgroundColor: BlueCurrentTheme.colors.surfaceElevated }]}>
               <QRCodeComponent
                 value={currentFragment.toUpperCase()}
                 size={this.state.qrCodeHeight}
@@ -188,6 +187,8 @@ const animatedQRCodeStyle = StyleSheet.create({
   qrcodeContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 22,
+    borderRadius: 16,
   },
   controller: {
     width: '90%',

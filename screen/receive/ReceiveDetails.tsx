@@ -7,6 +7,7 @@ import * as Electrum from '../../modules/Electrum';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import { ShroudText } from '../../ShroudComponents';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
+import { computeResponsiveQRSize } from '../../helpers/computeResponsiveQRSize';
 import AddressCopyCard from '../../components/AddressCopyCard';
 import presentAlert from '../../components/Alert';
 import ShareIcon from '../../components/icons/ShareIcon';
@@ -261,10 +262,7 @@ const ReceiveDetails = () => {
 
   const onLayout = useCallback((e: { nativeEvent: { layout: { height: number; width: number } } }) => {
     const { height, width } = e.nativeEvent.layout;
-    const maxQRSize = 500;
-    const heightBasedSize = Math.min(height * 0.6, maxQRSize);
-    const widthBasedSize = width * 0.85 - HORIZONTAL_PADDING * 2;
-    setQRCodeSize(Math.min(heightBasedSize, widthBasedSize));
+    setQRCodeSize(computeResponsiveQRSize({ height, width }, { heightRatio: 0.6, widthRatio: 0.85 }, 500, HORIZONTAL_PADDING));
   }, []);
 
   const renderTabContent = () => {
