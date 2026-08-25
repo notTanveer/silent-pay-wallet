@@ -381,7 +381,7 @@ const ReceiveDetails = () => {
             android_ripple={{ color: colors.androidRippleColor }}
             style={({ pressed }) => [
               styles.shareButton,
-              { backgroundColor: shareDisabled ? colors.buttonDisabledBackgroundColor : colors.brandPrimary },
+              { backgroundColor: shareDisabled ? colors.buttonDisabledBackgroundColor : colors.brandPrimaryFixed },
               pressed && !shareDisabled ? styles.sharePressed : null,
             ]}
           >

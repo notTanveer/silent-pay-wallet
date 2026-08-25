@@ -17,8 +17,8 @@ interface InfoBannerProps {
 const InfoBanner: React.FC<InfoBannerProps> = ({ text, emphasis, variant = 'info', containerStyle }) => {
   const { colors } = useTheme();
   const [before, match, after] = splitForEmphasis(text, emphasis);
-  const backgroundColor = variant === 'caution' ? colors.surfaceCaution : colors.surfaceSubtle;
-  const iconColor = variant === 'caution' ? colors.iconCaution : colors.brandPrimary;
+  const backgroundColor = variant === 'caution' ? colors.surfaceCaution : colors.surfaceElevated;
+  const iconColor = variant === 'caution' ? colors.iconCaution : colors.brandPrimaryFixed;
 
   return (
     <View style={[styles.banner, { backgroundColor }, containerStyle]}>
@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     lineHeight: 23,
   },
   bold: {
-    fontFamily: ClashFont.semibold,
+    fontFamily: ClashFont.medium,
   },
 });
 

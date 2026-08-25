@@ -14,7 +14,7 @@ const logo = require('../img/logo.png');
 const QRCard: React.FC<QRCardProps> = ({ value, size }) => {
   const { colors } = useTheme();
   return (
-    <View style={[styles.card, { backgroundColor: colors.qrCardBg }]}>
+    <View style={[styles.card, { backgroundColor: colors.surfaceElevated }]}>
       <QRCodeComponent
         value={value}
         size={size}

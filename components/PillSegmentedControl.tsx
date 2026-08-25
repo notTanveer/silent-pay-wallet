@@ -45,10 +45,7 @@ const PillSegmentedControl: React.FC<PillSegmentedControlProps> = ({ values, sel
   if (!Array.isArray(values) || values.length === 0) return null;
 
   return (
-    <View
-      style={[styles.track, { backgroundColor: colors.segmentTrack, borderColor: colors.buttonGrayBackgroundColor }]}
-      onLayout={onTrackLayout}
-    >
+    <View style={[styles.track, { backgroundColor: colors.segmentTrack, borderColor: colors.segmentTrackBorder }]} onLayout={onTrackLayout}>
       {segmentWidth > 0 && (
         <Animated.View
           pointerEvents="none"
@@ -56,7 +53,7 @@ const PillSegmentedControl: React.FC<PillSegmentedControlProps> = ({ values, sel
             styles.pill,
             {
               width: segmentWidth,
-              backgroundColor: colors.white,
+              backgroundColor: colors.background,
               borderColor: colors.segmentSelectedBorder,
               transform: [{ translateX }],
             },
@@ -76,7 +73,7 @@ const PillSegmentedControl: React.FC<PillSegmentedControlProps> = ({ values, sel
             style={[
               styles.label,
               {
-                color: index === selectedIndex ? colors.textPrimary : colors.textSecondary,
+                color: index === selectedIndex ? colors.textPrimarySoft : colors.textSecondary,
                 fontFamily: index === selectedIndex ? ClashFont.semibold : ClashFont.medium,
               },
             ]}
