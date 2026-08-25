@@ -143,7 +143,7 @@ const tokens = {
   segmentTrack: pair('#F8F8FA', palette.gray940), // pill toggle track background
   segmentTrackBorder: pair(palette.gray150, '#1E1D1D'), // pill toggle track border
   segmentSelectedBorder: pair('#CFCFCF', '#3D3D3D'), // selected pill border
-  surfaceElevated: pair('#F9FAFB', '#121212'), // QR code card + AddressCopyCard + InfoBanner (info variant) background
+  surfaceElevated: pair('#F6F5FD', '#121212'), // QR code card + AddressCopyCard + InfoBanner (info variant) background
   copyHint: same(palette.gray450), // "tap to copy" icon + label
   progressTrack: pair('#EAECF0', palette.violet920),
   // Hairline rim on the filled brand button; in dark the design draws it in the brand color itself.
