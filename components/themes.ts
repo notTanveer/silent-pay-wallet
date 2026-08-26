@@ -30,7 +30,6 @@ const palette = {
   gray850: '#313030',
   gray900: '#202020',
   gray925: '#1C1C1E',
-  gray950: '#121212',
   maroon900: '#5A4E4E',
   brown900: '#2E2518',
 
@@ -38,6 +37,7 @@ const palette = {
   slate400: '#8888AA',
   slate880: '#25253A',
   slate890: '#1A1A28',
+  slate950: '#0E0E16',
 
   violet50: '#F6F5FD',
   violet100: '#E6E2FA',
@@ -92,7 +92,10 @@ const tokens = {
   warningColor: same('#F5A623'),
   placeholderTextColor: same(palette.gray500),
   hdborderColor: same('#68BBE1'),
-  background: pair(palette.white, palette.gray950),
+  background: pair(palette.white, palette.slate950),
+  // React Navigation's reserved `card` key paints the native header; without it dark headers
+  // keep RN's own #121212 and read as a lighter strip above the #0E0E16 screen.
+  card: pair(palette.white, palette.slate950),
   lightButton: pair(palette.gray100, 'rgba(255,255,255,.1)'),
   lightBorder: pair('#EDEDED', palette.gray850),
   ballOutgoingExpired: pair('#ECF1F7', palette.gray900),
@@ -151,7 +154,7 @@ const tokens = {
   syncRingDone: pair('#E2FAEA', palette.slate880),
   syncFillDone: pair('#D2F9DC', palette.green900),
   syncRingError: pair('#FDF1F2', palette.red500),
-  syncFillError: pair('#FBE9EB', 'transparent'), // dark design draws the error ring unfilled
+  syncFillError: pair('#FBE9EB', '#2E1A1A'),
   // Legacy / existing tokens (keep for compatibility)
   receiveBtnBackground: pair('#EAE4FB', '#110732'),
   bannerBackground: pair(palette.violet50, palette.violet900),
