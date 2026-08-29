@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useReducer, useRef, useMemo, useState } 
 import { useFocusEffect } from '@react-navigation/native';
 import useAppState from '../../hooks/useAppState';
 import ScanProgressBar from '../../components/ScanProgressBar';
-import { useScannableWallet } from '../../hooks/useScannableWallet';
+import { useScanActions, useScannableWallet } from '../../hooks/useScannableWallet';
 import { Alert, Animated, InteractionManager, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import A from '../../modules/analytics';
 import { getClipboardContent } from '../../modules/clipboard';
@@ -272,6 +272,7 @@ const WalletsList: React.FC = () => {
   }, [isLarge, wallets]);
 
   const scanWallet = useScannableWallet();
+  const scanActions = useScanActions(scanWallet);
 
   useEffect(() => {
     if (!scanWallet) return;
@@ -457,13 +458,7 @@ const WalletsList: React.FC = () => {
           <Text style={[styles.balanceFiat, stylesHook.alternativeText]}>{fiatLine}</Text>
         </TouchableOpacity>
 
-        {scanWallet && (
-          <ScanProgressBar
-            scanState={scanState}
-            onResume={() => scanWallet.resumeScan()}
-            onRetry={() => scanWallet.fetchTransactions().catch((e: any) => console.warn('[WalletsList] retry scan error:', e))}
-          />
-        )}
+        {scanWallet && <ScanProgressBar scanState={scanState} onResume={scanActions.resume} onRetry={scanActions.retry} />}
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={[styles.actionBtnWide, stylesHook.receiveBtnStyle]}
@@ -505,6 +500,7 @@ const WalletsList: React.FC = () => {
     colors,
     changeWalletBalanceUnit,
     scanWallet,
+    scanActions,
     scanState,
     triggerZeroBalanceToast,
     onReceiveButtonPressed,

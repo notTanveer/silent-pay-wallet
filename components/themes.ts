@@ -8,6 +8,7 @@ import { ThemePreference } from './Context/SettingsProvider';
 // (higher number = darker); they are deliberately not tied to any component.
 const palette = {
   white: '#FFFFFF',
+  whiteAlpha08: '#FFFFFF14',
   black: '#000000',
 
   gray50: '#F5F5F7',
@@ -63,6 +64,7 @@ const palette = {
   red500: '#EF4444',
   red550: '#B24334',
   red600: '#D0021B',
+  red950: '#2E1A1A',
 };
 
 // Semantic color tokens. Each token declares BOTH schemes, so a token can never
@@ -74,6 +76,11 @@ type ColorToken = { light: string; dark: string; todoDark?: true };
 const pair = (light: string, dark: string): ColorToken => ({ light, dark });
 const same = (v: string): ColorToken => ({ light: v, dark: v });
 const lightOnly = (v: string): ColorToken => ({ light: v, dark: v, todoDark: true });
+
+// React Navigation's reserved `card` key paints the native header; without it dark headers keep
+// RN's own #121212 and read as a lighter strip above the #0E0E16 screen. It has to track
+// `background` exactly, so both keys share one token rather than repeating the pair().
+const background = pair(palette.white, palette.slate950);
 
 const tokens = {
   brandingColor: pair(palette.white, palette.black),
@@ -92,10 +99,8 @@ const tokens = {
   warningColor: same('#F5A623'),
   placeholderTextColor: same(palette.gray500),
   hdborderColor: same('#68BBE1'),
-  background: pair(palette.white, palette.slate950),
-  // React Navigation's reserved `card` key paints the native header; without it dark headers
-  // keep RN's own #121212 and read as a lighter strip above the #0E0E16 screen.
-  card: pair(palette.white, palette.slate950),
+  background,
+  card: background,
   lightButton: pair(palette.gray100, 'rgba(255,255,255,.1)'),
   lightBorder: pair('#EDEDED', palette.gray850),
   ballOutgoingExpired: pair('#ECF1F7', palette.gray900),
@@ -130,7 +135,10 @@ const tokens = {
   accentSubtle: pair(palette.violet100, palette.slate880), // banner & card border, "check again" button bg, scanning icon ring
   accentSubtleDisabled: pair(palette.violet150Alpha, palette.violet850), // disabled bg for accentSubtle/brandPrimary "soft" buttons
   brandPrimaryDisabled: pair(palette.violet600Alpha, palette.gray400), // disabled text for accentSubtle/brandPrimary "soft" buttons
-  surfaceCaution: pair('#FDFBF5', palette.brown900), // caution + scan-error banner background
+  surfaceCaution: pair('#FDFBF5', palette.brown900), // caution banner background (address-reuse warning)
+  // Same values as surfaceCaution today, but a separate token: caution and error are different
+  // states, so a tweak to the amber caution surface must not silently restyle the error banner.
+  surfaceError: pair('#FDFBF5', palette.brown900), // scan-error banner background
   iconCaution: same('#F1AF63'), // caution banner icon (warm amber)
   segmentTrack: same('#F8F8FA'), // pill toggle track background
   segmentSelectedBorder: same('#CFCFCF'), // selected pill border
@@ -139,6 +147,9 @@ const tokens = {
   progressTrack: pair('#EAECF0', palette.violet920),
   // Hairline rim on the filled brand button; in dark the design draws it in the brand color itself.
   buttonBorder: pair('#EBEBEB', palette.violet500),
+  // Light keeps five distinct greys below; dark deliberately collapses every secondary/meta/
+  // muted/chevron role (and statusPaused above) onto slate400 - the single text/secondary value
+  // the Figma dark collection defines. Intentional, not unfinished placeholders.
   textPrimary: pair('#1A1A1A', palette.gray375), // titles, primary copy
   textSecondary: pair('#8E8E93', palette.slate400), // subtitles, privacy copy
   textMeta: pair('#92929B', palette.slate400), // ETA / "%" meta text
@@ -146,15 +157,15 @@ const tokens = {
   textEmphasis: pair(palette.black, palette.gray75), // large display numerals (sync percentage)
   chevron: pair(palette.gray375, palette.slate400), // disclosure chevron
   white: same(palette.white),
-  black: same(palette.black), // large emphasis numerals
+  black: same(palette.black), // legacy pure black; text sites should migrate to textEmphasis
   // SyncStatusIcon per-status ring/fill tints (glyph color = brandPrimary / status* above)
   syncFillScanning: pair('#DCD2F9', palette.slate880),
-  syncRingPaused: pair('#EEEEF1', '#FFFFFF14'),
+  syncRingPaused: pair('#EEEEF1', palette.whiteAlpha08),
   syncFillPaused: pair('#E4E2E8', palette.slate890),
   syncRingDone: pair('#E2FAEA', palette.slate880),
   syncFillDone: pair('#D2F9DC', palette.green900),
   syncRingError: pair('#FDF1F2', palette.red500),
-  syncFillError: pair('#FBE9EB', '#2E1A1A'),
+  syncFillError: pair('#FBE9EB', palette.red950),
   // Legacy / existing tokens (keep for compatibility)
   receiveBtnBackground: pair('#EAE4FB', '#110732'),
   bannerBackground: pair(palette.violet50, palette.violet900),

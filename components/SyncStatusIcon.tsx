@@ -29,7 +29,9 @@ interface SyncStatusIconProps {
 
 const SyncStatusIcon: React.FC<SyncStatusIconProps> = ({ status, size = 66 }) => {
   const { colors } = useTheme();
-  // ring = outer ring + inner disc stroke, fill = inner disc fill, glyph = the symbol
+  // ring = outer ring + inner disc stroke, fill = inner disc fill, glyph = the symbol.
+  // Exception: `error` draws no inner-disc stroke - the design carries that state entirely on the
+  // outer ring in full-saturation red - so for `error` ring means the outer ring only.
   const iconColors = {
     scanning: { ring: colors.accentSubtle, fill: colors.syncFillScanning, glyph: colors.brandPrimary },
     paused: { ring: colors.syncRingPaused, fill: colors.syncFillPaused, glyph: colors.statusPaused },
@@ -39,9 +41,10 @@ const SyncStatusIcon: React.FC<SyncStatusIconProps> = ({ status, size = 66 }) =>
   const c = iconColors[status];
   return (
     <Svg width={size} height={size} viewBox="0 0 66 66" fill="none">
+      {/* Outer ring, identical in every status. Unfilled, so the badge sits on any surface. */}
+      <Circle cx="32.9998" cy="32.9998" r="32.2464" fill="none" stroke={c.ring} strokeWidth="1.50691" />
       {status === 'paused' && (
         <>
-          <Circle cx="32.9998" cy="32.9998" r="32.2464" fill={colors.background} stroke={c.ring} strokeWidth="1.50691" />
           <Rect
             x="53.3979"
             y="53.3978"
@@ -70,7 +73,6 @@ const SyncStatusIcon: React.FC<SyncStatusIconProps> = ({ status, size = 66 }) =>
 
       {status === 'done' && (
         <>
-          <Circle cx="32.9998" cy="32.9998" r="32.2464" fill={colors.background} stroke={c.ring} strokeWidth="1.50691" />
           <Rect
             x="54.3393"
             y="54.3392"
@@ -99,7 +101,6 @@ const SyncStatusIcon: React.FC<SyncStatusIconProps> = ({ status, size = 66 }) =>
 
       {status === 'scanning' && (
         <>
-          <Circle cx="32.9998" cy="32.9998" r="32.2464" fill={colors.background} stroke={c.ring} strokeWidth="1.50691" />
           <Rect
             x="54.8503"
             y="54.8502"
@@ -138,7 +139,6 @@ const SyncStatusIcon: React.FC<SyncStatusIconProps> = ({ status, size = 66 }) =>
 
       {status === 'error' && (
         <>
-          <Circle cx="32.9998" cy="32.9998" r="32.2464" fill={colors.background} stroke={c.ring} strokeWidth="1.50691" />
           <Rect
             x="54.3393"
             y="54.3392"

@@ -6,7 +6,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import SafeArea from '../../components/SafeArea';
 import SyncStatusIcon, { PauseIcon, PlayIcon } from '../../components/SyncStatusIcon';
 import { useStorage } from '../../hooks/context/useStorage';
-import { useScannableWallet } from '../../hooks/useScannableWallet';
+import { useScanActions, useScannableWallet } from '../../hooks/useScannableWallet';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
 import { type ScanProgress, type ScanStatus } from '../../helpers/silent-payments';
 import loc from '../../loc';
@@ -91,13 +91,7 @@ const SyncScreen: React.FC<SyncScreenProps> = () => {
     outputRange: ['0%', '100%'],
   });
 
-  const handlePause = useCallback(() => scanWallet?.pauseScan(), [scanWallet]);
-  const handleResume = useCallback(() => scanWallet?.resumeScan(), [scanWallet]);
-  // On error the scan was never paused (activeScanPromise is already null), so resumeScan() is a
-  // no-op. Restart the scan from scratch via fetchTransactions() instead.
-  const handleRetry = useCallback(() => {
-    scanWallet?.fetchTransactions().catch((e: any) => console.warn('[SyncScreen] retry scan error:', e));
-  }, [scanWallet]);
+  const { pause: handlePause, resume: handleResume, retry: handleRetry } = useScanActions(scanWallet);
   const handleCheckAgain = useCallback(async () => {
     if (scanWallet) {
       setShowDone(false);
