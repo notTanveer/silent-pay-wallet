@@ -1,10 +1,16 @@
-import * as bitcoin from 'bitcoinjs-lib';
-import { decodeSilentPaymentAddress } from '@silent-pay/core';
 import * as bip39 from 'bip39';
+import * as bitcoin from 'bitcoinjs-lib';
+import * as crypto from 'crypto';
+import { decodeSilentPaymentAddress } from '@silent-pay/core';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet.ts';
 import ecc from '../../modules/noble_ecc.ts';
+import {
+  getScanPrivateKey,
+  getSilentPaymentAddress,
+  getSilentPaymentChangeSpendPublicKey,
+  getSpendPublicKey,
+} from '../../helpers/silent-payments';
 import { type SilentPaymentUTXO } from '../../helpers/silent-payments/types.ts';
-import { getSilentPaymentChangeSpendPublicKey } from '../../helpers/silent-payments';
 import { type CreateTransactionUtxo } from '../../class/wallets/types.ts';
 
 const TEST_SEED = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
@@ -325,6 +331,155 @@ describe('BIP-352 Silent Payments', () => {
       expect(wallet.getChangeAddressForUtxos([regularUtxo], fallback)).toBe(fallback);
       expect(wallet.getChangeAddressForUtxos([spUtxo, regularUtxo], fallback)).toBe(fallback);
       expect(wallet.getChangeAddressForUtxos([], fallback)).toBe(fallback);
+    });
+  });
+
+  describe('sending to a silent payment (sp1) address from SP-received coins', () => {
+    const senderSeed = TEST_SEED;
+    const recipientSeed = 'zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo glue';
+    const recipientSpAddress =
+      'sp1qqvchcnrcqpdutxhpf57ptn3wajj0ymqxwzu9g6vj9uxx3wuvlykhyqh99hyh33y5593802pzw5rtw040zrw9f8re52tgcwngc5974w5evuufdy0m';
+
+    function taggedHash(tag: string, data: Buffer): Buffer {
+      const tagHash = crypto.createHash('sha256').update(tag, 'utf-8').digest();
+      return crypto
+        .createHash('sha256')
+        .update(Buffer.concat([tagHash, tagHash, data]))
+        .digest();
+    }
+
+    function makeSpUtxo(wallet: HDSilentPaymentsWallet, tweakLastByte: number, value: number, txidHexChar: string): SilentPaymentUTXO {
+      const tweak = new Uint8Array(32);
+      tweak[31] = tweakLastByte;
+      const tweakedPub = ecc.pointAddScalar(wallet.getSpendPublicKey(), tweak, true);
+      if (!tweakedPub) throw new Error('synthetic tweak produced invalid point');
+      const outputKey = Buffer.from(tweakedPub.subarray(1, 33));
+      return {
+        txid: txidHexChar.repeat(64),
+        vout: 0,
+        value,
+        height: 800_000,
+        address: bitcoin.payments.p2tr({ pubkey: outputKey }).address!,
+        silentPaymentAddress: wallet.getSilentPaymentAddress() || '',
+        pubKey: outputKey.toString('hex'),
+        tweak,
+        blockHash: '',
+        blockTime: 0,
+        isSpent: false,
+      };
+    }
+
+    // Receiver-side BIP-352 derivation: recompute the taproot output key the recipient's
+    // scan key would discover, independently of the sender-side code under test.
+    function expectedRecipientOutputKey(spentUtxos: SilentPaymentUTXO[]): Buffer {
+      const seed = bip39.mnemonicToSeedSync(recipientSeed);
+      const bScan = getScanPrivateKey(seed);
+      const BSpend = getSpendPublicKey(seed);
+
+      // A = sum of the input taproot output keys, lifted to even-Y points
+      let A: Uint8Array = Buffer.concat([Buffer.from([0x02]), Buffer.from(spentUtxos[0].pubKey, 'hex')]);
+      for (const u of spentUtxos.slice(1)) {
+        const lifted = Buffer.concat([Buffer.from([0x02]), Buffer.from(u.pubKey, 'hex')]);
+        A = ecc.pointAdd(A, lifted, true)!;
+      }
+
+      const outpoints = spentUtxos
+        .map(u => {
+          const vout = Buffer.alloc(4);
+          vout.writeUInt32LE(u.vout);
+          return Buffer.concat([Buffer.from(u.txid, 'hex').reverse(), vout]);
+        })
+        .sort(Buffer.compare);
+      const inputHash = taggedHash('BIP0352/Inputs', Buffer.concat([outpoints[0], Buffer.from(A)]));
+
+      // b_scan * input_hash * A, serialized compressed like the sender side
+      const sharedSecret = ecc.pointMultiply(ecc.pointMultiply(A, inputHash, true)!, bScan, true)!;
+      const t0 = taggedHash('BIP0352/SharedSecret', Buffer.concat([Buffer.from(sharedSecret), Buffer.from([0, 0, 0, 0])]));
+      const P0 = ecc.pointAdd(ecc.pointFromScalar(t0, true)!, BSpend, true)!;
+      return Buffer.from(P0.subarray(1, 33));
+    }
+
+    it('uses a recipient address that really belongs to the recipient seed', () => {
+      expect(getSilentPaymentAddress(bip39.mnemonicToSeedSync(recipientSeed))).toBe(recipientSpAddress);
+    });
+
+    it('unwraps the sp1 target into the recipient taproot output on a MAX send of two SP coins', () => {
+      const wallet = new HDSilentPaymentsWallet();
+      wallet.setSecret(senderSeed);
+
+      const utxos = [makeSpUtxo(wallet, 0x07, 16_867, '1'), makeSpUtxo(wallet, 0x09, 1_290, '2')];
+
+      // MAX send: target without a value
+      const result = wallet.createTransaction(
+        utxos as never[],
+        [{ address: recipientSpAddress }],
+        2,
+        utxos[0].address,
+        0xfffffffd,
+        false,
+        0,
+      );
+
+      expect(result.tx).toBeDefined();
+      const tx = result.tx!;
+      expect(tx.ins).toHaveLength(2);
+      expect(tx.outs).toHaveLength(1);
+
+      const expectedScript = Buffer.concat([Buffer.from([0x51, 0x20]), expectedRecipientOutputKey(utxos)]);
+      expect(Buffer.from(tx.outs[0].script).equals(expectedScript)).toBe(true);
+    });
+
+    it('unwraps the sp1 target and keeps the change output on a fixed-amount send', () => {
+      const wallet = new HDSilentPaymentsWallet();
+      wallet.setSecret(senderSeed);
+
+      const utxo = makeSpUtxo(wallet, 0x07, 100_000, '1');
+      const changeAddress = utxo.address;
+      const feeRate = 2;
+
+      const result = wallet.createTransaction(
+        [utxo as never],
+        [{ address: recipientSpAddress, value: 50_000 }],
+        feeRate,
+        changeAddress,
+        0xfffffffd,
+        false,
+        0,
+      );
+
+      expect(result.tx).toBeDefined();
+      const tx = result.tx!;
+      expect(tx.outs).toHaveLength(2);
+
+      const expectedScript = Buffer.concat([Buffer.from([0x51, 0x20]), expectedRecipientOutputKey([utxo])]);
+      const changeScript = bitcoin.address.toOutputScript(changeAddress);
+      const spOut = tx.outs.find(o => Buffer.from(o.script).equals(expectedScript));
+      const changeOut = tx.outs.find(o => Buffer.from(o.script).equals(changeScript));
+      expect(spOut).toBeDefined();
+      expect(changeOut).toBeDefined();
+      expect(spOut!.value).toBe(50_000n);
+
+      // Coin selection sizes the sp1 target before it is unwrapped, so it has to be sized
+      // as the P2TR output it becomes rather than falling through to coinselect's 25-byte
+      // P2PKH default. Paying the same recipient script via bc1p must therefore cost the
+      // same fee; sizing it as P2PKH underestimates by 12 bytes (24 sats at this feeRate).
+      const p2trEquivalent = wallet.createTransaction(
+        [utxo as never],
+        [{ address: bitcoin.address.fromOutputScript(expectedScript), value: 50_000 }],
+        feeRate,
+        changeAddress,
+        0xfffffffd,
+        false,
+        0,
+      );
+      expect(result.fee).toBe(p2trEquivalent.fee);
+
+      // Both outputs are taproot, so the reserved fee has to cover the transaction that was
+      // actually built — coinselect sizes its change output as P2PKH and would leave this
+      // 18 sats short. Pinned exactly: the fee is deterministic, and an over-estimate is a
+      // regression too.
+      expect(result.fee).toBeGreaterThanOrEqual(tx.virtualSize() * feeRate);
+      expect(result.fee).toBe(314);
     });
   });
 });

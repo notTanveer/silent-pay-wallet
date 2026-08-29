@@ -7,6 +7,7 @@ import { Psbt } from 'bitcoinjs-lib';
 import b58 from 'bs58check';
 import coinSelect, { CoinSelectOutput, CoinSelectReturnInput, CoinSelectTarget } from 'coinselect';
 import coinSelectSplit from 'coinselect/split';
+import * as utils from 'coinselect/utils';
 import { ECPairFactory, ECPairInterface } from 'ecpair';
 
 import * as Electrum from '../../modules/Electrum';
@@ -20,6 +21,16 @@ import { isValidBech32Address } from '../../utils/isValidBech32Address';
 
 const ECPair = ECPairFactory(ecc);
 const bip32 = BIP32Factory(ecc);
+
+// `OP_1 <32-byte x-only pubkey>`
+const P2TR_SCRIPT_LENGTH = 34;
+const P2PKH_SCRIPT_LENGTH = 25;
+
+/**
+ * coinselect appends its change output as a bare `{ value }`. An output with no address but
+ * with `script.hex` is a custom script (OP_RETURN), not change - see `CreateTransactionTarget`.
+ */
+const isChangeOutput = (output: { address?: string; script?: { hex?: string } }) => !output.address && !output.script?.hex;
 
 type BalanceByIndex = {
   c: number;
@@ -989,10 +1000,8 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
     });
 
     outputs.forEach(output => {
-      // if output has no address - this is change output or a custom script output
       let change = false;
-      // @ts-ignore
-      if (!output.address && !output.script?.hex) {
+      if (isChangeOutput(output)) {
         change = true;
         output.address = changeAddress;
       }
@@ -1280,6 +1289,11 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
     for (const t of _targets) {
       if (t.address?.startsWith('bc1')) {
         t.script = { length: bitcoin.address.toOutputScript(t.address).length + 3 };
+      } else if (t.address?.startsWith('sp1')) {
+        // a silent payment target is unwrapped into a P2TR output before broadcast, so size it
+        // as one; the +3 is the same margin the bc1 branch above carries, for addresses that
+        // take more bytes than coinselect anticipates by default.
+        t.script = { length: P2TR_SCRIPT_LENGTH + 3 };
       }
 
       if (t.script?.hex) {
@@ -1291,6 +1305,24 @@ export class AbstractHDElectrumWallet extends AbstractHDWallet {
 
     if (!inputs || !outputs) {
       throw new Error('Not enough balance. Try sending smaller amount or decrease the fee.');
+    }
+
+    // coinselect sizes the change output it appends as P2PKH (a 25-byte script), but our change
+    // goes to a P2TR address — every concrete wallet here is p2tr (HDTaprootWallet and its
+    // subclass HDSilentPaymentsWallet). Left uncorrected, every spend that produces change pays
+    // under the requested feeRate — 1.92 instead of 2. Take the difference out of the change
+    // rather than out of the fee.
+    const shortfall = Math.round(feeRate * (P2TR_SCRIPT_LENGTH - P2PKH_SCRIPT_LENGTH));
+    const last = outputs[outputs.length - 1]; // coinselect appends its change output last
+    const change = last && isChangeOutput(last) ? last : undefined;
+    if (change) {
+      // coinselect only adds change worth more than it costs to spend later; re-check that
+      // after taking our share, so we never leave an unspendable dust output behind.
+      if (change.value - shortfall > utils.dustThreshold({}, feeRate)) {
+        change.value -= shortfall;
+        return { inputs, outputs, fee: fee + shortfall };
+      }
+      return { inputs, outputs: outputs.slice(0, -1), fee: fee + change.value };
     }
 
     return { inputs, outputs, fee };

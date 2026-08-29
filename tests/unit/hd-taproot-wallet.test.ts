@@ -155,4 +155,58 @@ describe('Taproot HD (BIP86)', () => {
       `bad feerate, got ${actualFeerate}, expected at least ${targetFeeRate}; fee: ${psbt.getFee()}; virsualSize: ${tx.virtualSize()} vbytes; ${tx.toHex()}`,
     );
   });
+
+  // coinselect sizes the change output it appends as a 25-byte P2PKH script; ours is a
+  // 34-byte P2TR one, so the fee it reserves is 9 vbytes short of the transaction we build.
+  describe('change output sizing', () => {
+    const RECIPIENT = 'bc1pgrhjjw52p6a03v635f7cnl6ttvuz9f34ujhaefm6xqtscd3m473szkl92g';
+
+    it('reserves a fee that covers the taproot change output it actually builds', () => {
+      const hd = new HDTaprootWallet();
+      hd.setSecret(MNEMONIC);
+
+      const targetFeeRate = 2;
+      const { tx, fee, outputs } = hd.createTransaction(
+        utxos,
+        [{ address: RECIPIENT, value: 100000 }],
+        targetFeeRate,
+        hd._getInternalAddressByIndex(0),
+      );
+
+      assert.strictEqual(outputs.length, 2);
+      assert(tx);
+      assert.ok(fee >= tx.virtualSize() * targetFeeRate, `reserved ${fee} for ${tx.virtualSize()} vbytes at ${targetFeeRate} sat/vB`);
+      assert.strictEqual(fee, 314); // 296 without the correction, against a 308 sat transaction
+    });
+
+    it('corrects the change output and not a custom script output', () => {
+      const hd = new HDTaprootWallet();
+      hd.setSecret(MNEMONIC);
+
+      const opReturn = { script: { hex: '6a0b68656c6c6f20776f726c64' }, value: 0 }; // OP_RETURN "hello world"
+      const { inputs, outputs, fee } = hd.coinselect(utxos, [opReturn, { address: RECIPIENT, value: 50000 }], 2);
+
+      // an addressless output with a script.hex is a custom script, not change
+      assert.strictEqual(outputs.length, 3);
+      assert.strictEqual(outputs[0].script?.hex, opReturn.script.hex);
+      assert.strictEqual(outputs[1].address, RECIPIENT);
+      assert.ok(!outputs[2].address && !outputs[2].script);
+      assert.strictEqual(fee, 350); // 332 without the correction
+      assert.strictEqual(inputs.reduce((sum, i) => sum + i.value, 0) - outputs.reduce((sum, o) => sum + o.value, 0), fee);
+    });
+
+    it('folds the change into the fee when correcting it would leave dust', () => {
+      const hd = new HDTaprootWallet();
+      hd.setSecret(MNEMONIC);
+
+      // leaves coinselect a 300 sat change; taking our 18 sats puts it under the 296 sat
+      // dust threshold, so it is not worth creating at all
+      const { inputs, outputs, fee } = hd.coinselect(utxos, [{ address: RECIPIENT, value: 180789 }], 2);
+
+      assert.strictEqual(outputs.length, 1);
+      assert.strictEqual(outputs[0].address, RECIPIENT);
+      assert.strictEqual(fee, 596);
+      assert.strictEqual(inputs.reduce((sum, i) => sum + i.value, 0) - outputs.reduce((sum, o) => sum + o.value, 0), fee);
+    });
+  });
 });
