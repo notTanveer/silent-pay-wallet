@@ -10,6 +10,10 @@ import type {
   TransactionByTxidResponse,
 } from '../helpers/silent-payments/types';
 
+// Small metadata lookups a user is actively waiting on. The configured timeout is sized for bulk
+// range queries; inheriting it here makes create/import/track hang for minutes on a dead indexer.
+const FAST_LOOKUP = { timeout: 8000, retries: 1 };
+
 /** Invoked once per scanned range, empty or not, so the caller can track progress. */
 export type RangeProcessedCallback = (transactions: IndexerTransaction[], rangeEnd: number) => Promise<number>;
 
@@ -30,7 +34,7 @@ export class SilentPaymentIndexer {
   }
 
   async getHealth(): Promise<HealthResponse> {
-    return this.httpClient.get<HealthResponse>('/health', 'Error fetching indexer health');
+    return this.httpClient.get<HealthResponse>('/health', 'Error fetching indexer health', FAST_LOOKUP);
   }
 
   async getTransactionsByHeight(height: number): Promise<TransactionResponse> {
@@ -45,18 +49,23 @@ export class SilentPaymentIndexer {
   }
 
   async getLatestBlockHeight(): Promise<LatestBlockHeightResponse> {
-    return this.httpClient.get<LatestBlockHeightResponse>('/silent-block/latest-height', 'Error fetching latest block height');
+    return this.httpClient.get<LatestBlockHeightResponse>('/silent-block/latest-height', 'Error fetching latest block height', FAST_LOOKUP);
   }
 
   async getBlockHeightByTimestamp(timestamp: number): Promise<BlockHeightByTimestampResponse> {
     return this.httpClient.get<BlockHeightByTimestampResponse>(
       `/transactions/timestamp-to-height?timestamp=${timestamp}`,
       `Error fetching block height for timestamp ${timestamp}`,
+      FAST_LOOKUP,
     );
   }
 
   async getTransactionByTxid(txid: string): Promise<TransactionByTxidResponse> {
-    return this.httpClient.get<TransactionByTxidResponse>(`/transactions/txid/${txid}`, `Error fetching transaction by txid ${txid}`);
+    return this.httpClient.get<TransactionByTxidResponse>(
+      `/transactions/txid/${txid}`,
+      `Error fetching transaction by txid ${txid}`,
+      FAST_LOOKUP,
+    );
   }
 
   /**
