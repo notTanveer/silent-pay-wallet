@@ -145,7 +145,6 @@ export class IndexerHttpClient {
     const clearnetResult = await retryWithBackoff<T>(RETRY_ATTEMPTS, () => this.attemptClearnetFetch<T>(endpoint));
     if (clearnetResult.ok) return clearnetResult.data;
 
-    console.error(`${errorContext}:`, clearnetResult.message);
     throw new Error(`${errorContext}: ${clearnetResult.message}`);
   }
 

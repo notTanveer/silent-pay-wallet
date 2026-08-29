@@ -10,6 +10,7 @@ import presentAlert from '../../components/Alert';
 import { useStorage } from '../../hooks/context/useStorage';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import { getDefaultIndexer } from '../../modules/SilentPaymentIndexer';
+import { BIP352_ACTIVATION_HEIGHT } from '../../modules/constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList, 'Onboarding'>;
@@ -32,17 +33,18 @@ const OnboardingScreen: React.FC = () => {
       presentAlert({ message: loc.wallets.single_wallet_limit });
       return;
     }
-    await saveToDisk();
-
     try {
       const indexer = getDefaultIndexer();
       const latestHeightResponse = await indexer.getLatestBlockHeight();
       w.setBirthHeight(latestHeightResponse.height);
       console.log(`Wallet birth height set to: ${latestHeightResponse.height}`);
-      await saveToDisk();
     } catch (error) {
-      console.warn('Could not set or persist birth height, will default to activation height:', error);
+      // indexer unreachable (or not initialised) at creation: remember when the wallet was made so
+      // the first scan that reaches it resolves the height, instead of rescanning from BIP-352 activation.
+      console.warn('Could not fetch birth height, deferring resolution to the first scan:', error);
+      w.updateBirthHeight(BIP352_ACTIVATION_HEIGHT, { pendingTimestamp: Math.floor(Date.now() / 1000) });
     }
+    await saveToDisk();
 
     triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
 

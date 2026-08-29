@@ -23,18 +23,20 @@ import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet.ts'
 import { useStorage } from '../../hooks/context/useStorage';
 import presentAlert from '../../components/Alert';
 import { WalletBirthSection } from '../../components/WalletBirthSection';
-import { BIP352_ACTIVATION_HEIGHT } from '../../modules/constants';
+import { BIP352_ACTIVATION_HEIGHT, clampBirthHeight } from '../../modules/constants';
 import { getDefaultIndexer } from '../../modules/SilentPaymentIndexer';
 
 type RouteProps = RouteProp<AddWalletStackParamList, 'ImportWallet'>;
 type NavigationProps = NativeStackNavigationProp<AddWalletStackParamList, 'ImportWallet'>;
 
-type BirthHeightResult = { ok: true; height: number } | { ok: false; error: 'invalid_date' | 'future_date' | 'network' };
+type BirthHeightResult =
+  | { ok: true; height: number; pendingTimestamp: number | null }
+  | { ok: false; error: 'invalid_date' | 'future_date' };
 
-async function resolveBirthHeight(dateStr: string, currentHeight: number): Promise<BirthHeightResult> {
+async function resolveBirthHeight(dateStr: string): Promise<BirthHeightResult> {
   const trimmed = dateStr.trim();
   if (trimmed.length === 0) {
-    return { ok: true, height: BIP352_ACTIVATION_HEIGHT };
+    return { ok: true, height: BIP352_ACTIVATION_HEIGHT, pendingTimestamp: null };
   }
 
   // Append T00:00:00 to treat YYYY-MM-DD as local time, not UTC
@@ -50,15 +52,16 @@ async function resolveBirthHeight(dateStr: string, currentHeight: number): Promi
     return { ok: false, error: 'future_date' };
   }
 
+  const timestampSeconds = Math.floor(inputDate.getTime() / 1000);
+
   try {
     const indexer = getDefaultIndexer();
-    const timestampSeconds = Math.floor(inputDate.getTime() / 1000);
-    const response = await indexer.getBlockHeightByTimestamp(timestampSeconds);
-    const height = Math.min(Math.max(response.blockHeight, BIP352_ACTIVATION_HEIGHT), currentHeight);
-    return { ok: true, height };
+    const [tip, byTimestamp] = await Promise.all([indexer.getLatestBlockHeight(), indexer.getBlockHeightByTimestamp(timestampSeconds)]);
+    const height = clampBirthHeight(byTimestamp.blockHeight, tip.height);
+    return { ok: true, height, pendingTimestamp: null };
   } catch (error) {
-    console.warn('Failed to lookup block height by timestamp, using BIP352 activation height:', error);
-    return { ok: true, height: BIP352_ACTIVATION_HEIGHT };
+    console.warn('[SP] Birth height lookup failed, deferring resolution to the first scan:', error);
+    return { ok: true, height: BIP352_ACTIVATION_HEIGHT, pendingTimestamp: timestampSeconds };
   }
 }
 
@@ -149,30 +152,19 @@ const ImportWallet = () => {
           return;
         }
 
-        const indexer = getDefaultIndexer();
-        let currentHeight: number;
-        try {
-          currentHeight = (await indexer.getLatestBlockHeight()).height;
-        } catch (error) {
-          console.error('Failed to fetch latest block height:', error);
-          presentAlert({ title: loc.errors.error, message: loc.wallet_birth.error_network });
-          setIsLoading(false);
-          return;
-        }
-
-        const birthHeightResult = await resolveBirthHeight(birthDate, currentHeight);
+        const birthHeightResult = await resolveBirthHeight(birthDate);
         if (!birthHeightResult.ok) {
-          const messages: Record<string, string> = {
-            invalid_date: loc.wallet_birth.error_invalid_date,
-            future_date: loc.wallet_birth.error_future_date,
-            network: loc.wallet_birth.error_network,
-          };
-          presentAlert({ title: loc.errors.error, message: messages[birthHeightResult.error] });
+          const message =
+            birthHeightResult.error === 'invalid_date' ? loc.wallet_birth.error_invalid_date : loc.wallet_birth.error_future_date;
+          presentAlert({ title: loc.errors.error, message });
           setIsLoading(false);
           return;
         }
 
-        wallet.updateBirthHeight(birthHeightResult.height, true);
+        wallet.updateBirthHeight(birthHeightResult.height, {
+          resetScan: true,
+          pendingTimestamp: birthHeightResult.pendingTimestamp,
+        });
 
         await addAndSaveWallet(wallet);
         navigation.navigateToWalletsList();

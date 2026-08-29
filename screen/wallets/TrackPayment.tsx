@@ -88,8 +88,11 @@ const TrackPayment: React.FC<TrackPaymentProps> = () => {
         navigate('NoPaymentFound');
       }
     } catch (error: any) {
+      // an outage is not a "no payment found" answer - saying so would tell the user their
+      // transaction does not exist when we simply could not check.
+      console.warn('[SP] Track payment lookup failed:', error?.message ?? error);
       triggerHapticFeedback(HapticFeedbackTypes.NotificationWarning);
-      navigate('NoPaymentFound');
+      presentAlert({ title: loc.errors.network, message: loc.wallet_birth.error_network });
     } finally {
       setIsLoading(false);
     }

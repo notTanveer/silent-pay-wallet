@@ -10,7 +10,10 @@ import type {
   TransactionByTxidResponse,
 } from '../helpers/silent-payments/types';
 
-class SilentPaymentIndexer {
+/** Invoked once per scanned range, empty or not, so the caller can track progress. */
+export type RangeProcessedCallback = (transactions: IndexerTransaction[], rangeEnd: number) => Promise<number>;
+
+export class SilentPaymentIndexer {
   private httpClient: IndexerHttpClient;
 
   constructor(config: SilentPaymentIndexerConfig) {
@@ -68,7 +71,7 @@ class SilentPaymentIndexer {
   async scanForwardWithCallback(
     startHeight: number,
     endHeight: number,
-    processTransactions: (transactions: IndexerTransaction[]) => Promise<number>,
+    processTransactions: RangeProcessedCallback,
     onProgress?: ScanProgressCallback,
     cancelCallback?: () => boolean,
   ): Promise<void> {
@@ -78,7 +81,7 @@ class SilentPaymentIndexer {
   private async scanBlocks(
     startHeight: number,
     endHeight: number,
-    onRangeProcessed?: (transactions: IndexerTransaction[]) => Promise<number>,
+    onRangeProcessed?: RangeProcessedCallback,
     onProgress?: ScanProgressCallback,
     cancelCallback?: () => boolean,
   ): Promise<void> {
@@ -95,32 +98,31 @@ class SilentPaymentIndexer {
       const rangeEnd = Math.min(rangeStart + RANGE_BATCH_SIZE - 1, endHeight);
       const rangeSize = rangeEnd - rangeStart + 1;
 
+      let response: TransactionResponse;
       try {
-        const response = await this.getTransactionsByRange(rangeStart, rangeEnd);
-
-        if (response.transactions.length > 0 && onRangeProcessed) {
-          const foundInRange = await onRangeProcessed(response.transactions);
-
-          utxosFound += foundInRange;
-        }
-
-        blocksScanned += rangeSize;
-
-        if (onProgress) {
-          await onProgress({
-            currentBlock: rangeEnd,
-            tipHeight: endHeight,
-            totalBlocks,
-            blocksScanned,
-            percentComplete: (blocksScanned / totalBlocks) * 100,
-            utxosFound,
-          });
-        }
+        response = await this.getTransactionsByRange(rangeStart, rangeEnd);
       } catch (error: any) {
-        if (error?.message === 'SCAN_CANCELLED') {
-          throw error;
-        }
-        console.error(`[Indexer] ✗ Failed to fetch range ${rangeStart}-${rangeEnd}:`, error);
+        // abort instead of logging, or else this will flood the log with errors when indexer is down.
+        // only the fetch is wrapped: a bug in the caller's callbacks must not masquerade as a fetch failure.
+        throw new Error(`Failed to fetch range ${rangeStart}-${rangeEnd}: ${error?.message ?? error}`);
+      }
+
+      // called for empty ranges too, so the caller can advance its scan watermark past them
+      if (onRangeProcessed) {
+        utxosFound += await onRangeProcessed(response.transactions, rangeEnd);
+      }
+
+      blocksScanned += rangeSize;
+
+      if (onProgress) {
+        await onProgress({
+          currentBlock: rangeEnd,
+          tipHeight: endHeight,
+          totalBlocks,
+          blocksScanned,
+          percentComplete: (blocksScanned / totalBlocks) * 100,
+          utxosFound,
+        });
       }
     }
   }
