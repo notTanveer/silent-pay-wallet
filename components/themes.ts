@@ -50,7 +50,7 @@ const palette = {
   violet25: '#FDFCFE',
   violet50: '#F6F5FD',
   violet100: '#E6E2FA',
-  violet150: '#DCD2F9',
+  violet150: '#D7C8F7',
   violet150Alpha: '#DCD2F999',
   violet175: '#D7C8F7',
   violet200: '#D0C0FAFF',
@@ -61,7 +61,7 @@ const palette = {
   violet850: '#473F71',
   violet900: '#1D1A2B',
   violet920: '#1A1535',
-  violet500Alpha: '#8763EB8F',
+  violet500Alpha: '#6B5CE78F',
   indigo500: '#5856D6',
 
   blue500: '#0A84FF',
@@ -74,6 +74,7 @@ const palette = {
   red500: '#EF4444',
   red550: '#B24334',
   red600: '#D0021B',
+  red900: '#2E1A1A',
   red950: '#2E1A1A',
 };
 
@@ -225,9 +226,9 @@ const tokens = {
   contactSavedSurface: pair('#EDFBF1', palette.green900),
   contactSavedAccent: pair('#0F7A38', palette.green400), // its border, check and label — one green, three uses
   copyButtonBorder: pair(palette.gray200, palette.gray800), // Confirm copy-button border
-  transactionCardBorder: pair(palette.gray200, palette.gray850),
-  searchFieldBorder: pair(palette.gray175, palette.gray850), // SearchField border
-  searchFieldIcon: same(palette.gray450), // SearchField magnifier stroke
+  transactionCardBorder: pair(palette.gray200, palette.slate880),
+  searchFieldBorder: pair(palette.gray175, palette.slate880), // SearchField border
+  searchFieldIcon: pair(palette.gray450, palette.slate400), // SearchField magnifier stroke
   searchFieldPlaceholder: pair('rgba(16, 24, 40, 0.5)', 'rgba(255, 255, 255, 0.5)'), // SearchField hint, primary copy at 50%
   txIconHaloBorder: pair(palette.violet100, palette.violet850),
   incomingIconBackground: pair('#E7E6F5', '#322361'),
@@ -260,9 +261,9 @@ const tokens = {
   settingsNetworkIconColor: same('#00A63E'),
   settingsCurrencyIconColor: same('#F7931A'),
 
-  emptyStateTitle: pair('#0A0A0A', palette.white),
-  tabDivider: pair('#EAECF0', palette.gray850), // hairline rule under the whole tab strip
-  tabInactiveText: pair('#667085', palette.gray400), // unselected tab label
+  emptyStateTitle: pair('#0A0A0A', palette.gray75),
+  tabDivider: pair('#EAECF0', '#FFFFFF14'), // hairline rule under the whole tab strip (border/default)
+  tabInactiveText: pair('#667085', palette.slate400), // unselected tab label
 
   // --- Contact detail tokens ---
   noticeText: pair('#343437', palette.gray375), // reuse-notice banner copy (info card = text/secondary)
