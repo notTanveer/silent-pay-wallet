@@ -136,7 +136,6 @@ const ImportWallet = () => {
       try {
         if (!text.trim()) {
           presentAlert({ title: loc.errors.error, message: loc.wallet_birth.error_empty_mnemonic });
-          setIsLoading(false);
           return;
         }
 
@@ -148,16 +147,16 @@ const ImportWallet = () => {
 
         if (!wallet.validateMnemonic()) {
           presentAlert({ title: loc.errors.error, message: loc.wallet_birth.error_invalid_mnemonic });
-          setIsLoading(false);
           return;
         }
 
         const birthHeightResult = await resolveBirthHeight(birthDate);
         if (!birthHeightResult.ok) {
-          const message =
-            birthHeightResult.error === 'invalid_date' ? loc.wallet_birth.error_invalid_date : loc.wallet_birth.error_future_date;
-          presentAlert({ title: loc.errors.error, message });
-          setIsLoading(false);
+          const messages: Record<Extract<BirthHeightResult, { ok: false }>['error'], string> = {
+            invalid_date: loc.wallet_birth.error_invalid_date,
+            future_date: loc.wallet_birth.error_future_date,
+          };
+          presentAlert({ title: loc.errors.error, message: messages[birthHeightResult.error] });
           return;
         }
 

@@ -16,6 +16,7 @@ jest.mock('../../hooks/context/useStorage');
 jest.mock('../../hooks/context/useSettings');
 jest.mock('../../hooks/useExtendedNavigation');
 jest.mock('../../hooks/useScreenProtect', () => ({ useScreenProtect: jest.fn() }));
+// Hand-rolled and load-bearing: the official safe-area mock lacks initialMetrics (breaks SafeAreaScrollView's useSafeAreaInsets), and themes.ts's useTheme needs a real NavigationContainer — swapping either for a library default breaks rendering.
 jest.mock('../../components/DoneAndDismissKeyboardInputAccessory', () => ({
   DoneAndDismissKeyboardInputAccessory: () => null,
   DoneAndDismissKeyboardInputAccessoryViewID: 'DoneAndDismissKeyboardInputAccessory',
@@ -48,11 +49,13 @@ const renderScreen = () =>
     </SafeAreaProvider>,
   );
 
-describe('unit - ImportWallet mnemonic validation', () => {
+describe('unit - ImportWallet', () => {
   let addAndSaveWallet: jest.Mock;
   let navigateToWalletsList: jest.Mock;
 
   beforeEach(() => {
+    jest.clearAllMocks();
+
     addAndSaveWallet = jest.fn().mockResolvedValue(undefined);
     navigateToWalletsList = jest.fn();
 
@@ -68,33 +71,38 @@ describe('unit - ImportWallet mnemonic validation', () => {
     });
     mockUseScreenProtect.mockReturnValue({ enableScreenProtect: jest.fn(), disableScreenProtect: jest.fn() });
     mockGetDefaultIndexer.mockReturnValue({ getLatestBlockHeight: jest.fn().mockResolvedValue({ height: 800000 }) });
-    mockPresentAlert.mockReset();
   });
 
-  it('rejects a non-mnemonic string instead of silently importing it', async () => {
-    const { getByTestId } = renderScreen();
+  const invalidMnemonicAlerts = () =>
+    mockPresentAlert.mock.calls.filter(([arg]) => arg.message === loc.wallet_birth.error_invalid_mnemonic).length;
 
-    fireEvent.changeText(getByTestId('MnemonicInput'), 'this is not a real seed phrase');
-    fireEvent.press(getByTestId('DoImport'));
+  describe('mnemonic validation', () => {
+    it('rejects a non-mnemonic string instead of silently importing it', async () => {
+      const { getByTestId } = renderScreen();
 
-    await waitFor(() => assert.ok(mockPresentAlert.mock.calls.some(([arg]) => arg.message === loc.wallet_birth.error_invalid_mnemonic)));
+      fireEvent.changeText(getByTestId('MnemonicInput'), 'this is not a real seed phrase');
+      fireEvent.press(getByTestId('DoImport'));
 
-    assert.strictEqual(addAndSaveWallet.mock.calls.length, 0);
-    assert.strictEqual(navigateToWalletsList.mock.calls.length, 0);
-  });
+      await waitFor(() => assert.strictEqual(invalidMnemonicAlerts(), 1, 'expected an invalid-mnemonic alert'));
 
-  it('accepts a valid mnemonic and proceeds to save the wallet', async () => {
-    const { getByTestId } = renderScreen();
+      assert.strictEqual(addAndSaveWallet.mock.calls.length, 0);
+      assert.strictEqual(navigateToWalletsList.mock.calls.length, 0);
+    });
 
-    const validMnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
-    fireEvent.changeText(getByTestId('MnemonicInput'), validMnemonic);
-    fireEvent.press(getByTestId('DoImport'));
+    it('accepts a valid mnemonic and proceeds to save the wallet', async () => {
+      const { getByTestId } = renderScreen();
 
-    await waitFor(() => assert.strictEqual(addAndSaveWallet.mock.calls.length, 1));
-    assert.strictEqual(navigateToWalletsList.mock.calls.length, 1);
-    assert.strictEqual(
-      mockPresentAlert.mock.calls.some(([arg]) => arg.message === loc.wallet_birth.error_invalid_mnemonic),
-      false,
-    );
+      const validMnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+      fireEvent.changeText(getByTestId('MnemonicInput'), validMnemonic);
+      fireEvent.press(getByTestId('DoImport'));
+
+      await waitFor(() => assert.strictEqual(addAndSaveWallet.mock.calls.length, 1));
+      assert.strictEqual(navigateToWalletsList.mock.calls.length, 1);
+      assert.strictEqual(invalidMnemonicAlerts(), 0);
+
+      const [savedWallet] = addAndSaveWallet.mock.calls[0];
+      assert.strictEqual(savedWallet.getSecret(), validMnemonic);
+      assert.strictEqual(savedWallet.getDerivationPath(), "m/84'/0'/0'");
+    });
   });
 });
