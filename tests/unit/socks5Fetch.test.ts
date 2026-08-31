@@ -104,6 +104,25 @@ describe('unit - socks5Fetch', () => {
     assert.deepStrictEqual(await response.json(), { a: 1 });
   });
 
+  it('decodes a chunked response containing multi-byte UTF-8 characters without corruption', async () => {
+    const promise = socks5Fetch('http://abc123.onion/status');
+    const socket = latestSocket();
+    await completeHandshake(socket);
+
+    const header = Buffer.from('HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n');
+    const payload = Buffer.from('{"msg":"café ☕"}', 'utf-8');
+    // The chunk-size line must be the byte length in hex, not the JS string length - café/☕
+    // are multi-byte in UTF-8, which is exactly what breaks a string-indexed chunk decoder.
+    const chunk = Buffer.concat([Buffer.from(`${payload.length.toString(16)}\r\n`), payload, Buffer.from('\r\n0\r\n\r\n')]);
+
+    socket.emit('data', header);
+    socket.emit('data', chunk);
+
+    const response = await promise;
+    assert.strictEqual(response.ok, true);
+    assert.deepStrictEqual(await response.json(), { msg: 'café ☕' });
+  });
+
   it('rejects instead of resolving truncated data when the socket closes before Content-Length is met', async () => {
     const promise = socks5Fetch('http://abc123.onion/status');
     const socket = latestSocket();

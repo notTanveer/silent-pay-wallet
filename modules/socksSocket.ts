@@ -1,25 +1,17 @@
 import { Buffer } from 'buffer';
 import { EventEmitter } from 'events';
 import TcpSocket from 'react-native-tcp-socket';
+import { getSocks5ConnectReplyLength } from './socks5ConnectReply';
 
 // react-native-tcp-socket doesn't export its BufferEncoding type at the package root, and
 // Node's own BufferEncoding includes values (e.g. 'utf-16le') it doesn't accept - derive the
 // type from the real method instead of guessing at a name.
 type SocketEncoding = Parameters<InstanceType<typeof TcpSocket.Socket>['setEncoding']>[0];
 
-// Returns the full length of a SOCKS5 CONNECT reply in `buf`, or null if more bytes are needed
-// to determine it, or -1 if the address type is unknown. Same wire format as socks5Fetch.ts.
-function getSocks5ConnectReplyLength(buf: Buffer): number | null {
-  if (buf.length < 5) return null;
-  const atyp = buf[3];
-  if (atyp === 0x01) return buf.length >= 10 ? 10 : null; // IPv4: VER+REP+RSV+ATYP + 4 + PORT(2)
-  if (atyp === 0x04) return buf.length >= 22 ? 22 : null; // IPv6: VER+REP+RSV+ATYP + 16 + PORT(2)
-  if (atyp === 0x03) {
-    const domainLength = buf[4];
-    return buf.length >= 5 + domainLength + 2 ? 5 + domainLength + 2 : null;
-  }
-  return -1;
-}
+// Orbot accepts the local TCP connection instantly, so the OS-level connect timeout never
+// fires even when the SOCKS5 negotiation itself stalls - this bounds the handshake phase
+// specifically, mirroring socks5Fetch.ts's connectTimeout.
+const HANDSHAKE_TIMEOUT_MS = 10000;
 
 /**
  * A net.Socket-compatible object (the subset `electrum-client` actually calls) that tunnels a
@@ -39,6 +31,7 @@ export class SocksTunnelSocket extends EventEmitter {
   private pendingEncoding: SocketEncoding | undefined;
   private targetHost = '';
   private targetPort = 0;
+  private handshakeTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly socksHost: string,
@@ -54,6 +47,10 @@ export class SocksTunnelSocket extends EventEmitter {
     this.targetHost = options.host;
     this.targetPort = options.port;
     this.phase = 'greeting';
+
+    this.handshakeTimer = setTimeout(() => {
+      this.failHandshake(new Error(`SOCKS5 handshake timed out after ${HANDSHAKE_TIMEOUT_MS}ms`));
+    }, HANDSHAKE_TIMEOUT_MS);
 
     this.real.on('data', this.onHandshakeData);
     this.real.on('error', (error: Error) => this.emit('error', error));
@@ -106,7 +103,15 @@ export class SocksTunnelSocket extends EventEmitter {
     }
   };
 
+  private clearHandshakeTimer(): void {
+    if (this.handshakeTimer) {
+      clearTimeout(this.handshakeTimer);
+      this.handshakeTimer = null;
+    }
+  }
+
   private failHandshake(error: Error): void {
+    this.clearHandshakeTimer();
     this.real.removeListener('data', this.onHandshakeData);
     try {
       this.real.destroy();
@@ -115,6 +120,7 @@ export class SocksTunnelSocket extends EventEmitter {
   }
 
   private completeHandshake(leftoverBytes: Buffer): void {
+    this.clearHandshakeTimer();
     this.real.removeListener('data', this.onHandshakeData);
     this.phase = 'tunnel';
 
@@ -141,6 +147,7 @@ export class SocksTunnelSocket extends EventEmitter {
   }
 
   destroy(): void {
+    this.clearHandshakeTimer();
     this.real.destroy();
   }
 

@@ -112,6 +112,8 @@ const ElectrumServerSettings: React.FC = () => {
     refreshPreferredServer();
   }, [refreshPreferredServer]);
 
+  // TODO: once a server is saved here there's no UI path back to unset it and resume
+  // connectMain's random peer selection - a "Reset to default" row is needed.
   const saveServer = useCallback(
     async (server: ElectrumServerItem) => {
       // Onion hosts can only ever connect through the Tor SOCKS5 tunnel (see Electrum.ts's

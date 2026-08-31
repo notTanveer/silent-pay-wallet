@@ -103,6 +103,44 @@ describe('unit - TorManager', () => {
     assert.strictEqual(torManager.status, 'connected');
   });
 
+  it('keeps rescheduling retries as long as each probe keeps failing', async () => {
+    const enablePromise = torManager.setEnabled(true);
+    await flush();
+    latestSocket().emit('data', SOCKS5_ACCEPT);
+    await enablePromise;
+    assert.strictEqual(torManager.status, 'connected');
+
+    mockCreateConnection.mockClear();
+    // Every retry timer in this chain is scheduled via a real setTimeout at the moment it's
+    // created, so the fake clock must stay active for the whole sequence - advanceTimersByTime
+    // can't see a timer that was scheduled before (or after switching back from) fake timers.
+    jest.useFakeTimers();
+    try {
+      torManager.markUnavailable();
+      assert.strictEqual(torManager.status, 'unavailable');
+
+      // First scheduled retry fires and probes again.
+      jest.advanceTimersByTime(30000);
+      assert.strictEqual(mockCreateConnection.mock.calls.length, 1, 'the first cooldown should have triggered a fresh probe');
+
+      // That probe fails too - before the fix, checkConnection's failure path never
+      // rescheduled, so nothing would probe again after this point.
+      latestSocket().emit('data', SOCKS5_REJECT);
+      // Fake timers only fake macrotask timer APIs, not native promise microtasks - these let
+      // checkConnection's `await this._testSocksProxy()` continuation actually run.
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      assert.strictEqual(torManager.status, 'unavailable');
+
+      // A second retry must still be scheduled - this is the fix under test.
+      jest.advanceTimersByTime(30000);
+      assert.strictEqual(mockCreateConnection.mock.calls.length, 2, 'a second cooldown should have triggered another probe');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('does not update in-memory settings when persisting them fails', async () => {
     mockSet.mockRejectedValueOnce(new Error('disk full'));
     await torManager.setTorOnly(true);

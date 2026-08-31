@@ -1,5 +1,6 @@
 import { Buffer } from 'buffer';
 import TcpSocket from 'react-native-tcp-socket';
+import { getSocks5ConnectReplyLength } from './socks5ConnectReply';
 
 const DEFAULT_SOCKS_HOST = '127.0.0.1';
 const DEFAULT_SOCKS_PORT = 9050;
@@ -48,29 +49,30 @@ function parseUrl(url: string): { host: string; port: number; path: string } {
 
 // Returns complete: false whenever more bytes are needed - on a short/malformed chunk this must
 // signal "not done yet" rather than returning the partial body, or a truncated read looks like success.
-function decodeChunked(data: string): { body: string; complete: boolean } {
-  let result = '';
+// Operates on the raw Buffer throughout - chunk sizes are byte counts, and indexing a UTF-8
+// string instead would misalign on any multi-byte character in the body.
+function decodeChunked(data: Buffer): { body: Buffer; complete: boolean } {
+  const chunks: Buffer[] = [];
   let remaining = data;
 
   while (remaining.length > 0) {
     const lineEnd = remaining.indexOf('\r\n');
-    if (lineEnd === -1) return { body: result, complete: false };
+    if (lineEnd === -1) return { body: Buffer.concat(chunks), complete: false };
 
-    const chunkSizeStr = remaining.substring(0, lineEnd).trim();
-    if (!chunkSizeStr) return { body: result, complete: false };
+    const chunkSizeStr = remaining.subarray(0, lineEnd).toString('ascii').trim();
+    if (!chunkSizeStr) return { body: Buffer.concat(chunks), complete: false };
 
     const chunkSize = parseInt(chunkSizeStr, 16);
-    if (isNaN(chunkSize)) return { body: result, complete: false };
-    if (chunkSize === 0) return { body: result, complete: true };
+    if (isNaN(chunkSize)) return { body: Buffer.concat(chunks), complete: false };
+    if (chunkSize === 0) return { body: Buffer.concat(chunks), complete: true };
 
     const chunkStart = lineEnd + 2;
-    if (remaining.length < chunkStart + chunkSize + 2) return { body: result, complete: false };
-    const chunkData = remaining.substring(chunkStart, chunkStart + chunkSize);
-    result += chunkData;
-    remaining = remaining.substring(chunkStart + chunkSize + 2); // +2 for trailing \r\n
+    if (remaining.length < chunkStart + chunkSize + 2) return { body: Buffer.concat(chunks), complete: false };
+    chunks.push(remaining.subarray(chunkStart, chunkStart + chunkSize));
+    remaining = remaining.subarray(chunkStart + chunkSize + 2); // +2 for trailing \r\n
   }
 
-  return { body: result, complete: false };
+  return { body: Buffer.concat(chunks), complete: false };
 }
 
 /**
@@ -117,20 +119,6 @@ export function socks5Fetch(url: string, options: Socks5FetchOptions = {}): Prom
 
     let phase: 'greeting' | 'connect' | 'http' = 'greeting';
     let pending: Buffer = Buffer.alloc(0);
-
-    // Returns the full length of a SOCKS5 CONNECT reply in `buf`, or null if
-    // more bytes are needed to determine it, or -1 if the address type is unknown.
-    const getSocks5ConnectReplyLength = (buf: Buffer): number | null => {
-      if (buf.length < 5) return null;
-      const atyp = buf[3];
-      if (atyp === 0x01) return buf.length >= 10 ? 10 : null; // IPv4: VER+REP+RSV+ATYP + 4 + PORT(2)
-      if (atyp === 0x04) return buf.length >= 22 ? 22 : null; // IPv6: VER+REP+RSV+ATYP + 16 + PORT(2)
-      if (atyp === 0x03) {
-        const domainLength = buf[4];
-        return buf.length >= 5 + domainLength + 2 ? 5 + domainLength + 2 : null;
-      }
-      return -1;
-    };
 
     let httpBuffer: Buffer = Buffer.alloc(0);
     let headerEnd = -1;
@@ -187,9 +175,9 @@ export function socks5Fetch(url: string, options: Socks5FetchOptions = {}): Prom
       const bodyBuf = httpBuffer.subarray(headerEnd + 4);
 
       if (isChunked) {
-        const decoded = decodeChunked(bodyBuf.toString('utf-8'));
+        const decoded = decodeChunked(bodyBuf);
         if (!decoded.complete) return false;
-        finish(() => resolve(buildResponse(decoded.body)));
+        finish(() => resolve(buildResponse(decoded.body.toString('utf-8'))));
         return true;
       }
 

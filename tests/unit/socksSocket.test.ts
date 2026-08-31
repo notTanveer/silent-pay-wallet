@@ -100,6 +100,46 @@ describe('unit - socksSocket (SOCKS5-tunneled net.Socket for onion Electrum)', (
     assert.match(errors[0].message, /CONNECT failed \(code: 4\)/);
   });
 
+  it('fails the handshake if the proxy never responds within the timeout', () => {
+    jest.useFakeTimers();
+    try {
+      const net = createSocksNet('127.0.0.1', 9050);
+      const socket = new net.Socket();
+      const errors: Error[] = [];
+      socket.on('error', (e: Error) => errors.push(e));
+
+      socket.connect({ host: 'abc123.onion', port: 50001 });
+      jest.advanceTimersByTime(10000);
+
+      assert.strictEqual(errors.length, 1);
+      assert.match(errors[0].message, /handshake timed out/);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('does not fire the handshake timeout once the tunnel is established', async () => {
+    jest.useFakeTimers();
+    try {
+      const net = createSocksNet('127.0.0.1', 9050);
+      const socket = new net.Socket();
+      const errors: Error[] = [];
+      socket.on('error', (e: Error) => errors.push(e));
+
+      socket.connect({ host: 'abc123.onion', port: 50001 });
+      jest.advanceTimersByTime(0);
+
+      const real = (socket as unknown as { real: EventEmitter }).real;
+      real.emit('data', SOCKS5_GREETING_ACCEPT);
+      real.emit('data', socks5ConnectReplyIPv4());
+
+      jest.advanceTimersByTime(10000);
+      assert.strictEqual(errors.length, 0, 'a completed handshake must not still time out');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('defers setEncoding until after the tunnel is established, keeping handshake bytes as raw Buffers', async () => {
     const net = createSocksNet('127.0.0.1', 9050);
     const socket = new net.Socket();

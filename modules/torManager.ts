@@ -158,10 +158,16 @@ class TorManager {
 
     try {
       const available = await this._testSocksProxy();
-      if (generation === this._checkGeneration) this._setStatus(available ? 'connected' : 'unavailable');
+      if (generation === this._checkGeneration) {
+        this._setStatus(available ? 'connected' : 'unavailable');
+        if (!available) this._scheduleRetry();
+      }
       return available;
     } catch {
-      if (generation === this._checkGeneration) this._setStatus('unavailable');
+      if (generation === this._checkGeneration) {
+        this._setStatus('unavailable');
+        this._scheduleRetry();
+      }
       return false;
     }
   }
