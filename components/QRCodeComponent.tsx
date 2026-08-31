@@ -6,7 +6,6 @@ import Share from 'react-native-share';
 
 import loc from '../loc';
 import { ActionIcons } from '../typings/ActionIcons';
-import { useTheme } from './themes';
 import ToolTipMenu from './TooltipMenu';
 import { Action } from './types';
 
@@ -65,7 +64,6 @@ const QRCodeComponent: React.FC<QRCodeComponentProps> = ({
   logoBackgroundColor,
   logoBorderRadius,
 }) => {
-  const { dark } = useTheme();
   const qrCode = useRef<any>();
   const setQrCodeRef = useCallback((c: any) => {
     qrCode.current = c;
@@ -93,8 +91,8 @@ const QRCodeComponent: React.FC<QRCodeComponentProps> = ({
     <QRCode
       value={value}
       size={size}
-      color={dark ? '#FFFFFF' : '#000000'}
-      backgroundColor={dark ? '#000000' : '#FFFFFF'}
+      color="#000000"
+      backgroundColor="#FFFFFF"
       ecl={ecl}
       getRef={setQrCodeRef}
       onError={onError}

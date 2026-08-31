@@ -105,12 +105,7 @@ const WalletExport: React.FC = () => {
 
     const size = isPortrait
       ? computeResponsiveQRSize({ height, width }, { heightRatio: 0.5, widthRatio: 0.75 }, maxQRSize, HORIZONTAL_PADDING)
-      : computeResponsiveQRSize(
-          { height, width },
-          { heightRatio: 0.6, widthRatio: 0.35, subtractPadding: false },
-          maxQRSize,
-          HORIZONTAL_PADDING,
-        );
+      : computeResponsiveQRSize({ height, width }, { heightRatio: 0.6, widthRatio: 0.35 }, maxQRSize, 0);
 
     setQRCodeSize(size);
   }, []);

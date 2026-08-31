@@ -73,8 +73,8 @@ const PillSegmentedControl: React.FC<PillSegmentedControlProps> = ({ values, sel
             style={[
               styles.label,
               {
-                color: index === selectedIndex ? colors.textPrimarySoft : colors.textSecondary,
-                fontFamily: index === selectedIndex ? ClashFont.semibold : ClashFont.medium,
+                color: index === selectedIndex ? colors.textPrimarySoft : colors.textDisabled,
+                fontFamily: ClashFont.medium,
               },
             ]}
           >

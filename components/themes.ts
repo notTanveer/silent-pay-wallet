@@ -140,10 +140,10 @@ const tokens = {
   // states, so a tweak to the amber caution surface must not silently restyle the error banner.
   surfaceError: pair('#FDFBF5', palette.brown900), // scan-error banner background
   iconCaution: same('#F1AF63'), // caution banner icon (warm amber)
-  segmentTrack: pair('#F8F8FA', palette.gray940), // pill toggle track background
-  segmentTrackBorder: pair(palette.gray150, '#1E1D1D'), // pill toggle track border
-  segmentSelectedBorder: pair('#CFCFCF', '#3D3D3D'), // selected pill border
-  surfaceElevated: pair('#F6F5FD', '#121212'), // QR code card + AddressCopyCard + InfoBanner (info variant) background
+  segmentTrack: pair('#FDFCFE', '#0E0E16'), // pill toggle track background
+  segmentTrackBorder: pair('#E6E2FA', '#25253A'), // pill toggle track border
+  segmentSelectedBorder: pair('#E6E2FA', '#3D3D3D'), // selected pill border
+  surfaceElevated: pair('#F6F5FD', '#1A1535'), // QR code card + AddressCopyCard + InfoBanner (info variant) background
   copyHint: same(palette.gray450), // "tap to copy" icon + label
   progressTrack: pair('#EAECF0', palette.violet920),
   // Hairline rim on the filled brand button; in dark the design draws it in the brand color itself.
@@ -159,6 +159,7 @@ const tokens = {
   chevron: pair(palette.gray375, palette.slate400), // disclosure chevron
   brandPrimaryFixed: same(palette.violet600), // brand purple that stays violet600 in dark mode (Receive accents)
   textPrimarySoft: pair('#1A1A1A', '#E5E5E5'), // off-white emphasis text (selected tab label, address text)
+  textDisabled: pair('#C7C7CC', '#1E1E2E'), // unselected pill segment label
   white: same(palette.white),
   black: same(palette.black), // legacy pure black; text sites should migrate to textEmphasis
   // SyncStatusIcon per-status ring/fill tints (glyph color = brandPrimary / status* above)

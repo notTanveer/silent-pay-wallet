@@ -21,13 +21,8 @@ describe('computeResponsiveQRSize', () => {
     expect(result).toBe(240);
   });
 
-  it('skips the padding subtraction when subtractPadding is false', () => {
-    const result = computeResponsiveQRSize(
-      { height: 1000, width: 800 },
-      { heightRatio: 0.6, widthRatio: 0.35, subtractPadding: false },
-      400,
-      20,
-    );
+  it('skips the padding subtraction when horizontalPadding is 0', () => {
+    const result = computeResponsiveQRSize({ height: 1000, width: 800 }, { heightRatio: 0.6, widthRatio: 0.35 }, 400, 0);
     expect(result).toBe(280);
   });
 });
