@@ -465,7 +465,7 @@
         "banner_scanning": "Checking pending payments.....",
         "banner_paused_at": "Sync paused at {blockHeight}",
         "banner_synced": "Synced to block {blockHeight}",
-        "banner_error": "Can't connect right now",
+        "banner_error": "Can't reach scan server",
         "banner_resume": "Resume",
         "eta_about": "about {time} left"
     }

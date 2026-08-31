@@ -13,12 +13,13 @@ import { ClashFont } from '../constants/fonts';
 
 interface Props {
   scanState: ScanStateInfo;
-  onResume?: () => void;
+  onResume: () => void;
+  onRetry: () => void;
 }
 
 type NavigationProps = NativeStackNavigationProp<DetailViewStackParamList>;
 
-const ScanProgressBar: React.FC<Props> = ({ scanState, onResume }) => {
+const ScanProgressBar: React.FC<Props> = ({ scanState, onResume, onRetry }) => {
   const { colors } = useTheme();
   const navigation = useNavigation<NavigationProps>();
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -56,8 +57,8 @@ const ScanProgressBar: React.FC<Props> = ({ scanState, onResume }) => {
         accessibilityLabel={blockText as string}
       >
         <View style={styles.leftRow}>
-          <View style={styles.iconWrap}>
-            <Icon name="check-circle" type="material" size={20} color={colors.statusSuccess} />
+          <View style={styles.glyphBox}>
+            <Icon name="check" type="material" size={20} color={colors.statusSuccess} />
           </View>
           <Text style={[styles.bannerText, { color: colors.textPrimary }]} numberOfLines={1}>
             {blockText}
@@ -80,22 +81,46 @@ const ScanProgressBar: React.FC<Props> = ({ scanState, onResume }) => {
           accessibilityRole="button"
           accessibilityLabel={blockText as string}
         >
-          <View style={styles.iconWrap}>
-            <Icon name="pause" type="material" size={18} color={colors.statusPaused} />
+          <View style={styles.glyphBox}>
+            <Icon name="pause" type="material" size={20} color={colors.statusPaused} />
           </View>
           <Text style={[styles.bannerText, { color: colors.textPrimary }]} numberOfLines={1}>
             {blockText}
           </Text>
         </TouchableOpacity>
         <Pressable onPress={onResume} hitSlop={8} accessibilityRole="button" accessibilityLabel={loc.sync.banner_resume}>
-          <Text style={[styles.resumeText, { color: colors.brandPrimary }]}>{loc.sync.banner_resume}</Text>
+          <Text style={[styles.actionText, { color: colors.brandPrimary }]}>{loc.sync.banner_resume}</Text>
         </Pressable>
       </View>
     );
   }
 
-  const dotColor = status === 'error' ? colors.statusError : colors.brandPrimary;
-  const bannerText = status === 'error' ? loc.sync.banner_error : loc.sync.banner_scanning;
+  if (status === 'error') {
+    return (
+      <View style={[styles.container, { borderColor: colors.statusError, backgroundColor: colors.surfaceError }]}>
+        <TouchableOpacity
+          style={styles.leftRow}
+          onPress={() => navigation.navigate('SyncScreen')}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={loc.sync.banner_error}
+        >
+          <View style={styles.glyphBox}>
+            <Icon name="info-outline" type="material" size={20} color={colors.statusError} />
+          </View>
+          <Text style={[styles.bannerText, { color: colors.statusError }]} numberOfLines={1}>
+            {loc.sync.banner_error}
+          </Text>
+        </TouchableOpacity>
+        <Pressable onPress={onRetry} hitSlop={8} accessibilityRole="button" accessibilityLabel={loc.sync.btn_retry}>
+          <Text style={[styles.actionText, { color: colors.statusError }]}>{loc.sync.btn_retry}</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  const dotColor = colors.brandPrimary;
+  const bannerText = loc.sync.banner_scanning;
 
   return (
     <TouchableOpacity
@@ -106,7 +131,7 @@ const ScanProgressBar: React.FC<Props> = ({ scanState, onResume }) => {
       accessibilityLabel={bannerText}
     >
       <View style={styles.leftRow}>
-        <View style={styles.iconWrap}>
+        <View style={styles.glyphBox}>
           <View style={[styles.halo, { backgroundColor: dotColor }]} />
           <Animated.View style={[styles.dot, { backgroundColor: dotColor, opacity: pulseAnim }]} />
         </View>
@@ -127,20 +152,22 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 16,
     height: 50,
-    paddingLeft: 14,
+    paddingLeft: 16,
     paddingRight: 16,
     borderRadius: 16,
     borderWidth: 1,
   },
+  // One geometry for all four states: 16 (container) + 32 (glyphBox) + 4 puts the label at 52,
+  // the left edge the design specifies. Per-state boxes made the glyph jump between renders.
   leftRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 9,
+    gap: 4,
     flex: 1,
   },
-  iconWrap: {
-    width: 22,
-    height: 22,
+  glyphBox: {
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -158,12 +185,14 @@ const styles = StyleSheet.create({
   },
   bannerText: {
     fontSize: 14,
+    lineHeight: 20,
     fontFamily: ClashFont.regular,
     flex: 1,
   },
-  resumeText: {
+  actionText: {
     fontSize: 14,
-    fontFamily: ClashFont.regular,
+    lineHeight: 20,
+    fontFamily: ClashFont.medium,
   },
 });
 
