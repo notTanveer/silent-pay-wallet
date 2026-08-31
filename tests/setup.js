@@ -266,6 +266,35 @@ const mockKeychain = {
 };
 jest.mock('react-native-keychain', () => mockKeychain);
 
-jest.mock('react-native-tcp-socket', () => mockKeychain);
+// Per-file mocks in tests/unit/{torManager,socks5Fetch,socksSocket}.test.ts override this with
+// scripted socket behavior - this is only the fallback for any other test that instantiates a
+// socket without its own mock, so it must be a real (if inert) socket shape, not an unrelated double.
+jest.mock('react-native-tcp-socket', () => {
+  const { EventEmitter } = require('events');
+  class FakeTcpSocket extends EventEmitter {
+    write = jest.fn();
+    end = jest.fn();
+    destroy = jest.fn();
+    setTimeout = jest.fn();
+    setEncoding = jest.fn();
+    setKeepAlive = jest.fn();
+    setNoDelay = jest.fn();
+    connect = jest.fn(function (_options, callback) {
+      if (callback) setImmediate(callback);
+      return this;
+    });
+  }
+  return {
+    __esModule: true,
+    default: {
+      Socket: FakeTcpSocket,
+      createConnection: jest.fn((_options, callback) => {
+        const socket = new FakeTcpSocket();
+        if (callback) setImmediate(callback);
+        return socket;
+      }),
+    },
+  };
+});
 
 global.alert = () => {};

@@ -21,7 +21,10 @@ import DenominationSettings from '../screen/settings/DenominationSettings';
 import PlausibleDeniability from '../screen/PlausibleDeniability';
 import Licensing from '../screen/settings/Licensing';
 import About from '../screen/settings/About';
-import ElectrumSettings from '../screen/settings/ElectrumSettings';
+import ElectrumServerSettings from '../screen/settings/ElectrumServerSettings';
+import BlockExplorerSettings from '../screen/settings/BlockExplorerSettings';
+import TorSettings from '../screen/settings/TorSettings';
+import NetworkSettings from '../screen/settings/NetworkSettings';
 import EncryptStorage from '../screen/settings/EncryptStorage';
 import SelfTest from '../screen/settings/SelfTest';
 
@@ -129,10 +132,25 @@ const DetailViewStackScreensStack = () => {
       <DetailViewStack.Screen name="Licensing" component={Licensing} options={navigationStyle({ title: loc.settings.license })(theme)} />
       <DetailViewStack.Screen name="About" component={About} options={navigationStyle({ title: loc.settings.about })(theme)} />
       <DetailViewStack.Screen
-        name="ElectrumSettings"
-        component={ElectrumSettings}
+        name="ElectrumServerSettings"
+        component={ElectrumServerSettings}
         options={navigationStyle({ title: loc.settings.electrum_settings_server })(theme)}
         initialParams={{ server: undefined }}
+      />
+      <DetailViewStack.Screen
+        name="BlockExplorerSettings"
+        component={BlockExplorerSettings}
+        options={navigationStyle({ title: loc.settings.block_explorer_title })(theme)}
+      />
+      <DetailViewStack.Screen
+        name="TorSettings"
+        component={TorSettings}
+        options={navigationStyle({ title: loc.settings.tor_title })(theme)}
+      />
+      <DetailViewStack.Screen
+        name="NetworkSettings"
+        component={NetworkSettings}
+        options={navigationStyle({ title: loc.settings.network })(theme)}
       />
       <DetailViewStack.Screen
         name="EncryptStorage"

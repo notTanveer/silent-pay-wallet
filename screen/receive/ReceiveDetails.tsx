@@ -15,7 +15,6 @@ import PillSegmentedControl from '../../components/PillSegmentedControl';
 import QRCard from '../../components/QRCard';
 import { useTheme } from '../../components/themes';
 import { TransactionPendingIconBig } from '../../components/TransactionPendingIconBig';
-import { useSettings } from '../../hooks/context/useSettings';
 import { useStorage } from '../../hooks/context/useStorage';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import loc, { formatBalance } from '../../loc';
@@ -60,7 +59,6 @@ type RouteProps = RouteProp<ReceiveDetailsStackParamList, 'ReceiveDetails'>;
 const ReceiveDetails = () => {
   const { walletID, address } = useRoute<RouteProps>().params;
   const { wallets, saveToDisk, sleep, fetchAndSaveWalletTransactions } = useStorage();
-  const { isElectrumDisabled } = useSettings();
   const { colors } = useTheme();
   const [bip21encoded, setBip21encoded] = useState('');
   const [showPendingBalance, setShowPendingBalance] = useState(false);
@@ -114,7 +112,7 @@ const ReceiveDetails = () => {
 
     let newAddress;
     try {
-      if (!isElectrumDisabled) newAddress = await Promise.race([wallet.getAddressAsync(), sleep(1000)]);
+      newAddress = await Promise.race([wallet.getAddressAsync(), sleep(1000)]);
     } catch (error) {
       console.warn('Error fetching wallet address:', error);
     }
@@ -130,7 +128,7 @@ const ReceiveDetails = () => {
     }
 
     setAddressBIP21Encoded(newAddress);
-  }, [wallet, saveToDisk, address, setAddressBIP21Encoded, isElectrumDisabled, sleep]);
+  }, [wallet, saveToDisk, address, setAddressBIP21Encoded, sleep]);
 
   useEffect(() => {
     if (showConfirmedBalance) {

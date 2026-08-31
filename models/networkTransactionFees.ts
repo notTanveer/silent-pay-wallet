@@ -24,10 +24,6 @@ export class NetworkTransactionFee {
 export default class NetworkTransactionFees {
   static async recommendedFees(): Promise<NetworkTransactionFee> {
     try {
-      const isDisabled = await Electrum.isDisabled();
-      if (isDisabled) {
-        throw new Error("Electrum is disabled. Don't attempt to fetch fees");
-      }
       const response = await Electrum.estimateFees();
       return new NetworkTransactionFee(response.fast + 5, response.medium + 2, response.slow);
     } catch (err) {

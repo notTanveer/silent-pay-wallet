@@ -3,7 +3,9 @@ import assert from 'assert';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
 
 jest.mock('../../modules/Electrum', () => {
+  const actual = jest.requireActual('../../modules/Electrum');
   return {
+    ...actual,
     connectMain: jest.fn(),
   };
 });
@@ -75,9 +77,9 @@ describe.each(['', '//'])('unit - DeepLinkSchemaMatch', function (suffix) {
           url: 'shroud:setelectrumserver?server=electrum1.bluewallet.io%3A443%3As',
         },
         expected: [
-          'ElectrumSettings',
+          'ElectrumServerSettings',
           {
-            server: 'electrum1.bluewallet.io:443:s',
+            server: { host: 'electrum1.bluewallet.io', ssl: 443 },
           },
         ],
       },
@@ -151,13 +153,13 @@ describe.each(['', '//'])('unit - DeepLinkSchemaMatch', function (suffix) {
 
   it('can work with some deeplink actions', () => {
     assert.strictEqual(DeeplinkSchemaMatch.getServerFromSetElectrumServerAction('sgasdgasdgasd'), false);
-    assert.strictEqual(
+    assert.deepStrictEqual(
       DeeplinkSchemaMatch.getServerFromSetElectrumServerAction('shroud:setelectrumserver?server=electrum1.bluewallet.io%3A443%3As'),
-      'electrum1.bluewallet.io:443:s',
+      { host: 'electrum1.bluewallet.io', ssl: 443 },
     );
-    assert.strictEqual(
+    assert.deepStrictEqual(
       DeeplinkSchemaMatch.getServerFromSetElectrumServerAction('setelectrumserver?server=electrum1.bluewallet.io%3A443%3As'),
-      'electrum1.bluewallet.io:443:s',
+      { host: 'electrum1.bluewallet.io', ssl: 443 },
     );
     assert.strictEqual(
       DeeplinkSchemaMatch.getServerFromSetElectrumServerAction('ololo:setelectrumserver?server=electrum1.bluewallet.io%3A443%3As'),

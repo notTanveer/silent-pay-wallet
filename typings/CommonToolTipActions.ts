@@ -16,7 +16,6 @@ const keys = {
   MoreInfo: 'moreInfo',
   SaveChanges: 'saveChanges',
   ClearClipboard: 'clearClipboard',
-  ResetToDefault: 'resetToDefault',
   ScanQR: 'scan_qr',
   RemoveAllRecipients: 'RemoveAllRecipients',
   AddRecipient: 'AddRecipient',
@@ -243,12 +242,6 @@ export const CommonToolTipActions: Record<string, ToolTipAction> = {
     id: keys.Share,
     text: loc.receive.details_share,
     icon: icons.Share,
-  },
-  ResetToDefault: {
-    id: keys.ResetToDefault,
-    text: loc.settings.electrum_reset,
-    hidden: false,
-    destructive: true,
   },
   PasteFromClipboard: {
     id: keys.PasteFromClipboard,

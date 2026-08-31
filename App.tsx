@@ -11,7 +11,7 @@ import { StorageProvider } from './components/Context/StorageProvider';
 import { useSettings } from './hooks/context/useSettings';
 import { initializeIndexer } from './modules/SilentPaymentIndexer';
 import { initializeRustJsiBridge } from './modules/RustJsiBridge';
-import { INDEXER_BASE_URL } from '@env';
+import { INDEXER_BASE_URL, INDEXER_ONION_URL } from '@env';
 import { useColorScheme } from 'react-native';
 
 const ThemedNavigationContainer = () => {
@@ -35,6 +35,7 @@ const App = () => {
     initializeRustJsiBridge();
     initializeIndexer({
       baseUrl: INDEXER_BASE_URL,
+      onionUrl: INDEXER_ONION_URL,
       timeout: 100000,
     });
   }, []);

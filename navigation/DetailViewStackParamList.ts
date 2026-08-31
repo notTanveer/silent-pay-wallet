@@ -1,6 +1,6 @@
 import { Transaction, TWallet } from '../class/wallets/types';
 import { OwnedOutput } from '../class/wallets/hd-bip352-wallet';
-import { ElectrumServerItem } from '../screen/settings/ElectrumSettings';
+import { ElectrumServerItem } from '../modules/Electrum';
 import { SendDetailsParams } from './SendDetailsStackParamList';
 import { AddWalletStackParamList } from './AddWalletStack';
 
@@ -48,7 +48,10 @@ export type DetailViewStackParamList = {
   PlausibleDeniability: undefined;
   Licensing: undefined;
   About: undefined;
-  ElectrumSettings: { server?: ElectrumServerItem; onBarScanned?: string };
+  ElectrumServerSettings: { server?: ElectrumServerItem };
+  BlockExplorerSettings: undefined;
+  TorSettings: undefined;
+  NetworkSettings: undefined;
   EncryptStorage: undefined;
   SelfTest: undefined;
   ReceiveDetails: {
