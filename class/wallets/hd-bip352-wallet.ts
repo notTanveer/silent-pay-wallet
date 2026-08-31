@@ -4,7 +4,7 @@ import { Buffer } from 'buffer';
 import { ECPairFactory } from 'ecpair';
 import { AbstractHDElectrumWallet } from './abstract-hd-electrum-wallet.ts';
 import * as Electrum from '../../modules/Electrum';
-import { getDefaultIndexer } from '../../modules/SilentPaymentIndexer';
+import { getDefaultIndexer, SilentPaymentIndexer } from '../../modules/SilentPaymentIndexer';
 import ecc from '../../modules/noble_ecc';
 import { SilentPayment } from 'silent-payments';
 import { calculateSumOfPrivateKeys, createInputHash, scanOutputs, type PrivateKey } from '@silent-pay/core';
@@ -29,7 +29,7 @@ import {
   IDLE_SCAN_STATE,
   type IScannableWallet,
 } from '../../helpers/silent-payments';
-import { BIP352_ACTIVATION_HEIGHT } from '../../modules/constants';
+import { BIP352_ACTIVATION_HEIGHT, clampBirthHeight } from '../../modules/constants';
 import { CreateTransactionResult, CreateTransactionTarget, CreateTransactionUtxo, Transaction, Utxo } from './types.ts';
 import * as bitcoin from 'bitcoinjs-lib';
 import { HDTaprootWallet } from './hd-taproot-wallet.ts';
@@ -50,6 +50,10 @@ interface SpendKeyPair {
 const SCAN_PROGRESS_THROTTLE_MS = 500;
 // Number of recent progress samples kept for the windowed ETA throughput estimate.
 const SCAN_ETA_ROLLING_WINDOW = 10;
+// Consecutive failed birth-height lookups before we stop deferring and scan from the fallback height.
+const BIRTH_RESOLUTION_MAX_ATTEMPTS = 3;
+
+type UpdateBirthHeightOptions = { resetScan?: boolean; pendingTimestamp?: number | null };
 
 export type OwnedOutput = {
   vout: number;
@@ -91,6 +95,8 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
   private transactionProcessor: RustTransactionProcessor | null = null;
   private lastScannedBlock: number = 0;
   private _birthHeight: number = BIP352_ACTIVATION_HEIGHT;
+  private _birthTimestamp: number | null = null; // set when indexer is unreachable, resolved to height on next scan
+  private _birthResolutionFailures: number = 0; // consecutive failed attempts to resolve _birthTimestamp
   private spUTXOsCache: SilentPaymentUTXO[] | null = null;
   private activeScanPromise: Promise<number> | null = null;
   private cancelScanCallbackScan: boolean = false;
@@ -176,6 +182,8 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         wallet.lastScannedBlock = data[key] || 0;
       } else if (key === '_birthHeight') {
         wallet._birthHeight = data[key] || BIP352_ACTIVATION_HEIGHT;
+      } else if (key === '_birthTimestamp') {
+        wallet._birthTimestamp = data[key] ?? null;
       } else if (key === '_sp_spending_txs') {
         wallet._sp_spending_txs = data[key] || [];
       } else if (key === '_sp_pending_inputs') {
@@ -217,6 +225,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
 
     (this as any).lastScannedBlock = this.lastScannedBlock;
     (this as any)._birthHeight = this._birthHeight;
+    (this as any)._birthTimestamp = this._birthTimestamp;
     (this as any)._sp_spending_txs = this._sp_spending_txs;
     (this as any)._sp_pending_inputs = Array.from(this._sp_pending_inputs);
   }
@@ -495,7 +504,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       try {
         await this.scanForPayments();
       } catch (error) {
-        console.error('[SP] Error during polling:', error);
+        console.warn('[SP] Polling scan failed:', error instanceof Error ? error.message : error);
       }
     }, this.POLLING_INTERVAL_MS);
   }
@@ -550,13 +559,19 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
 
     try {
       const indexer = getDefaultIndexer();
-      const latestHeightResponse = await indexer.getLatestBlockHeight();
-      const latestHeight = latestHeightResponse.height;
-      const effectiveBirthHeight = Math.max(this._birthHeight, BIP352_ACTIVATION_HEIGHT);
+      const latestHeight = (await indexer.getLatestBlockHeight()).height;
 
       if (latestHeight <= 0) {
         throw new Error(`Invalid latest block height: ${latestHeight}`);
       }
+
+      if (!(await this._resolvePendingBirthHeight(indexer, latestHeight))) {
+        // birth height still unknown, so there is no correct range to scan yet. the next refresh retries.
+        this._emitScanState('idle', IDLE_SCAN_STATE);
+        return 0;
+      }
+
+      const effectiveBirthHeight = Math.max(this._birthHeight, BIP352_ACTIVATION_HEIGHT);
 
       let startHeight: number;
       const endHeight: number = latestHeight;
@@ -624,7 +639,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       await indexer.scanForwardWithCallback(
         startHeight,
         endHeight,
-        async transactions => {
+        async (transactions, rangeEnd) => {
           if (this.cancelScanCallbackScan) {
             throw new Error('SCAN_CANCELLED');
           }
@@ -633,7 +648,8 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
           if (this.cancelScanCallbackScan) throw new Error('SCAN_CANCELLED');
 
           const result = await this.processTransactions(transactions);
-          const addedCount = this.commitUTXOs(result.utxos, result.lastScannedBlock);
+          // rangeEnd, not the highest tx height: the whole range was queried, so it is all scanned
+          const addedCount = this.commitUTXOs(result.utxos, Math.max(result.lastScannedBlock, rangeEnd));
           totalUTXOsAdded += addedCount;
 
           return addedCount;
@@ -660,7 +676,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         throw new Error('Silent Payment Indexer not initialized. Please configure the indexer first.');
       }
 
-      console.error('[SP] Scan error:', error);
       this._emitScanState('error', { error: error.message ?? 'Unknown scan error' });
       throw error;
     }
@@ -913,22 +928,63 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
   }
 
   setBirthHeight(height: number): void {
-    if (height < 0) {
-      throw new Error('Birth height cannot be negative');
-    }
-
-    this._birthHeight = height;
+    this.updateBirthHeight(height);
   }
 
-  updateBirthHeight(height: number, resetScan: boolean = false): void {
-    if (height < 0) {
-      throw new Error('Birth height cannot be negative');
+  /**
+   * Set the wallet's birth height. `pendingTimestamp` defers the real height to the first scan
+   * that reaches the indexer; taking both here keeps them from being set in the wrong order.
+   */
+  updateBirthHeight(height: number, { resetScan = false, pendingTimestamp = null }: UpdateBirthHeightOptions = {}): void {
+    if (!Number.isInteger(height) || height < 0) {
+      throw new Error(`Invalid birth height: ${height}`);
     }
 
     this._birthHeight = height;
+    this._birthTimestamp = pendingTimestamp;
+    this._birthResolutionFailures = 0;
 
     if (resetScan) {
       this.lastScannedBlock = 0;
+    }
+  }
+
+  getPendingBirthTimestamp(): number | null {
+    return this._birthTimestamp;
+  }
+
+  /**
+   * Turn a deferred birth timestamp into a real height now that the indexer is reachable.
+   * Returns false when the height is still unknown and the caller must not scan.
+   */
+  private async _resolvePendingBirthHeight(indexer: SilentPaymentIndexer, latestHeight: number): Promise<boolean> {
+    if (this._birthTimestamp === null) return true;
+
+    try {
+      const { blockHeight } = await indexer.getBlockHeightByTimestamp(this._birthTimestamp);
+      if (!Number.isInteger(blockHeight)) {
+        throw new Error(`Invalid block height for timestamp ${this._birthTimestamp}: ${blockHeight}`);
+      }
+
+      this.updateBirthHeight(clampBirthHeight(blockHeight, latestHeight), { resetScan: true });
+      this.onPersistCallback?.();
+      return true;
+    } catch (error) {
+      this._birthResolutionFailures++;
+      if (this._birthResolutionFailures < BIRTH_RESOLUTION_MAX_ATTEMPTS) {
+        console.warn(
+          `[SP] Birth height resolution failed (${this._birthResolutionFailures}/${BIRTH_RESOLUTION_MAX_ATTEMPTS}), skipping scan:`,
+          error,
+        );
+        return false;
+      }
+
+      // stop deferring rather than leave the wallet permanently unscannable: pay the one-off cost
+      // of scanning from whatever height we have (BIP-352 activation, at worst).
+      console.warn('[SP] Giving up on birth height resolution, scanning from the fallback height:', error);
+      this.updateBirthHeight(this._birthHeight, { resetScan: true });
+      this.onPersistCallback?.();
+      return true;
     }
   }
 

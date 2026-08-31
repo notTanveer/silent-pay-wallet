@@ -30,6 +30,8 @@ async function retryWithBackoff<T>(
   return lastResult;
 }
 
+export type RequestOptions = { timeout?: number; retries?: number };
+
 export class IndexerHttpClient {
   private onionUrl?: string;
 
@@ -83,37 +85,40 @@ export class IndexerHttpClient {
     );
   }
 
-  private attemptClearnetFetch<T>(endpoint: string): Promise<AttemptResult<T>> {
+  private attemptClearnetFetch<T>(endpoint: string, timeout: number): Promise<AttemptResult<T>> {
     return this.classifyResponse<T>(
       fetch(`${this.baseUrl}${endpoint}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        timeout: this.timeout,
+        timeout,
       }),
     );
   }
 
-  private async executeGet<T>(endpoint: string, errorContext: string): Promise<T> {
+  private async executeGet<T>(endpoint: string, errorContext: string, options: RequestOptions = {}): Promise<T> {
+    const timeout = options.timeout ?? this.timeout;
+    const attempts = options.retries ?? RETRY_ATTEMPTS;
+
     const torManager = TorManager.getInstance();
     await torManager.ensureLoaded();
 
     // 'checking' is included so a request that fires just after Tor is enabled attempts the
     // connection instead of failing immediately while the initial socket test is still in flight.
     if (torManager.settings.enabled && this.onionUrl && (torManager.isReady || torManager.status === 'checking')) {
-      // this.timeout is a total budget for the caller's request, not a per-attempt one - split it
-      // across the retries so a hung Orbot/onion service can't turn one request into RETRY_ATTEMPTS
+      // `timeout` is a total budget for the caller's request, not a per-attempt one - split it
+      // across the retries so a hung Orbot/onion service can't turn one request into `attempts`
       // times the configured timeout before falling back to clearnet. Each attempt's own budget is
       // further split between connect and request phases, since socks5Fetch times those separately
       // and sequentially - otherwise every attempt would silently carry an extra connect timeout on
       // top of the request timeout.
-      const perAttemptTimeout = Math.max(1, Math.floor(this.timeout / RETRY_ATTEMPTS));
+      const perAttemptTimeout = Math.max(1, Math.floor(timeout / attempts));
       const perAttemptConnectTimeout = Math.max(1, Math.floor(perAttemptTimeout / 3));
       const perAttemptRequestTimeout = Math.max(1, perAttemptTimeout - perAttemptConnectTimeout);
 
       const torResult = await retryWithBackoff<T>(
-        RETRY_ATTEMPTS,
+        attempts,
         () => this.attemptTorFetch<T>(endpoint, perAttemptConnectTimeout, perAttemptRequestTimeout, torManager.socksPort),
-        (attemptNumber, message) => console.warn(`[IndexerHttpClient] Tor attempt ${attemptNumber}/${RETRY_ATTEMPTS} failed: ${message}`),
+        (attemptNumber, message) => console.warn(`[IndexerHttpClient] Tor attempt ${attemptNumber}/${attempts} failed: ${message}`),
       );
 
       if (torResult.ok) return torResult.data;
@@ -142,15 +147,14 @@ export class IndexerHttpClient {
       console.warn('[IndexerHttpClient] Tor unavailable, falling back to clearnet');
     }
 
-    const clearnetResult = await retryWithBackoff<T>(RETRY_ATTEMPTS, () => this.attemptClearnetFetch<T>(endpoint));
+    const clearnetResult = await retryWithBackoff<T>(attempts, () => this.attemptClearnetFetch<T>(endpoint, timeout));
     if (clearnetResult.ok) return clearnetResult.data;
 
-    console.error(`${errorContext}:`, clearnetResult.message);
     throw new Error(`${errorContext}: ${clearnetResult.message}`);
   }
 
-  async get<T>(endpoint: string, errorContext: string): Promise<T> {
-    return this.executeGet<T>(endpoint, errorContext);
+  async get<T>(endpoint: string, errorContext: string, options: RequestOptions = {}): Promise<T> {
+    return this.executeGet<T>(endpoint, errorContext, options);
   }
 
   getBaseUrl(): string {

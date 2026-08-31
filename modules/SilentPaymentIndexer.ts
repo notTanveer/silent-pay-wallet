@@ -10,7 +10,14 @@ import type {
   TransactionByTxidResponse,
 } from '../helpers/silent-payments/types';
 
-class SilentPaymentIndexer {
+// Small metadata lookups a user is actively waiting on. The configured timeout is sized for bulk
+// range queries; inheriting it here makes create/import/track hang for minutes on a dead indexer.
+const FAST_LOOKUP = { timeout: 8000, retries: 1 };
+
+/** Invoked once per scanned range, empty or not, so the caller can track progress. */
+export type RangeProcessedCallback = (transactions: IndexerTransaction[], rangeEnd: number) => Promise<number>;
+
+export class SilentPaymentIndexer {
   private httpClient: IndexerHttpClient;
 
   constructor(config: SilentPaymentIndexerConfig) {
@@ -27,7 +34,7 @@ class SilentPaymentIndexer {
   }
 
   async getHealth(): Promise<HealthResponse> {
-    return this.httpClient.get<HealthResponse>('/health', 'Error fetching indexer health');
+    return this.httpClient.get<HealthResponse>('/health', 'Error fetching indexer health', FAST_LOOKUP);
   }
 
   async getTransactionsByHeight(height: number): Promise<TransactionResponse> {
@@ -42,18 +49,23 @@ class SilentPaymentIndexer {
   }
 
   async getLatestBlockHeight(): Promise<LatestBlockHeightResponse> {
-    return this.httpClient.get<LatestBlockHeightResponse>('/silent-block/latest-height', 'Error fetching latest block height');
+    return this.httpClient.get<LatestBlockHeightResponse>('/silent-block/latest-height', 'Error fetching latest block height', FAST_LOOKUP);
   }
 
   async getBlockHeightByTimestamp(timestamp: number): Promise<BlockHeightByTimestampResponse> {
     return this.httpClient.get<BlockHeightByTimestampResponse>(
       `/transactions/timestamp-to-height?timestamp=${timestamp}`,
       `Error fetching block height for timestamp ${timestamp}`,
+      FAST_LOOKUP,
     );
   }
 
   async getTransactionByTxid(txid: string): Promise<TransactionByTxidResponse> {
-    return this.httpClient.get<TransactionByTxidResponse>(`/transactions/txid/${txid}`, `Error fetching transaction by txid ${txid}`);
+    return this.httpClient.get<TransactionByTxidResponse>(
+      `/transactions/txid/${txid}`,
+      `Error fetching transaction by txid ${txid}`,
+      FAST_LOOKUP,
+    );
   }
 
   /**
@@ -68,7 +80,7 @@ class SilentPaymentIndexer {
   async scanForwardWithCallback(
     startHeight: number,
     endHeight: number,
-    processTransactions: (transactions: IndexerTransaction[]) => Promise<number>,
+    processTransactions: RangeProcessedCallback,
     onProgress?: ScanProgressCallback,
     cancelCallback?: () => boolean,
   ): Promise<void> {
@@ -78,7 +90,7 @@ class SilentPaymentIndexer {
   private async scanBlocks(
     startHeight: number,
     endHeight: number,
-    onRangeProcessed?: (transactions: IndexerTransaction[]) => Promise<number>,
+    onRangeProcessed?: RangeProcessedCallback,
     onProgress?: ScanProgressCallback,
     cancelCallback?: () => boolean,
   ): Promise<void> {
@@ -95,32 +107,31 @@ class SilentPaymentIndexer {
       const rangeEnd = Math.min(rangeStart + RANGE_BATCH_SIZE - 1, endHeight);
       const rangeSize = rangeEnd - rangeStart + 1;
 
+      let response: TransactionResponse;
       try {
-        const response = await this.getTransactionsByRange(rangeStart, rangeEnd);
-
-        if (response.transactions.length > 0 && onRangeProcessed) {
-          const foundInRange = await onRangeProcessed(response.transactions);
-
-          utxosFound += foundInRange;
-        }
-
-        blocksScanned += rangeSize;
-
-        if (onProgress) {
-          await onProgress({
-            currentBlock: rangeEnd,
-            tipHeight: endHeight,
-            totalBlocks,
-            blocksScanned,
-            percentComplete: (blocksScanned / totalBlocks) * 100,
-            utxosFound,
-          });
-        }
+        response = await this.getTransactionsByRange(rangeStart, rangeEnd);
       } catch (error: any) {
-        if (error?.message === 'SCAN_CANCELLED') {
-          throw error;
-        }
-        console.error(`[Indexer] ✗ Failed to fetch range ${rangeStart}-${rangeEnd}:`, error);
+        // abort instead of logging, or else this will flood the log with errors when indexer is down.
+        // only the fetch is wrapped: a bug in the caller's callbacks must not masquerade as a fetch failure.
+        throw new Error(`Failed to fetch range ${rangeStart}-${rangeEnd}: ${error?.message ?? error}`);
+      }
+
+      // called for empty ranges too, so the caller can advance its scan watermark past them
+      if (onRangeProcessed) {
+        utxosFound += await onRangeProcessed(response.transactions, rangeEnd);
+      }
+
+      blocksScanned += rangeSize;
+
+      if (onProgress) {
+        await onProgress({
+          currentBlock: rangeEnd,
+          tipHeight: endHeight,
+          totalBlocks,
+          blocksScanned,
+          percentComplete: (blocksScanned / totalBlocks) * 100,
+          utxosFound,
+        });
       }
     }
   }
