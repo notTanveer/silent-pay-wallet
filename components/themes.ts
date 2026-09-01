@@ -140,9 +140,10 @@ const tokens = {
   // states, so a tweak to the amber caution surface must not silently restyle the error banner.
   surfaceError: pair('#FDFBF5', palette.brown900), // scan-error banner background
   iconCaution: same('#F1AF63'), // caution banner icon (warm amber)
-  segmentTrack: same('#F8F8FA'), // pill toggle track background
-  segmentSelectedBorder: same('#CFCFCF'), // selected pill border
-  qrCardBg: same('#F9FAFB'), // QR code card background
+  segmentTrack: pair('#FDFCFE', '#0E0E16'), // pill toggle track background
+  segmentTrackBorder: pair(palette.violet100, '#25253A'), // pill toggle track border
+  segmentSelectedBorder: pair(palette.violet100, '#3D3D3D'), // selected pill border
+  segmentSelectedBackground: pair(palette.white, palette.slate890), // selected pill fill, lighter than segmentTrack
   copyHint: same(palette.gray450), // "tap to copy" icon + label
   progressTrack: pair('#EAECF0', palette.violet920),
   // Hairline rim on the filled brand button; in dark the design draws it in the brand color itself.
@@ -156,6 +157,8 @@ const tokens = {
   textMuted: pair('#7B7A7E', palette.slate400), // card row labels
   textEmphasis: pair(palette.black, palette.gray75), // large display numerals (sync percentage)
   chevron: pair(palette.gray375, palette.slate400), // disclosure chevron
+  textBright: pair('#1A1A1A', '#E5E5E5'), // selected tab label, address text — stays crisp in dark mode instead of collapsing like textPrimary
+  segmentLabelInactive: pair(palette.gray480, palette.slate400), // unselected pill segment label
   white: same(palette.white),
   black: same(palette.black), // legacy pure black; text sites should migrate to textEmphasis
   // SyncStatusIcon per-status ring/fill tints (glyph color = brandPrimary / status* above)
@@ -249,8 +252,10 @@ export const ShroudDefaultTheme = {
 
 export type Theme = typeof ShroudDefaultTheme;
 
-// Dark spreads the RN base + RN dark reserved keys first, then our dark values on top,
-// exactly reproducing the previous inheritance order (e.g. `primary` stays RN's dark blue).
+// Dark spreads the RN base + RN dark reserved keys first, then our dark values on top, so our
+// tokens (e.g. `primary`, always violet600) win over RN's own dark-scheme defaults for every key
+// we define. RN's reserved `text`/`border`/`notification` aren't in `tokens` and still fall
+// through to DarkTheme.colors, but nothing in the app currently reads them.
 export const ShroudDarkTheme: Theme = {
   ...DarkTheme,
   closeImage: require('../img/close-white.png'),

@@ -1,12 +1,11 @@
 import Clipboard from '@react-native-clipboard/clipboard';
 import React, { useCallback, useRef } from 'react';
-import { ImageSourcePropType, Platform, StyleSheet, View } from 'react-native';
+import { ImageSourcePropType, Platform, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import Share from 'react-native-share';
 
 import loc from '../loc';
 import { ActionIcons } from '../typings/ActionIcons';
-import { useTheme } from './themes';
 import ToolTipMenu from './TooltipMenu';
 import { Action } from './types';
 
@@ -21,8 +20,6 @@ interface QRCodeComponentProps {
   logoBackgroundColor?: string;
   logoBorderRadius?: number;
 }
-
-const BORDER_WIDTH = 6;
 
 const actionIcons: { [key: string]: ActionIcons } = {
   Share: {
@@ -67,10 +64,16 @@ const QRCodeComponent: React.FC<QRCodeComponentProps> = ({
   logoBackgroundColor,
   logoBorderRadius,
 }) => {
-  const qrCode = useRef<any>();
-  const { dark } = useTheme();
+  const qrCode = useRef<{ toDataURL: (callback: (data: string) => void) => void } | null>(null);
+  // getRef is a plain ref (react-native-qrcode-svg forwards it to `ref={getRef}` on the
+  // underlying SVG), so an inline function here would be torn down and reattached on every
+  // render — this memoizes it, matching what DynamicQRCode's 500ms re-render cycle needs.
+  const setQrCodeRef = useCallback((c: { toDataURL: (callback: (data: string) => void) => void } | null) => {
+    qrCode.current = c;
+  }, []);
 
   const handleShareQRCode = () => {
+    if (!qrCode.current) return;
     qrCode.current.toDataURL((data: string) => {
       data = data.replace(/(\r\n|\n|\r)/gm, '');
       const shareImageBase64 = {
@@ -84,24 +87,20 @@ const QRCodeComponent: React.FC<QRCodeComponentProps> = ({
     if (id === actionKeys.Share) {
       handleShareQRCode();
     } else if (id === actionKeys.Copy) {
+      if (!qrCode.current) return;
       qrCode.current.toDataURL(Clipboard.setImage);
     }
   }, []);
 
-  // Adjust the size of the QR code to account for the border width
-  const newSize = dark ? size - BORDER_WIDTH * 2 : size;
-  const stylesHook = StyleSheet.create({
-    container: { borderWidth: dark ? BORDER_WIDTH : 0 },
-  });
-
   const renderQRCode = (
     <QRCode
       value={value}
-      size={newSize}
+      size={size}
       color="#000000"
       backgroundColor="#FFFFFF"
+      quietZone={Math.round(size * 0.08)}
       ecl={ecl}
-      getRef={(c: any) => (qrCode.current = c)}
+      getRef={setQrCodeRef}
       onError={onError}
       {...(logo ? { logo, logoSize, logoBackgroundColor, logoBorderRadius } : {})}
     />
@@ -109,7 +108,6 @@ const QRCodeComponent: React.FC<QRCodeComponentProps> = ({
 
   return (
     <View
-      style={[styles.container, stylesHook.container]}
       testID="BitcoinAddressQRCodeContainer"
       accessibilityIgnoresInvertColors
       importantForAccessibility="no-hide-descendants"
@@ -128,7 +126,3 @@ const QRCodeComponent: React.FC<QRCodeComponentProps> = ({
 };
 
 export default QRCodeComponent;
-
-const styles = StyleSheet.create({
-  container: { borderColor: '#FFFFFF' },
-});

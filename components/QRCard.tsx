@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ImageSourcePropType, StyleSheet, View } from 'react-native';
 
 import QRCodeComponent from './QRCodeComponent';
 import { useTheme } from './themes';
@@ -7,21 +7,23 @@ import { useTheme } from './themes';
 interface QRCardProps {
   value: string;
   size: number;
+  logo?: ImageSourcePropType;
+  isMenuAvailable?: boolean;
+  ecl?: 'H' | 'Q' | 'M' | 'L';
+  onError?: () => void;
 }
 
-const logo = require('../img/logo.png');
-
-const QRCard: React.FC<QRCardProps> = ({ value, size }) => {
+const QRCard: React.FC<QRCardProps> = ({ value, size, logo, isMenuAvailable, ecl, onError }) => {
   const { colors } = useTheme();
   return (
-    <View style={[styles.card, { backgroundColor: colors.qrCardBg }]}>
+    <View style={[styles.card, { backgroundColor: colors.surfaceSubtle }]}>
       <QRCodeComponent
         value={value}
         size={size}
-        logo={logo}
-        logoSize={size * 0.19}
-        logoBackgroundColor={colors.white}
-        logoBorderRadius={12}
+        isMenuAvailable={isMenuAvailable}
+        ecl={ecl}
+        onError={onError}
+        {...(logo ? { logo, logoSize: size * 0.19, logoBackgroundColor: colors.white, logoBorderRadius: 12 } : {})}
       />
     </View>
   );

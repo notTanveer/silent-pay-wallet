@@ -53,8 +53,8 @@
         "address_not_found": "Unable to generate receiving address.",
         "header": "Receive",
         "qrcode_for_the_address": "QR Code for the address",
-        "address_reuse_warning": "For better privacy, use a new address for each payment. Reusing this one can link your transactions together.",
-        "address_reuse_warning_emphasis": "use a new address for each payment"
+        "standard_address_notice": "This is a standard Bitcoin address. For better privacy, use the Silent Payments tab instead.",
+        "standard_address_notice_emphasis": "Silent Payments tab instead"
     },
     "send": {
         "broadcastButton": "Broadcast",
@@ -390,7 +390,8 @@
     "bip352": {
         "silent_payments": "Silent Payments",
         "not_supported": "Silent Payments not supported by this wallet",
-        "explanation": "Silent Payment addresses are reusable. Share one address for multiple payments without compromising privacy."
+        "explanation": "Silent Payment addresses are reusable. Share one address for multiple payments without compromising privacy.",
+        "explanation_emphasis": "without compromising privacy"
     },
     "onboarding": {
         "shroud": "Shroud",

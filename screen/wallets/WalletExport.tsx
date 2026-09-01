@@ -7,7 +7,8 @@ import { useScreenProtect } from '../../hooks/useScreenProtect';
 import { validateMnemonic } from '../../modules/bip39';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import { ShroudText } from '../../ShroudComponents';
-import QRCodeComponent from '../../components/QRCodeComponent';
+import { computeResponsiveQRSize } from '../../helpers/computeResponsiveQRSize';
+import QRCard from '../../components/QRCard';
 import SeedWords from '../../components/SeedWords';
 import { useTheme } from '../../components/themes';
 import { useSettings } from '../../hooks/context/useSettings';
@@ -98,19 +99,17 @@ const WalletExport: React.FC = () => {
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     const { height, width } = e.nativeEvent.layout;
-
     const isPortrait = height > width;
     const maxQRSize = 400;
 
-    if (isPortrait) {
-      const heightBasedSize = Math.min(height * 0.5, maxQRSize);
-      const widthBasedSize = width * 0.75 - HORIZONTAL_PADDING * 2;
-      setQRCodeSize(Math.min(heightBasedSize, widthBasedSize));
-    } else {
-      const heightBasedSize = Math.min(height * 0.6, maxQRSize);
-      const widthBasedSize = width * 0.35;
-      setQRCodeSize(Math.min(heightBasedSize, widthBasedSize));
-    }
+    const size = isPortrait
+      ? computeResponsiveQRSize(
+          { height, width },
+          { heightRatio: 0.5, widthRatio: 0.75, maxSize: maxQRSize, horizontalPadding: HORIZONTAL_PADDING },
+        )
+      : computeResponsiveQRSize({ height, width }, { heightRatio: 0.6, widthRatio: 0.35, maxSize: maxQRSize });
+
+    setQRCodeSize(size);
   }, []);
 
   const handleCopy = useCallback(() => {
@@ -135,9 +134,7 @@ const WalletExport: React.FC = () => {
 
       <ShroudText style={styles.scanText}>{loc.wallets.scan_import}</ShroudText>
 
-      <View style={styles.qrCodeContainer}>
-        <QRCodeComponent isMenuAvailable={false} value={secret} size={qrCodeSize} />
-      </View>
+      <QRCard value={secret} size={qrCodeSize} isMenuAvailable={false} />
 
       {/* Do not allow to copy mnemonic */}
       {secretIsMnemonic ? (
@@ -217,11 +214,6 @@ const styles = StyleSheet.create({
   },
   copyText: {
     fontSize: 17,
-  },
-  qrCodeContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
   },
   pressed: {
     opacity: 0.6,

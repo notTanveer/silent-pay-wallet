@@ -7,6 +7,7 @@ import * as Electrum from '../../modules/Electrum';
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import { ShroudText } from '../../ShroudComponents';
 import DeeplinkSchemaMatch from '../../class/deeplink-schema-match';
+import { computeResponsiveQRSize } from '../../helpers/computeResponsiveQRSize';
 import AddressCopyCard from '../../components/AddressCopyCard';
 import presentAlert from '../../components/Alert';
 import ShareIcon from '../../components/icons/ShareIcon';
@@ -28,6 +29,7 @@ import { ClashFont } from '../../constants/fonts';
 
 const segmentControlValues = [loc.bip352.silent_payments, loc.wallets.details_address];
 const HORIZONTAL_PADDING = 24;
+const qrLogo = require('../../img/logo.png');
 
 type StickyHeaderProps = {
   wallet: any;
@@ -261,10 +263,12 @@ const ReceiveDetails = () => {
 
   const onLayout = useCallback((e: { nativeEvent: { layout: { height: number; width: number } } }) => {
     const { height, width } = e.nativeEvent.layout;
-    const maxQRSize = 500;
-    const heightBasedSize = Math.min(height * 0.6, maxQRSize);
-    const widthBasedSize = width * 0.85 - HORIZONTAL_PADDING * 2;
-    setQRCodeSize(Math.min(heightBasedSize, widthBasedSize));
+    setQRCodeSize(
+      computeResponsiveQRSize(
+        { height, width },
+        { heightRatio: 0.6, widthRatio: 0.85, maxSize: 500, horizontalPadding: HORIZONTAL_PADDING },
+      ),
+    );
   }, []);
 
   const renderTabContent = () => {
@@ -274,11 +278,11 @@ const ReceiveDetails = () => {
           {address && (
             <View style={styles.addressBody}>
               <InfoBanner
-                text={loc.receive.address_reuse_warning}
-                emphasis={loc.receive.address_reuse_warning_emphasis}
+                text={loc.receive.standard_address_notice}
+                emphasis={loc.receive.standard_address_notice_emphasis}
                 variant="caution"
               />
-              <QRCard value={bip21encoded} size={qrCodeSize} />
+              <QRCard value={bip21encoded} size={qrCodeSize} logo={qrLogo} />
               <AddressCopyCard text={address} />
             </View>
           )}
@@ -289,8 +293,8 @@ const ReceiveDetails = () => {
         <View style={styles.container}>
           {spAddress ? (
             <View style={styles.addressBody}>
-              <InfoBanner text={loc.bip352.explanation} emphasis="without compromising privacy" />
-              <QRCard value={spAddress} size={qrCodeSize} />
+              <InfoBanner text={loc.bip352.explanation} emphasis={loc.bip352.explanation_emphasis} />
+              <QRCard value={spAddress} size={qrCodeSize} logo={qrLogo} />
               <AddressCopyCard text={spAddress} />
             </View>
           ) : (
@@ -381,7 +385,7 @@ const ReceiveDetails = () => {
             android_ripple={{ color: colors.androidRippleColor }}
             style={({ pressed }) => [
               styles.shareButton,
-              { backgroundColor: shareDisabled ? colors.buttonDisabledBackgroundColor : colors.brandPrimary },
+              { backgroundColor: shareDisabled ? colors.buttonDisabledBackgroundColor : colors.primary },
               pressed && !shareDisabled ? styles.sharePressed : null,
             ]}
           >
