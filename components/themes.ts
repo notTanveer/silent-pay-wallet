@@ -179,7 +179,7 @@ const tokens = {
   scanBtnBorderColor: pair(palette.violet100, '#241F3B'),
   settingsBtnBackground: pair('#F6F7F9', '#141414'),
   settingsBtnIconColor: pair(palette.gray700, '#AAAAAA'),
-  searchIconBackground: pair(palette.white, palette.gray975),
+  searchIconBackground: pair(palette.white, '#0D0D0D'),
   shieldIconBackground: pair('#FAF5FF', palette.violet900),
   shieldIconBorder: pair('#F3E8FF', '#181818'),
   shareAddrBorderColor: pair(palette.violet100, palette.violet500Alpha),
