@@ -57,6 +57,25 @@ describe('BIP-352 Silent Payments', () => {
     expect(silentPaymentAddress).toBe(expectedAddress);
   });
 
+  describe('fromMnemonic', () => {
+    const MNEMONIC = 'zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo glue';
+
+    it("derives at the m/86'/0'/0' class default, not an overridden path", () => {
+      const wallet = HDSilentPaymentsWallet.fromMnemonic(MNEMONIC);
+      expect(wallet.getDerivationPath()).toBe("m/86'/0'/0'");
+    });
+
+    it('produces the same wallet as manually calling setSecret, so both import screens stay in sync', () => {
+      const viaFactory = HDSilentPaymentsWallet.fromMnemonic(MNEMONIC);
+      const viaManualSetup = new HDSilentPaymentsWallet();
+      viaManualSetup.setSecret(MNEMONIC);
+
+      expect(viaFactory.getDerivationPath()).toBe(viaManualSetup.getDerivationPath());
+      expect(viaFactory.getXpub()).toBe(viaManualSetup.getXpub());
+      expect(viaFactory._getExternalAddressByIndex(0)).toBe(viaManualSetup._getExternalAddressByIndex(0));
+    });
+  });
+
   describe('createSPTransaction handles both spend pubkey parities', () => {
     it.each([
       {

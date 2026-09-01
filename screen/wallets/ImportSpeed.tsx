@@ -11,6 +11,7 @@ import { useStorage } from '../../hooks/context/useStorage';
 import { AddWalletStackParamList } from '../../navigation/AddWalletStack';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import { Spacing20 } from '../../components/Spacing';
+import loc from '../../loc';
 
 type NavigationProp = NativeStackNavigationProp<AddWalletStackParamList, 'ImportSpeed'>;
 
@@ -52,11 +53,10 @@ const ImportSpeed = () => {
   const importMnemonic = async () => {
     setLoading(true);
     try {
-      const wallet = new HDSilentPaymentsWallet();
-      wallet.setSecret(importText);
+      const wallet = HDSilentPaymentsWallet.fromMnemonic(importText);
 
       if (!wallet.validateMnemonic()) {
-        throw new Error('Only BIP39 mnemonics for HD Silent Payments wallets are supported.');
+        throw new Error(loc.wallet_birth.error_invalid_mnemonic);
       }
 
       if (passphrase) {

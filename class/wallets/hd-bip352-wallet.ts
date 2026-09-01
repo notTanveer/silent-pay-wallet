@@ -167,6 +167,15 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     }
   }
 
+  // Deliberately does not call setDerivationPath: relies on HDTaprootWallet's class default
+  // (m/86'/0'/0') so every SP wallet built from a mnemonic uses the same path, regardless of
+  // which screen imported it.
+  static fromMnemonic(mnemonic: string): HDSilentPaymentsWallet {
+    const wallet = new HDSilentPaymentsWallet();
+    wallet.setSecret(mnemonic);
+    return wallet;
+  }
+
   static fromJson(obj: string): HDSilentPaymentsWallet {
     const data = JSON.parse(obj);
     const wallet = new HDSilentPaymentsWallet();
