@@ -1,7 +1,8 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
-import { ContactListItem, truncateContactAddress } from '../class/contacts';
+import { ContactListItem } from '../class/contacts';
+import { shortenAddress } from '../utils/transactionHelpers';
 import ContactAvatar from './ContactAvatar';
 import ChevronRightIcon from './icons/ChevronRightIcon';
 import PaperPlaneIcon from './icons/PaperPlaneIcon';
@@ -11,17 +12,21 @@ import loc from '../loc';
 
 type ContactRowProps = {
   contact: ContactListItem;
-  onPress: () => void;
+  // Handlers take the address rather than close over it, so a list can hold one stable callback
+  // per action and let the React.memo below actually skip untouched rows.
+  onPress: (address: string) => void;
   testID: string;
+  /** Spacing is the list's to set: neither variant carries a margin of its own. */
+  style?: StyleProp<ViewStyle>;
 } & (
   | // Bare row that opens the contact, for a screen whose whole job is the list.
   { variant?: 'row' }
   // Bordered card carrying its own pay action, for a list sharing a screen with other content.
-  | { variant: 'card'; onPay: () => void }
+  | { variant: 'card'; onPay: (address: string) => void }
 );
 
 const ContactRow: React.FC<ContactRowProps> = props => {
-  const { contact, onPress, testID } = props;
+  const { contact, onPress, testID, style } = props;
   const { colors } = useTheme();
   const isCard = props.variant === 'card';
 
@@ -33,7 +38,7 @@ const ContactRow: React.FC<ContactRowProps> = props => {
           {contact.name}
         </Text>
         <Text style={[styles.rowAddress, { color: colors.textSecondary }]} numberOfLines={1}>
-          {truncateContactAddress(contact.address)}
+          {shortenAddress(contact.address, 8)}
         </Text>
       </View>
     </>
@@ -41,7 +46,7 @@ const ContactRow: React.FC<ContactRowProps> = props => {
 
   if (props.variant !== 'card') {
     return (
-      <Pressable accessibilityRole="button" style={styles.row} onPress={onPress} testID={testID}>
+      <Pressable accessibilityRole="button" style={[styles.row, style]} onPress={() => onPress(contact.address)} testID={testID}>
         {identity}
         <ChevronRightIcon color={colors.chevron} />
       </Pressable>
@@ -51,8 +56,8 @@ const ContactRow: React.FC<ContactRowProps> = props => {
   return (
     <Pressable
       accessibilityRole="button"
-      style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.transactionCardBorder }]}
-      onPress={onPress}
+      style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.transactionCardBorder }, style]}
+      onPress={() => onPress(contact.address)}
       testID={testID}
     >
       {identity}
@@ -60,7 +65,7 @@ const ContactRow: React.FC<ContactRowProps> = props => {
         accessibilityRole="button"
         accessibilityLabel={`${loc.contacts.pay} ${contact.name}`}
         style={[styles.pay, { backgroundColor: colors.surfaceSubtle, borderColor: colors.borderDefault }]}
-        onPress={props.onPay}
+        onPress={() => props.onPay(contact.address)}
         testID={`${testID}-Pay`}
       >
         <PaperPlaneIcon size={16} color={colors.textBrand} />
@@ -70,10 +75,12 @@ const ContactRow: React.FC<ContactRowProps> = props => {
   );
 };
 
-export default ContactRow;
+// Sits in the same lists as TransactionListItem, which is memoised for the same reason: the
+// screens above it re-render on every keystroke and balance poll.
+export default React.memo(ContactRow);
 
 const styles = StyleSheet.create({
-  // A bare row's vertical rhythm comes from the list's gap, not from padding of its own.
+  // Vertical rhythm comes from the list's gap, not from padding of its own.
   row: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   card: {
     flexDirection: 'row',
@@ -83,8 +90,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 0.5,
     paddingHorizontal: 12,
-    marginHorizontal: 16,
-    marginBottom: 12,
   },
   text: { flex: 1 },
   rowText: { gap: 12 },

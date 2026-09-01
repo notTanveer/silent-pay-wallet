@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { RouteProp, StackActions, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ContactError, MAX_CONTACT_NAME_LENGTH, normalizeAddress, randomContactColorIndex, validateContact } from '../../class/contacts';
+import { ContactError, MAX_CONTACT_NAME_LENGTH, normalizeAddress, randomContactColorIndex } from '../../class/contacts';
 import ActionButton from '../../components/ActionButton';
 import presentAlert from '../../components/Alert';
 import ContactAvatar from '../../components/ContactAvatar';
@@ -12,8 +12,9 @@ import LabeledField from '../../components/LabeledField';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 import { useTheme } from '../../components/themes';
 import CheckmarkIcon from '../../components/icons/CheckmarkIcon';
+import CloseIcon from '../../components/icons/CloseIcon';
 import SaveIcon from '../../components/icons/SaveIcon';
-import UsersRoundIcon from '../../components/icons/UsersRoundIcon';
+import ContactIcon from '../../components/icons/ContactIcon';
 import { ClashFont } from '../../constants/fonts';
 import { useContacts } from '../../hooks/context/useContacts';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
@@ -22,7 +23,10 @@ import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamL
 
 type RouteProps = RouteProp<DetailViewStackParamList, 'ContactEdit'>;
 
-const addressMessage = (errors: ContactError[]): { text: string; ok: boolean } | null => {
+const errorMessage = (errors: ContactError[]): { text: string; ok: boolean } | null => {
+  const nameError = errors.find(e => e.field === 'name');
+  if (nameError?.code === 'too_long') return { text: loc.contacts.name_too_long, ok: false };
+
   const error = errors.find(e => e.field === 'address');
   if (error === undefined) return { text: loc.contacts.address_valid, ok: true };
   if (error.code === 'invalid') return { text: loc.contacts.address_invalid, ok: false };
@@ -37,7 +41,7 @@ const ContactEdit: React.FC = () => {
   const navigation = useExtendedNavigation();
   const insets = useSafeAreaInsets();
   const { params } = useRoute<RouteProps>();
-  const { contacts, getContact, saveContact } = useContacts();
+  const { getContact, saveContact, validate } = useContacts();
 
   const editingAddress = params.mode === 'edit' ? params.address : undefined;
   const existing = editingAddress === undefined ? undefined : getContact(editingAddress);
@@ -51,8 +55,8 @@ const ContactEdit: React.FC = () => {
     navigation.setOptions({ title: params.mode === 'edit' ? loc.contacts.edit_header : loc.contacts.add_header });
   }, [navigation, params.mode]);
 
-  const errors = useMemo(() => validateContact(contacts, { name, address, editingAddress }), [contacts, name, address, editingAddress]);
-  const message = addressMessage(errors);
+  const errors = useMemo(() => validate({ name, address, editingAddress }), [validate, name, address, editingAddress]);
+  const message = errorMessage(errors);
   const canSave = errors.length === 0 && !isSaving;
 
   // Where a save lands depends on how the screen was reached. Kept out of onSave so the save
@@ -88,7 +92,7 @@ const ContactEdit: React.FC = () => {
       <View style={styles.avatar}>
         {name.trim().length === 0 ? (
           <View style={[styles.avatarPlaceholder, { backgroundColor: colors.fieldBackground }]} testID="ContactAvatarPlaceholder">
-            <UsersRoundIcon size={32} color={colors.brandPrimary} />
+            <ContactIcon size={32} color={colors.brandPrimary} />
           </View>
         ) : (
           <ContactAvatar name={name} colorIndex={colorIndex} size={72} borderRadius={24} />
@@ -119,8 +123,12 @@ const ContactEdit: React.FC = () => {
           </LabeledField>
           {message !== null && (
             <View style={styles.message} testID="ContactAddressMessage">
-              {message.ok && <CheckmarkIcon size={24} color={colors.statusSuccess} />}
-              <Text style={[styles.messageText, { color: message.ok ? colors.statusSuccess : colors.redText }]}>{message.text}</Text>
+              {message.ok ? (
+                <CheckmarkIcon size={20} color={colors.statusSuccess} variant="filled" />
+              ) : (
+                <CloseIcon size={15} color={colors.statusError} />
+              )}
+              <Text style={[styles.messageText, { color: message.ok ? colors.statusSuccess : colors.statusError }]}>{message.text}</Text>
             </View>
           )}
         </View>
@@ -153,8 +161,8 @@ const styles = StyleSheet.create({
   avatarPlaceholder: { width: 72, height: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   form: { marginTop: 24, gap: 12 },
   addressBlock: { gap: 4 },
-  message: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  messageText: { fontFamily: ClashFont.regular, fontSize: 14, lineHeight: 22 },
+  message: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  messageText: { fontFamily: ClashFont.regular, fontSize: 14, lineHeight: 20 },
   spacer: { flex: 1 },
   footer: { paddingTop: 32 },
 });

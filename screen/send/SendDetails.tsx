@@ -28,7 +28,7 @@ import { BottomModalHandle } from '../../components/BottomModal';
 import FieldTextInput, { FieldAddressInput } from '../../components/FieldTextInput';
 import LabeledField from '../../components/LabeledField';
 import SafeArea from '../../components/SafeArea';
-import { caretProps, shadowSm, useTheme } from '../../components/themes';
+import { shadowSm, useTheme } from '../../components/themes';
 import { Action } from '../../components/types';
 import { ClashFont } from '../../constants/fonts';
 import { isAmountEmpty, sanitizeAmountInput, displayAmountForUnit, feeSpeedTierForRate } from '../../helpers/send/format';
@@ -74,9 +74,11 @@ const SendDetails = () => {
   const isTransactionReplaceable = route.params?.isTransactionReplaceable;
   const routeParams = route.params;
   const { colors } = useTheme();
+  const { contactList, getContact } = useContacts();
 
   // state
   const [isLoading, setIsLoading] = useState(false);
+  const contactSheetRef = useRef<BottomModalHandle>(null);
   const [wallet, setWallet] = useState<TWallet | null>(null);
   const { isVisible } = useKeyboard();
   const [addresses, setAddresses] = useState<IPaymentDestinations[]>([{ address: '', key: String(Math.random()), unit: amountUnit }]);
@@ -558,9 +560,6 @@ const SendDetails = () => {
     });
   }, [navigation]);
 
-  const { contactList, getContact } = useContacts();
-  const contactSheetRef = useRef<BottomModalHandle>(null);
-
   // A saved payee is named by the chip above the address; an unsaved one gets the save affordance.
   const contact = getContact(recipient?.address ?? '');
 
@@ -1011,6 +1010,7 @@ const styles = StyleSheet.create({
   contactBtn: {
     width: 32,
     height: 32,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },

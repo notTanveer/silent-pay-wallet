@@ -1,5 +1,5 @@
 import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { ContactListItem, searchContacts } from '../../class/contacts';
 import ContactRow from '../../components/ContactRow';
@@ -22,15 +22,13 @@ const ContactList: React.FC = () => {
 
   const openAdd = useCallback(() => navigation.navigate('ContactEdit', { mode: 'add' }), [navigation]);
 
+  const openDetail = useCallback((address: string) => navigation.navigate('ContactDetail', { address }), [navigation]);
+
+  // Prefixed: WalletsList's card variant carries its own `HomeContact-` ids, and Home stays mounted
+  // underneath this screen, so a bare `Contact-` id would match two different rows.
   const renderItem = useCallback(
-    (p: { item: ContactListItem }) => (
-      <ContactRow
-        contact={p.item}
-        onPress={() => navigation.navigate('ContactDetail', { address: p.item.address })}
-        testID={`Contact-${p.item.address}`}
-      />
-    ),
-    [navigation],
+    (p: { item: ContactListItem }) => <ContactRow contact={p.item} onPress={openDetail} testID={`ContactListContact-${p.item.address}`} />,
+    [openDetail],
   );
 
   const HeaderRight = useMemo(
@@ -55,14 +53,22 @@ const ContactList: React.FC = () => {
   if (contactList.length === 0) {
     return (
       <SafeArea style={styles.root}>
-        <ContactsEmptyState onAdd={openAdd} standalone />
+        <View style={styles.emptyState}>
+          <ContactsEmptyState onAdd={openAdd} bordered={false} />
+        </View>
       </SafeArea>
     );
   }
 
   return (
     <SafeArea style={styles.root}>
-      <SearchField value={query} onChangeText={setQuery} placeholder={loc.contacts.search_placeholder} testID="ContactSearchInput" />
+      <SearchField
+        value={query}
+        onChangeText={setQuery}
+        placeholder={loc.contacts.search_placeholder}
+        style={styles.searchField}
+        testID="ContactSearchInput"
+      />
       <FlatList
         data={results}
         keyExtractor={item => item.address}
@@ -78,6 +84,10 @@ export default ContactList;
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  // This screen *is* the empty state, so it centres the card itself rather than asking the shared
+  // component to nudge itself up out of a list footer's position.
+  emptyState: { flex: 1, justifyContent: 'center', paddingBottom: 96 },
+  searchField: { marginHorizontal: 24, marginTop: 16 },
   add: { width: 40, height: 40, borderRadius: 8, borderWidth: 1.63, alignItems: 'center', justifyContent: 'center' },
   // Rows are bare here, so the 16pt rhythm is the list's to set.
   listContent: { gap: 16, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 24 },

@@ -49,7 +49,9 @@ export type DetailViewStackParamList = {
   DenominationSettings: undefined;
   Contacts: undefined;
   ContactDetail: { address: string };
-  ContactEdit: { mode: 'add' | 'edit'; address?: string };
+  // Discriminated: an 'edit' without an address would render an Edit form that silently inserts
+  // a second contact, because upsertContact would see no editingAddress.
+  ContactEdit: { mode: 'add'; address?: string } | { mode: 'edit'; address: string };
   Tools: undefined;
   PlausibleDeniability: undefined;
   Licensing: undefined;

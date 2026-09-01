@@ -19,9 +19,6 @@
         "enter_amount": "Enter amount",
         "qr_custom_input_button": "Tap 10 times to enter custom input",
         "unlock": "Unlock",
-        "port": "Port",
-        "ssl_port": "SSL Port",
-        "suggested": "Suggested",
         "edit": "Edit"
     },
     "contacts": {
@@ -40,7 +37,9 @@
         "address_valid": "Valid silent payment address",
         "address_invalid": "That doesn't look like a valid address",
         "address_duplicate": "This address is already saved as \"{name}\"",
+    "name_too_long": "Name is too long",
         "save": "Save Contact",
+    "save_short": "Save",
         "settings_subtitle": "Manage Silent payment Contacts",
         "pay": "Pay",
         "reuse_notice": "You can reuse this address as often as you like. Each payment lands at a fresh on-chain address, so no one can link them.",
@@ -48,10 +47,12 @@
         "remove": "Remove Contact",
         "remove_confirm_title": "Remove contact?",
         "remove_confirm_message": "This only removes the contact from this wallet. It does not affect any payments you have already made.",
+    "remove_confirm_action": "Remove",
         "pick_header": "Pick Contacts",
         "save_as_contact": "Save as Contact",
         "saved_to_contacts": "Saved to Contacts",
-        "to_name": "to {name}"
+        "to_name": "to {name}",
+    "invalid_contact": "That contact can't be saved"
     },
     "errors": {
         "broadcast": "Broadcast failed.",

@@ -10,11 +10,11 @@ import loc from '../loc';
 
 interface ContactsEmptyStateProps {
   onAdd: () => void;
-  standalone?: boolean;
+  bordered?: boolean;
 }
 
 // Shown in place of the contact list until the first contact is saved.
-const ContactsEmptyState: React.FC<ContactsEmptyStateProps> = ({ onAdd, standalone = false }) => {
+const ContactsEmptyState: React.FC<ContactsEmptyStateProps> = ({ onAdd, bordered = true }) => {
   const { colors } = useTheme();
 
   return (
@@ -30,7 +30,7 @@ const ContactsEmptyState: React.FC<ContactsEmptyStateProps> = ({ onAdd, standalo
       title={loc.contacts.empty_title}
       subtitle={loc.contacts.empty_subtitle}
       testID="NoContactsMessage"
-      standalone={standalone}
+      bordered={bordered}
     >
       <ActionButton
         title={loc.contacts.empty_cta}

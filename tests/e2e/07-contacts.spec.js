@@ -7,6 +7,7 @@ const ADDR_B = 'sp1qqvchcnrcqpdutxhpf57ptn3wajj0ymqxwzu9g6vj9uxx3wuvlykhyqh99hyh
 // whole react-native module graph into a plain node process.
 const ADDRESS_INVALID = "That doesn't look like a valid address";
 const ADDRESS_VALID = 'Valid silent payment address';
+const REMOVE_CONFIRM = 'Remove';
 
 const returnToHome = async () => {
   for (let i = 0; i < 4; i++) {
@@ -59,7 +60,7 @@ describe('Contacts', () => {
   it('adds the contact and shows it on the home tab', async () => {
     await element(by.id('ContactSaveButton')).tap();
 
-    await waitFor(element(by.id(`Contact-${ADDR_A}`)))
+    await waitFor(element(by.id(`HomeContact-${ADDR_A}`)))
       .toBeVisible()
       .withTimeout(15_000);
     // the empty state replaces the whole list body, so a stale one left behind is a real failure.
@@ -81,11 +82,11 @@ describe('Contacts', () => {
     await expect(element(by.id('ContactAddressInput'))).toBeVisible();
 
     await device.pressBack();
-    await waitForId(`Contact-${ADDR_A}`);
+    await waitForId(`HomeContact-${ADDR_A}`);
   });
 
   it('opens contact detail from the home tab', async () => {
-    await element(by.id(`Contact-${ADDR_A}`)).tap();
+    await element(by.id(`HomeContact-${ADDR_A}`)).tap();
     await waitFor(element(by.id('ContactPayButton')))
       .toBeVisible()
       .withTimeout(15_000);
@@ -154,7 +155,7 @@ describe('Contacts', () => {
 
   it('filters the contact list from settings', async () => {
     await helperAddContact('Zeref', ADDR_B);
-    await waitForId(`Contact-${ADDR_B}`);
+    await waitForId(`HomeContact-${ADDR_B}`);
 
     await element(by.id('SettingsButton')).tap();
     await waitFor(element(by.id('ContactsButton')))
@@ -165,46 +166,46 @@ describe('Contacts', () => {
     await waitFor(element(by.id('ContactSearchInput')))
       .toBeVisible()
       .withTimeout(10_000);
-    await expect(element(by.id(`Contact-${ADDR_A}`))).toBeVisible();
-    await expect(element(by.id(`Contact-${ADDR_B}`))).toBeVisible();
+    await expect(element(by.id(`ContactListContact-${ADDR_A}`))).toBeVisible();
+    await expect(element(by.id(`ContactListContact-${ADDR_B}`))).toBeVisible();
 
     await element(by.id('ContactSearchInput')).replaceText('zer');
-    await waitFor(element(by.id(`Contact-${ADDR_A}`)))
+    await waitFor(element(by.id(`ContactListContact-${ADDR_A}`)))
       .not.toBeVisible()
       .withTimeout(5_000);
-    await expect(element(by.id(`Contact-${ADDR_B}`))).toBeVisible();
+    await expect(element(by.id(`ContactListContact-${ADDR_B}`))).toBeVisible();
 
     await element(by.id('ContactSearchInput')).replaceText('');
-    await waitFor(element(by.id(`Contact-${ADDR_A}`)))
+    await waitFor(element(by.id(`ContactListContact-${ADDR_A}`)))
       .toBeVisible()
       .withTimeout(5_000);
   });
 
   it('removes a contact', async () => {
-    await element(by.id(`Contact-${ADDR_B}`)).tap();
+    await element(by.id(`ContactListContact-${ADDR_B}`)).tap();
     await waitFor(element(by.id('ContactRemoveButton')))
       .toBeVisible()
       .whileElement(by.id('ContactDetailScrollView'))
       .scroll(200, 'down');
     await element(by.id('ContactRemoveButton')).tap();
 
-    await waitFor(element(by.text('Yes')))
+    await waitFor(element(by.text(REMOVE_CONFIRM)))
       .toBeVisible()
       .withTimeout(5_000);
-    await element(by.text('Yes')).tap();
+    await element(by.text(REMOVE_CONFIRM)).tap();
 
-    await waitFor(element(by.id(`Contact-${ADDR_B}`)))
+    await waitFor(element(by.id(`ContactListContact-${ADDR_B}`)))
       .not.toExist()
       .withTimeout(15_000);
-    await expect(element(by.id(`Contact-${ADDR_A}`))).toBeVisible();
+    await expect(element(by.id(`ContactListContact-${ADDR_A}`))).toBeVisible();
   });
 
   // ADDR_B is unsaved again by now, so the send screen offers to save it.
   it('saves an unsaved address as a contact from the send screen', async () => {
     await returnToHome();
     await element(by.id('HomeTab-1')).tap();
-    await waitForId(`Contact-${ADDR_A}`);
-    await element(by.id(`Contact-${ADDR_A}`)).tap();
+    await waitForId(`HomeContact-${ADDR_A}`);
+    await element(by.id(`HomeContact-${ADDR_A}`)).tap();
     await waitFor(element(by.id('ContactPayButton')))
       .toBeVisible()
       .withTimeout(15_000);
@@ -226,7 +227,8 @@ describe('Contacts', () => {
       await element(by.id('SaveContactButton')).tap();
       // already capitalised, so the field's autoCapitalize="words" cannot change what was typed
       await element(by.id('SaveContactNameInput')).typeText('Tanveer');
-      await element(by.id('SaveContactNameInput')).tapReturnKey();
+      // blur cancels now, so committing goes through the button rather than tapping away
+      await element(by.id('SaveContactConfirmButton')).tap();
 
       // the green receipt is deliberately short-lived, so assert what the save leaves behind:
       // the address is now named by the chip, and has no save affordance left to offer
@@ -249,7 +251,7 @@ describe('Contacts', () => {
       .withTimeout(30_000);
 
     await element(by.id('HomeTab-1')).tap();
-    await waitFor(element(by.id(`Contact-${ADDR_A}`)))
+    await waitFor(element(by.id(`HomeContact-${ADDR_A}`)))
       .toBeVisible()
       .withTimeout(15_000);
   });
@@ -258,19 +260,19 @@ describe('Contacts', () => {
   // stale route param. Backing out of the saved contact has to reach home, not the form again.
   it('returns home from a contact whose address was edited', async () => {
     // ADDR_B belongs to Tanveer until removed, and a duplicate address will not save.
-    await element(by.id(`Contact-${ADDR_B}`)).tap();
+    await element(by.id(`HomeContact-${ADDR_B}`)).tap();
     await waitFor(element(by.id('ContactRemoveButton')))
       .toBeVisible()
       .whileElement(by.id('ContactDetailScrollView'))
       .scroll(200, 'down');
     await element(by.id('ContactRemoveButton')).tap();
-    await waitFor(element(by.text('Yes')))
+    await waitFor(element(by.text(REMOVE_CONFIRM)))
       .toBeVisible()
       .withTimeout(5_000);
-    await element(by.text('Yes')).tap();
+    await element(by.text(REMOVE_CONFIRM)).tap();
 
-    await waitForId(`Contact-${ADDR_A}`);
-    await element(by.id(`Contact-${ADDR_A}`)).tap();
+    await waitForId(`HomeContact-${ADDR_A}`);
+    await element(by.id(`HomeContact-${ADDR_A}`)).tap();
     await waitFor(element(by.id('ContactEditButton')))
       .toBeVisible()
       .withTimeout(15_000);

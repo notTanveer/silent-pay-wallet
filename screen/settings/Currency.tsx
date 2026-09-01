@@ -150,7 +150,7 @@ const Currency: React.FC = () => {
 
   return (
     <View style={[styles.flex, { backgroundColor: colors.background }]}>
-      <SearchField value={search} onChangeText={setSearch} placeholder={loc.settings.search_currency} />
+      <SearchField value={search} onChangeText={setSearch} placeholder={loc.settings.search_currency} style={styles.searchField} />
       <View style={[styles.listCard, { backgroundColor: colors.settingsCardBackground, marginBottom: insets.bottom }]}>
         <FlatList
           keyboardShouldPersistTaps="always"
@@ -176,6 +176,10 @@ export default Currency;
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
+  },
+  searchField: {
+    marginHorizontal: 24,
+    marginTop: 16,
   },
   listCard: {
     flex: 1,

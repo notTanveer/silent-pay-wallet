@@ -12,21 +12,18 @@ interface EmptyStateCardProps {
   // The call to action that gets the user out of the empty state.
   children?: React.ReactNode;
   testID?: string;
-  standalone?: boolean;
+  /** Drop the card's fill and outline when the card *is* the screen rather than a list footer. */
+  bordered?: boolean;
 }
 
 // The one empty state in the app: every list that can be empty fills its space with this card,
 // so "no transactions" and "no contacts" differ only in glyph, copy and action.
-const EmptyStateCard: React.FC<EmptyStateCardProps> = ({ icon, title, subtitle, children, testID, standalone = false }) => {
+const EmptyStateCard: React.FC<EmptyStateCardProps> = ({ icon, title, subtitle, children, testID, bordered = true }) => {
   const { colors } = useTheme();
 
   return (
     <View
-      style={[
-        styles.card,
-        !standalone && [styles.bordered, { backgroundColor: colors.cardBackground, borderColor: colors.lightBorder }],
-        standalone && styles.raised,
-      ]}
+      style={[styles.card, bordered && [styles.bordered, { backgroundColor: colors.cardBackground, borderColor: colors.lightBorder }]]}
       testID={testID}
     >
       <View style={styles.icon}>{icon}</View>
@@ -50,7 +47,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   bordered: { borderWidth: 1 },
-  raised: { transform: [{ translateY: -96 }] },
   icon: { marginBottom: 28 },
   title: {
     fontFamily: ClashFont.medium,

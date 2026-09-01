@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { RouteProp, useIsFocused, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,12 +11,12 @@ import ContactAvatar from '../../components/ContactAvatar';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 import { useTheme } from '../../components/themes';
 import { ClashFont } from '../../constants/fonts';
-import confirm from '../../helpers/confirm';
 import { splitForEmphasis } from '../../helpers/emphasis';
 import { useContacts } from '../../hooks/context/useContacts';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import loc from '../../loc';
 import { DetailViewStackParamList } from '../../navigation/DetailViewStackParamList';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import { useSendToAddress } from '../../hooks/useSendToAddress';
 import CopyIcon from '../../components/icons/CopyIcon';
 import EditIcon from '../../components/icons/EditIcon';
@@ -33,6 +33,7 @@ const ContactDetail: React.FC = () => {
   const { params } = useRoute<RouteProps>();
   const { getContact, deleteContact } = useContacts();
   const sendToAddress = useSendToAddress();
+  const [copied, setCopied] = useState(false);
 
   const contact = getContact(params.address);
 
@@ -45,6 +46,12 @@ const ContactDetail: React.FC = () => {
     hasLeft.current = true;
     navigation.goBack();
   }, [contact, isFocused, navigation]);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 1000);
+    return () => clearTimeout(timer);
+  }, [copied]);
 
   const HeaderRight = useMemo(
     () => (
@@ -71,16 +78,36 @@ const ContactDetail: React.FC = () => {
 
   const onPay = () => sendToAddress(params.address);
 
-  const onCopyAddress = () => Clipboard.setString(params.address);
-
-  const onRemove = async () => {
-    if (!(await confirm(loc.contacts.remove_confirm_title, loc.contacts.remove_confirm_message))) return;
-    try {
-      await deleteContact(params.address);
-    } catch (error: any) {
-      presentAlert({ message: error?.message ?? String(error) });
-    }
+  // The copy button tints while it holds, the way DetailRow's does: without any acknowledgement a
+  // tap on the address reads as a no-op.
+  const onCopyAddress = () => {
+    Clipboard.setString(params.address);
+    triggerHapticFeedback(HapticFeedbackTypes.Selection);
+    setCopied(true);
   };
+
+  // helpers/confirm hardcodes a default-styled "Yes", which is neither destructive nor named. Every
+  // other irreversible action in the app spells the verb out — see hooks/useDeleteWallet.
+  const onRemove = () =>
+    presentAlert({
+      title: loc.contacts.remove_confirm_title,
+      message: loc.contacts.remove_confirm_message,
+      buttons: [
+        { text: loc._.cancel, style: 'cancel' },
+        {
+          text: loc.contacts.remove_confirm_action,
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteContact(params.address);
+            } catch (error: any) {
+              presentAlert({ message: error?.message ?? String(error) });
+            }
+          },
+        },
+      ],
+      options: { cancelable: false },
+    });
 
   return (
     <SafeAreaScrollView testID="ContactDetailScrollView" contentContainerStyle={styles.content}>
@@ -107,15 +134,18 @@ const ContactDetail: React.FC = () => {
             <Text style={[styles.label, { color: colors.textPrimary }]}>{loc.contacts.label_address}</Text>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={loc.transactions.details_copy}
+              hitSlop={10}
               onPress={onCopyAddress}
               testID="ContactCopyAddressIconButton"
               style={[styles.copyButton, { backgroundColor: colors.background, borderColor: colors.copyButtonBorder }]}
             >
-              <CopyIcon size={16} color={colors.chevron} />
+              <CopyIcon size={16} color={copied ? colors.brandPrimary : colors.chevron} />
             </Pressable>
           </View>
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={loc.transactions.details_copy}
             onPress={onCopyAddress}
             testID="ContactCopyAddressButton"
             style={[styles.addressBox, { backgroundColor: colors.surfaceSubtle, borderColor: colors.accentSubtle }]}

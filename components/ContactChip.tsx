@@ -1,9 +1,9 @@
 import React from 'react';
 import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
-import { CONTACT_AVATAR_PALETTE, contactInitials } from '../class/contacts';
 import { ClashFont } from '../constants/fonts';
 import loc from '../loc';
+import ContactAvatar from './ContactAvatar';
 import { useTheme } from './themes';
 
 interface ContactChipProps {
@@ -17,13 +17,16 @@ interface ContactChipProps {
 // contact carries everywhere else. Unfilled, so it reads as part of whatever surface holds it.
 const ContactChip: React.FC<ContactChipProps> = ({ name, colorIndex, style, testID }) => {
   const { colors } = useTheme();
-  const tint = CONTACT_AVATAR_PALETTE[colorIndex];
 
   return (
     <View style={[styles.root, { borderColor: colors.contactChipBorder }, style]} testID={testID}>
-      <View style={[styles.avatar, { borderColor: colors.contactChipBorder, backgroundColor: tint.background }]}>
-        <Text style={[styles.initials, { color: tint.text }]}>{contactInitials(name)}</Text>
-      </View>
+      {/* Same avatar as everywhere else, squashed into the chip's 32x22 outline. */}
+      <ContactAvatar
+        name={name}
+        colorIndex={colorIndex}
+        style={[styles.avatar, { borderColor: colors.contactChipBorder }]}
+        textStyle={styles.initials}
+      />
       <Text style={[styles.name, { color: colors.contactChipText }]}>{loc.formatString(loc.contacts.to_name, { name })}</Text>
     </View>
   );
@@ -46,8 +49,6 @@ const styles = StyleSheet.create({
   avatar: {
     width: 32,
     height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
     borderWidth: 1,
     borderRadius: 16,
   },

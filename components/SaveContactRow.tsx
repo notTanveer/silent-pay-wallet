@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { LayoutAnimation, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { isValidContactAddress, MAX_CONTACT_NAME_LENGTH } from '../class/contacts';
@@ -16,55 +16,74 @@ import { useTheme } from './themes';
 
 interface SaveContactRowProps {
   address?: string;
-  saved?: React.ReactNode;
-  pill?: boolean;
+  /** 'row' is the dashed full-width row; 'pill' the tinted button. Matches ContactRow's naming. */
+  variant?: 'row' | 'pill';
 }
 
-const SaveContactRow: React.FC<SaveContactRowProps> = ({ address, saved, pill }) => {
+// The three things this row can be, named. `null` used to mean both "not editing" and "just
+// committed", which is how blur ended up committing and cancelling at the same time.
+type State = { k: 'offer' } | { k: 'editing'; name: string } | { k: 'saved' };
+
+const animate = () => LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+/**
+ * Offers to save a payee the user has just addressed or paid. Renders nothing once the address is
+ * a known contact — naming that contact is the calling screen's job, so both screens read on their
+ * own instead of handing their chip in here.
+ */
+const SaveContactRow: React.FC<SaveContactRowProps> = ({ address, variant = 'row' }) => {
   const { colors } = useTheme();
-  const { getContact, saveContact } = useContacts();
-  const [name, setName] = useState<string | null>(null);
-  const [justSaved, setJustSaved] = useState(false);
+  const { getContact, saveContact, validate } = useContacts();
+  const [state, setState] = useState<State>({ k: 'offer' });
+
+  // A full bech32m decode, and the address changes on every keystroke of the field above.
+  const isPayable = useMemo(() => address !== undefined && isValidContactAddress(address), [address]);
 
   useEffect(() => {
-    setName(null);
-    setJustSaved(false);
+    setState({ k: 'offer' });
   }, [address]);
 
   useEffect(() => {
-    if (!justSaved) return;
+    if (state.k !== 'saved') return;
     const timer = setTimeout(() => {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setJustSaved(false);
+      animate();
+      setState({ k: 'offer' });
     }, 2000);
     return () => clearTimeout(timer);
-  }, [justSaved]);
+  }, [state.k]);
 
   const onSave = useCallback(async () => {
-    const trimmed = name?.trim();
-    if (!address || !trimmed) {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setName(null); // nothing typed — the row goes back to being an offer
+    if (state.k !== 'editing' || address === undefined) return;
+
+    const errors = validate({ name: state.name, address });
+    if (errors.length > 0) {
+      presentAlert({ title: loc.errors.error, message: loc.contacts.invalid_contact });
       return;
     }
 
     try {
-      await saveContact({ name: trimmed, address });
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setName(null);
-      setJustSaved(true);
+      await saveContact({ name: state.name, address });
+      animate();
+      setState({ k: 'saved' });
       triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
     } catch (error: any) {
       presentAlert({ title: loc.errors.error, message: error?.message ?? String(error) });
     }
-  }, [address, name, saveContact]);
+  }, [address, state, saveContact, validate]);
 
   const onOpen = useCallback(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setName('');
+    animate();
+    setState({ k: 'editing', name: '' });
   }, []);
 
-  if (justSaved) {
+  // Blur is a dismissal, not a commit: tapping the address field above to fix a typo must not
+  // save a contact for the payee the user is in the middle of correcting.
+  const onCancel = useCallback(() => {
+    animate();
+    setState({ k: 'offer' });
+  }, []);
+
+  if (state.k === 'saved') {
     return (
       <View
         style={[styles.row, styles.rowSolid, { backgroundColor: colors.contactSavedSurface, borderColor: colors.contactSavedAccent }]}
@@ -78,12 +97,10 @@ const SaveContactRow: React.FC<SaveContactRowProps> = ({ address, saved, pill })
     );
   }
 
-  if (address === undefined || !isValidContactAddress(address) || getContact(address) !== undefined) {
-    return <>{saved}</>;
-  }
+  if (address === undefined || !isPayable || getContact(address) !== undefined) return null;
 
-  if (name === null) {
-    return pill ? (
+  if (state.k === 'offer') {
+    return variant === 'pill' ? (
       <ActionButton
         title={loc.contacts.save_as_contact}
         onPress={onOpen}
@@ -108,6 +125,8 @@ const SaveContactRow: React.FC<SaveContactRowProps> = ({ address, saved, pill })
     );
   }
 
+  const canSave = state.name.trim().length > 0;
+
   return (
     <View style={[styles.row, styles.rowSolid, styles.card, { backgroundColor: colors.surfaceSubtle, borderColor: colors.accentSubtle }]}>
       <View style={styles.cardLabel}>
@@ -120,16 +139,28 @@ const SaveContactRow: React.FC<SaveContactRowProps> = ({ address, saved, pill })
           style={styles.nameInput}
           accessibilityLabel={loc.contacts.label_name}
           placeholder={loc.contacts.name_placeholder}
-          value={name}
-          onChangeText={setName}
-          // return blurs the field, so blur is the only commit path — tapping away commits too
-          onBlur={onSave}
+          value={state.name}
+          onChangeText={name => setState({ k: 'editing', name })}
+          maxLength={MAX_CONTACT_NAME_LENGTH}
+          onBlur={onCancel}
           autoCapitalize="words"
           autoCorrect={false}
-          maxLength={MAX_CONTACT_NAME_LENGTH}
           returnKeyType="done"
+          // Return submits without blurring, so it can't race the blur that cancels.
+          blurOnSubmit={false}
+          onSubmitEditing={onSave}
           testID="SaveContactNameInput"
         />
+        <Pressable
+          accessibilityRole="button"
+          disabled={!canSave}
+          // onPressIn: the input's blur cancels, and on Android it lands before onPress would.
+          onPressIn={onSave}
+          style={[styles.saveButton, { backgroundColor: canSave ? colors.brandPrimary : colors.accentSubtle }]}
+          testID="SaveContactConfirmButton"
+        >
+          <Text style={[styles.saveLabel, { color: canSave ? colors.white : colors.textSecondary }]}>{loc.contacts.save_short}</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -170,6 +201,7 @@ const styles = StyleSheet.create({
   cardRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
   },
   text: {
     flex: 1,
@@ -183,9 +215,22 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   nameInput: {
+    flex: 1,
     fontFamily: ClashFont.regular,
     fontSize: 16,
     lineHeight: 24,
+  },
+  saveButton: {
+    height: 32,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveLabel: {
+    fontFamily: ClashFont.medium,
+    fontSize: 14,
+    lineHeight: 20,
   },
   savedCheck: {
     width: 18,

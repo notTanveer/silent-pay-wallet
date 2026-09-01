@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useEffect, useMemo, useState } from 
 
 import { ShroudApp } from '../../class';
 import {
+  ContactError,
   ContactInput,
   ContactListItem,
   TContact,
@@ -10,15 +11,17 @@ import {
   listContacts,
   removeContact,
   upsertContact,
+  validateContact,
 } from '../../class/contacts';
 import { useStorage } from '../../hooks/context/useStorage';
 
 const shroudApp = ShroudApp.getInstance();
 
 export interface ContactsContextType {
-  contacts: TContacts;
   contactList: ContactListItem[];
   getContact: (address: string) => TContact | undefined;
+  /** The same check saveContact runs, so a form can preview the verdict without holding the map. */
+  validate: (input: ContactInput) => ContactError[];
   saveContact: (input: ContactInput) => Promise<void>;
   deleteContact: (address: string) => Promise<void>;
   resetContacts: () => void;
@@ -36,19 +39,16 @@ export const ContactsProvider = ({ children }: { children: React.ReactNode }) =>
     if (walletsInitialized) setContacts(shroudApp.contacts);
   }, [walletsInitialized]);
 
+  // No rollback on a failed write: ShroudApp.saveToDisk catches everything it hits and alerts from
+  // inside, and StorageProvider hands its body to InteractionManager, which drops the promise.
+  // Awaiting it therefore never rejects, so an optimistic-update-and-revert here would be a safety
+  // net that cannot fire. Keeping the write one-way at least does not claim otherwise.
   const persist = useCallback(
     async (next: TContacts) => {
-      const previous = shroudApp.contacts;
       shroudApp.contacts = next;
       setContacts(next);
-      try {
-        // force=true: the unforced path early-returns when no wallets are loaded.
-        await saveToDisk(true);
-      } catch (error) {
-        shroudApp.contacts = previous;
-        setContacts(previous);
-        throw error;
-      }
+      // force=true: the unforced path early-returns when no wallets are loaded.
+      await saveToDisk(true);
     },
     [saveToDisk],
   );
@@ -70,9 +70,11 @@ export const ContactsProvider = ({ children }: { children: React.ReactNode }) =>
 
   const getContact = useCallback((address: string) => getContactFrom(contacts, address), [contacts]);
 
+  const validate = useCallback((input: ContactInput) => validateContact(contacts, input), [contacts]);
+
   const value: ContactsContextType = useMemo(
-    () => ({ contacts, contactList, getContact, saveContact, deleteContact, resetContacts }),
-    [contacts, contactList, getContact, saveContact, deleteContact, resetContacts],
+    () => ({ contactList, getContact, validate, saveContact, deleteContact, resetContacts }),
+    [contactList, getContact, validate, saveContact, deleteContact, resetContacts],
   );
 
   return <ContactsContext.Provider value={value}>{children}</ContactsContext.Provider>;

@@ -42,7 +42,8 @@ import { ContactListItem } from '../../class/contacts';
 import { useContacts } from '../../hooks/context/useContacts';
 
 // The second section holds whichever tab is selected, so it is named for the role, not the content.
-const WalletsListSections = { WALLET: 'WALLET', LIST: 'LIST' };
+// One section per row type, so the renderer knows what it holds instead of sniffing the value.
+const WalletsListSections = { WALLET: 'WALLET', TRANSACTIONS: 'TRANSACTIONS', CONTACTS: 'CONTACTS' };
 
 enum HomeTab {
   Transactions,
@@ -57,9 +58,6 @@ type SectionData = {
   key: string;
   data: Transaction[] | ContactListItem[] | string[];
 };
-
-// Rows arrive from the section list untyped, and only a contact carries an address.
-const isContactItem = (item: SectionItem): item is ContactListItem => typeof item === 'object' && 'address' in item;
 
 enum ActionTypes {
   SET_LOADING,
@@ -395,18 +393,23 @@ const WalletsList: React.FC = () => {
     [],
   );
 
+  const openContactDetail = useCallback((address: string) => navigation.navigate('ContactDetail', { address }), [navigation]);
+
+  // Prefixed: the Contacts screen tags its own bare rows `ContactListContact-`, and this screen
+  // stays mounted underneath it.
   const renderContactRow = useCallback(
     (item: ContactListItem) => (
       <ContactRow
         key={item.address}
         variant="card"
         contact={item}
-        onPress={() => navigation.navigate('ContactDetail', { address: item.address })}
-        onPay={() => sendToAddress(item.address)}
-        testID={`Contact-${item.address}`}
+        onPress={openContactDetail}
+        onPay={sendToAddress}
+        style={styles.contactCard}
+        testID={`HomeContact-${item.address}`}
       />
     ),
-    [navigation, sendToAddress],
+    [openContactDetail, sendToAddress],
   );
 
   const changeWalletBalanceUnit = useCallback(async () => {
@@ -568,8 +571,10 @@ const WalletsList: React.FC = () => {
       switch (item.section.key) {
         case WalletsListSections.WALLET:
           return sizeClass === SizeClass.Large ? null : renderWalletItem();
-        case WalletsListSections.LIST:
-          return isContactItem(item.item) ? renderContactRow(item.item) : renderTransactionListsRow(item.item as ExtendedTransaction);
+        case WalletsListSections.CONTACTS:
+          return renderContactRow(item.item as ContactListItem);
+        case WalletsListSections.TRANSACTIONS:
+          return renderTransactionListsRow(item.item as ExtendedTransaction);
         default:
           return null;
       }
@@ -584,7 +589,8 @@ const WalletsList: React.FC = () => {
       }
 
       switch (section.section.key) {
-        case WalletsListSections.LIST:
+        case WalletsListSections.TRANSACTIONS:
+        case WalletsListSections.CONTACTS:
           return renderListHeaderComponent();
         default:
           return null;
@@ -643,25 +649,25 @@ const WalletsList: React.FC = () => {
 
   // Contacts are keyed by address so switching tabs can't reuse a transaction's row identity.
   const sectionListKeyExtractor = useCallback(
-    (item: SectionItem, index: number) => (isContactItem(item) ? `contact-${item.address}` : `${item}${index}`),
+    (item: SectionItem, index: number) => (typeof item === 'object' && 'address' in item ? `contact-${item.address}` : `${item}${index}`),
     [],
   );
 
   const refreshProps = isDesktop ? {} : { refreshing: isLoading, onRefresh };
 
   const sections: SectionData[] = useMemo(() => {
-    const listData = activeTab === HomeTab.Contacts ? contactList : dataSource;
+    const list: SectionData =
+      activeTab === HomeTab.Contacts
+        ? { key: WalletsListSections.CONTACTS, data: contactList }
+        : { key: WalletsListSections.TRANSACTIONS, data: dataSource };
 
     // On large screens, only show the list section
     if (sizeClass === SizeClass.Large) {
-      return [{ key: WalletsListSections.LIST, data: listData }];
+      return [list];
     }
 
     // On smaller screens, show both wallet and list
-    return [
-      { key: WalletsListSections.WALLET, data: [WalletsListSections.WALLET] },
-      { key: WalletsListSections.LIST, data: listData },
-    ];
+    return [{ key: WalletsListSections.WALLET, data: [WalletsListSections.WALLET] }, list];
   }, [sizeClass, activeTab, contactList, dataSource]);
 
   return (
@@ -706,6 +712,8 @@ const WalletsList: React.FC = () => {
 export default WalletsList;
 
 const styles = StyleSheet.create({
+  // WalletsList's own gutters: ContactRow carries no margin of its own.
+  contactCard: { marginHorizontal: 16, marginBottom: 12 },
   sectionListContent: {
     flexGrow: 1,
   },

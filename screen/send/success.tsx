@@ -56,17 +56,13 @@ const Success = () => {
 
         <AmountHero amount={amountStr} fiat={fiat} />
 
+        {contact && (
+          <ContactChip name={contact.name} colorIndex={contact.colorIndex} style={styles.contactChip} testID="SuccessContactChip" />
+        )}
+
         {/* The payment is already sent, so leaving for the contact editor would strand the user
-            here forever. The row takes the name on the sheet and settles into the chip instead. */}
-        <SaveContactRow
-          address={recipientAddress}
-          pill
-          saved={
-            contact && (
-              <ContactChip name={contact.name} colorIndex={contact.colorIndex} style={styles.contactChip} testID="SuccessContactChip" />
-            )
-          }
-        />
+            here forever. The row takes the name on the sheet and settles into the chip above. */}
+        <SaveContactRow address={recipientAddress} variant="pill" />
 
         <ActionButton
           title={loc.send.success_done}

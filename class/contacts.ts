@@ -2,15 +2,8 @@ import { SilentPayment } from 'silent-payments';
 
 export const MAX_CONTACT_NAME_LENGTH = 50;
 
-// Fixed tints; deliberately independent of the light/dark theme so a contact keeps one
-// recognisable colour.
-export const CONTACT_AVATAR_PALETTE: ReadonlyArray<{ background: string; text: string }> = [
-  { background: '#D7C9FF', text: '#754CE8' },
-  { background: '#E7F0FA', text: '#3B80F9' },
-  { background: '#F9EFE6', text: '#C35E19' },
-  { background: '#EBF5ED', text: '#65C366' },
-  { background: '#F7E9EF', text: '#AA3F7E' },
-];
+/** How many distinct colour indices a contact may carry. components/ContactAvatar holds the tints. */
+export const CONTACT_COLOR_COUNT = 5;
 
 export type TContact = { name: string; createdAt: number; colorIndex: number };
 
@@ -21,7 +14,7 @@ export type ContactListItem = TContact & { address: string };
 export type ContactInput = { name: string; address: string; editingAddress?: string; colorIndex?: number };
 
 export type ContactError =
-  | { field: 'name'; code: 'empty' }
+  | { field: 'name'; code: 'empty' | 'too_long' }
   | { field: 'address'; code: 'empty' | 'invalid' }
   | { field: 'address'; code: 'duplicate'; conflictName: string };
 
@@ -42,27 +35,26 @@ export class ContactValidationError extends Error {
  */
 export const normalizeAddress = (raw: string): string => raw.trim().toLowerCase();
 
-export const isValidContactAddress = (addr: string): boolean => SilentPayment.isPaymentCodeValid(normalizeAddress(addr));
+/**
+ * The app's one definition of "an address we can pay".
+ *
+ * SilentPayment.isPaymentCodeValid only decodes bech32m and checks the version, so it accepts any
+ * HRP — `tsp1…` and even `lol1…` pass. The transaction builder routes on `sp1` (see
+ * abstract-hd-electrum-wallet's hasSilentPaymentOutput), so anything else would save, prefill the
+ * send screen and then quietly take the non-SP path. Check the prefix here rather than let the two
+ * layers disagree about what is payable.
+ */
+export const isValidContactAddress = (addr: string): boolean => {
+  const normalized = normalizeAddress(addr);
+  return normalized.startsWith('sp1') && SilentPayment.isPaymentCodeValid(normalized);
+};
 
 export const getContact = (contacts: TContacts, address: string): TContact | undefined => contacts[normalizeAddress(address)];
 
 const paletteIndex = (value: unknown): number | undefined =>
-  typeof value === 'number' && Number.isInteger(value) && value >= 0 && value < CONTACT_AVATAR_PALETTE.length ? value : undefined;
+  typeof value === 'number' && Number.isInteger(value) && value >= 0 && value < CONTACT_COLOR_COUNT ? value : undefined;
 
-export const randomContactColorIndex = (): number => Math.floor(Math.random() * CONTACT_AVATAR_PALETTE.length);
-
-/**
- * Derived from the address rather than the name so a rename keeps the colour the user
- * already associates with this contact.
- */
-export const legacyContactColorIndex = (address: string): number => {
-  const normalized = normalizeAddress(address);
-  let hash = 0;
-  for (let i = 0; i < normalized.length; i++) {
-    hash = (hash * 31 + normalized.charCodeAt(i)) % 100000007;
-  }
-  return hash % CONTACT_AVATAR_PALETTE.length;
-};
+export const randomContactColorIndex = (): number => Math.floor(Math.random() * CONTACT_COLOR_COUNT);
 
 /**
  * Both validate and upsert start by trimming the name and normalizing the addresses. Doing it
@@ -79,6 +71,7 @@ export const validateContact = (contacts: TContacts, input: ContactInput): Conta
   const { name, address, editingAddress } = normalizeInput(input);
 
   if (name.length === 0) errors.push({ field: 'name', code: 'empty' });
+  else if (name.length > MAX_CONTACT_NAME_LENGTH) errors.push({ field: 'name', code: 'too_long' });
 
   if (address.length === 0) {
     errors.push({ field: 'address', code: 'empty' });
@@ -133,37 +126,36 @@ export const searchContacts = (list: ContactListItem[], query: string): ContactL
  * Deserializes the `contacts` field of a storage bucket. Buckets written before this feature
  * have no such field, so a missing or malformed value reads as an empty map — that tolerance
  * is the whole migration path for existing installs.
+ *
+ * The key is the primary key and is validated like any other field: an entry the send flow could
+ * not pay is dropped rather than shown as a live contact that upsertContact then refuses to
+ * rename.
  */
-export const readContacts = (bucket: unknown): TContacts => {
-  const raw = (bucket as { contacts?: unknown } | undefined)?.contacts;
+export const readContacts = (raw: unknown): TContacts => {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return {};
 
   const out: TContacts = {};
   for (const [address, value] of Object.entries(raw as Record<string, unknown>)) {
     const record = value as { name?: unknown; createdAt?: unknown; colorIndex?: unknown } | null;
     if (typeof record?.name !== 'string') continue;
+
     const normalized = normalizeAddress(address);
+    if (!isValidContactAddress(normalized)) {
+      console.warn('dropping contact with unpayable address');
+      continue;
+    }
+    // Two keys differing only in case are the same payee; keeping the first is arbitrary, but
+    // silently overwriting is not something to do without a word.
+    if (out[normalized] !== undefined) {
+      console.warn('duplicate contact address after normalization, keeping the first');
+      continue;
+    }
+
     out[normalized] = {
       name: record.name,
       createdAt: typeof record.createdAt === 'number' ? record.createdAt : 0,
-      colorIndex: paletteIndex(record.colorIndex) ?? legacyContactColorIndex(normalized),
+      colorIndex: paletteIndex(record.colorIndex) ?? randomContactColorIndex(),
     };
   }
   return out;
 };
-
-export const contactInitials = (name: string): string =>
-  name
-    .trim()
-    .split(/\s+/)
-    .filter(word => word.length > 0)
-    .slice(0, 2)
-    .map(word => word[0].toUpperCase())
-    .join('');
-
-/**
- * Shortened form for list rows. Deliberately longer than utils/transactionHelpers.ts's
- * shortenAddress (4+4): silent payment addresses share a long common bech32m prefix, so a
- * short preview would make most contacts indistinguishable from one another.
- */
-export const truncateContactAddress = (address: string): string => `${address.slice(0, 8)}…${address.slice(-4)}`;

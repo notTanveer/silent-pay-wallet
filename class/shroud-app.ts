@@ -347,7 +347,7 @@ export class ShroudApp {
       const data: TBucketStorage = JSON.parse(dataRaw);
       if (!data.wallets) return false;
       this.tx_metadata = data.tx_metadata;
-      this.contacts = readContacts(data);
+      this.contacts = readContacts(data.contacts);
       const wallets = data.wallets;
       for (const key of wallets) {
         let parsedWallet: { type?: string } | undefined;

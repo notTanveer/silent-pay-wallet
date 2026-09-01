@@ -1,8 +1,16 @@
 import assert from 'assert';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ShroudApp } from '../../class/shroud-app';
 
 describe('ShroudApp persistence', () => {
+  // Every case builds its own ShroudApp but they all share one `data` key, and the last one
+  // encrypts it. Without this, appending or reordering a case fails it for reasons unrelated to
+  // its own subject.
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+  });
+
   const ADDR_A = 'sp1qqfqnnv8czppwysafq3uwgwvsc638hc8rx3hscuddh0xa2yd746s7xqh6yy9ncjnqhqxazct0fzh98w7lpkm5fvlepqec2yy0sxlq4j6ccc3h6t0g';
 
   it('round-trips tx_metadata through storage', async () => {

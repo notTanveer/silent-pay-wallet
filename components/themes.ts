@@ -74,7 +74,6 @@ const palette = {
   red500: '#EF4444',
   red550: '#B24334',
   red600: '#D0021B',
-  red900: '#2E1A1A',
   red950: '#2E1A1A',
 };
 
@@ -220,16 +219,16 @@ const tokens = {
   sheetBackIcon: pair(palette.gray700, palette.slate400), // bottom-sheet header back chevron
   dashedBorder: pair('#E7E7E7', palette.whiteAlpha08), // "Save as Contact" affordance border (border/default)
   // "to <contact>" chip. Unfilled, so only its border and label need tokens.
-  contactChipBorder: pair('#EAECF0', palette.slate880),
+  contactChipBorder: pair('#EAECF0', palette.whiteAlpha08),
   contactChipText: pair('#344054', palette.gray375),
   // "Saved as <name>" receipt shown in place of the save affordance for a beat after an inline save.
   contactSavedSurface: pair('#EDFBF1', palette.green900),
   contactSavedAccent: pair('#0F7A38', palette.green400), // its border, check and label — one green, three uses
   copyButtonBorder: pair(palette.gray200, palette.gray800), // Confirm copy-button border
   transactionCardBorder: pair(palette.gray200, palette.slate880),
-  searchFieldBorder: pair(palette.gray175, palette.slate880), // SearchField border
+  searchFieldBorder: pair(palette.gray175, palette.slate885), // SearchField border (border/input)
   searchFieldIcon: pair(palette.gray450, palette.slate400), // SearchField magnifier stroke
-  searchFieldPlaceholder: pair('rgba(16, 24, 40, 0.5)', 'rgba(255, 255, 255, 0.5)'), // SearchField hint, primary copy at 50%
+  searchFieldPlaceholder: pair('rgba(16, 24, 40, 0.5)', palette.slate400), // SearchField hint (light: primary copy at 50%; dark: text/muted)
   txIconHaloBorder: pair(palette.violet100, palette.violet850),
   incomingIconBackground: pair('#E7E6F5', '#322361'),
   outgoingIconBackground: pair(palette.gray50, '#161616'),
@@ -267,6 +266,8 @@ const tokens = {
 
   // --- Contact detail tokens ---
   noticeText: pair('#343437', palette.gray375), // reuse-notice banner copy (info card = text/secondary)
+  // Destructive button (spec 8e): unfilled — bg/primary carries it and the red is border + label
+  // only. Light still tints; see the note on aligning it to #FFFFFF / #B24334.
   removeSurface: pair('#FBE1DF', palette.slate950), // Remove Contact button background
   removeBorder: pair('#FFC9C9', palette.red500), // Remove Contact button border
   removeText: pair('#E7000B', palette.red500), // Remove Contact button label + trash glyph
