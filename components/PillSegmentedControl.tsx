@@ -53,7 +53,7 @@ const PillSegmentedControl: React.FC<PillSegmentedControlProps> = ({ values, sel
             styles.pill,
             {
               width: segmentWidth,
-              backgroundColor: colors.background,
+              backgroundColor: colors.segmentSelectedBackground,
               borderColor: colors.segmentSelectedBorder,
               transform: [{ translateX }],
             },
@@ -70,13 +70,7 @@ const PillSegmentedControl: React.FC<PillSegmentedControlProps> = ({ values, sel
         >
           <ShroudText
             numberOfLines={1}
-            style={[
-              styles.label,
-              {
-                color: index === selectedIndex ? colors.textPrimarySoft : colors.textDisabled,
-                fontFamily: ClashFont.medium,
-              },
-            ]}
+            style={[styles.label, { color: index === selectedIndex ? colors.textBright : colors.segmentLabelInactive }]}
           >
             {value}
           </ShroudText>
@@ -118,6 +112,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     lineHeight: 24,
+    fontFamily: ClashFont.medium,
   },
 });
 

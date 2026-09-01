@@ -4,8 +4,9 @@ import { Text } from '@rneui/themed';
 
 import { encodeUR } from '../modules/ur';
 import { BlueCurrentTheme } from '../components/themes';
+import { computeResponsiveQRSize } from '../helpers/computeResponsiveQRSize';
 import loc from '../loc';
-import QRCodeComponent from './QRCodeComponent';
+import QRCard from './QRCard';
 import { Spacing20 } from './Spacing';
 
 interface DynamicQRCodeProps {
@@ -27,12 +28,15 @@ export class DynamicQRCode extends Component<DynamicQRCodeProps, DynamicQRCodeSt
   constructor(props: DynamicQRCodeProps) {
     super(props);
     const { height, width } = Dimensions.get('window');
-    const qrCodeHeight = height > width ? width - 40 : width / 3;
     const qrCodeMaxHeight = 370;
+    const qrCodeHeight =
+      height > width
+        ? computeResponsiveQRSize({ height, width }, { widthRatio: 1, maxSize: qrCodeMaxHeight, horizontalPadding: 20 })
+        : computeResponsiveQRSize({ height, width }, { widthRatio: 1 / 3, maxSize: qrCodeMaxHeight });
     this.state = {
       index: 0,
       total: 0,
-      qrCodeHeight: Math.min(qrCodeHeight, qrCodeMaxHeight),
+      qrCodeHeight,
       intervalHandler: null,
       displayQRCode: true,
     };
@@ -129,15 +133,13 @@ export class DynamicQRCode extends Component<DynamicQRCodeProps, DynamicQRCodeSt
           }}
         >
           {this.state.displayQRCode && (
-            <View style={[animatedQRCodeStyle.qrcodeContainer, { backgroundColor: BlueCurrentTheme.colors.surfaceElevated }]}>
-              <QRCodeComponent
-                value={currentFragment.toUpperCase()}
-                size={this.state.qrCodeHeight}
-                isMenuAvailable={false}
-                ecl="L"
-                onError={this.onError}
-              />
-            </View>
+            <QRCard
+              value={currentFragment.toUpperCase()}
+              size={this.state.qrCodeHeight}
+              isMenuAvailable={false}
+              ecl="L"
+              onError={this.onError}
+            />
           )}
         </TouchableOpacity>
 
@@ -183,12 +185,6 @@ const animatedQRCodeStyle = StyleSheet.create({
     flex: 1,
     flexDirection: 'column',
     alignItems: 'center',
-  },
-  qrcodeContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 22,
-    borderRadius: 16,
   },
   controller: {
     width: '90%',

@@ -64,12 +64,16 @@ const QRCodeComponent: React.FC<QRCodeComponentProps> = ({
   logoBackgroundColor,
   logoBorderRadius,
 }) => {
-  const qrCode = useRef<any>();
-  const setQrCodeRef = useCallback((c: any) => {
+  const qrCode = useRef<{ toDataURL: (callback: (data: string) => void) => void } | null>(null);
+  // getRef is a plain ref (react-native-qrcode-svg forwards it to `ref={getRef}` on the
+  // underlying SVG), so an inline function here would be torn down and reattached on every
+  // render — this memoizes it, matching what DynamicQRCode's 500ms re-render cycle needs.
+  const setQrCodeRef = useCallback((c: { toDataURL: (callback: (data: string) => void) => void } | null) => {
     qrCode.current = c;
   }, []);
 
   const handleShareQRCode = () => {
+    if (!qrCode.current) return;
     qrCode.current.toDataURL((data: string) => {
       data = data.replace(/(\r\n|\n|\r)/gm, '');
       const shareImageBase64 = {
@@ -83,6 +87,7 @@ const QRCodeComponent: React.FC<QRCodeComponentProps> = ({
     if (id === actionKeys.Share) {
       handleShareQRCode();
     } else if (id === actionKeys.Copy) {
+      if (!qrCode.current) return;
       qrCode.current.toDataURL(Clipboard.setImage);
     }
   }, []);
@@ -93,6 +98,7 @@ const QRCodeComponent: React.FC<QRCodeComponentProps> = ({
       size={size}
       color="#000000"
       backgroundColor="#FFFFFF"
+      quietZone={Math.round(size * 0.08)}
       ecl={ecl}
       getRef={setQrCodeRef}
       onError={onError}

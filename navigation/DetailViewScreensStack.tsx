@@ -191,9 +191,6 @@ const DetailViewStackScreensStack = () => {
           statusBarStyle: 'light',
           headerShown: true,
           presentation: 'modal',
-          headerStyle: {
-            backgroundColor: theme.colors.background,
-          },
         })(theme)}
       />
       <DetailViewStack.Screen

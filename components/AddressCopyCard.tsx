@@ -41,9 +41,9 @@ const AddressCopyCard: React.FC<AddressCopyCardProps> = ({ text }) => {
       onPress={onCopy}
       accessibilityRole="button"
       testID="AddressCopyCard"
-      style={[styles.card, { backgroundColor: colors.surfaceElevated }]}
+      style={[styles.card, { backgroundColor: colors.surfaceSubtle }]}
     >
-      <ShroudText testID="AddressValue" style={[styles.address, { color: colors.textPrimarySoft }]}>
+      <ShroudText testID="AddressValue" style={[styles.address, { color: colors.textBright }]}>
         {text}
       </ShroudText>
       <View style={styles.copyRow}>
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   address: {
     fontFamily: ClashFont.regular,
     fontSize: 16,
-    lineHeight: 20,
+    lineHeight: 24,
     textAlign: 'center',
   },
   copyRow: {

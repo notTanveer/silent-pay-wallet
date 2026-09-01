@@ -17,8 +17,8 @@ interface InfoBannerProps {
 const InfoBanner: React.FC<InfoBannerProps> = ({ text, emphasis, variant = 'info', containerStyle }) => {
   const { colors } = useTheme();
   const [before, match, after] = splitForEmphasis(text, emphasis);
-  const backgroundColor = variant === 'caution' ? colors.surfaceCaution : colors.surfaceElevated;
-  const iconColor = variant === 'caution' ? colors.iconCaution : colors.brandPrimaryFixed;
+  const backgroundColor = variant === 'caution' ? colors.surfaceCaution : colors.surfaceSubtle;
+  const iconColor = variant === 'caution' ? colors.iconCaution : colors.primary;
 
   return (
     <View style={[styles.banner, { backgroundColor }, containerStyle]}>
@@ -27,7 +27,7 @@ const InfoBanner: React.FC<InfoBannerProps> = ({ text, emphasis, variant = 'info
       </View>
       <ShroudText style={[styles.text, { color: colors.textSecondary }]}>
         {before}
-        {match ? <ShroudText style={[styles.bold, { color: colors.textPrimary }]}>{match}</ShroudText> : null}
+        {match ? <ShroudText style={[styles.emphasis, { color: colors.textPrimary }]}>{match}</ShroudText> : null}
         {after}
       </ShroudText>
     </View>
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 23,
   },
-  bold: {
+  emphasis: {
     fontFamily: ClashFont.medium,
   },
 });
