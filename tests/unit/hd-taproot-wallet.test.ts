@@ -99,6 +99,38 @@ describe('Taproot HD (BIP86)', () => {
     assert.strictEqual(hd._getInternalAddressByIndex(0), 'bc1p5hgf9g8fy0m7ch20qe58wad632qhauq3t3hvf3gsz6ty54hw804qw24cxg');
   });
 
+  describe('non-ASCII mnemonic wordlists', () => {
+    it('validates a Japanese mnemonic instead of collapsing it to whitespace', () => {
+      const hd = new HDTaprootWallet();
+      hd.setSecret(
+        'あいこくしん　あいこくしん　あいこくしん　あいこくしん　あいこくしん　あいこくしん　あいこくしん　あいこくしん　あいこくしん　あいこくしん　あいこくしん　あおぞら',
+      );
+      assert.strictEqual(hd.validateMnemonic(), true);
+    });
+
+    it('validates a French mnemonic without stripping its accented characters', () => {
+      const hd = new HDTaprootWallet();
+      hd.setSecret('exhaler filou sélectif zèbre jeton minéral féroce effrayer freiner fouiller estime ultrason');
+      assert.strictEqual(hd.validateMnemonic(), true);
+    });
+
+    it('still normalises stray punctuation and whitespace for an English mnemonic', () => {
+      const hd = new HDTaprootWallet();
+      hd.setSecret('  Zoo, zoo,\tzoo\n zoo zoo zoo zoo zoo zoo zoo zoo GLUE  ');
+      assert.strictEqual(hd.validateMnemonic(), true);
+    });
+
+    it('does not let the English partial-word autocomplete corrupt an already-valid Spanish mnemonic', () => {
+      // Spanish "luna" (moon) is an exact 4-letter prefix match for the English wordlist's
+      // "lunar" — without a guard, setSecret's partial-word autocomplete step silently
+      // rewrites it, corrupting an otherwise-valid Spanish mnemonic into an invalid one.
+      const hd = new HDTaprootWallet();
+      hd.setSecret('detalle árido mismo luna bufanda borrar alga duro detalle árido mismo luz');
+      assert.strictEqual(hd.getSecret().includes('lunar'), false);
+      assert.strictEqual(hd.validateMnemonic(), true);
+    });
+  });
+
   it('can createTransaction with a correct feerate', async () => {
     const hd = new HDTaprootWallet();
     hd.setSecret(MNEMONIC);

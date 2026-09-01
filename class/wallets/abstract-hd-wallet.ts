@@ -102,24 +102,34 @@ export class AbstractHDWallet extends AbstractWallet {
     // end SeedQR
 
     this.secret = newSecret.trim().toLowerCase();
-    this.secret = this.secret.replace(/[^a-zA-Z0-9]/g, ' ').replace(/\s+/g, ' ');
+    // Strip only visible ASCII punctuation, leaving anything above the ASCII range
+    // untouched so non-Latin wordlist characters (CJK, accented Latin) survive. The \s+
+    // collapse below already normalises tabs/newlines/Unicode whitespace on its own.
+    // Deliberately not \p{L}/\p{N} (Unicode property escapes): Hermes's regex engine has
+    // broken support for them (facebook/hermes#850, facebook/hermes#1027).
+    this.secret = this.secret.replace(/[\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e]/g, ' ').replace(/\s+/g, ' ');
 
-    // Try to match words to the default bip39 wordlist and complete partial words
-    const wordlist = bip39.wordlists[bip39.getDefaultWordlist()];
-    const lookupMap = wordlist.reduce((map, word) => {
-      const prefix3 = word.substr(0, 3);
-      const prefix4 = word.substr(0, 4);
+    // Try to match words to the default bip39 wordlist and complete partial words. Skipped
+    // when the phrase is already a complete, valid mnemonic in some wordlist — otherwise a
+    // short complete word from another Latin-script wordlist (e.g. Spanish "luna") can
+    // collide with a unique English prefix and get silently rewritten (e.g. to "lunar").
+    if (!bip39custom.validateMnemonic(this.secret)) {
+      const wordlist = bip39.wordlists[bip39.getDefaultWordlist()];
+      const lookupMap = wordlist.reduce((map, word) => {
+        const prefix3 = word.substr(0, 3);
+        const prefix4 = word.substr(0, 4);
 
-      map.set(prefix3, !map.has(prefix3) ? word : false);
-      map.set(prefix4, !map.has(prefix4) ? word : false);
+        map.set(prefix3, !map.has(prefix3) ? word : false);
+        map.set(prefix4, !map.has(prefix4) ? word : false);
 
-      return map;
-    }, new Map<string, string | false>());
+        return map;
+      }, new Map<string, string | false>());
 
-    this.secret = this.secret
-      .split(' ')
-      .map(word => lookupMap.get(word) || word)
-      .join(' ');
+      this.secret = this.secret
+        .split(' ')
+        .map(word => lookupMap.get(word) || word)
+        .join(' ');
+    }
 
     return this;
   }
