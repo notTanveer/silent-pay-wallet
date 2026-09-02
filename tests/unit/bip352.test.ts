@@ -57,6 +57,31 @@ describe('BIP-352 Silent Payments', () => {
     expect(silentPaymentAddress).toBe(expectedAddress);
   });
 
+  describe('derivation path is locked to BIP-86', () => {
+    it("defaults to m/86'/0'/0' via the class's static override", () => {
+      expect(HDSilentPaymentsWallet.derivationPath).toBe("m/86'/0'/0'");
+      expect(new HDSilentPaymentsWallet().getDerivationPath()).toBe(HDSilentPaymentsWallet.derivationPath);
+    });
+
+    it('throws if something tries to change it', () => {
+      const wallet = new HDSilentPaymentsWallet();
+      expect(() => wallet.setDerivationPath("m/84'/0'/0'")).toThrow();
+    });
+  });
+
+  describe('fromMnemonic', () => {
+    const MNEMONIC = 'zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo glue';
+
+    it('derives the canonical BIP-86 address and silent payment address for a known mnemonic', () => {
+      const wallet = HDSilentPaymentsWallet.fromMnemonic(MNEMONIC);
+      // bc1p... independently pinned in hd-taproot-wallet.test.ts for the same mnemonic
+      expect(wallet._getExternalAddressByIndex(0)).toBe('bc1p4mc3hspc535vj2d9qcjmtynllv38u0lvfp8gs8npt64ejgtxszuq6t4ckj');
+      expect(wallet.getSilentPaymentAddress()).toBe(
+        'sp1qqvchcnrcqpdutxhpf57ptn3wajj0ymqxwzu9g6vj9uxx3wuvlykhyqh99hyh33y5593802pzw5rtw040zrw9f8re52tgcwngc5974w5evuufdy0m',
+      );
+    });
+  });
+
   describe('createSPTransaction handles both spend pubkey parities', () => {
     it.each([
       {

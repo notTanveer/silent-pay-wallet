@@ -84,6 +84,7 @@ type RegularOutputMatch = OwnedOutput & { index: number };
 export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannableWallet {
   static readonly type = 'HDSilentPaymentsWallet';
   static readonly typeReadable = 'HD Silent Payments';
+  static readonly derivationPath = "m/86'/0'/0'";
   // @ts-ignore: override
   public readonly type = HDSilentPaymentsWallet.type;
   // @ts-ignore: override
@@ -165,6 +166,19 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     if (this._scanPaused && this._scanResumePromise) {
       await this._scanResumePromise;
     }
+  }
+
+  static fromMnemonic(mnemonic: string, passphrase?: string): HDSilentPaymentsWallet {
+    const wallet = new HDSilentPaymentsWallet();
+    wallet.setSecret(mnemonic);
+    if (passphrase) wallet.setPassphrase(passphrase);
+    return wallet;
+  }
+
+  // SP wallets always derive at the BIP-86 default; moving off it silently changes every
+  // address the wallet has ever shown, so this is a hard error rather than a no-op override.
+  setDerivationPath(path: string): never {
+    throw new Error(`HDSilentPaymentsWallet is locked to ${HDSilentPaymentsWallet.derivationPath}; refusing to set it to ${path}`);
   }
 
   static fromJson(obj: string): HDSilentPaymentsWallet {

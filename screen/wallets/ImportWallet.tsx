@@ -139,11 +139,7 @@ const ImportWallet = () => {
           return;
         }
 
-        // create HDSilentPaymentsWallet with hardcoded m/84'/0'/0' derivation path
-        const wallet = new HDSilentPaymentsWallet();
-        wallet.setSecret(text.trim());
-
-        wallet.setDerivationPath("m/84'/0'/0'");
+        const wallet = HDSilentPaymentsWallet.fromMnemonic(text);
 
         if (!wallet.validateMnemonic()) {
           presentAlert({ title: loc.errors.error, message: loc.wallet_birth.error_invalid_mnemonic });
