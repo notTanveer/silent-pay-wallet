@@ -13,6 +13,8 @@ const WORDLISTS: string[][] = [
   bip39.wordlists.portuguese,
 ];
 
+export const ALL_WORDS = new Set(WORDLISTS.flat());
+
 export function validateMnemonic(mnemonic: string) {
   for (const wordlist of WORDLISTS) {
     const valid = bip39.validateMnemonic(mnemonic, wordlist);
