@@ -102,7 +102,7 @@ describe('unit - ImportWallet', () => {
 
       const [savedWallet] = addAndSaveWallet.mock.calls[0];
       assert.strictEqual(savedWallet.getSecret(), validMnemonic);
-      assert.strictEqual(savedWallet.getDerivationPath(), "m/84'/0'/0'");
+      assert.strictEqual(savedWallet.getDerivationPath(), "m/86'/0'/0'");
     });
   });
 });

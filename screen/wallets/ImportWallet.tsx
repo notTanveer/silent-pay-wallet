@@ -139,7 +139,7 @@ const ImportWallet = () => {
           return;
         }
 
-        const wallet = HDSilentPaymentsWallet.fromMnemonic(text.trim());
+        const wallet = HDSilentPaymentsWallet.fromMnemonic(text);
 
         if (!wallet.validateMnemonic()) {
           presentAlert({ title: loc.errors.error, message: loc.wallet_birth.error_invalid_mnemonic });

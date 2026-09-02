@@ -53,14 +53,11 @@ const ImportSpeed = () => {
   const importMnemonic = async () => {
     setLoading(true);
     try {
-      const wallet = HDSilentPaymentsWallet.fromMnemonic(importText);
+      const wallet = HDSilentPaymentsWallet.fromMnemonic(importText, passphrase || undefined);
 
       if (!wallet.validateMnemonic()) {
-        throw new Error(loc.wallet_birth.error_invalid_mnemonic);
-      }
-
-      if (passphrase) {
-        wallet.setPassphrase(passphrase);
+        presentAlert({ title: loc.errors.error, message: loc.wallet_birth.error_invalid_mnemonic });
+        return;
       }
 
       addAndSaveWallet(wallet);
