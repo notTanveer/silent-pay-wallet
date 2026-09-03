@@ -5,7 +5,7 @@ import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { TOptions } from 'bip21';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Keyboard, LayoutAnimation, ScrollView, StyleSheet, Text, TextInput, Pressable, View } from 'react-native';
+import { Keyboard, LayoutAnimation, ScrollView, StyleSheet, Text, TextInput, Pressable, View } from 'react-native';
 import { SilentPayment } from 'silent-payments';
 import { btcToSatoshi, satoshiToBTC, satoshiToLocalCurrency } from '../../modules/currency';
 import triggerHapticFeedback, { HapticFeedbackTypes, triggerSelectionHapticFeedback } from '../../modules/hapticFeedback';
@@ -22,7 +22,7 @@ import ChevronRightIcon from '../../components/icons/ChevronRightIcon';
 import ScanQRIcon from '../../components/icons/ScanQRIcon';
 import LabeledField from '../../components/LabeledField';
 import SafeArea from '../../components/SafeArea';
-import { useTheme } from '../../components/themes';
+import { caretProps, shadowSm, useTheme } from '../../components/themes';
 import { Action } from '../../components/types';
 import { ClashFont } from '../../constants/fonts';
 import { isAmountEmpty, sanitizeAmountInput, displayAmountForUnit, feeSpeedTierForRate } from '../../helpers/send/format';
@@ -74,7 +74,6 @@ const SendDetails = () => {
   const { isVisible } = useKeyboard();
   const [addresses, setAddresses] = useState<IPaymentDestinations[]>([{ address: '', key: String(Math.random()), unit: amountUnit }]);
   const [networkTransactionFees, setNetworkTransactionFees] = useState(new NetworkTransactionFee(3, 2, 1));
-  const [networkTransactionFeesIsLoading, setNetworkTransactionFeesIsLoading] = useState(false);
   const [customFee, setCustomFee] = useState<string | null>(null);
   const [selectedPresetFeeRate, setSelectedPresetFeeRate] = useState<string | null>(null);
   const [feePrecalc, setFeePrecalc] = useState<IFee>({ current: null, slowFee: null, mediumFee: null, fastestFee: null });
@@ -292,17 +291,13 @@ const SendDetails = () => {
 
     // load fresh fees from servers
 
-    setNetworkTransactionFeesIsLoading(true);
     NetworkTransactionFees.recommendedFees()
       .then(async fees => {
         if (!fees?.fastestFee) return;
         setNetworkTransactionFees(fees);
         await AsyncStorage.setItem(NetworkTransactionFee.StorageKey, JSON.stringify(fees));
       })
-      .catch(e => console.log('loading recommendedFees error', e))
-      .finally(() => {
-        setNetworkTransactionFeesIsLoading(false);
-      });
+      .catch(e => console.log('loading recommendedFees error', e));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // change header and reset state on wallet change
@@ -817,39 +812,28 @@ const SendDetails = () => {
     root: {
       backgroundColor: colors.background,
     },
-    selectLabel: {
-      color: colors.white,
-    },
     fieldInput: { color: colors.textPrimary },
-    scanBtn: { backgroundColor: colors.white, shadowColor: colors.black, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
-    feeSummary: { borderColor: colors.summaryBorder },
+    scanBtn: { backgroundColor: colors.background },
+    feeSummary: { borderColor: colors.accentSubtle, backgroundColor: colors.surfaceSubtle },
+    feeSummaryDisabled: { borderColor: colors.borderDefault, backgroundColor: colors.surfaceBrandSubtle },
     feeSummaryLabel: { color: colors.textSecondary },
-    feeSummaryValue: { color: colors.black },
+    feeSummaryValue: { color: colors.textEmphasis },
+    feeSummaryTextDisabled: { color: colors.textDisabled },
     feeSummaryValueMeta: { color: colors.amountMeta },
   });
 
   const renderCoinsSelected = () => {
-    if (isVisible) return null;
-    if (utxos && utxos?.length > 0) {
-      return (
-        <View style={styles.select}>
-          <CoinsSelected
-            number={utxos.length}
-            onContainerPress={handleCoinControl}
-            onClose={() => {
-              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-              setParams({ utxos: null });
-            }}
-          />
-        </View>
-      );
-    }
-
+    if (isVisible || !utxos?.length) return null;
     return (
       <View style={styles.select}>
-        <View style={styles.selectWrap}>
-          <Text style={[styles.selectLabel, stylesHook.selectLabel]}>{wallet?.getLabel()}</Text>
-        </View>
+        <CoinsSelected
+          number={utxos.length}
+          onContainerPress={handleCoinControl}
+          onClose={() => {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+            setParams({ utxos: null });
+          }}
+        />
       </View>
     );
   };
@@ -871,79 +855,85 @@ const SendDetails = () => {
           isMax={isMaxActive}
         />
 
-        <LabeledField
-          label={loc.send.label_address}
-          tinted={!!recipient?.address}
-          trailing={
-            !recipient?.address ? (
-              <Pressable accessibilityRole="button" onPress={navigateToQRCodeScanner} style={[styles.scanBtn, stylesHook.scanBtn]}>
-                <ScanQRIcon color={colors.brandPrimary} size={20} />
-              </Pressable>
-            ) : undefined
-          }
-        >
-          <TextInput
-            style={[styles.fieldInput, stylesHook.fieldInput, styles.addressFieldInput]}
-            placeholder={loc.send.paste_or_scan}
-            placeholderTextColor={colors.placeholderTextColor}
-            value={recipient?.address}
-            onChangeText={onChangeAddress}
-            editable={isEditable}
-            autoCapitalize="none"
-            autoCorrect={false}
-            multiline
-            underlineColorAndroid="transparent"
-            testID="AddressInput"
-          />
-        </LabeledField>
+        <View style={styles.fieldsGroup}>
+          <View style={styles.fieldsPair}>
+            <LabeledField
+              label={loc.send.label_address}
+              tinted={!!recipient?.address}
+              trailing={
+                !recipient?.address ? (
+                  <Pressable accessibilityRole="button" onPress={navigateToQRCodeScanner} style={[styles.scanBtn, stylesHook.scanBtn]}>
+                    <ScanQRIcon color={colors.brandStrong} size={20} />
+                  </Pressable>
+                ) : undefined
+              }
+            >
+              <TextInput
+                style={[styles.fieldInput, stylesHook.fieldInput, styles.addressFieldInput]}
+                placeholder={loc.send.paste_or_scan}
+                placeholderTextColor={colors.textSecondary}
+                value={recipient?.address}
+                onChangeText={onChangeAddress}
+                editable={isEditable}
+                autoCapitalize="none"
+                autoCorrect={false}
+                multiline
+                {...caretProps(colors)}
+                underlineColorAndroid="transparent"
+                testID="AddressInput"
+              />
+            </LabeledField>
 
-        <LabeledField label={loc.send.label_note}>
-          <TextInput
-            style={[styles.fieldInput, stylesHook.fieldInput]}
-            placeholder={loc.send.note_visible_to_you}
-            placeholderTextColor={colors.placeholderTextColor}
-            value={transactionMemo}
-            onChangeText={setTransactionMemo}
-            editable={!isLoading}
-            underlineColorAndroid="transparent"
-            testID="NoteInput"
-          />
-        </LabeledField>
-
-        <Pressable
-          testID="chooseFee"
-          accessibilityRole="button"
-          onPress={() => {
-            Keyboard.dismiss();
-            navigation.navigate('SelectFee', {
-              networkTransactionFees,
-              feePrecalc,
-              feeRate,
-              feeUnit,
-              walletID: wallet?.getID() || '',
-              customFee,
-            });
-          }}
-          disabled={isLoading || !hasFeeEstimate}
-          style={[styles.feeSummary, stylesHook.feeSummary]}
-        >
-          <View style={[styles.feeSummaryTexts, !hasFeeEstimate && styles.feeSummaryTextsDisabled]}>
-            <Text style={[styles.feeSummaryLabel, stylesHook.feeSummaryLabel]}>{loc.send.network_fee}</Text>
-            {networkTransactionFeesIsLoading ? (
-              <ActivityIndicator style={styles.feeSummaryLoader} />
-            ) : hasFeeEstimate ? (
-              <Text style={[styles.feeSummaryValue, stylesHook.feeSummaryValue]}>
-                {formatFee(feePrecalc.current!)}
-                <Text style={[styles.feeSummaryValueMeta, stylesHook.feeSummaryValueMeta]}>
-                  {` · ${feeRate} ${loc.units.sat_vbyte} ≈ ${feeEtaLabel}`}
-                </Text>
-              </Text>
-            ) : (
-              <Text style={[styles.feeSummaryValue, stylesHook.feeSummaryValue]}>{loc.send.enter_amount_to_estimate}</Text>
-            )}
+            <LabeledField label={loc.send.label_note}>
+              <TextInput
+                style={[styles.fieldInput, stylesHook.fieldInput]}
+                placeholder={loc.send.note_visible_to_you}
+                placeholderTextColor={colors.textSecondary}
+                value={transactionMemo}
+                onChangeText={setTransactionMemo}
+                editable={!isLoading}
+                {...caretProps(colors)}
+                underlineColorAndroid="transparent"
+                testID="NoteInput"
+              />
+            </LabeledField>
           </View>
-          <ChevronRightIcon color={colors.chevron} />
-        </Pressable>
+
+          <Pressable
+            testID="chooseFee"
+            accessibilityRole="button"
+            onPress={() => {
+              Keyboard.dismiss();
+              navigation.navigate('SelectFee', {
+                networkTransactionFees,
+                feePrecalc,
+                feeRate,
+                feeUnit,
+                walletID: wallet?.getID() || '',
+                customFee,
+              });
+            }}
+            disabled={isLoading || !hasFeeEstimate}
+            style={[styles.feeSummary, stylesHook.feeSummary, !hasFeeEstimate && stylesHook.feeSummaryDisabled]}
+          >
+            <View style={styles.feeSummaryTexts}>
+              <Text style={[styles.feeSummaryLabel, hasFeeEstimate ? stylesHook.feeSummaryLabel : stylesHook.feeSummaryTextDisabled]}>
+                {loc.send.network_fee}
+              </Text>
+              {hasFeeEstimate ? (
+                <Text style={[styles.feeSummaryValue, stylesHook.feeSummaryValue]}>
+                  {formatFee(feePrecalc.current!)}
+                  <Text style={[styles.feeSummaryValueMeta, stylesHook.feeSummaryValueMeta]}>
+                    {` · ${feeRate} ${loc.units.sat_vbyte} ≈ ${feeEtaLabel}`}
+                  </Text>
+                </Text>
+              ) : (
+                <Text style={[styles.feeSummaryValue, stylesHook.feeSummaryTextDisabled]}>{loc.send.enter_amount_to_estimate}</Text>
+              )}
+            </View>
+            {hasFeeEstimate && <ChevronRightIcon color={colors.chevron} />}
+          </Pressable>
+        </View>
       </ScrollView>
 
       <DismissKeyboardInputAccessory />
@@ -954,7 +944,7 @@ const SendDetails = () => {
         <Button
           testID="sendNextButton"
           title={loc.send.details_next}
-          backgroundColor={colors.brandPrimary}
+          backgroundColor={colors.brandStrong}
           disabledBackgroundColor={colors.ctaDisabled}
           disabledTextColor={colors.white}
           disabled={!isFormValid || isLoading}
@@ -980,15 +970,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     alignItems: 'center',
   },
-  selectWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 4,
-  },
-  selectLabel: {
-    fontFamily: ClashFont.regular,
-    fontSize: 14,
-  },
   body: {
     flex: 1,
   },
@@ -996,6 +977,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     gap: 24,
+  },
+  fieldsGroup: {
+    gap: 20,
+  },
+  fieldsPair: {
+    gap: 12,
   },
   fieldInput: {
     flex: 1,
@@ -1017,11 +1004,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadowSm,
   },
   feeSummary: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 66,
+    minHeight: 62,
     borderWidth: 1,
     borderRadius: 16,
     paddingHorizontal: 16,
@@ -1030,13 +1018,6 @@ const styles = StyleSheet.create({
   },
   feeSummaryTexts: {
     flex: 1,
-    gap: 2,
-  },
-  feeSummaryTextsDisabled: {
-    opacity: 0.5,
-  },
-  feeSummaryLoader: {
-    alignSelf: 'flex-start',
   },
   feeSummaryLabel: {
     fontFamily: ClashFont.regular,
@@ -1046,10 +1027,10 @@ const styles = StyleSheet.create({
   feeSummaryValue: {
     fontFamily: ClashFont.medium,
     fontSize: 16,
-    lineHeight: 26,
+    lineHeight: 24,
   },
   feeSummaryValueMeta: {
-    fontFamily: ClashFont.medium,
+    fontFamily: ClashFont.regular,
   },
   bottom: {
     paddingHorizontal: 24,

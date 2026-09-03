@@ -1,6 +1,6 @@
 import React, { useRef, useCallback, useReducer, useEffect, useMemo, FC } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Keyboard } from 'react-native';
-import { useTheme, Theme } from '../components/themes';
+import { caretProps, useTheme, Theme } from '../components/themes';
 import loc from '../loc';
 import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { SendDetailsStackParamList } from '../navigation/SendDetailsStackParamList';
@@ -11,6 +11,8 @@ import { satoshiToBTC } from '../modules/currency';
 import { feeSpeedTierForRate, estimateFeeForRate } from '../helpers/send/format';
 import LightningIcon from '../components/icons/LightningIcon';
 import ClockIcon from '../components/icons/ClockIcon';
+import StopwatchIcon from '../components/icons/StopwatchIcon';
+import ChevronRightIcon from '../components/icons/ChevronRightIcon';
 import Button from '../components/Button';
 import SafeArea from '../components/SafeArea';
 
@@ -116,14 +118,18 @@ interface FeeCardProps {
 const FeeCard: FC<FeeCardProps> = ({ label, fee, rate, eta, icon, selected, disabled, onPress, colors }) => {
   const stylesHook = StyleSheet.create({
     card: {
-      backgroundColor: selected ? colors.surfaceSubtle : colors.white,
-      borderColor: selected ? colors.feeCardSelectedBorder : colors.feeCardBorder,
+      backgroundColor: selected ? colors.surfaceSubtle : colors.background,
+      borderColor: selected ? colors.accentSubtle : colors.borderDefault,
     },
-    iconCircle: { backgroundColor: selected ? colors.white : colors.surfaceSubtle },
-    label: { color: colors.black },
-    subtitlePrimary: { color: colors.textPrimary },
+    iconCircle: {
+      backgroundColor: selected ? colors.background : colors.surfaceSubtle,
+      borderWidth: selected ? 1 : 0,
+      borderColor: colors.brandStrong,
+    },
+    label: { color: colors.textEmphasis },
+    subtitlePrimary: { color: colors.textEmphasis },
     subtitleSecondary: { color: colors.textSecondary },
-    eta: { color: selected ? colors.brandPrimary : colors.amountMeta },
+    eta: { color: selected ? colors.textBrand : colors.amountMeta },
   });
 
   return (
@@ -138,7 +144,9 @@ const FeeCard: FC<FeeCardProps> = ({ label, fee, rate, eta, icon, selected, disa
         <Text style={[styles.cardLabel, stylesHook.label]}>{label}</Text>
         <Text style={[styles.cardSubtitle, stylesHook.subtitlePrimary]}>
           {fee != null ? `${satoshiToBTC(fee)} BTC · ` : '— '}
-          <Text style={stylesHook.subtitleSecondary}>{fee != null ? `${rate} ${loc.units.sat_vbyte}` : loc.units.sat_vbyte}</Text>
+          <Text style={[styles.cardSubtitleSecondary, stylesHook.subtitleSecondary]}>
+            {fee != null ? `${rate} ${loc.units.sat_vbyte}` : loc.units.sat_vbyte}
+          </Text>
         </Text>
       </View>
       <Text style={[styles.cardEta, stylesHook.eta]}>{eta}</Text>
@@ -171,16 +179,16 @@ const SelectFeeScreen = () => {
     container: {
       backgroundColor: colors.background,
     },
-    customCard: { backgroundColor: colors.white, borderColor: colors.feeCardBorder },
-    customCardSelected: { backgroundColor: colors.surfaceSubtle, borderColor: colors.feeCardSelectedBorder },
-    customLabel: { color: colors.black },
+    customCard: { backgroundColor: colors.background, borderColor: colors.borderDefault },
+    customCardSelected: { backgroundColor: colors.surfaceSubtle, borderColor: colors.accentSubtle },
+    customLabel: { color: colors.textEmphasis },
     customSubtitle: { color: colors.textSecondary },
-    customInputRow: { backgroundColor: colors.white },
+    customInputRow: { backgroundColor: colors.background },
     satVbyteText: { color: colors.textSecondary },
     customFeeInputColors: { color: colors.textPrimary },
     customEstimateText: { color: colors.textPrimary },
     customEstimateRate: { color: colors.textSecondary },
-    customEstimateEta: { color: colors.brandPrimary },
+    customEstimateEta: { color: colors.textBrand },
   });
 
   useEffect(() => {
@@ -315,9 +323,11 @@ const SelectFeeScreen = () => {
               eta={`~${time}`}
               icon={
                 feeType === NetworkTransactionFeeType.FAST ? (
-                  <LightningIcon size={24} color={colors.brandPrimary} />
+                  <LightningIcon size={24} color={colors.brandStrong} />
+                ) : feeType === NetworkTransactionFeeType.MEDIUM ? (
+                  <StopwatchIcon size={24} color={colors.brandStrong} />
                 ) : (
-                  <ClockIcon size={24} color={colors.brandPrimary} />
+                  <ClockIcon size={24} color={colors.brandStrong} />
                 )
               }
               selected={active}
@@ -338,6 +348,7 @@ const SelectFeeScreen = () => {
                 <Text style={[styles.cardLabel, stylesHook.customLabel]}>{loc.send.fee_custom}</Text>
                 <Text style={[styles.customCardSubtitle, stylesHook.customSubtitle]}>{loc.send.set_your_own_fee_rate}</Text>
               </View>
+              {!state.isCustomFeeSelected && <ChevronRightIcon color={colors.chevron} />}
             </View>
 
             {state.isCustomFeeSelected && (
@@ -345,6 +356,7 @@ const SelectFeeScreen = () => {
                 <TextInput
                   ref={customFeeInputRef}
                   style={[styles.customFeeInput, stylesHook.customFeeInputColors]}
+                  {...caretProps(colors)}
                   keyboardType="numeric"
                   placeholder={loc.send.insert_custom_fee}
                   value={state.customFeeValue}
@@ -367,7 +379,9 @@ const SelectFeeScreen = () => {
               <View style={styles.customEstimateRow}>
                 <Text style={[styles.customEstimateText, stylesHook.customEstimateText]}>
                   {`${satoshiToBTC(customEstimate.fee)} BTC · `}
-                  <Text style={stylesHook.customEstimateRate}>{`${customRateNum} ${loc.units.sat_vbyte}`}</Text>
+                  <Text
+                    style={[styles.customEstimateRate, stylesHook.customEstimateRate]}
+                  >{`${customRateNum} ${loc.units.sat_vbyte}`}</Text>
                 </Text>
                 <Text style={[styles.customEstimateEta, stylesHook.customEstimateEta]}>{`~${customEstimate.eta}`}</Text>
               </View>
@@ -380,7 +394,7 @@ const SelectFeeScreen = () => {
         <Button
           testID="feeNextButton"
           title={loc.send.details_next}
-          backgroundColor={colors.brandPrimary}
+          backgroundColor={colors.brandStrong}
           disabledBackgroundColor={colors.ctaDisabled}
           disabledTextColor={colors.white}
           disabled={isNextDisabled}
@@ -448,6 +462,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
+  cardSubtitleSecondary: {
+    fontFamily: ClashFont.regular,
+  },
   cardEta: {
     fontFamily: ClashFont.medium,
     fontSize: 14,
@@ -501,6 +518,9 @@ const styles = StyleSheet.create({
     fontFamily: ClashFont.medium,
     fontSize: 14,
     lineHeight: 20,
+  },
+  customEstimateRate: {
+    fontFamily: ClashFont.regular,
   },
   customEstimateEta: {
     fontFamily: ClashFont.medium,
