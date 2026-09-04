@@ -10,7 +10,7 @@ interface LabeledFieldProps {
   children: React.ReactNode; // the input element
   trailing?: React.ReactNode; // e.g. a scan button
   testID?: string;
-  /** Tinted variant for the Address field: light purple background + border, 16px radius. */
+  /** Tinted variant for the Address field: light purple background + border. */
   tinted?: boolean;
 }
 
@@ -20,7 +20,7 @@ const LabeledField: React.FC<LabeledFieldProps> = ({ label, children, trailing, 
   const stylesHook = StyleSheet.create({
     label: { color: colors.textSecondary },
     field: tinted
-      ? { backgroundColor: colors.surfaceSubtle, borderWidth: 1, borderColor: colors.accentSubtle, borderRadius: 16 }
+      ? { backgroundColor: colors.surfaceSubtle, borderWidth: 1, borderColor: colors.accentSubtle }
       : { backgroundColor: colors.fieldBackground },
   });
 
@@ -49,10 +49,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 48,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    gap: 10,
+    gap: 8,
   },
   inputWrap: {
     flex: 1,

@@ -9,13 +9,17 @@ import { ThemePreference } from './Context/SettingsProvider';
 const palette = {
   white: '#FFFFFF',
   whiteAlpha08: '#FFFFFF14',
+  whiteAlpha32: '#FFFFFF52',
   black: '#000000',
+  blackAlpha32: '#00000052',
+  blackAlpha40: '#00000066',
 
   gray50: '#F5F5F7',
   gray75: '#F0F0F5',
   gray100: '#EEF0F4',
   gray150: '#EEEEEE',
   gray200: '#E6E4E4',
+  gray200Alpha: '#E6E4E499',
   gray250: '#E5E5EA',
   gray300: '#D2D2D2',
   gray325: '#D1D1D6',
@@ -31,21 +35,26 @@ const palette = {
   gray850: '#313030',
   gray900: '#202020',
   gray925: '#1C1C1E',
+  navy900: '#101828',
   maroon900: '#5A4E4E',
   brown900: '#2E2518',
 
   // Blue-violet tinted neutrals used by the dark scheme (distinct from the pure grays above).
   slate400: '#8888AA',
   slate880: '#25253A',
+  slate885: '#1E1E2E',
   slate890: '#1A1A28',
   slate950: '#0E0E16',
 
+  violet25: '#FDFCFE',
   violet50: '#F6F5FD',
   violet100: '#E6E2FA',
   violet150: '#DCD2F9',
   violet150Alpha: '#DCD2F999',
+  violet175: '#D7C8F7',
   violet200: '#D0C0FAFF',
   violet500: '#8763EB',
+  violet525: '#6B5CE7',
   violet600: '#754CE8',
   violet600Alpha: '#754CE866',
   violet850: '#473F71',
@@ -71,11 +80,9 @@ const palette = {
 // silently inherit its light value in dark mode — the type requires both.
 //   pair(l, d)   different value per scheme
 //   same(v)      deliberately identical in both
-//   lightOnly(v) only a light value exists yet; dark is a TODO (todoDark), tracked for #3
-type ColorToken = { light: string; dark: string; todoDark?: true };
+type ColorToken = { light: string; dark: string };
 const pair = (light: string, dark: string): ColorToken => ({ light, dark });
 const same = (v: string): ColorToken => ({ light: v, dark: v });
-const lightOnly = (v: string): ColorToken => ({ light: v, dark: v, todoDark: true });
 
 // React Navigation's reserved `card` key paints the native header; without it dark headers keep
 // RN's own #121212 and read as a lighter strip above the #0E0E16 screen. It has to track
@@ -156,7 +163,7 @@ const tokens = {
   textMeta: pair('#92929B', palette.slate400), // ETA / "%" meta text
   textMuted: pair('#7B7A7E', palette.slate400), // card row labels
   textEmphasis: pair(palette.black, palette.gray75), // large display numerals (sync percentage)
-  chevron: pair(palette.gray375, palette.slate400), // disclosure chevron
+  chevron: pair(palette.gray480, palette.slate400), // disclosure chevron (icon/secondary)
   textBright: pair('#1A1A1A', '#E5E5E5'), // selected tab label, address text — stays crisp in dark mode instead of collapsing like textPrimary
   segmentLabelInactive: pair(palette.gray480, palette.slate400), // unselected pill segment label
   white: same(palette.white),
@@ -172,7 +179,7 @@ const tokens = {
   // Legacy / existing tokens (keep for compatibility)
   receiveBtnBackground: pair('#EAE4FB', '#110732'),
   bannerBackground: pair(palette.violet50, palette.violet900),
-  payBtnDisabledBackground: pair('#00000052', '#FFFFFF52'),
+  payBtnDisabledBackground: pair(palette.blackAlpha32, palette.whiteAlpha32),
   requestBtnBorderColor: pair(palette.violet600, palette.violet500Alpha),
   bannerBorderColor: pair(palette.violet100, '#2D264F'),
   scanBtnBorderColor: pair(palette.violet100, '#241F3B'),
@@ -183,21 +190,32 @@ const tokens = {
   shieldIconBorder: pair('#F3E8FF', '#181818'),
   shareAddrBorderColor: pair(palette.violet100, palette.violet500Alpha),
   shareAddrBackground: pair('transparent', palette.violet900),
-  cardBackground: pair('#FDFCFE', '#1A1A1A'),
+  cardBackground: pair(palette.violet25, '#1A1A1A'),
 
-  // --- Send redesign tokens. Ones using lightOnly() still need real dark values (see todoDark, #3). ---
-  fieldBackground: pair(palette.gray50, '#1E1E1E'), // Address / Note field background
-  amountMeta: pair('#9B9BA5', '#AEAEB2'), // BTC unit, fiat estimate, slow/medium ETA
-  amountPlaceholder: lightOnly('rgba(0,0,0,0.32)'), // AmountHero empty/placeholder digits
-  scrim: lightOnly('rgba(10, 13, 19, 0.8)'), // Success bottom-sheet backdrop
-  ctaDisabled: lightOnly(palette.gray450), // disabled primary button background
-  feeCardBorder: lightOnly('#E6E6E8'), // unselected fee card border
-  feeCardSelectedBorder: lightOnly('#B9BAF9'), // selected fee card border
-  useMaxBorder: lightOnly('#E8E4FA'), // "Use Max" pill border
-  useMaxText: lightOnly('#6E55E0'), // "Use Max" pill text
+  // --- Send redesign tokens ---
+  fieldBackground: pair(palette.gray50, palette.slate890), // Address / Note field background (bg/secondary)
+  amountMeta: pair(palette.gray480, palette.slate400), // BTC unit, fiat estimate, slow/medium ETA (text/muted)
+  // text/disabled. Dark shares its value with bg/disabled, so the empty 48px "0" and the disabled
+  // fee row sit at 1.17:1 on bg/primary — that is deliberate in the design: the ghost digit is
+  // meant to recede and "Tap amount to edit" carries the affordance.
+  textDisabled: pair(palette.gray375, palette.slate885), // empty amount digits, disabled fee row
+  // shadow/overlay: a flat 40% black scrim in both schemes. In dark the sheet (bg/primary) and the
+  // screen behind it are the same color, so the sheet's edge is carried by its top radius, not contrast.
+  scrim: same(palette.blackAlpha40), // Success bottom-sheet backdrop
+  // surface/brand + icon/brand + border/brand-strong. One value in the dark collection, and
+  // deliberately NOT brandPrimary: retuning the violet500 primitive would move all 49
+  // brandPrimary call sites, several of which are text.
+  brandStrong: pair(palette.violet600, palette.violet525),
+  ctaDisabled: pair(palette.gray480, palette.slate885), // disabled primary button background (bg/disabled)
+  // border/default. Every hairline edge in the send flow is this one token: unselected fee cards,
+  // the "Use Max" pill, Confirm's section dividers, the disabled fee summary card.
+  borderDefault: pair(palette.gray200Alpha, palette.whiteAlpha08),
+  // bg/brand-subtle. Faintest brand tint; the disabled fee summary card fill is its only user today.
+  surfaceBrandSubtle: pair(palette.violet25, palette.slate950),
+  // text/brand. Brand-tinted *text*: "Use Max" pill, amount hints, Confirm total. Distinct from
+  // brandStrong, which fills surfaces — this one has to stay readable *on* the background.
+  textBrand: pair(palette.violet600, palette.violet175),
   copyButtonBorder: pair(palette.gray200, palette.gray800), // Confirm copy-button border
-  divider: pair(palette.gray200, palette.gray850), // Confirm section dividers
-  summaryBorder: pair(palette.gray200, palette.gray850), // SendDetails fee summary card border
   transactionCardBorder: pair(palette.gray200, palette.gray850),
   txIconHaloBorder: pair(palette.violet100, palette.violet850),
   incomingIconBackground: pair('#E7E6F5', '#322361'),
@@ -207,7 +225,7 @@ const tokens = {
   // --- Settings screen tokens ---
   settingsCardBorder: pair('#F0F0F0', '#2C2C2E'),
   settingsCardBackground: pair('#F9F9FB', '#1C1C1E'),
-  settingsRowTitle: pair('#101828', palette.white),
+  settingsRowTitle: pair(palette.navy900, palette.white),
   settingsDescriptionText: pair('#3C3C43', palette.white),
   settingsCheckmark: pair(palette.violet600, palette.violet500), // mirrors brandPrimary's light/dark split for contrast on dark backgrounds
   settingsDenominationIconColor: same(palette.gray600),
@@ -269,6 +287,24 @@ export const ShroudDarkTheme: Theme = {
 
 // Casting theme value to get autocompletion
 export const useTheme = (): Theme => useThemeBase() as Theme;
+
+// shadow/sm from the design system: a hairline lift off the page, not a drop shadow.
+// Not theme-dependent, so it belongs in a static sheet at every call site. Kept here because
+// it was previously reimplemented per-component with different offsets and colors.
+export const shadowSm = {
+  shadowColor: palette.navy900,
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.1,
+  shadowRadius: 3,
+  elevation: 2,
+} as const;
+
+// TextInput caret + selection tint. Spread onto any TextInput so the caret follows the wallet's
+// brand instead of the platform default: <TextInput {...caretProps(colors)} />
+export const caretProps = (colors: Theme['colors']) => ({
+  selectionColor: colors.brandPrimary,
+  cursorColor: colors.brandPrimary,
+});
 
 export const getEffectiveTheme = (themePreference: ThemePreference, colorScheme: ColorSchemeName): Theme => {
   const effectiveScheme = themePreference === 'system' ? colorScheme : themePreference;

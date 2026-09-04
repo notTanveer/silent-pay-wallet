@@ -73,14 +73,13 @@ const Confirm: React.FC = () => {
 
   const stylesHook = StyleSheet.create({
     root: { backgroundColor: colors.background },
-    divider: { backgroundColor: colors.divider },
+    divider: { backgroundColor: colors.borderDefault },
     summaryLabel: { color: colors.amountMeta },
-    summaryValue: { color: colors.black },
-    summaryFiat: { color: colors.chevron },
-    totalRow: { backgroundColor: colors.white },
+    summaryValue: { color: colors.textEmphasis },
+    summaryFiat: { color: colors.amountMeta },
     totalLabel: { color: colors.textPrimary },
-    totalValue: { color: colors.brandPrimary },
-    sendNowButton: { backgroundColor: colors.brandPrimary },
+    totalValue: { color: colors.textBrand },
+    sendNowButton: { backgroundColor: colors.brandStrong },
     sendNowButtonDisabled: { backgroundColor: colors.ctaDisabled },
     sendNowText: { color: colors.white },
   });
@@ -186,7 +185,7 @@ const Confirm: React.FC = () => {
               onCopy={() => copy(recipient?.address ?? '', setCopiedAddr)}
               accessibilityLabel={loc.transactions.details_copy}
             />
-            <View style={styles.lightDivider} />
+            <View style={[styles.divider, stylesHook.divider]} />
 
             <DetailRow
               label={loc.send.transaction_id}
@@ -196,7 +195,7 @@ const Confirm: React.FC = () => {
               onCopy={() => copy(txid, setCopiedTxid)}
               accessibilityLabel={loc.transactions.details_copy_txid}
             />
-            <View style={styles.lightDivider} />
+            <View style={[styles.divider, stylesHook.divider]} />
           </View>
 
           <View>
@@ -207,9 +206,9 @@ const Confirm: React.FC = () => {
                 <Text style={[styles.summaryFiat, stylesHook.summaryFiat]}> ({satoshiToLocalCurrency(feeSatoshi)})</Text>
               </Text>
             </View>
-            <View style={styles.lightDivider} />
+            <View style={[styles.divider, stylesHook.divider]} />
 
-            <View style={[styles.totalRow, stylesHook.totalRow]}>
+            <View style={styles.totalRow}>
               <Text style={[styles.totalLabel, stylesHook.totalLabel]}>{loc.send.total}</Text>
               <Text style={[styles.totalValue, stylesHook.totalValue]}>
                 {satoshiToBTC(totalSats)} {loc.units[BitcoinUnit.BTC]}
@@ -221,7 +220,7 @@ const Confirm: React.FC = () => {
 
       <View style={styles.bottom}>
         {state.isLoading ? (
-          <ActivityIndicator />
+          <ActivityIndicator color={colors.brandStrong} />
         ) : (
           <Pressable
             accessibilityRole="button"
@@ -256,11 +255,6 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     width: '100%',
   },
-  lightDivider: {
-    height: StyleSheet.hairlineWidth,
-    width: '100%',
-    backgroundColor: 'rgba(230, 228, 228, 0.6)',
-  },
   detailsGroup: {
     marginTop: -10,
   },
@@ -292,7 +286,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 8,
-    borderRadius: 12,
   },
   totalLabel: {
     fontFamily: ClashFont.regular,
@@ -300,7 +293,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   totalValue: {
-    fontFamily: ClashFont.semibold,
+    fontFamily: ClashFont.medium,
     fontSize: 14,
     lineHeight: 26,
   },

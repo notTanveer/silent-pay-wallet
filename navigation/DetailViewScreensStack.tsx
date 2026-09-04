@@ -48,12 +48,9 @@ const DetailViewStackScreensStack = () => {
       navigationBarColor: theme.colors.navigationBarColor,
       headerLargeTitle: sizeClass === SizeClass.Compact,
       headerShadowVisible: false,
-      headerStyle: {
-        backgroundColor: theme.colors.background,
-      },
       headerRight: () => (isDesktop ? undefined : RightBarButtons),
     };
-  }, [RightBarButtons, sizeClass, theme.colors.background, theme.colors.navigationBarColor]);
+  }, [RightBarButtons, sizeClass, theme.colors.navigationBarColor]);
 
   // Derive the initial route from the ShroudApp singleton (populated synchronously by
   // startAndDecrypt before walletsInitialized flips) rather than the React `wallets` state,
@@ -77,9 +74,6 @@ const DetailViewStackScreensStack = () => {
         component={TransactionDetails}
         options={navigationStyle({
           statusBarStyle: 'auto',
-          headerStyle: {
-            backgroundColor: theme.colors.background,
-          },
           headerTitle: loc.transactions.details_title,
         })(theme)}
       />

@@ -7,7 +7,7 @@ import loc from '../loc';
 import { BitcoinUnit } from '../models/bitcoinUnits';
 import { isAmountEmpty } from '../helpers/send/format';
 import CheckmarkIcon from './icons/CheckmarkIcon';
-import { useTheme } from './themes';
+import { caretProps, useTheme } from './themes';
 
 interface AmountHeroProps {
   /** BTC amount as a string ('' when empty), or a display string in read-only mode. */
@@ -49,13 +49,14 @@ const AmountHero: React.FC<AmountHeroProps> = ({
   const empty = isAmountEmpty(amount);
 
   const stylesHook = StyleSheet.create({
-    amountFilled: { color: colors.black },
-    amountEmpty: { color: colors.amountPlaceholder },
+    amountFilled: { color: colors.textEmphasis },
+    amountEmpty: { color: colors.textDisabled },
     meta: { color: colors.amountMeta },
-    hint: { color: colors.brandPrimary },
-    sendingMax: { color: colors.brandPrimary },
-    useMax: { backgroundColor: colors.surfaceSubtle, borderColor: colors.useMaxBorder },
-    useMaxText: { color: colors.useMaxText },
+    hint: { color: colors.textBrand },
+    sendingMax: { color: colors.textBrand },
+    // The pill fill is bg/brand whether or not Max is on - only the tick and the label change.
+    useMax: { backgroundColor: colors.surfaceSubtle, borderColor: colors.borderDefault },
+    useMaxText: { color: colors.textBrand },
     unit: { marginBottom: unitMarginBottom },
   });
 
@@ -77,8 +78,9 @@ const AmountHero: React.FC<AmountHeroProps> = ({
             value={amount}
             onChangeText={onChangeAmount}
             placeholder="0"
-            placeholderTextColor={colors.amountPlaceholder}
+            placeholderTextColor={colors.textDisabled}
             keyboardType={keyboardType}
+            {...caretProps(colors)}
             editable={!isMax}
             testID="AmountHeroInput"
           />
@@ -112,7 +114,7 @@ const AmountHero: React.FC<AmountHeroProps> = ({
           style={[styles.useMax, stylesHook.useMax, useMaxDisabled && styles.useMaxDisabled]}
           testID="UseMaxButton"
         >
-          {isMax && <CheckmarkIcon color={colors.brandPrimary} size={16} />}
+          {isMax && <CheckmarkIcon color={colors.brandStrong} size={16} />}
           <ShroudText style={[styles.useMaxText, stylesHook.useMaxText]}>{isMax ? loc.send.max_active : loc.send.max}</ShroudText>
         </Pressable>
       )}
@@ -152,7 +154,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   hint: {
-    fontFamily: ClashFont.regular,
+    fontFamily: ClashFont.medium,
     fontSize: 12,
     lineHeight: 22,
     textAlign: 'center',

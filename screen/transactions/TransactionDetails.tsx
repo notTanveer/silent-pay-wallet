@@ -72,7 +72,7 @@ const TransactionDetails = () => {
       backgroundColor: colors.fieldBackground,
       color: colors.textPrimary,
     },
-    divider: { backgroundColor: colors.divider },
+    divider: { backgroundColor: colors.borderDefault },
     summaryTitle: { color: colors.textPrimary },
     summaryTitleSecondary: { color: colors.textSecondary },
     summaryValueConfirmations: { color: colors.brandPrimary },
