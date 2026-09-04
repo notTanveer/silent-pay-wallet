@@ -8,10 +8,10 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import ActionButton from '../../components/ActionButton';
 import presentAlert from '../../components/Alert';
 import ContactAvatar from '../../components/ContactAvatar';
+import InfoBanner from '../../components/InfoBanner';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 import { useTheme } from '../../components/themes';
 import { ClashFont } from '../../constants/fonts';
-import { splitForEmphasis } from '../../helpers/emphasis';
 import { useContacts } from '../../hooks/context/useContacts';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import loc from '../../loc';
@@ -20,7 +20,6 @@ import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/haptic
 import { useSendToAddress } from '../../hooks/useSendToAddress';
 import CopyIcon from '../../components/icons/CopyIcon';
 import EditIcon from '../../components/icons/EditIcon';
-import InfoIcon from '../../components/icons/InfoIcon';
 import PaperPlaneIcon from '../../components/icons/PaperPlaneIcon';
 import TrashIcon from '../../components/icons/TrashIcon';
 
@@ -73,8 +72,6 @@ const ContactDetail: React.FC = () => {
   }, [navigation, HeaderRight]);
 
   if (contact === undefined) return null;
-
-  const [noticeBefore, noticeMatch, noticeAfter] = splitForEmphasis(loc.contacts.reuse_notice, loc.contacts.reuse_notice_emphasis);
 
   const onPay = () => sendToAddress(params.address);
 
@@ -154,14 +151,7 @@ const ContactDetail: React.FC = () => {
           </Pressable>
         </View>
 
-        <View style={[styles.notice, { backgroundColor: colors.surfaceSubtle }]}>
-          <InfoIcon size={20} color={colors.brandPrimary} />
-          <Text style={[styles.noticeText, { color: colors.noticeText }]}>
-            {noticeBefore}
-            {noticeMatch !== '' && <Text style={styles.noticeEmphasis}>{noticeMatch}</Text>}
-            {noticeAfter}
-          </Text>
-        </View>
+        <InfoBanner text={loc.contacts.reuse_notice} emphasis={loc.contacts.reuse_notice_emphasis} />
       </View>
 
       <View style={styles.spacer} />
@@ -202,9 +192,6 @@ const styles = StyleSheet.create({
   },
   addressBox: { borderRadius: 16, borderWidth: 1, paddingVertical: 8, paddingHorizontal: 12 },
   address: { fontFamily: ClashFont.regular, fontSize: 14, lineHeight: 22 },
-  notice: { flexDirection: 'row', alignItems: 'flex-start', borderRadius: 16, paddingVertical: 19, paddingHorizontal: 12, gap: 10 },
-  noticeText: { flex: 1, fontFamily: ClashFont.regular, fontSize: 12, lineHeight: 20 },
-  noticeEmphasis: { fontFamily: ClashFont.medium },
   spacer: { flex: 1 },
   footer: { paddingTop: 32 },
 });

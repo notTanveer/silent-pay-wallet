@@ -265,7 +265,6 @@ const tokens = {
   tabInactiveText: pair('#667085', palette.slate400), // unselected tab label
 
   // --- Contact detail tokens ---
-  noticeText: pair('#343437', palette.gray375), // reuse-notice banner copy (info card = text/secondary)
   // Destructive button (spec 8e): unfilled — bg/primary carries it and the red is border + label
   // only. Light still tints; see the note on aligning it to #FFFFFF / #B24334.
   removeSurface: pair('#FBE1DF', palette.slate950), // Remove Contact button background

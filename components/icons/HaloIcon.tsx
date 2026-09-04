@@ -16,26 +16,40 @@ export interface HaloIconProps {
 interface Props extends HaloIconProps {
   /** The glyph, drawn in the 94x94 halo's coordinate space. */
   children: React.ReactNode;
+  /** The download badge in the lower right. Only for medallions that mean "receive". */
+  badge?: boolean;
 }
 
 /**
- * The 94pt empty-state medallion: tinted disc, hairline ring, and the download badge in the lower
- * right. Only the glyph differs between empty states, so it is the only child.
+ * The 94pt empty-state medallion: tinted disc and hairline ring, with the glyph as its only child.
+ * The receive badge is opt-in, so an empty state that has nothing to do with receiving does not
+ * inherit a download chevron.
  */
-const HaloIcon: React.FC<Props> = ({ size = 94, background = '#FAF5FF', borderColor = '#F3E8FF', accent = '#754CE8', children }) => (
+const HaloIcon: React.FC<Props> = ({
+  size = 94,
+  background = '#FAF5FF',
+  borderColor = '#F3E8FF',
+  accent = '#754CE8',
+  badge = false,
+  children,
+}) => (
   <Svg width={size} height={size} viewBox="0 0 94 94" fill="none">
     <Path d={HALO} fill={background} />
     <Path d={HALO} stroke={borderColor} />
     {children}
-    <Path d={BADGE} fill={accent} />
-    <Path d="M76.9111 71.9257V81.8955" stroke="white" strokeWidth={1.42427} strokeLinecap="round" strokeLinejoin="round" />
-    <Path
-      d="M81.8957 76.9106L76.9107 81.8956L71.9258 76.9106"
-      stroke="white"
-      strokeWidth={1.42427}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+    {badge && (
+      <>
+        <Path d={BADGE} fill={accent} />
+        <Path d="M76.9111 71.9257V81.8955" stroke="white" strokeWidth={1.42427} strokeLinecap="round" strokeLinejoin="round" />
+        <Path
+          d="M81.8957 76.9106L76.9107 81.8956L71.9258 76.9106"
+          stroke="white"
+          strokeWidth={1.42427}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </>
+    )}
   </Svg>
 );
 
