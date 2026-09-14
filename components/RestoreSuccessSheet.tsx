@@ -42,7 +42,7 @@ const RestoreSuccessSheet = forwardRef<RestoreSuccessSheetHandle, RestoreSuccess
     >
       <View style={styles.container} testID="RestoreSuccessSheet">
         <View style={styles.icon}>
-          <SuccessCheckIcon size={60} />
+          <SuccessCheckIcon size={60} color={colors.brandStrong} backgroundColor={colors.surfaceSubtle} />
         </View>
         <Text style={[styles.title, { color: colors.textPrimary }]}>{loc.wallets.restore_success_title}</Text>
         <Text style={[styles.message, { color: colors.textSecondary }]}>{loc.wallets.restore_success_message}</Text>
