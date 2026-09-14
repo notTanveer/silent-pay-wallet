@@ -1,39 +1,54 @@
 import React from 'react';
-import { ScrollView } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
+import SafeAreaScrollView from '../../components/SafeAreaScrollView';
+import SettingsCard from '../../components/SettingsCard';
+import { useTheme } from '../../components/themes';
+import loc from '../../loc';
+import { ClashFont } from '../../constants/fonts';
 
-import { ShroudCard, ShroudText } from '../../ShroudComponents';
-import { Spacing20 } from '../../components/Spacing';
+const Licensing: React.FC = () => {
+  const { colors } = useTheme();
 
-const Licensing = () => {
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" automaticallyAdjustContentInsets>
-      <ShroudCard>
-        <ShroudText>MIT License</ShroudText>
-        <Spacing20 />
-        <ShroudText>Copyright (c) 2018-2026 Shroud developers</ShroudText>
-        <Spacing20 />
-        <ShroudText>
-          Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
-          (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
-          merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
-          furnished to do so, subject to the following conditions:
-        </ShroudText>
-        <Spacing20 />
+    <SafeAreaScrollView contentContainerStyle={styles.content} testID="LicensingScrollView">
+      <SettingsCard style={styles.card}>
+        <Text style={[styles.title, { color: colors.settingsRowTitle }]}>{loc.settings.license_title}</Text>
+        <Text style={[styles.copyright, { color: colors.alternativeTextColor }]}>{loc.settings.license_copyright}</Text>
 
-        <ShroudText>
-          The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-        </ShroudText>
-        <Spacing20 />
+        <Text style={[styles.body, { color: colors.settingsDescriptionText }]}>{loc.settings.license_body_permission}</Text>
 
-        <ShroudText>
-          THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-          MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-          LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-          CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-        </ShroudText>
-      </ShroudCard>
-    </ScrollView>
+        <Text style={[styles.body, { color: colors.settingsDescriptionText }]}>{loc.settings.license_body_notice}</Text>
+
+        <Text style={[styles.body, { color: colors.settingsDescriptionText }]}>{loc.settings.license_body_warranty}</Text>
+      </SettingsCard>
+    </SafeAreaScrollView>
   );
 };
 
 export default Licensing;
+
+const styles = StyleSheet.create({
+  content: {
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+  },
+  card: {
+    padding: 20,
+  },
+  title: {
+    fontSize: 16,
+    fontFamily: ClashFont.medium,
+  },
+  copyright: {
+    fontSize: 13,
+    fontFamily: ClashFont.regular,
+    marginTop: 6,
+  },
+  body: {
+    fontSize: 14,
+    fontFamily: ClashFont.regular,
+    lineHeight: 21,
+    marginTop: 20,
+  },
+});

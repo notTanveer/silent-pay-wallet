@@ -1,19 +1,26 @@
 import React from 'react';
 import { Image, Linking, StyleSheet, Text, View } from 'react-native';
-import { ShroudCard } from '../../ShroudComponents';
-import ListItem from '../../components/ListItem';
-import { useTheme } from '../../components/themes';
-import loc, { formatStringAddTwoWhiteSpaces } from '../../loc';
+import DeviceInfo from 'react-native-device-info';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
+import SettingsCard from '../../components/SettingsCard';
+import SettingsSectionHeader from '../../components/SettingsSectionHeader';
+import SettingsNavRow from '../../components/SettingsNavRow';
+import SettingsStatRow from '../../components/SettingsStatRow';
+import DiscordIcon from '../../components/icons/DiscordIcon';
+import GithubIcon from '../../components/icons/GithubIcon';
+import InfoIcon from '../../components/icons/InfoIcon';
+import { useTheme } from '../../components/themes';
+import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
+import loc from '../../loc';
+import { ClashFont } from '../../constants/fonts';
+
+const APP_VERSION = DeviceInfo.getVersion();
+const BUILD_NUMBER = DeviceInfo.getBuildNumber();
+const shroudLogo = require('../../img/icon.png');
 
 const About: React.FC = () => {
   const { colors } = useTheme();
-
-  const stylesHook = StyleSheet.create({
-    textBackup: {
-      color: colors.foregroundColor,
-    },
-  });
+  const navigation = useExtendedNavigation();
 
   const handleOnDiscordPress = () => {
     Linking.openURL('https://discord.com/invite/STeQFVEWf9');
@@ -23,33 +30,64 @@ const About: React.FC = () => {
     Linking.openURL('https://github.com/Bitshala-Incubator/silent-pay-wallet');
   };
 
+  const handleOnWebsitePress = () => {
+    Linking.openURL('https://shroudwallet.app/');
+  };
+
   return (
-    <SafeAreaScrollView testID="AboutScrollView" contentInsetAdjustmentBehavior="automatic" automaticallyAdjustContentInsets>
-      <ShroudCard>
-        <View style={styles.center}>
-          <Image style={styles.logo} source={require('../../img/icon.png')} />
-          <Text style={styles.textFree}>{loc.settings.about_free}</Text>
-          <Text style={[styles.textBackup, stylesHook.textBackup]}>{formatStringAddTwoWhiteSpaces(loc.settings.warning)}</Text>
+    <SafeAreaScrollView contentContainerStyle={styles.content} testID="AboutScrollView">
+      <View style={styles.hero}>
+        <Image source={shroudLogo} style={styles.logo} resizeMode="contain" />
+        <Text style={[styles.appName, { color: colors.primary }]}>{loc.settings.about_app_name}</Text>
+        <Text style={[styles.description, { color: colors.alternativeTextColor }]}>{loc.settings.about_free}</Text>
+      </View>
+
+      <View style={[styles.warningBanner, { backgroundColor: colors.surfaceCaution }]}>
+        <View style={styles.warningIcon}>
+          <InfoIcon size={20} color={colors.settingsWarningTextColor} />
         </View>
-        <ListItem
-          leftIcon={{
-            name: 'discord',
-            type: 'font-awesome-5',
-            color: '#7289da',
-          }}
-          onPress={handleOnDiscordPress}
+        <View style={styles.warningTextContainer}>
+          <Text style={[styles.warningTitle, { color: colors.settingsWarningTextColor }]}>{loc.settings.warning_title}</Text>
+          <Text style={[styles.warningText, { color: colors.settingsWarningTextColor }]}>{loc.settings.warning}</Text>
+        </View>
+      </View>
+
+      <SettingsSectionHeader style={styles.sectionHeaderGap}>{loc.settings.about_community_header}</SettingsSectionHeader>
+      <SettingsCard>
+        <SettingsNavRow
+          icon={<DiscordIcon size={20} color={colors.settingsDiscordIconColor} />}
           title={loc.settings.about_sm_discord}
+          subtitle={loc.settings.about_sm_discord_subtitle}
+          onPress={handleOnDiscordPress}
+          testID="DiscordRow"
         />
-        <ListItem
-          leftIcon={{
-            name: 'github',
-            type: 'font-awesome-5',
-            color: '#000000',
-          }}
-          onPress={handleOnGithubPress}
+        <SettingsNavRow
+          icon={<GithubIcon size={20} color={colors.settingsGithubIconColor} />}
           title={loc.settings.about_sm_github}
+          subtitle={loc.settings.about_sm_github_subtitle}
+          onPress={handleOnGithubPress}
+          testID="GithubRow"
         />
-      </ShroudCard>
+        <SettingsNavRow
+          icon={<Image source={shroudLogo} style={styles.linkRowLogo} resizeMode="contain" />}
+          title={loc.settings.about_sm_website}
+          subtitle={loc.settings.about_sm_website_subtitle}
+          onPress={handleOnWebsitePress}
+          showSeparator={false}
+          testID="WebsiteRow"
+        />
+      </SettingsCard>
+
+      <SettingsSectionHeader style={styles.sectionHeaderGap}>{loc.settings.about_version_header}</SettingsSectionHeader>
+      <SettingsCard>
+        <SettingsStatRow title={loc.settings.about_version} value={`v${APP_VERSION} (build ${BUILD_NUMBER})`} />
+        <SettingsNavRow
+          title={loc.settings.license}
+          onPress={() => navigation.navigate('Licensing')}
+          showSeparator={false}
+          testID="LicenseRow"
+        />
+      </SettingsCard>
     </SafeAreaScrollView>
   );
 };
@@ -57,28 +95,64 @@ const About: React.FC = () => {
 export default About;
 
 const styles = StyleSheet.create({
-  center: {
-    justifyContent: 'center',
+  content: {
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+  },
+  hero: {
     alignItems: 'center',
-    marginTop: 54,
+    marginTop: 24,
+    marginBottom: 8,
   },
   logo: {
-    width: 50,
-    height: 50,
+    width: 64,
+    height: 64,
+    marginBottom: 20,
   },
-  textFree: {
-    maxWidth: 260,
-    marginVertical: 24,
-    color: '#9AA0AA',
-    fontSize: 15,
+  appName: {
+    fontSize: 22,
+    fontFamily: ClashFont.semibold,
     textAlign: 'center',
-    fontWeight: '500',
+    marginBottom: 8,
   },
-  textBackup: {
-    maxWidth: 260,
-    marginBottom: 40,
-    fontSize: 15,
+  description: {
+    maxWidth: 280,
+    fontSize: 14,
+    fontFamily: ClashFont.regular,
+    lineHeight: 20,
     textAlign: 'center',
-    fontWeight: '500',
+  },
+  warningBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: 20,
+    borderRadius: 16,
+    paddingVertical: 19,
+    paddingHorizontal: 17,
+    gap: 10,
+  },
+  warningIcon: {
+    marginTop: 1,
+  },
+  warningTextContainer: {
+    flex: 1,
+  },
+  warningTitle: {
+    fontFamily: ClashFont.medium,
+    fontSize: 15,
+  },
+  warningText: {
+    fontFamily: ClashFont.regular,
+    fontSize: 13,
+    lineHeight: 23,
+    marginTop: 2,
+  },
+  sectionHeaderGap: {
+    marginTop: 24,
+  },
+  linkRowLogo: {
+    width: 20,
+    height: 20,
   },
 });

@@ -290,6 +290,11 @@ const tokens = {
   settingsContactIconColor: same('#6366F1'),
   settingsNetworkIconColor: same('#00A63E'),
   settingsCurrencyIconColor: same('#F7931A'),
+  settingsDiscordIconColor: same('#7289da'),
+  settingsGithubIconColor: pair(palette.black, palette.white),
+  // Dark yellowish-brown for the About screen's WIP warning text; dark value reuses iconCaution's
+  // amber so it stays legible against the dark surfaceCaution card instead of going near-invisible.
+  settingsWarningTextColor: pair('#7A5410', '#F1AF63'),
 
   emptyStateTitle: pair('#0A0A0A', palette.gray75),
   tabDivider: pair('#EAECF0', '#FFFFFF14'), // hairline rule under the whole tab strip (border/default)
