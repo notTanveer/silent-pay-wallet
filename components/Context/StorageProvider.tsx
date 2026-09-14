@@ -423,10 +423,6 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
       triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
       await saveToDisk();
       A(A.ENUM.CREATED_WALLET);
-      presentAlert({
-        hapticFeedback: HapticFeedbackTypes.ImpactHeavy,
-        message: loc.wallets.import_success,
-      });
 
       await w.fetchBalance();
       if (isScannable(w) && !w.isScanActive()) {

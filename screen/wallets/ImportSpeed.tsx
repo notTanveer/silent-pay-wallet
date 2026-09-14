@@ -11,6 +11,7 @@ import { useStorage } from '../../hooks/context/useStorage';
 import { AddWalletStackParamList } from '../../navigation/AddWalletStack';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet';
 import { Spacing20 } from '../../components/Spacing';
+import { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 import loc from '../../loc';
 
 type NavigationProp = NativeStackNavigationProp<AddWalletStackParamList, 'ImportSpeed'>;
@@ -60,7 +61,8 @@ const ImportSpeed = () => {
         return;
       }
 
-      addAndSaveWallet(wallet);
+      await addAndSaveWallet(wallet);
+      presentAlert({ hapticFeedback: HapticFeedbackTypes.ImpactHeavy, message: loc.wallets.import_success });
       navigation.navigateToWalletsList();
     } catch (error: any) {
       presentAlert({ message: error.message });
