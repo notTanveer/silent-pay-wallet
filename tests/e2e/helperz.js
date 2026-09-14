@@ -95,6 +95,10 @@ export async function helperImportWallet(mnemonic, { birthDate } = {}) {
       await element(by.id('BirthDateInput')).replaceText(birthDate);
     }
     await element(by.id('DoImport')).tap();
+    await waitFor(element(by.id('RestoreSuccessDoneButton')))
+      .toBeVisible()
+      .withTimeout(60_000);
+    await element(by.id('RestoreSuccessDoneButton')).tap();
     await waitFor(element(by.id('HomeScreenReceiveButton')))
       .toBeVisible()
       .withTimeout(60_000);

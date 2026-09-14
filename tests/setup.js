@@ -229,6 +229,24 @@ jest.mock('realm', () => {
   };
 });
 
+// Stands in for the unlinked native module; present/dismiss/resize just resolve.
+jest.mock('@lodev09/react-native-true-sheet', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+
+  class TrueSheet extends React.Component {
+    dismiss = jest.fn(() => Promise.resolve());
+    present = jest.fn(() => Promise.resolve());
+    resize = jest.fn(() => Promise.resolve());
+
+    render() {
+      return React.createElement(View, this.props);
+    }
+  }
+
+  return { TrueSheet };
+});
+
 jest.mock('react-native-camera-kit-no-google', () => ({
   detectQRCodeInImage: jest.fn(base64 => {
     if (base64 === 'invalid-image') {

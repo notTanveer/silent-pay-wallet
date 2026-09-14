@@ -89,7 +89,7 @@ describe('unit - ImportWallet', () => {
       assert.strictEqual(navigateToWalletsList.mock.calls.length, 0);
     });
 
-    it('accepts a valid mnemonic and proceeds to save the wallet', async () => {
+    it('accepts a valid mnemonic, saves the wallet, and hands off after the success sheet is dismissed', async () => {
       const { getByTestId } = renderScreen();
 
       const validMnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
@@ -97,12 +97,16 @@ describe('unit - ImportWallet', () => {
       fireEvent.press(getByTestId('DoImport'));
 
       await waitFor(() => assert.strictEqual(addAndSaveWallet.mock.calls.length, 1));
-      assert.strictEqual(navigateToWalletsList.mock.calls.length, 1);
       assert.strictEqual(invalidMnemonicAlerts(), 0);
 
       const [savedWallet] = addAndSaveWallet.mock.calls[0];
       assert.strictEqual(savedWallet.getSecret(), validMnemonic);
       assert.strictEqual(savedWallet.getDerivationPath(), "m/86'/0'/0'");
+
+      // Landing on the wallets list waits for the "You're all set" sheet's Done button.
+      assert.strictEqual(navigateToWalletsList.mock.calls.length, 0);
+      fireEvent.press(getByTestId('RestoreSuccessDoneButton'));
+      await waitFor(() => assert.strictEqual(navigateToWalletsList.mock.calls.length, 1));
     });
   });
 });
