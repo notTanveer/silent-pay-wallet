@@ -30,7 +30,7 @@ const AddWalletStack = () => {
       <Stack.Screen
         name="ImportWallet"
         component={ImportWalletComponent}
-        options={navigationStyle({ title: loc.wallets.import_title })(theme)}
+        options={navigationStyle({ title: '', closeButtonPosition: CloseButtonPosition.None })(theme)}
       />
       <Stack.Screen
         name="ImportSpeed"

@@ -1,15 +1,14 @@
 import React, { useCallback, useMemo } from 'react';
-import { Image, Keyboard, Platform, StyleSheet, Text } from 'react-native';
-import Clipboard from '@react-native-clipboard/clipboard';
+import { Image, Keyboard, StyleSheet, Text } from 'react-native';
 import ToolTipMenu from './TooltipMenu';
 import loc from '../loc';
 import { showFilePickerAndReadFile, showImagePickerAndReadImage } from '../modules/fs';
 import presentAlert from './Alert';
 import { useTheme } from './themes';
-import { detectQRCodeInImage } from 'react-native-camera-kit-no-google';
 import { CommonToolTipActions } from '../typings/CommonToolTipActions';
 import { useSettings } from '../hooks/context/useSettings';
 import { scanQrHelper } from '../helpers/scan-qr';
+import { readClipboardForPaste } from '../helpers/clipboard';
 import { ClashFont } from '../constants/fonts';
 
 interface AddressInputScanButtonProps {
@@ -36,6 +35,9 @@ export const AddressInputScanButton = ({
     },
     scanText: {
       color: colors.white,
+    },
+    outlined: {
+      borderColor: colors.accentSubtle,
     },
   });
 
@@ -65,34 +67,8 @@ export const AddressInputScanButton = ({
       switch (action) {
         case CommonToolTipActions.PasteFromClipboard.id:
           try {
-            let getImage: string | null = null;
-            let hasImage = false;
-            if (Platform.OS === 'android') {
-              hasImage = true;
-            } else {
-              hasImage = await Clipboard.hasImage();
-            }
-
-            if (hasImage) {
-              getImage = await Clipboard.getImage();
-            }
-
-            if (getImage) {
-              try {
-                const base64Data = getImage.replace(/^data:image\/(png|jpeg|jpg);base64,/, '');
-                const result = await detectQRCodeInImage(base64Data);
-                if (result) {
-                  onChangeText(result);
-                } else {
-                  presentAlert({ message: loc.send.qr_error_no_qrcode });
-                }
-              } catch (error) {
-                presentAlert({ message: (error as Error).message });
-              }
-            } else {
-              const clipboardText = await Clipboard.getString();
-              onChangeText(clipboardText);
-            }
+            const text = await readClipboardForPaste();
+            if (text !== undefined) onChangeText(text);
           } catch (error) {
             presentAlert({ message: (error as Error).message });
           }
@@ -126,6 +102,7 @@ export const AddressInputScanButton = ({
   );
 
   const buttonStyle = useMemo(() => [styles.scan, stylesHook.scan], [stylesHook.scan]);
+  const outlinedButtonStyle = useMemo(() => [styles.outlined, stylesHook.outlined], [stylesHook.outlined]);
 
   return (
     <ToolTipMenu
@@ -135,7 +112,7 @@ export const AddressInputScanButton = ({
       testID={testID}
       disabled={isLoading}
       onPress={toolTipOnPress}
-      buttonStyle={type === 'default' ? buttonStyle : undefined}
+      buttonStyle={type === 'default' ? buttonStyle : outlinedButtonStyle}
       accessibilityLabel={loc.send.details_scan}
       accessibilityHint={loc.send.details_scan_hint}
     >
@@ -147,7 +124,7 @@ export const AddressInputScanButton = ({
           </Text>
         </>
       ) : (
-        <Text style={[styles.linkText, { color: colors.textSecondary }]}>{loc.wallets.import_scan_qr}</Text>
+        <Text style={[styles.linkText, { color: colors.brandPrimary }]}>{loc.wallets.import_scan_qr}</Text>
       )}
     </ToolTipMenu>
   );
@@ -170,9 +147,18 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontFamily: ClashFont.regular,
   },
+  outlined: {
+    height: 56,
+    width: '100%',
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   linkText: {
     textAlign: 'center',
     fontSize: 16,
-    fontFamily: ClashFont.regular,
+    lineHeight: 24,
+    fontFamily: ClashFont.medium,
   },
 });
