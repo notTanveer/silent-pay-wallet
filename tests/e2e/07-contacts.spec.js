@@ -106,8 +106,13 @@ describe('Contacts', () => {
     await element(by.id('ContactNameInput')).replaceText('Anmol Sharma');
     await element(by.id('ContactSaveButton')).tap();
 
-    await waitFor(element(by.text('Anmol Sharma')))
-      .toBeVisible()
+    // Android's toBeVisible() checks view.getGlobalVisibleRect() coverage, which is unreliable
+    // for RN views inside a ScrollView right after a navigation transition — RN hard-codes
+    // clipChildren=false unless overflow:'hidden' is set (facebook/react-native#23870), so the
+    // matcher can report <75% visible for a view that is genuinely on screen (wix/Detox#4688).
+    // Assert on the rendered text directly instead of gating on that matcher.
+    await waitFor(element(by.id('ContactDetailName')))
+      .toHaveText('Anmol Sharma')
       .withTimeout(15_000);
   });
 

@@ -111,7 +111,7 @@ const ContactDetail: React.FC = () => {
       <View style={styles.body}>
         <View style={styles.header}>
           <ContactAvatar name={contact.name} colorIndex={contact.colorIndex} size={72} borderRadius={24} />
-          <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={1} ellipsizeMode="tail">
+          <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={1} ellipsizeMode="tail" testID="ContactDetailName">
             {contact.name}
           </Text>
         </View>
