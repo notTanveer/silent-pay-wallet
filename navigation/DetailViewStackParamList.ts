@@ -59,7 +59,6 @@ export type DetailViewStackParamList = {
   BlockExplorerSettings: undefined;
   TorSettings: undefined;
   NetworkSettings: undefined;
-  SelfTest: undefined;
   ReceiveDetails: {
     walletID?: string;
     address: string;

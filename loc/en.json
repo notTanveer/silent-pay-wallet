@@ -221,8 +221,6 @@
     "settings": {
         "about": "About",
         "about_free": "Shroud Wallet is a non-custodial, Bitcoin-only mobile wallet with support for Silent Payments",
-        "about_selftest": "Run self-test",
-        "about_selftest_ok": "All internal tests have passed successfully. The wallet works well.",
         "about_sm_github": "GitHub",
         "about_sm_discord": "Discord Server",
         "biometrics": "Biometrics",
@@ -313,7 +311,6 @@
         "tor_port_saved": "SOCKS5 port saved.",
         "delete_wallet": "Delete Wallet",
         "license": "License",
-        "selfTest": "Self-Test",
         "success_transaction_broadcasted": "Your transaction has been successfully broadcasted!",
         "warning": "⚠️ Work in Progress - This wallet is currently under active development."
     },

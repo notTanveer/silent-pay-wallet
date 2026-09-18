@@ -3,7 +3,6 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { Header } from '../../components/Header';
-import SelfTest from '../../screen/settings/SelfTest';
 import Settings from '../../screen/settings/Settings';
 import { ShroudDefaultTheme } from '../../components/themes';
 
@@ -32,14 +31,4 @@ it.skip('Settings work', () => {
     </Wrapper>,
   );
   expect(toJSON()).toBeTruthy();
-});
-
-it('SelfTest work', () => {
-  const { toJSON, getByText } = render(
-    <Wrapper>
-      <SelfTest />
-    </Wrapper>,
-  );
-  expect(toJSON()).toBeTruthy();
-  expect(getByText('OK')).toBeTruthy();
 });

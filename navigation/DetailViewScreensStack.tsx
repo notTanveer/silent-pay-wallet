@@ -24,7 +24,6 @@ import ElectrumServerSettings from '../screen/settings/ElectrumServerSettings';
 import BlockExplorerSettings from '../screen/settings/BlockExplorerSettings';
 import TorSettings from '../screen/settings/TorSettings';
 import NetworkSettings from '../screen/settings/NetworkSettings';
-import SelfTest from '../screen/settings/SelfTest';
 
 import { useSizeClass, SizeClass } from '../modules/sizeClass';
 import { isDesktop } from '../modules/environment';
@@ -153,7 +152,6 @@ const DetailViewStackScreensStack = () => {
         component={NetworkSettings}
         options={navigationStyle({ title: loc.settings.network })(theme)}
       />
-      <DetailViewStack.Screen name="SelfTest" component={SelfTest} options={navigationStyle({ title: loc.settings.selfTest })(theme)} />
       <DetailViewStack.Screen
         name="TrackPayment"
         component={TrackPayment}
