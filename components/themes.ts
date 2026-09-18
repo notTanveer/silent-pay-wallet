@@ -304,6 +304,8 @@ const tokens = {
   removeSurface: pair('#FBE1DF', palette.slate950), // Remove Contact button background
   removeBorder: pair('#FFC9C9', palette.red500), // Remove Contact button border
   removeText: pair('#E7000B', palette.red500), // Remove Contact button label + trash glyph
+
+  paymentBadgeFill: pair(palette.violet600, palette.violet525),
 } satisfies Record<string, ColorToken>;
 
 type Scheme = 'light' | 'dark';
