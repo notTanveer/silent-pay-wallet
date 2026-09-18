@@ -288,7 +288,6 @@ const tokens = {
   settingsRipple: pair('rgba(0,0,0,0.06)', 'rgba(255,255,255,0.06)'),
   settingsAboutIconColor: same('#E7000B'),
   settingsGeneralIconColor: same('#3B80F9'),
-  settingsToolsIconColor: same('#3B80F9'),
   settingsSecurityIconColor: same('#FF3B30'),
   settingsContactIconColor: same('#6366F1'),
   settingsNetworkIconColor: same('#00A63E'),

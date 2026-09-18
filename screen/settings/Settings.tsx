@@ -19,7 +19,7 @@ import { IconProps } from '../../components/icons/types';
 const APP_VERSION = DeviceInfo.getVersion();
 const BUILD_NUMBER = DeviceInfo.getBuildNumber();
 
-type SettingsRoute = 'General' | 'Currency' | 'Contacts' | 'NetworkSettings' | 'Tools' | 'About';
+type SettingsRoute = 'General' | 'Currency' | 'Contacts' | 'NetworkSettings' | 'About';
 
 type SettingsIconColorToken =
   | 'settingsGeneralIconColor'
@@ -27,7 +27,6 @@ type SettingsIconColorToken =
   | 'settingsContactIconColor'
   | 'settingsSecurityIconColor'
   | 'settingsNetworkIconColor'
-  | 'settingsToolsIconColor'
   | 'settingsAboutIconColor';
 
 interface RowConfig {
