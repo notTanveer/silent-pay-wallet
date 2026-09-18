@@ -429,12 +429,6 @@
         "sat_vbyte": "sat/vByte",
         "sats": "sats"
     },
-    "addresses": {
-        "type_change": "Change",
-        "type_receive": "Receive",
-        "type_used": "Used",
-        "transactions": "Transactions"
-    },
     "bip352": {
         "silent_payments": "Silent Payments",
         "not_supported": "Silent Payments not supported by this wallet",
