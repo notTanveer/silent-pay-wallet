@@ -368,7 +368,6 @@
         "list_tryagain": "Try again",
         "single_wallet_limit": "Only one wallet is supported. Please delete the existing wallet first.",
         "please_continue_scanning": "Please continue scanning.",
-        "xpub_copiedToClipboard": "Copied to clipboard.",
         "pull_to_refresh": "Pull to Refresh",
         "warning_do_not_disclose": "Never share the information below",
         "scan_import": "Scan this QR code to import your wallet in another application.",
