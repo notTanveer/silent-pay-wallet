@@ -9,7 +9,7 @@ export function BigCheckmark(props: BigCheckmarkProps) {
   const { colors } = useTheme();
   return (
     <View style={[styles.container, props.style]}>
-      <Icon name="check" size={50} type="font-awesome" color={colors.successCheck} />
+      <Icon name="check" size={50} type="font-awesome" color={colors.statusSuccess} />
     </View>
   );
 }

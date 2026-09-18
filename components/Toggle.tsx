@@ -42,7 +42,7 @@ const Toggle: React.FC<ToggleProps> = ({ value, onValueChange, accessibilityLabe
 
   const trackColor = colorProgress.interpolate({
     inputRange: [0, 1],
-    outputRange: [colors.toggleTrackOff, colors.accentColor],
+    outputRange: [colors.borderStrong, colors.brandPrimary],
   });
 
   const thumbShadowOpacity = colorProgress.interpolate({

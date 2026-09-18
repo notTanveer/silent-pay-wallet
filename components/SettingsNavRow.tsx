@@ -22,12 +22,12 @@ const SettingsNavRow: React.FC<SettingsNavRowProps> = ({ title, value, onPress, 
         accessibilityLabel={title}
         onPress={onPress}
         style={({ pressed }) => [styles.navRow, pressed && Platform.OS !== 'android' && styles.rowPressed]}
-        android_ripple={{ color: colors.settingsRipple }}
+        android_ripple={{ color: colors.borderDefault }}
         testID={testID}
       >
-        <Text style={[styles.rowTitle, { color: colors.settingsRowTitle }]}>{title}</Text>
+        <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{title}</Text>
         <View style={styles.navRowValue}>
-          {value ? <Text style={[styles.navRowValueText, { color: colors.alternativeTextColor }]}>{value}</Text> : null}
+          {value ? <Text style={[styles.navRowValueText, { color: colors.textMuted }]}>{value}</Text> : null}
           <ChevronRightIcon />
         </View>
       </Pressable>

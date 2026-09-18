@@ -31,14 +31,14 @@ const DenominationRow: React.FC<DenominationRowProps> = ({ icon, title, subtitle
         style={({ pressed }) => [styles.row, pressed && Platform.OS !== 'android' && styles.rowPressed]}
         onPress={onPress}
         testID={testID}
-        android_ripple={{ color: colors.settingsRipple }}
+        android_ripple={{ color: colors.borderDefault }}
       >
         {icon}
         <View style={styles.rowText}>
-          <Text style={[styles.rowTitle, { color: colors.settingsRowTitle }]}>{title}</Text>
-          <Text style={[styles.rowSubtitle, { color: colors.alternativeTextColor }]}>{subtitle}</Text>
+          <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{title}</Text>
+          <Text style={[styles.rowSubtitle, { color: colors.textMuted }]}>{subtitle}</Text>
         </View>
-        {selected && <CheckmarkIcon color={colors.accentColor} size={20} />}
+        {selected && <CheckmarkIcon color={colors.brandPrimary} size={20} />}
       </Pressable>
     </SettingsRowWrapper>
   );
@@ -63,9 +63,9 @@ const DenominationSettings: React.FC = () => {
 
   return (
     <SafeAreaScrollView contentContainerStyle={styles.content}>
-      <View style={[styles.card, { backgroundColor: colors.settingsCardBackground, borderColor: colors.settingsCardBorder }]}>
+      <View style={[styles.card, { backgroundColor: colors.fieldBackground, borderColor: colors.borderDefault }]}>
         <DenominationRow
-          icon={<SatsIcon color={colors.settingsDenominationIconColor} backgroundColor={colors.settingsIconWrapperBg} />}
+          icon={<SatsIcon color={colors.iconPrimary} backgroundColor={colors.background} />}
           title={loc.units.sats}
           subtitle={loc.settings.denomination_sats_subtitle}
           selected={preferredUnit === BitcoinUnit.SATS}
@@ -73,7 +73,7 @@ const DenominationSettings: React.FC = () => {
           testID="DenominationSatsOption"
         />
         <DenominationRow
-          icon={<BitcoinSymbolIcon color={colors.settingsDenominationIconColor} backgroundColor={colors.settingsIconWrapperBg} />}
+          icon={<BitcoinSymbolIcon color={colors.iconPrimary} backgroundColor={colors.background} />}
           title={loc.units.BTC}
           subtitle={loc.settings.denomination_btc_subtitle}
           selected={preferredUnit === BitcoinUnit.BTC}

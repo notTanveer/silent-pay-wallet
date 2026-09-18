@@ -74,12 +74,12 @@ const Confirm: React.FC = () => {
   const stylesHook = StyleSheet.create({
     root: { backgroundColor: colors.background },
     divider: { backgroundColor: colors.borderDefault },
-    summaryLabel: { color: colors.amountMeta },
-    summaryValue: { color: colors.textEmphasis },
-    summaryFiat: { color: colors.amountMeta },
-    totalLabel: { color: colors.textPrimary },
+    summaryLabel: { color: colors.textMuted },
+    summaryValue: { color: colors.textPrimary },
+    summaryFiat: { color: colors.textMuted },
+    totalLabel: { color: colors.textSecondary },
     totalValue: { color: colors.textBrand },
-    sendNowButton: { backgroundColor: colors.brandStrong },
+    sendNowButton: { backgroundColor: colors.brandPrimary },
     sendNowButtonDisabled: { backgroundColor: colors.ctaDisabled },
     sendNowText: { color: colors.white },
   });
@@ -221,7 +221,7 @@ const Confirm: React.FC = () => {
 
       <View style={styles.bottom}>
         {state.isLoading ? (
-          <ActivityIndicator color={colors.brandStrong} />
+          <ActivityIndicator color={colors.brandPrimary} />
         ) : (
           <Pressable
             accessibilityRole="button"

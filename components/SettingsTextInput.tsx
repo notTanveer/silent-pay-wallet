@@ -29,13 +29,13 @@ const SettingsTextInput: React.FC<SettingsTextInputProps> = ({
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
-      placeholderTextColor={colors.alternativeTextColor}
+      placeholderTextColor={colors.textMuted}
       editable={editable}
       keyboardType={keyboardType}
       autoCapitalize="none"
       autoCorrect={false}
       clearButtonMode="while-editing"
-      style={[styles.input, { color: colors.settingsRowTitle, backgroundColor: colors.background }, style]}
+      style={[styles.input, { color: colors.textSecondary, backgroundColor: colors.background }, style]}
     />
   );
 };

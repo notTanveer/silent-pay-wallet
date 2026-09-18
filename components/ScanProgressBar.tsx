@@ -60,7 +60,7 @@ const ScanProgressBar: React.FC<Props> = ({ scanState, onResume, onRetry }) => {
           <View style={styles.glyphBox}>
             <Icon name="check" type="material" size={20} color={colors.statusSuccess} />
           </View>
-          <Text style={[styles.bannerText, { color: colors.textPrimary }]} numberOfLines={1}>
+          <Text style={[styles.bannerText, { color: colors.textSecondary }]} numberOfLines={1}>
             {blockText}
           </Text>
         </View>
@@ -82,9 +82,9 @@ const ScanProgressBar: React.FC<Props> = ({ scanState, onResume, onRetry }) => {
           accessibilityLabel={blockText as string}
         >
           <View style={styles.glyphBox}>
-            <Icon name="pause" type="material" size={20} color={colors.statusPaused} />
+            <Icon name="pause" type="material" size={20} color={colors.textMuted} />
           </View>
-          <Text style={[styles.bannerText, { color: colors.textPrimary }]} numberOfLines={1}>
+          <Text style={[styles.bannerText, { color: colors.textSecondary }]} numberOfLines={1}>
             {blockText}
           </Text>
         </TouchableOpacity>
@@ -97,7 +97,7 @@ const ScanProgressBar: React.FC<Props> = ({ scanState, onResume, onRetry }) => {
 
   if (status === 'error') {
     return (
-      <View style={[styles.container, { borderColor: colors.statusError, backgroundColor: colors.surfaceError }]}>
+      <View style={[styles.container, { borderColor: colors.statusError, backgroundColor: colors.surfaceCaution }]}>
         <TouchableOpacity
           style={styles.leftRow}
           onPress={() => navigation.navigate('SyncScreen')}
@@ -135,7 +135,7 @@ const ScanProgressBar: React.FC<Props> = ({ scanState, onResume, onRetry }) => {
           <View style={[styles.halo, { backgroundColor: dotColor }]} />
           <Animated.View style={[styles.dot, { backgroundColor: dotColor, opacity: pulseAnim }]} />
         </View>
-        <Text style={[styles.bannerText, { color: colors.textPrimary }]} numberOfLines={1}>
+        <Text style={[styles.bannerText, { color: colors.textSecondary }]} numberOfLines={1}>
           {bannerText}
         </Text>
       </View>

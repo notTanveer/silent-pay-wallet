@@ -10,12 +10,12 @@ export const AddressTypeBadge: React.FC<Props> = ({ isInternal, hasTransactions 
   const { colors } = useTheme();
 
   const stylesHook = StyleSheet.create({
-    changeBadge: { backgroundColor: colors.changeBackground },
-    receiveBadge: { backgroundColor: colors.receiveBackground },
-    usedBadge: { backgroundColor: colors.buttonDisabledBackgroundColor },
-    changeText: { color: colors.changeText },
-    receiveText: { color: colors.successColor },
-    usedText: { color: colors.alternativeTextColor },
+    changeBadge: { backgroundColor: colors.surfaceCaution },
+    receiveBadge: { backgroundColor: colors.bgSuccess },
+    usedBadge: { backgroundColor: colors.ctaDisabled },
+    changeText: { color: colors.textWarning },
+    receiveText: { color: colors.statusSuccess },
+    usedText: { color: colors.textMuted },
   });
 
   const badgeLabel = hasTransactions

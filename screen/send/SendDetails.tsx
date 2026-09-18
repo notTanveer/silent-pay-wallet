@@ -841,10 +841,10 @@ const SendDetails = () => {
     scanBtn: { backgroundColor: colors.background },
     feeSummary: { borderColor: colors.accentSubtle, backgroundColor: colors.surfaceSubtle },
     feeSummaryDisabled: { borderColor: colors.borderDefault, backgroundColor: colors.surfaceBrandSubtle },
-    feeSummaryLabel: { color: colors.textSecondary },
-    feeSummaryValue: { color: colors.textEmphasis },
+    feeSummaryLabel: { color: colors.textMuted },
+    feeSummaryValue: { color: colors.textPrimary },
     feeSummaryTextDisabled: { color: colors.textDisabled },
-    feeSummaryValueMeta: { color: colors.amountMeta },
+    feeSummaryValueMeta: { color: colors.textMuted },
   });
 
   const renderCoinsSelected = () => {
@@ -895,7 +895,7 @@ const SendDetails = () => {
                   !recipient?.address ? (
                     <View style={styles.addressActions}>
                       <Pressable accessibilityRole="button" onPress={navigateToQRCodeScanner} style={[styles.scanBtn, stylesHook.scanBtn]}>
-                        <ScanQRIcon color={colors.brandStrong} size={20} />
+                        <ScanQRIcon color={colors.brandPrimary} size={20} />
                       </Pressable>
                       {/* Nothing to pick from means the button can only open an empty sheet. */}
                       {contactList.length > 0 && (
@@ -906,7 +906,7 @@ const SendDetails = () => {
                           testID="SendDetailsContactsButton"
                           accessibilityLabel={loc.contacts.header}
                         >
-                          <ContactIcon color={colors.brandStrong} size={24} />
+                          <ContactIcon color={colors.brandPrimary} size={24} />
                         </Pressable>
                       )}
                     </View>
@@ -983,7 +983,7 @@ const SendDetails = () => {
         <Button
           testID="sendNextButton"
           title={loc.send.details_next}
-          backgroundColor={colors.brandStrong}
+          backgroundColor={colors.brandPrimary}
           disabledBackgroundColor={colors.ctaDisabled}
           disabledTextColor={colors.white}
           disabled={!isFormValid || isLoading}

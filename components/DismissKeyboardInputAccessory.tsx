@@ -9,7 +9,7 @@ export const DismissKeyboardInputAccessory: React.FC = () => {
   const { colors } = useTheme();
   const styleHooks = StyleSheet.create({
     container: {
-      backgroundColor: colors.inputBackgroundColor,
+      backgroundColor: colors.fieldBackground,
     },
   });
 

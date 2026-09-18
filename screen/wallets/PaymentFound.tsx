@@ -58,28 +58,28 @@ const PaymentFound: React.FC<PaymentFoundProps> = ({ route }) => {
     );
   };
 
-  const confirmingColor = colors.warningColor;
+  const confirmingColor = colors.textWarning;
 
   const stylesHook = StyleSheet.create({
-    amount: { color: colors.foregroundColor },
-    fiat: { color: colors.alternativeTextColor },
-    detailsCard: { backgroundColor: colors.ballOutgoingExpired },
-    rowLabel: { color: colors.alternativeTextColor },
-    progressTrack: { backgroundColor: colors.formBorder },
-    attentionBox: { backgroundColor: colors.ballOutgoingExpired },
-    attentionText: { color: colors.foregroundColor },
-    outlineButton: { borderColor: colors.formBorder },
-    outlineButtonText: { color: colors.foregroundColor },
+    amount: { color: colors.textPrimary },
+    fiat: { color: colors.textMuted },
+    detailsCard: { backgroundColor: colors.surfaceSubtle },
+    rowLabel: { color: colors.textMuted },
+    progressTrack: { backgroundColor: colors.borderInput },
+    attentionBox: { backgroundColor: colors.surfaceSubtle },
+    attentionText: { color: colors.textSecondary },
+    outlineButton: { borderColor: colors.borderInput },
+    outlineButtonText: { color: colors.textSecondary },
   });
 
   return (
     <SafeArea>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
-          <View style={[styles.checkmarkContainer, { backgroundColor: colors.successColor + '20' }]}>
-            <Icon name="check" size={40} type="material" color={colors.successCheck} />
+          <View style={[styles.checkmarkContainer, { backgroundColor: colors.statusSuccess + '20' }]}>
+            <Icon name="check" size={40} type="material" color={colors.statusSuccess} />
           </View>
-          <Text style={[styles.foundItText, { color: colors.successCheck }]}>{loc.payment_found.found_it}</Text>
+          <Text style={[styles.foundItText, { color: colors.statusSuccess }]}>{loc.payment_found.found_it}</Text>
 
           <Spacing20 />
 
@@ -92,7 +92,7 @@ const PaymentFound: React.FC<PaymentFoundProps> = ({ route }) => {
           <View style={[styles.detailsCard, stylesHook.detailsCard]}>
             <View style={styles.detailRow}>
               <Text style={[styles.rowLabel, stylesHook.rowLabel]}>{loc.payment_found.status}</Text>
-              <Text style={[styles.statusText, { color: isConfirmed ? colors.successCheck : confirmingColor }]}>
+              <Text style={[styles.statusText, { color: isConfirmed ? colors.statusSuccess : confirmingColor }]}>
                 {isConfirmed ? loc.payment_found.confirmed : loc.payment_found.confirming_label}
               </Text>
             </View>
@@ -100,11 +100,11 @@ const PaymentFound: React.FC<PaymentFoundProps> = ({ route }) => {
               <View
                 style={[
                   styles.progressFill,
-                  { width: `${progressRatio * 100}%`, backgroundColor: isConfirmed ? colors.successCheck : confirmingColor },
+                  { width: `${progressRatio * 100}%`, backgroundColor: isConfirmed ? colors.statusSuccess : confirmingColor },
                 ]}
               />
             </View>
-            <Text style={[styles.progressText, { color: colors.successCheck }]}>
+            <Text style={[styles.progressText, { color: colors.statusSuccess }]}>
               {confirmationsDisplay} of {CONFIRMATIONS_THRESHOLD}
             </Text>
           </View>

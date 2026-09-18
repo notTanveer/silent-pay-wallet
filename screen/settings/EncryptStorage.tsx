@@ -72,7 +72,7 @@ const EncryptStorage = () => {
 
   const styleHooks = StyleSheet.create({
     root: {
-      backgroundColor: colors.background,
+      backgroundColor: colors.fieldBackground,
     },
   });
 
@@ -151,6 +151,7 @@ const EncryptStorage = () => {
           <Header leftText={loc.settings.biometrics} />
           <ListItem
             title={loc.formatString(loc.settings.encrypt_use, { type: deviceBiometricType! })}
+            titleStyle={{ color: colors.textPrimary }}
             Component={TouchableWithoutFeedback}
             switch={{
               value: biometricEnabled,
@@ -175,6 +176,7 @@ const EncryptStorage = () => {
       <ListItem
         testID="EncyptedAndPasswordProtected"
         title={loc.settings.encrypt_enc_and_pass}
+        titleStyle={{ color: colors.textPrimary }}
         Component={TouchableWithoutFeedback}
         switch={{
           onValueChange: onEncryptStorageSwitch,
@@ -189,6 +191,7 @@ const EncryptStorage = () => {
         <ListItem
           onPress={navigateToPlausibleDeniability}
           title={loc.settings.plausible_deniability}
+          titleStyle={{ color: colors.textPrimary }}
           chevron
           testID="PlausibleDeniabilityButton"
           Component={TouchableOpacityWrapper}

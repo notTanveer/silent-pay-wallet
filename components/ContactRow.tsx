@@ -37,7 +37,7 @@ const ContactRow: React.FC<ContactRowProps> = props => {
         <Text style={[styles.rowName, { color: colors.textPrimary }]} numberOfLines={1}>
           {contact.name}
         </Text>
-        <Text style={[styles.rowAddress, { color: colors.textSecondary }]} numberOfLines={1}>
+        <Text style={[styles.rowAddress, { color: colors.textMuted }]} numberOfLines={1}>
           {shortenAddress(contact.address, 8)}
         </Text>
       </View>
@@ -56,7 +56,7 @@ const ContactRow: React.FC<ContactRowProps> = props => {
   return (
     <Pressable
       accessibilityRole="button"
-      style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.transactionCardBorder }, style]}
+      style={[styles.card, { backgroundColor: colors.surfaceBrandSubtle, borderColor: colors.borderDefault }, style]}
       onPress={() => onPress(contact.address)}
       testID={testID}
     >

@@ -22,18 +22,9 @@ const BUILD_NUMBER = DeviceInfo.getBuildNumber();
 
 type SettingsRoute = 'General' | 'Currency' | 'Contacts' | 'EncryptStorage' | 'NetworkSettings' | 'Tools' | 'About';
 
-type SettingsIconColorToken =
-  | 'settingsGeneralIconColor'
-  | 'settingsCurrencyIconColor'
-  | 'settingsContactIconColor'
-  | 'settingsSecurityIconColor'
-  | 'settingsNetworkIconColor'
-  | 'settingsToolsIconColor'
-  | 'settingsAboutIconColor';
-
+// Settings row glyphs carry their own fixed color as the SVG default.
 interface RowConfig {
   Icon: React.FC<IconProps>;
-  colorToken: SettingsIconColorToken;
   title: string;
   subtitle: string;
   route: SettingsRoute;
@@ -43,7 +34,6 @@ interface RowConfig {
 const MAIN_ROWS: RowConfig[] = [
   {
     Icon: GeneralIcon,
-    colorToken: 'settingsGeneralIconColor',
     title: loc.settings.general,
     subtitle: loc.settings.general_subtitle,
     route: 'General',
@@ -51,7 +41,6 @@ const MAIN_ROWS: RowConfig[] = [
   },
   {
     Icon: CurrencyIcon,
-    colorToken: 'settingsCurrencyIconColor',
     title: loc.settings.currency,
     subtitle: loc.settings.currency_subtitle,
     route: 'Currency',
@@ -59,7 +48,6 @@ const MAIN_ROWS: RowConfig[] = [
   },
   {
     Icon: ContactIcon,
-    colorToken: 'settingsContactIconColor',
     title: loc.contacts.header,
     subtitle: loc.contacts.settings_subtitle,
     route: 'Contacts',
@@ -67,7 +55,6 @@ const MAIN_ROWS: RowConfig[] = [
   },
   {
     Icon: SecurityIcon,
-    colorToken: 'settingsSecurityIconColor',
     title: loc.settings.encrypt_title,
     subtitle: loc.settings.security_subtitle,
     route: 'EncryptStorage',
@@ -75,7 +62,6 @@ const MAIN_ROWS: RowConfig[] = [
   },
   {
     Icon: NetworkIcon,
-    colorToken: 'settingsNetworkIconColor',
     title: loc.settings.network,
     subtitle: loc.settings.network_subtitle,
     route: 'NetworkSettings',
@@ -86,7 +72,6 @@ const MAIN_ROWS: RowConfig[] = [
 const SECONDARY_ROWS: RowConfig[] = [
   {
     Icon: AboutIcon,
-    colorToken: 'settingsAboutIconColor',
     title: loc.settings.about,
     subtitle: `v${APP_VERSION} (build ${BUILD_NUMBER})`,
     route: 'About',
@@ -100,10 +85,10 @@ const Settings: React.FC = () => {
   const { wallets } = useStorage();
   const handleDeleteWallet = useDeleteWallet();
 
-  const cardStyle = [styles.card, { borderColor: colors.settingsCardBorder, backgroundColor: colors.settingsCardBackground }];
+  const cardStyle = [styles.card, { borderColor: colors.borderDefault, backgroundColor: colors.fieldBackground }];
 
-  const mainRowIcons = useMemo(() => MAIN_ROWS.map(row => <row.Icon key={row.route} color={colors[row.colorToken]} />), [colors]);
-  const secondaryRowIcons = useMemo(() => SECONDARY_ROWS.map(row => <row.Icon key={row.route} color={colors[row.colorToken]} />), [colors]);
+  const mainRowIcons = useMemo(() => MAIN_ROWS.map(row => <row.Icon key={row.route} />), []);
+  const secondaryRowIcons = useMemo(() => SECONDARY_ROWS.map(row => <row.Icon key={row.route} />), []);
 
   return (
     <SafeAreaScrollView
@@ -144,12 +129,12 @@ const Settings: React.FC = () => {
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={loc.settings.delete_wallet}
-          style={[styles.deleteWalletButton, styles.cardGap, { borderColor: colors.settingsDeleteWallet }]}
+          style={[styles.deleteWalletButton, styles.cardGap, { borderColor: colors.statusError, backgroundColor: colors.surfaceCaution }]}
           onPress={handleDeleteWallet}
           testID="DeleteWalletButton"
           activeOpacity={0.7}
         >
-          <Text style={[styles.deleteWalletText, { color: colors.settingsDeleteWallet }]}>{loc.settings.delete_wallet}</Text>
+          <Text style={[styles.deleteWalletText, { color: colors.statusError }]}>{loc.settings.delete_wallet}</Text>
         </TouchableOpacity>
       )}
     </SafeAreaScrollView>

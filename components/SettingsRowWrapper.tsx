@@ -13,7 +13,7 @@ const SettingsRowWrapper: React.FC<SettingsRowWrapperProps> = ({ children, showS
   return (
     <View>
       {children}
-      {showSeparator && <View style={[styles.separator, { backgroundColor: colors.settingsCardBorder }, separatorStyle]} />}
+      {showSeparator && <View style={[styles.separator, { backgroundColor: colors.borderDefault }, separatorStyle]} />}
     </View>
   );
 };

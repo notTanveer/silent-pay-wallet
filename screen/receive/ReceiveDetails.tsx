@@ -86,7 +86,7 @@ const ReceiveDetails = () => {
       backgroundColor: colors.background,
     },
     label: {
-      color: colors.foregroundColor,
+      color: colors.textSecondary,
     },
   });
 
@@ -382,15 +382,15 @@ const ReceiveDetails = () => {
             onPress={handleShareButtonPressed}
             disabled={shareDisabled}
             accessibilityRole="button"
-            android_ripple={{ color: colors.androidRippleColor }}
+            android_ripple={{ color: colors.textMuted }}
             style={({ pressed }) => [
               styles.shareButton,
-              { backgroundColor: shareDisabled ? colors.buttonDisabledBackgroundColor : colors.primary },
+              { backgroundColor: shareDisabled ? colors.ctaDisabled : colors.brandPrimary },
               pressed && !shareDisabled ? styles.sharePressed : null,
             ]}
           >
-            <ShareIcon size={19} color={shareDisabled ? colors.alternativeTextColor : colors.white} />
-            <ShroudText style={[styles.shareLabel, { color: shareDisabled ? colors.alternativeTextColor : colors.white }]}>
+            <ShareIcon size={19} color={shareDisabled ? colors.textMuted : colors.white} />
+            <ShroudText style={[styles.shareLabel, { color: shareDisabled ? colors.textMuted : colors.white }]}>
               {loc.receive.details_share}
             </ShroudText>
           </Pressable>

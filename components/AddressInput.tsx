@@ -46,12 +46,12 @@ const AddressInput = ({
   const { colors } = useTheme();
   const stylesHook = StyleSheet.create({
     root: {
-      borderColor: colors.formBorder,
-      borderBottomColor: colors.formBorder,
-      backgroundColor: colors.inputBackgroundColor,
+      borderColor: colors.borderInput,
+      borderBottomColor: colors.borderInput,
+      backgroundColor: colors.fieldBackground,
     },
     input: {
-      color: colors.foregroundColor,
+      color: colors.textSecondary,
     },
   });
 

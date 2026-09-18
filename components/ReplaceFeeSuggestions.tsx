@@ -20,27 +20,27 @@ const ReplaceFeeSuggestions: React.FC<ReplaceFeeSuggestionsProps> = ({ onFeeSele
   const { colors } = useTheme();
   const stylesHook = StyleSheet.create({
     activeButton: {
-      backgroundColor: colors.incomingBackgroundColor,
+      backgroundColor: colors.bgSuccess,
     },
     buttonText: {
-      color: colors.primary,
+      color: colors.brandPrimary,
     },
     timeContainer: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.brandPrimary,
     },
     timeText: {
       color: colors.background,
     },
     rateText: {
-      color: colors.primary,
+      color: colors.brandPrimary,
     },
     customFeeInput: {
-      backgroundColor: colors.inputBackgroundColor,
-      borderBottomColor: colors.formBorder,
-      borderColor: colors.formBorder,
+      backgroundColor: colors.fieldBackground,
+      borderBottomColor: colors.borderInput,
+      borderColor: colors.borderInput,
     },
     alternativeText: {
-      color: colors.alternativeTextColor,
+      color: colors.textMuted,
     },
   });
 

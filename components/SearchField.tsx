@@ -19,12 +19,12 @@ const SearchField: React.FC<SearchFieldProps> = ({ value, onChangeText, placehol
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.field, { backgroundColor: colors.background, borderColor: colors.searchFieldBorder }, style]}>
-      <SearchIcon size={20} stroke={colors.searchFieldIcon} />
+    <View style={[styles.field, { backgroundColor: colors.background, borderColor: colors.borderInput }, style]}>
+      <SearchIcon size={20} stroke={colors.chevron} />
       <TextInput
-        style={[styles.input, { color: colors.textPrimary }]}
+        style={[styles.input, { color: colors.textSecondary }]}
         placeholder={placeholder}
-        placeholderTextColor={colors.searchFieldPlaceholder}
+        placeholderTextColor={colors.textMuted}
         value={value}
         onChangeText={onChangeText}
         autoCapitalize="none"

@@ -80,7 +80,7 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
     const { colors } = useTheme();
     const stylesHook = StyleSheet.create({
       subtitle: {
-        color: colors.foregroundColor,
+        color: colors.textSecondary,
       },
     });
     const { navigate } = useExtendedNavigation<NavigationProps>();
@@ -89,8 +89,8 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
     const insets = useSafeAreaInsets();
     const containerStyle = useMemo(
       () => ({
-        backgroundColor: colors.cardBackground,
-        borderColor: colors.transactionCardBorder,
+        backgroundColor: colors.surfaceBrandSubtle,
+        borderColor: colors.borderDefault,
         borderWidth: 0.5,
         borderRadius: 16,
         minHeight: 77,
@@ -99,7 +99,7 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
         paddingHorizontal: 16,
         paddingVertical: 8,
       }),
-      [colors.cardBackground, colors.transactionCardBorder],
+      [colors.surfaceBrandSubtle, colors.borderDefault],
     );
 
     const combinedStyle = useMemo(() => [containerStyle, style], [containerStyle, style]);
@@ -169,7 +169,7 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
     }, [formattedAmount]);
 
     const rowTitleStyle = useMemo(() => {
-      const color = isIncoming ? colors.brandPrimary : colors.foregroundColor;
+      const color = isIncoming ? colors.brandPrimary : colors.textPrimary;
 
       return {
         ...ROW_TYPOGRAPHY,
@@ -178,7 +178,7 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = memo(
         paddingRight: insets.right,
         paddingLeft: insets.left,
       };
-    }, [isIncoming, colors.brandPrimary, colors.foregroundColor, insets.right, insets.left]);
+    }, [isIncoming, colors.brandPrimary, colors.textPrimary, insets.right, insets.left]);
 
     useEffect(() => {
       setSubtitleNumberOfLines(1);

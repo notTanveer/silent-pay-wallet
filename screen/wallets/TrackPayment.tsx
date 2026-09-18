@@ -27,32 +27,32 @@ const TrackPayment: React.FC<TrackPaymentProps> = () => {
 
   const stylesHook = StyleSheet.create({
     inputContainer: {
-      borderColor: colors.formBorder,
-      backgroundColor: colors.inputBackgroundColor,
+      borderColor: colors.borderInput,
+      backgroundColor: colors.fieldBackground,
     },
     input: {
-      color: colors.foregroundColor,
+      color: colors.textSecondary,
     },
     label: {
-      color: colors.foregroundColor,
+      color: colors.textSecondary,
     },
     description: {
-      color: colors.alternativeTextColor,
+      color: colors.textMuted,
     },
     helperText: {
-      color: colors.alternativeTextColor,
+      color: colors.textMuted,
     },
     infoBox: {
-      backgroundColor: colors.ballOutgoingExpired,
+      backgroundColor: colors.surfaceSubtle,
     },
     infoText: {
-      color: colors.secondButtonTextColor,
+      color: colors.textSecondary,
     },
     outlineButton: {
-      borderColor: colors.formBorder,
+      borderColor: colors.borderInput,
     },
     outlineButtonText: {
-      color: colors.foregroundColor,
+      color: colors.textSecondary,
     },
   });
 
@@ -113,7 +113,7 @@ const TrackPayment: React.FC<TrackPaymentProps> = () => {
             <TextInput
               style={[styles.input, stylesHook.input]}
               placeholder={loc.track_payment.txid_placeholder}
-              placeholderTextColor={colors.alternativeTextColor}
+              placeholderTextColor={colors.textMuted}
               value={txid}
               onChangeText={setTxid}
               autoCapitalize="none"
@@ -123,7 +123,7 @@ const TrackPayment: React.FC<TrackPaymentProps> = () => {
               testID="TrackPaymentTxidInput"
             />
             <Pressable onPress={handlePasteFromClipboard} style={styles.pasteButton} testID="PasteButton">
-              <Icon name="content-paste" type="material" size={18} color={colors.alternativeTextColor} />
+              <Icon name="content-paste" type="material" size={18} color={colors.textMuted} />
             </Pressable>
           </View>
           <Text style={[styles.helperText, stylesHook.helperText]}>{loc.track_payment.txid_helper}</Text>
@@ -132,7 +132,7 @@ const TrackPayment: React.FC<TrackPaymentProps> = () => {
 
           <View style={[styles.infoBox, stylesHook.infoBox]}>
             <View style={styles.infoHeader}>
-              <Icon name="info-outline" type="material" size={18} color={colors.hdborderColor} />
+              <Icon name="info-outline" type="material" size={18} color={colors.borderDefault} />
               <Text style={[styles.infoTitle, { color: colors.black }]}>{loc.track_payment.whats_txid}</Text>
             </View>
             <Text style={[styles.infoText, stylesHook.infoText]}>{loc.track_payment.txid_explanation}</Text>
@@ -141,7 +141,7 @@ const TrackPayment: React.FC<TrackPaymentProps> = () => {
 
         <View style={styles.buttonContainer}>
           {isLoading ? (
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={colors.brandPrimary} />
           ) : (
             <Pressable
               style={[styles.outlineButton, stylesHook.outlineButton, (!isValidTxid || !wallet) && styles.disabled]}

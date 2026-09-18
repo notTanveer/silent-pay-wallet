@@ -17,7 +17,7 @@ const HeaderRightButton: React.FC<HeaderRightButtonProps> = ({ disabled = true, 
     <TouchableOpacity
       accessibilityRole="button"
       disabled={disabled}
-      style={[styles.save, { backgroundColor: colors.lightButton }, { opacity }]}
+      style={[styles.save, { backgroundColor: colors.surfaceSubtle }, { opacity }]}
       onPress={onPress}
       testID={testID}
     >

@@ -167,33 +167,33 @@ const WalletsList: React.FC = () => {
         backgroundColor: colors.background,
       },
       trackPaymentBg: {
-        backgroundColor: colors.bannerBackground,
-        borderColor: colors.bannerBorderColor,
+        backgroundColor: colors.surfaceSubtle,
+        borderColor: colors.accentSubtle,
       },
       receiveBtnStyle: {
-        backgroundColor: colors.receiveBtnBackground,
-        borderColor: colors.requestBtnBorderColor,
+        backgroundColor: colors.surfaceBrandTint,
+        borderColor: colors.brandPrimary,
       },
       scanBtnStyle: {
         backgroundColor: colors.background,
-        borderColor: colors.scanBtnBorderColor,
+        borderColor: colors.accentSubtle,
         borderWidth: 1,
       },
       payBtnActive: {
-        backgroundColor: colors.primary,
+        backgroundColor: colors.brandPrimary,
       },
       payBtnDisabled: {
-        backgroundColor: colors.payBtnDisabledBackground,
+        backgroundColor: colors.ctaDisabled,
       },
       cardStyle: {
         backgroundColor: colors.background,
-        borderColor: colors.lightBorder,
+        borderColor: colors.borderDefault,
       },
       foregroundText: {
-        color: colors.foregroundColor,
+        color: colors.textPrimary,
       },
       alternativeText: {
-        color: colors.alternativeTextColor,
+        color: colors.textMuted,
       },
       requestBtnLabel: {
         color: colors.brandPrimary,
@@ -202,12 +202,12 @@ const WalletsList: React.FC = () => {
         color: colors.white,
       },
       toastRequestBtn: {
-        backgroundColor: colors.primary,
+        backgroundColor: colors.brandPrimary,
       },
       shareAddrStyle: {
         borderWidth: 1.63,
-        borderColor: colors.shareAddrBorderColor,
-        backgroundColor: colors.shareAddrBackground,
+        borderColor: colors.accentSubtle,
+        backgroundColor: colors.background,
       },
       shareAddrText: {
         color: colors.brandPrimary,
@@ -340,7 +340,7 @@ const WalletsList: React.FC = () => {
             testID="TrackPaymentBanner"
           >
             <View style={styles.trackPaymentIconCircle}>
-              <SearchIcon size={48} background={colors.searchIconBackground} stroke={colors.brandPrimary} />
+              <SearchIcon size={48} background={colors.background} stroke={colors.brandPrimary} />
             </View>
             <View style={styles.trackPaymentBannerContent}>
               <Text style={[styles.trackPaymentBannerTitle, stylesHook.foregroundText]}>{loc.track_payment.banner_title}</Text>
@@ -381,7 +381,7 @@ const WalletsList: React.FC = () => {
     activeTab,
     contactList.length,
     openAddContact,
-    colors.searchIconBackground,
+    colors.background,
     colors.brandPrimary,
     colors.chevron,
   ]);
@@ -534,7 +534,7 @@ const WalletsList: React.FC = () => {
             accessibilityRole="button"
             accessibilityLabel={loc.wallets.scan_qr_code}
           >
-            <QRScanIcon color={colors.primary} size={22} />
+            <QRScanIcon color={colors.brandPrimary} size={22} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -609,12 +609,7 @@ const WalletsList: React.FC = () => {
     return (
       <EmptyStateCard
         icon={
-          <ShieldReceiveIcon
-            size={94}
-            background={colors.shieldIconBackground}
-            borderColor={colors.shieldIconBorder}
-            accent={colors.brandPrimary}
-          />
+          <ShieldReceiveIcon size={94} background={colors.surfaceSubtle} borderColor={colors.accentSubtle} accent={colors.brandPrimary} />
         }
         title={loc.wallets.no_transactions_title}
         subtitle={loc.wallets.no_transactions_subtitle}
@@ -642,8 +637,8 @@ const WalletsList: React.FC = () => {
     navigation,
     stylesHook.shareAddrStyle,
     stylesHook.shareAddrText,
-    colors.shieldIconBackground,
-    colors.shieldIconBorder,
+    colors.surfaceSubtle,
+    colors.accentSubtle,
     colors.brandPrimary,
   ]);
 

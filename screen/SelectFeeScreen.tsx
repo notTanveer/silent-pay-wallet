@@ -124,12 +124,12 @@ const FeeCard: FC<FeeCardProps> = ({ label, fee, rate, eta, icon, selected, disa
     iconCircle: {
       backgroundColor: selected ? colors.background : colors.surfaceSubtle,
       borderWidth: selected ? 1 : 0,
-      borderColor: colors.brandStrong,
+      borderColor: colors.brandPrimary,
     },
-    label: { color: colors.textEmphasis },
-    subtitlePrimary: { color: colors.textEmphasis },
-    subtitleSecondary: { color: colors.textSecondary },
-    eta: { color: selected ? colors.textBrand : colors.amountMeta },
+    label: { color: colors.textPrimary },
+    subtitlePrimary: { color: colors.textPrimary },
+    subtitleSecondary: { color: colors.textMuted },
+    eta: { color: selected ? colors.textBrand : colors.textMuted },
   });
 
   return (
@@ -181,13 +181,13 @@ const SelectFeeScreen = () => {
     },
     customCard: { backgroundColor: colors.background, borderColor: colors.borderDefault },
     customCardSelected: { backgroundColor: colors.surfaceSubtle, borderColor: colors.accentSubtle },
-    customLabel: { color: colors.textEmphasis },
-    customSubtitle: { color: colors.textSecondary },
+    customLabel: { color: colors.textPrimary },
+    customSubtitle: { color: colors.textMuted },
     customInputRow: { backgroundColor: colors.background },
-    satVbyteText: { color: colors.textSecondary },
-    customFeeInputColors: { color: colors.textPrimary },
-    customEstimateText: { color: colors.textPrimary },
-    customEstimateRate: { color: colors.textSecondary },
+    satVbyteText: { color: colors.textMuted },
+    customFeeInputColors: { color: colors.textSecondary },
+    customEstimateText: { color: colors.textSecondary },
+    customEstimateRate: { color: colors.textMuted },
     customEstimateEta: { color: colors.textBrand },
   });
 
@@ -323,11 +323,11 @@ const SelectFeeScreen = () => {
               eta={`~${time}`}
               icon={
                 feeType === NetworkTransactionFeeType.FAST ? (
-                  <LightningIcon size={24} color={colors.brandStrong} />
+                  <LightningIcon size={24} color={colors.brandPrimary} />
                 ) : feeType === NetworkTransactionFeeType.MEDIUM ? (
-                  <StopwatchIcon size={24} color={colors.brandStrong} />
+                  <StopwatchIcon size={24} color={colors.brandPrimary} />
                 ) : (
-                  <ClockIcon size={24} color={colors.brandStrong} />
+                  <ClockIcon size={24} color={colors.brandPrimary} />
                 )
               }
               selected={active}
@@ -360,7 +360,7 @@ const SelectFeeScreen = () => {
                   keyboardType="numeric"
                   placeholder={loc.send.insert_custom_fee}
                   value={state.customFeeValue}
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={colors.textMuted}
                   onChangeText={handleCustomFeeChange}
                   onSubmitEditing={handleCustomFeeSubmit}
                   onFocus={handleCustomFocus}
@@ -394,7 +394,7 @@ const SelectFeeScreen = () => {
         <Button
           testID="feeNextButton"
           title={loc.send.details_next}
-          backgroundColor={colors.brandStrong}
+          backgroundColor={colors.brandPrimary}
           disabledBackgroundColor={colors.ctaDisabled}
           disabledTextColor={colors.white}
           disabled={isNextDisabled}

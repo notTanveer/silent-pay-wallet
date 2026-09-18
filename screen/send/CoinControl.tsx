@@ -42,8 +42,8 @@ type RouteProps = RouteProp<SendDetailsStackParamList, 'CoinControl'>;
 const FrozenBadge: React.FC = () => {
   const { colors } = useTheme();
   const oStyles = StyleSheet.create({
-    freeze: { backgroundColor: colors.redBG, borderWidth: 0, marginLeft: 4 },
-    freezeText: { color: colors.redText, marginTop: -1 },
+    freeze: { backgroundColor: colors.surfaceError, borderWidth: 0, marginLeft: 4 },
+    freezeText: { color: colors.statusError, marginTop: -1 },
   });
   return <Badge value={loc.cc.freeze} badgeStyle={oStyles.freeze} textStyle={oStyles.freezeText} />;
 };
@@ -51,8 +51,8 @@ const FrozenBadge: React.FC = () => {
 const ChangeBadge: React.FC = () => {
   const { colors } = useTheme();
   const oStyles = StyleSheet.create({
-    change: { backgroundColor: colors.buttonDisabledBackgroundColor, borderWidth: 0, marginLeft: 4 },
-    changeText: { color: colors.alternativeTextColor, marginTop: -1 },
+    change: { backgroundColor: colors.ctaDisabled, borderWidth: 0, marginLeft: 4 },
+    changeText: { color: colors.textMuted, marginTop: -1 },
   });
   return <Badge value={loc.cc.change} badgeStyle={oStyles.change} textStyle={oStyles.changeText} />;
 };
@@ -89,14 +89,14 @@ const OutputList: React.FC<TOutputListProps> = ({
   const amount = formatBalance(value, balanceUnit, true);
 
   const oStyles = StyleSheet.create({
-    container: { borderBottomColor: colors.lightBorder, backgroundColor: colors.background },
+    container: { borderBottomColor: colors.borderDefault, backgroundColor: colors.background },
     containerSelected: {
-      backgroundColor: colors.ballOutgoingExpired,
+      backgroundColor: colors.surfaceSubtle,
       borderBottomColor: 'rgba(0, 0, 0, 0)',
     },
     avatar: { borderColor: 'white', borderWidth: 1, backgroundColor: color },
-    amount: { fontWeight: 'bold', color: colors.foregroundColor },
-    memo: { fontSize: 13, marginTop: 3, color: colors.alternativeTextColor },
+    amount: { fontWeight: 'bold', color: colors.textSecondary },
+    memo: { fontSize: 13, marginTop: 3, color: colors.textMuted },
   });
 
   let onPress = onOpen;
@@ -146,12 +146,12 @@ const OutputModal: React.FC<TOutputModalProps> = ({
   const amount = formatBalance(value, balanceUnit, true);
 
   const oStyles = StyleSheet.create({
-    container: { paddingHorizontal: 0, borderBottomColor: colors.lightBorder, backgroundColor: 'transparent' },
+    container: { paddingHorizontal: 0, borderBottomColor: colors.borderDefault, backgroundColor: 'transparent' },
     avatar: { borderColor: 'white', borderWidth: 1, backgroundColor: color },
-    amount: { fontWeight: 'bold', color: colors.foregroundColor },
+    amount: { fontWeight: 'bold', color: colors.textSecondary },
     tranContainer: { paddingLeft: 20 },
-    tranText: { fontWeight: 'normal', fontSize: 13, color: colors.alternativeTextColor },
-    memo: { fontSize: 13, marginTop: 3, color: colors.alternativeTextColor },
+    tranText: { fontWeight: 'normal', fontSize: 13, color: colors.textMuted },
+    memo: { fontSize: 13, marginTop: 3, color: colors.textMuted },
   });
   const confirmationsFormatted = new Intl.NumberFormat('en', { maximumSignificantDigits: 3 }).format(confirmations);
 
@@ -239,9 +239,9 @@ const OutputModalContent: React.FC<TOutputModalContentProps> = ({ output, wallet
         style={[
           mStyles.memoTextInput,
           {
-            borderColor: colors.formBorder,
-            borderBottomColor: colors.formBorder,
-            backgroundColor: colors.inputBackgroundColor,
+            borderColor: colors.borderInput,
+            borderBottomColor: colors.borderInput,
+            backgroundColor: colors.fieldBackground,
           },
         ]}
         onChangeText={onMemoChange}
@@ -342,7 +342,7 @@ const CoinControl: React.FC = () => {
 
   const stylesHook = StyleSheet.create({
     tip: {
-      backgroundColor: colors.ballOutgoingExpired,
+      backgroundColor: colors.surfaceSubtle,
       borderRadius: 12,
       padding: 16,
       marginVertical: 24,
@@ -503,7 +503,7 @@ const CoinControl: React.FC = () => {
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       {utxos.length === 0 && (
         <View style={styles.empty}>
-          <Text style={{ color: colors.foregroundColor }}>{loc.cc.empty}</Text>
+          <Text style={{ color: colors.textSecondary }}>{loc.cc.empty}</Text>
         </View>
       )}
 

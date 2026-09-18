@@ -2,13 +2,15 @@ import React from 'react';
 import { Path } from 'react-native-svg';
 
 import HaloIcon, { HaloIconProps } from './HaloIcon';
+import { useTheme } from '../themes';
 
 // lucide "users-round" glyph (24x24) scaled 1.875x and centered in the 94x94 halo,
 // matching the Figma frame's icon inset (8.33%/12.5%) exactly.
 const ContactsGroupIcon: React.FC<HaloIconProps> = props => {
-  const accent = props.accent ?? '#754CE8';
+  const { colors } = useTheme();
+  const accent = props.accent ?? colors.brandPrimary;
   return (
-    <HaloIcon {...props}>
+    <HaloIcon {...props} badge>
       <Path d="M58.25 63.875a15 15 0 0 0-30 0" stroke={accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
       <Path
         d="M52.625 39.5a9.375 9.375 0 1 1-18.75 0 9.375 9.375 0 0 1 18.75 0Z"

@@ -144,7 +144,7 @@ const ContactEdit: React.FC = () => {
           onPress={onSave}
           disabled={!canSave}
           backgroundColor={canSave ? colors.brandPrimary : colors.accentSubtle}
-          color={canSave ? colors.white : colors.textSecondary}
+          color={canSave ? colors.white : colors.textMuted}
           testID="ContactSaveButton"
         />
       </View>

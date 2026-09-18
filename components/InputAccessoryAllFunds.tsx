@@ -17,13 +17,13 @@ const InputAccessoryAllFunds: React.FC<InputAccessoryAllFundsProps> = ({ balance
 
   const stylesHook = StyleSheet.create({
     root: {
-      backgroundColor: colors.inputBackgroundColor,
+      backgroundColor: colors.fieldBackground,
     },
     totalLabel: {
-      color: colors.alternativeTextColor,
+      color: colors.textMuted,
     },
     totalCanNot: {
-      color: colors.alternativeTextColor,
+      color: colors.textMuted,
     },
   });
 

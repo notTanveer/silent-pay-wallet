@@ -19,7 +19,7 @@ export const ShroudButtonLink = forwardRef((props, ref) => {
       {...props}
       ref={ref}
     >
-      <Text style={{ color: colors.foregroundColor, textAlign: 'center', fontSize: 16 }}>{props.title}</Text>
+      <Text style={{ color: colors.textSecondary, textAlign: 'center', fontSize: 16 }}>{props.title}</Text>
     </Pressable>
   );
 });
@@ -32,7 +32,7 @@ export const ShroudText = ({ bold = false, ...props }) => {
   const { colors } = useTheme();
   const style = StyleSheet.compose(
     {
-      color: colors.foregroundColor,
+      color: colors.textSecondary,
       fontWeight: bold ? 'bold' : 'normal',
     },
     props.style,
@@ -42,7 +42,7 @@ export const ShroudText = ({ bold = false, ...props }) => {
 
 export const ShroudTextCentered = props => {
   const { colors } = useTheme();
-  return <Text {...props} style={{ color: colors.foregroundColor, textAlign: 'center' }} />;
+  return <Text {...props} style={{ color: colors.textSecondary, textAlign: 'center' }} />;
 };
 
 export const ShroudFormLabel = props => {
@@ -52,7 +52,7 @@ export const ShroudFormLabel = props => {
     <Text
       {...props}
       style={{
-        color: colors.foregroundColor,
+        color: colors.textSecondary,
         fontFamily: ClashFont.regular,
         marginHorizontal: 20,
       }}
@@ -75,13 +75,13 @@ export const ShroudFormMultiInput = props => {
         flex: 1,
         marginTop: 5,
         marginHorizontal: 20,
-        borderColor: colors.formBorder,
-        borderBottomColor: colors.formBorder,
+        borderColor: colors.borderInput,
+        borderBottomColor: colors.borderInput,
         borderWidth: 1,
         borderBottomWidth: 0.5,
         borderRadius: 4,
-        backgroundColor: colors.inputBackgroundColor,
-        color: colors.foregroundColor,
+        backgroundColor: colors.fieldBackground,
+        color: colors.textSecondary,
         textAlignVertical: 'top',
         fontFamily: ClashFont.regular,
       }}

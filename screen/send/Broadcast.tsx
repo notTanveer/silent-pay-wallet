@@ -30,9 +30,9 @@ const Broadcast: React.FC = () => {
 
   const stylesHooks = StyleSheet.create({
     input: {
-      borderColor: colors.formBorder,
-      borderBottomColor: colors.formBorder,
-      backgroundColor: colors.inputBackgroundColor,
+      borderColor: colors.borderInput,
+      borderBottomColor: colors.borderInput,
+      backgroundColor: colors.fieldBackground,
     },
   });
 

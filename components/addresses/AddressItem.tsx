@@ -33,18 +33,18 @@ const AddressItem = ({ item, balanceUnit, walletID, onPress, searchQuery = '', r
 
   const stylesHook = StyleSheet.create({
     container: {
-      borderBottomColor: colors.lightBorder,
+      borderBottomColor: colors.borderDefault,
       backgroundColor: colors.background,
     },
 
     index: {
-      color: colors.alternativeTextColor,
+      color: colors.textMuted,
     },
     balance: {
-      color: colors.alternativeTextColor,
+      color: colors.textMuted,
     },
     address: {
-      color: hasTransactions ? colors.darkGray : colors.white,
+      color: hasTransactions ? colors.textMuted : colors.white,
     },
   });
 

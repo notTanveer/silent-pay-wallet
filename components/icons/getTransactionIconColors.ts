@@ -19,16 +19,16 @@ export const getTransactionIconColors = (colors: Theme['colors'], value?: number
     ? {
         direction: 'incoming',
         haloBackground: colors.background,
-        haloBorder: colors.txIconHaloBorder,
-        background: colors.incomingIconBackground,
-        borderColor: colors.txIconHaloBorder,
+        haloBorder: colors.accentSubtle,
+        background: colors.surfaceSubtle,
+        borderColor: colors.accentSubtle,
         arrowColor: colors.brandPrimary,
       }
     : {
         direction: 'outgoing',
         haloBackground: colors.background,
-        haloBorder: colors.txIconHaloBorder,
-        background: colors.outgoingIconBackground,
-        borderColor: colors.outgoingIconBorder,
-        arrowColor: colors.foregroundColor,
+        haloBorder: colors.accentSubtle,
+        background: colors.fieldBackground,
+        borderColor: colors.borderDefault,
+        arrowColor: colors.textSecondary,
       };

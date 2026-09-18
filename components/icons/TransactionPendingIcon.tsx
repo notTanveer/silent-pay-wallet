@@ -22,14 +22,14 @@ const TransactionPendingIcon: React.FC = () => {
 
   const stylesHook = StyleSheet.create({
     ball: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.brandPrimary,
     },
   });
 
   return (
     <View style={styles.boxIncoming}>
       <View style={[styles.ball, stylesHook.ball]}>
-        <Icon name="more-horiz" type="material" size={16} color={colors.foregroundColor} />
+        <Icon name="more-horiz" type="material" size={16} color={colors.textSecondary} />
       </View>
     </View>
   );

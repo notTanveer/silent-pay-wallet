@@ -29,10 +29,10 @@ const ExplorerRow: React.FC<ExplorerRowProps> = ({ explorer, selected, onPress, 
         style={({ pressed }) => [styles.row, pressed && Platform.OS !== 'android' && styles.rowPressed]}
         onPress={onPress}
         testID={testID}
-        android_ripple={{ color: colors.settingsRipple }}
+        android_ripple={{ color: colors.borderDefault }}
       >
-        <Text style={[styles.rowTitle, { color: colors.settingsRowTitle }]}>{explorer.name}</Text>
-        {selected && <CheckmarkIcon color={colors.settingsCheckmark} size={20} />}
+          <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{explorer.name}</Text>
+        {selected && <CheckmarkIcon color={colors.brandPrimary} size={20} />}
       </Pressable>
     </SettingsRowWrapper>
   );

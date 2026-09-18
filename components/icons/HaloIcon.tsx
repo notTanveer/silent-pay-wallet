@@ -1,5 +1,6 @@
 import React from 'react';
 import Svg, { Path } from 'react-native-svg';
+import { useTheme } from '../themes';
 
 const HALO =
   'M45.5771 0.5C70.4727 0.5 90.655 20.6817 90.6553 45.5771C90.6553 70.4728 70.4728 90.6553 45.5771 90.6553C20.6817 90.655 0.5 70.4727 0.5 45.5771C0.500252 20.6818 20.6818 0.500252 45.5771 0.5Z';
@@ -25,32 +26,33 @@ interface Props extends HaloIconProps {
  * The receive badge is opt-in, so an empty state that has nothing to do with receiving does not
  * inherit a download chevron.
  */
-const HaloIcon: React.FC<Props> = ({
-  size = 94,
-  background = '#FAF5FF',
-  borderColor = '#F3E8FF',
-  accent = '#754CE8',
-  badge = false,
-  children,
-}) => (
-  <Svg width={size} height={size} viewBox="0 0 94 94" fill="none">
-    <Path d={HALO} fill={background} />
-    <Path d={HALO} stroke={borderColor} />
-    {children}
-    {badge && (
-      <>
-        <Path d={BADGE} fill={accent} />
-        <Path d="M76.9111 71.9257V81.8955" stroke="white" strokeWidth={1.42427} strokeLinecap="round" strokeLinejoin="round" />
-        <Path
-          d="M81.8957 76.9106L76.9107 81.8956L71.9258 76.9106"
-          stroke="white"
-          strokeWidth={1.42427}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </>
-    )}
-  </Svg>
-);
+const HaloIcon: React.FC<Props> = ({ size = 94, background, borderColor, accent, badge = false, children }) => {
+  const { colors } = useTheme();
+  // Off-spec legacy fallbacks were #FAF5FF / #F3E8FF — resolve from the spec tokens instead.
+  // Every caller passes explicit theme values; these only cover a bare <HaloIcon>.
+  const haloFill = background ?? colors.surfaceSubtle;
+  const haloStroke = borderColor ?? colors.accentSubtle;
+  const badgeFill = accent ?? colors.brandPrimary;
+  return (
+    <Svg width={size} height={size} viewBox="0 0 94 94" fill="none">
+      <Path d={HALO} fill={haloFill} />
+      <Path d={HALO} stroke={haloStroke} />
+      {children}
+      {badge && (
+        <>
+          <Path d={BADGE} fill={badgeFill} />
+          <Path d="M76.9111 71.9257V81.8955" stroke={colors.white} strokeWidth={1.42427} strokeLinecap="round" strokeLinejoin="round" />
+          <Path
+            d="M81.8957 76.9106L76.9107 81.8956L71.9258 76.9106"
+            stroke={colors.white}
+            strokeWidth={1.42427}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </>
+      )}
+    </Svg>
+  );
+};
 
 export default HaloIcon;

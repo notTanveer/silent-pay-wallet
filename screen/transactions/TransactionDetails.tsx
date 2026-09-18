@@ -64,24 +64,24 @@ const TransactionDetails = () => {
 
   const stylesHooks = StyleSheet.create({
     headerStatus: { color: colors.brandPrimary },
-    amountValue: { color: colors.foregroundColor },
-    amountUnit: { color: colors.amountMeta },
+    amountValue: { color: colors.textSecondary },
+    amountUnit: { color: colors.textMuted },
     dateText: { color: colors.chevron },
-    noteLabel: { color: colors.textSecondary },
+    noteLabel: { color: colors.textMuted },
     memoTextInput: {
       backgroundColor: colors.fieldBackground,
-      color: colors.textPrimary,
+      color: colors.textSecondary,
     },
     divider: { backgroundColor: colors.borderDefault },
-    summaryTitle: { color: colors.textPrimary },
-    summaryTitleSecondary: { color: colors.textSecondary },
+    summaryTitle: { color: colors.textSecondary },
+    summaryTitleSecondary: { color: colors.textMuted },
     summaryValueConfirmations: { color: colors.brandPrimary },
     explorerButton: {
       backgroundColor: colors.background,
-      borderColor: colors.copyButtonBorder,
+      borderColor: colors.borderDefault,
     },
     splitTag: {
-      backgroundColor: colors.incomingIconBackground,
+      backgroundColor: colors.surfaceSubtle,
     },
   });
 
@@ -112,7 +112,7 @@ const TransactionDetails = () => {
           <TextInput
             placeholder="Only visible to you"
             value={memo}
-            placeholderTextColor={colors.placeholderTextColor}
+            placeholderTextColor={colors.textMuted}
             clearButtonMode="while-editing"
             style={[styles.memoTextInput, stylesHooks.memoTextInput]}
             onChangeText={setMemo}
@@ -166,8 +166,8 @@ const TransactionDetails = () => {
         {/* Block Explorer Button */}
         <View style={styles.actionContainer}>
           <Pressable accessibilityRole="button" style={[styles.explorerButton, stylesHooks.explorerButton]} onPress={viewInBlockExplorer}>
-            <ExternalLinkIcon size={24} color={colors.foregroundColor} />
-            <Text style={[styles.explorerButtonText, { color: colors.foregroundColor }]}>View In Block Explorer</Text>
+            <ExternalLinkIcon size={24} color={colors.textSecondary} />
+            <Text style={[styles.explorerButtonText, { color: colors.textSecondary }]}>View In Block Explorer</Text>
           </Pressable>
         </View>
       </View>

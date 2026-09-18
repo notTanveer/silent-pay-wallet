@@ -55,16 +55,16 @@ const PromptPasswordConfirmationModal = forwardRef<PromptPasswordConfirmationMod
         width: '100%',
       },
       input: {
-        backgroundColor: colors.inputBackgroundColor,
-        borderColor: colors.formBorder,
-        color: colors.foregroundColor,
+        backgroundColor: colors.fieldBackground,
+        borderColor: colors.borderInput,
+        color: colors.textSecondary,
         width: '100%',
       },
       feeModalCustomText: {
         color: colors.white,
       },
       feeModalLabel: {
-        color: colors.successColor,
+        color: colors.statusSuccess,
       },
     });
 
@@ -253,7 +253,7 @@ const PromptPasswordConfirmationModal = forwardRef<PromptPasswordConfirmationMod
         grabber={false}
         showCloseButton={!isSuccess}
         onCloseModalPressed={handleCancel}
-        backgroundColor={colors.modal}
+        backgroundColor={colors.background}
         isGrabberVisible={!isSuccess}
         dismissible={false}
         sizes={Platform.OS === 'ios' ? ['auto'] : [420, 'auto']}

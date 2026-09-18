@@ -42,14 +42,14 @@ const Success = () => {
     overlay: { backgroundColor: colors.scrim },
     sheet: { backgroundColor: colors.background, paddingBottom: 32 + insets.bottom },
     checkCircle: { backgroundColor: colors.surfaceSubtle },
-    sentText: { color: colors.textEmphasis },
+    sentText: { color: colors.textPrimary },
   });
 
   return (
     <View style={[styles.overlay, stylesHook.overlay]}>
       <View style={[styles.sheet, stylesHook.sheet]}>
         <View style={[styles.checkCircle, stylesHook.checkCircle]}>
-          <CheckmarkIcon size={32} color={colors.brandStrong} />
+          <CheckmarkIcon size={32} color={colors.brandPrimary} />
         </View>
 
         <Text style={[styles.sentText, stylesHook.sentText]}>{loc.send.sent_successfully}</Text>
@@ -67,7 +67,7 @@ const Success = () => {
         <ActionButton
           title={loc.send.success_done}
           onPress={onDonePressed}
-          backgroundColor={colors.brandStrong}
+          backgroundColor={colors.brandPrimary}
           color={colors.white}
           style={[styles.sheetButton, styles.doneButton]}
           testID="successDoneButton"
@@ -98,15 +98,15 @@ export const SuccessView = ({ shouldAnimate = true }: SuccessViewParam) => {
           colorFilters={[
             {
               keypath: 'spark',
-              color: colors.success,
+              color: colors.brandPrimary,
             },
             {
               keypath: 'circle',
-              color: colors.success,
+              color: colors.brandPrimary,
             },
             {
               keypath: 'Oval',
-              color: colors.successCheck,
+              color: colors.statusSuccess,
             },
           ]}
           resizeMode="center"

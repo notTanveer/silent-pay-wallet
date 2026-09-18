@@ -135,7 +135,7 @@ const ContactDetail: React.FC = () => {
               hitSlop={10}
               onPress={onCopyAddress}
               testID="ContactCopyAddressIconButton"
-              style={[styles.copyButton, { backgroundColor: colors.background, borderColor: colors.copyButtonBorder }]}
+              style={[styles.copyButton, { backgroundColor: colors.background, borderColor: colors.borderDefault }]}
             >
               <CopyIcon size={16} color={copied ? colors.brandPrimary : colors.chevron} />
             </Pressable>
@@ -161,9 +161,9 @@ const ContactDetail: React.FC = () => {
           title={loc.contacts.remove}
           Icon={TrashIcon}
           onPress={onRemove}
-          backgroundColor={colors.removeSurface}
-          color={colors.removeText}
-          borderColor={colors.removeBorder}
+          backgroundColor={colors.surfaceCaution}
+          color={colors.statusError}
+          borderColor={colors.statusError}
           testID="ContactRemoveButton"
         />
       </View>

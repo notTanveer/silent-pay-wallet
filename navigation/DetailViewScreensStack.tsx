@@ -48,12 +48,12 @@ const DetailViewStackScreensStack = () => {
   const walletListScreenOptions = useMemo<NativeStackNavigationOptions>(() => {
     return {
       title: '',
-      navigationBarColor: theme.colors.navigationBarColor,
+      navigationBarColor: theme.colors.background,
       headerLargeTitle: sizeClass === SizeClass.Compact,
       headerShadowVisible: false,
       headerRight: () => (isDesktop ? undefined : RightBarButtons),
     };
-  }, [RightBarButtons, sizeClass, theme.colors.navigationBarColor]);
+  }, [RightBarButtons, sizeClass, theme.colors.background]);
 
   // Derive the initial route from the ShroudApp singleton (populated synchronously by
   // startAndDecrypt before walletsInitialized flips) rather than the React `wallets` state,

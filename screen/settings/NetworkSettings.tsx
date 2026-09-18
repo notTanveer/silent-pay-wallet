@@ -27,8 +27,8 @@ const StatRow: React.FC<StatRowProps> = ({ title, value, valueColor, showSeparat
   return (
     <SettingsRowWrapper showSeparator={showSeparator}>
       <View style={styles.statRow}>
-        <Text style={[styles.statLabel, { color: colors.alternativeTextColor }]}>{title}</Text>
-        <Text style={[styles.statValue, { color: valueColor ?? colors.settingsRowTitle }]}>{value}</Text>
+        <Text style={[styles.statLabel, { color: colors.textMuted }]}>{title}</Text>
+        <Text style={[styles.statValue, { color: valueColor ?? colors.textPrimary }]}>{value}</Text>
       </View>
     </SettingsRowWrapper>
   );
@@ -75,12 +75,12 @@ const NetworkSettings: React.FC = () => {
 
   let blockHeightText = '—';
   let syncStatusText = loc.settings.network_status_not_synced;
-  let syncStatusColor = colors.alternativeTextColor;
+  let syncStatusColor = colors.textMuted;
 
   if (status === 'idle' && lastScannedBlock > 0) {
     blockHeightText = lastScannedBlock.toLocaleString();
     syncStatusText = loc.settings.network_status_synced;
-    syncStatusColor = colors.primary;
+    syncStatusColor = colors.brandPrimary;
   } else if (status === 'scanning') {
     blockHeightText = (progress?.currentBlock ?? lastScannedBlock).toLocaleString();
     syncStatusText = loc.settings.network_status_syncing;
@@ -97,12 +97,12 @@ const NetworkSettings: React.FC = () => {
       <SettingsSectionHeader>{loc.settings.network_section_authentication}</SettingsSectionHeader>
       <SettingsCard>
         <View style={styles.serverRow}>
-          <Text style={[styles.rowTitle, { color: colors.settingsRowTitle }]}>{loc.settings.network_server}</Text>
-          <StatusDotIcon size={16} color={isConnected ? colors.settingsNetworkIconColor : colors.statusError} />
+          <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{loc.settings.network_server}</Text>
+          <StatusDotIcon size={16} color={isConnected ? colors.statusSuccess : colors.statusError} />
         </View>
         {config.host ? (
           <View style={[styles.addressBar, { backgroundColor: colors.background }]}>
-            <Text style={[styles.serverAddress, { color: colors.settingsRowTitle }]}>
+            <Text style={[styles.serverAddress, { color: colors.textPrimary }]}>
               {preferredServer &&
               preferredServer.host === config.host &&
               (preferredServer.ssl === config.port || preferredServer.tcp === config.port)

@@ -9,7 +9,7 @@ export const TransactionPendingIconBig: React.FC = () => {
 
   const hookStyles = StyleSheet.create({
     ball: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.brandPrimary,
     },
   });
 
@@ -17,7 +17,7 @@ export const TransactionPendingIconBig: React.FC = () => {
     <View>
       <View style={styles.boxIncoming}>
         <View style={[styles.ball, hookStyles.ball]}>
-          <Icon name="more-horiz" type="material" size={100} color={colors.foregroundColor} iconStyle={styles.iconStyle} />
+          <Icon name="more-horiz" type="material" size={100} color={colors.textSecondary} iconStyle={styles.iconStyle} />
         </View>
       </View>
     </View>

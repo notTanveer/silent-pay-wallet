@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 import CheckmarkIcon from '../../components/icons/CheckmarkIcon';
-import { useTheme } from '../../components/themes';
+import { ShroudDarkTheme, ShroudDefaultTheme, useTheme } from '../../components/themes';
 import { useSettings } from '../../hooks/context/useSettings';
 import { ThemePreference } from '../../components/Context/SettingsProvider';
 import loc from '../../loc';
@@ -19,12 +19,16 @@ interface ThemeCardProps {
 const ThemeCard: React.FC<ThemeCardProps> = ({ variant, label, selected, onPress, testID }) => {
   const { colors } = useTheme();
   const isLight = variant === 'light';
-  const barColor = isLight ? colors.themePreviewBarLight : colors.themePreviewBarDark;
-  const borderColor = selected ? colors.accentColor : colors.themePreviewBorderInactive;
+  // Preview swatches render as literal light/dark mini-mocks regardless of the
+  // app's active theme, so each variant reads its fixed scheme's doc tokens
+  // directly (bg/primary, text/disabled, border/default) — never raw hex.
+  const previewColors = isLight ? ShroudDefaultTheme.colors : ShroudDarkTheme.colors;
+  const barColor = previewColors.textDisabled;
+  const borderColor = selected ? colors.brandPrimary : previewColors.borderDefault;
   const borderWidth = selected ? 2 : 1.5;
-  const labelColor = selected ? colors.accentColor : colors.themePreviewLabelInactive;
+  const labelColor = selected ? colors.brandPrimary : colors.textMuted;
   const cardStyle = {
-    backgroundColor: isLight ? colors.themePreviewLightBg : colors.themePreviewDarkBg,
+    backgroundColor: previewColors.background,
     borderColor,
     borderWidth,
   };
@@ -35,10 +39,10 @@ const ThemeCard: React.FC<ThemeCardProps> = ({ variant, label, selected, onPress
       <View style={[styles.card, cardStyle]}>
         <View style={[styles.bar, styles.barWide, { backgroundColor: barColor }]} />
         <View style={[styles.bar, styles.barNarrow, { backgroundColor: barColor }]} />
-        <View style={[styles.pill, { backgroundColor: colors.accentColor }]} />
+        <View style={[styles.pill, { backgroundColor: colors.brandPrimary }]} />
         {selected && (
-          <View style={[styles.badge, { backgroundColor: colors.accentColor }]}>
-            <CheckmarkIcon color="#FFFFFF" size={14} />
+          <View style={[styles.badge, { backgroundColor: colors.brandPrimary }]}>
+            <CheckmarkIcon color={colors.white} size={14} />
           </View>
         )}
       </View>
@@ -90,8 +94,8 @@ const ThemeSettings: React.FC = () => {
           testID="ThemeSystemOption"
         />
       </View>
-      <View style={[styles.descriptionBox, { backgroundColor: colors.settingsCardBackground, borderColor: colors.settingsCardBorder }]}>
-        <Text style={[styles.descriptionText, { color: colors.settingsDescriptionText }]}>{description}</Text>
+      <View style={[styles.descriptionBox, { backgroundColor: colors.fieldBackground, borderColor: colors.borderDefault }]}>
+        <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>{description}</Text>
       </View>
     </SafeAreaScrollView>
   );

@@ -72,8 +72,8 @@ const OnboardingScreen: React.FC = () => {
             <Image source={require('../../img/icon.png')} style={styles.bitcoinLogo} resizeMode="contain" />
           </View>
 
-          <Text style={[styles.welcomeTitle, { color: colors.primary }]}>{loc.onboarding.shroud}</Text>
-          <Text style={[styles.welcomeSubtitle, { color: colors.labelText }]}>{loc.onboarding.subtitle}</Text>
+          <Text style={[styles.welcomeTitle, { color: colors.brandPrimary }]}>{loc.onboarding.shroud}</Text>
+          <Text style={[styles.welcomeSubtitle, { color: colors.textMuted }]}>{loc.onboarding.subtitle}</Text>
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.createButton} onPress={handleContinue} testID="CreateWallet">
@@ -86,7 +86,7 @@ const OnboardingScreen: React.FC = () => {
           </View>
 
           <View style={styles.footerContainer}>
-            <Text style={[styles.footerText, { color: colors.labelText }]}> {loc.onboarding.footer}</Text>
+            <Text style={[styles.footerText, { color: colors.textMuted }]}> {loc.onboarding.footer}</Text>
           </View>
         </View>
       </SafeAreaView>

@@ -11,7 +11,7 @@ const About: React.FC = () => {
 
   const stylesHook = StyleSheet.create({
     textBackup: {
-      color: colors.foregroundColor,
+      color: colors.textSecondary,
     },
   });
 
@@ -39,6 +39,7 @@ const About: React.FC = () => {
           }}
           onPress={handleOnDiscordPress}
           title={loc.settings.about_sm_discord}
+          titleStyle={{ color: colors.textPrimary }}
         />
         <ListItem
           leftIcon={{
@@ -48,6 +49,7 @@ const About: React.FC = () => {
           }}
           onPress={handleOnGithubPress}
           title={loc.settings.about_sm_github}
+          titleStyle={{ color: colors.textPrimary }}
         />
       </ShroudCard>
     </SafeAreaScrollView>

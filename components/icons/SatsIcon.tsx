@@ -1,8 +1,9 @@
 import React from 'react';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { IconProps } from './types';
+import { palette } from '../themes';
 
-const SatsIcon: React.FC<IconProps> = ({ size = 48, color, backgroundColor = 'white' }) => (
+const SatsIcon: React.FC<IconProps> = ({ size = 48, color, backgroundColor = palette.neutral0 }) => (
   <Svg width={size} height={size} viewBox="0 0 48 48" fill="none">
     <Rect width="47.9965" height="47.9965" rx="23.9982" fill={backgroundColor} />
     <Path

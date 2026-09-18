@@ -142,18 +142,18 @@ const ScanQRCode = () => {
   const stylesHook = StyleSheet.create({
     rootElevated: { backgroundColor: colors.background },
     iconCircle: { backgroundColor: colors.surfaceSubtle },
-    permissionTitle: { color: colors.foregroundColor },
+    permissionTitle: { color: colors.textSecondary },
     primaryButton: { backgroundColor: colors.brandPrimary },
     primaryButtonText: { color: colors.white },
     secondaryButton: { backgroundColor: colors.accentSubtle },
     secondaryButtonText: { color: colors.brandPrimary },
-    ghostButtonText: { color: colors.alternativeTextColor },
-    progressWrapper: { backgroundColor: colors.brandingColor, borderColor: colors.foregroundColor, borderWidth: 4 },
+    ghostButtonText: { color: colors.textMuted },
+    progressWrapper: { backgroundColor: colors.bgInverse, borderColor: colors.textSecondary, borderWidth: 4 },
     backdoorInput: {
-      borderColor: colors.formBorder,
-      borderBottomColor: colors.formBorder,
-      backgroundColor: colors.inputBackgroundColor,
-      color: colors.foregroundColor,
+      borderColor: colors.borderInput,
+      borderBottomColor: colors.borderInput,
+      backgroundColor: colors.fieldBackground,
+      color: colors.textSecondary,
     },
   });
 

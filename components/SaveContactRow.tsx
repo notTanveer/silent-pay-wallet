@@ -86,13 +86,13 @@ const SaveContactRow: React.FC<SaveContactRowProps> = ({ address, variant = 'row
   if (state.k === 'saved') {
     return (
       <View
-        style={[styles.row, styles.rowSolid, { backgroundColor: colors.contactSavedSurface, borderColor: colors.contactSavedAccent }]}
+        style={[styles.row, styles.rowSolid, { backgroundColor: colors.bgSuccess, borderColor: colors.statusSuccess }]}
         testID="SaveContactReceipt"
       >
-        <View style={[styles.savedCheck, { borderColor: colors.contactSavedAccent }]}>
-          <CheckmarkIcon size={12} color={colors.contactSavedAccent} />
+        <View style={[styles.savedCheck, { borderColor: colors.statusSuccess }]}>
+          <CheckmarkIcon size={12} color={colors.statusSuccess} />
         </View>
-        <Text style={[styles.text, { color: colors.contactSavedAccent }]}>{loc.contacts.saved_to_contacts}</Text>
+        <Text style={[styles.text, { color: colors.statusSuccess }]}>{loc.contacts.saved_to_contacts}</Text>
       </View>
     );
   }
@@ -115,7 +115,7 @@ const SaveContactRow: React.FC<SaveContactRowProps> = ({ address, variant = 'row
       <Pressable
         accessibilityRole="button"
         onPress={onOpen}
-        style={[styles.row, { backgroundColor: colors.cardBackground, borderColor: colors.dashedBorder }]}
+        style={[styles.row, { backgroundColor: colors.surfaceBrandSubtle, borderColor: colors.borderDefault }]}
         testID="SaveContactButton"
       >
         <SaveIcon size={20} color={colors.brandPrimary} />
@@ -159,7 +159,7 @@ const SaveContactRow: React.FC<SaveContactRowProps> = ({ address, variant = 'row
           style={[styles.saveButton, { backgroundColor: canSave ? colors.brandPrimary : colors.accentSubtle }]}
           testID="SaveContactConfirmButton"
         >
-          <Text style={[styles.saveLabel, { color: canSave ? colors.white : colors.textSecondary }]}>{loc.contacts.save_short}</Text>
+          <Text style={[styles.saveLabel, { color: canSave ? colors.white : colors.textMuted }]}>{loc.contacts.save_short}</Text>
         </Pressable>
       </View>
     </View>

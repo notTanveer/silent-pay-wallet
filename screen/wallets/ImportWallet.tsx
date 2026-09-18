@@ -280,7 +280,7 @@ const ImportWallet = () => {
       <Spacing20 />
       <WalletBirthSection birthDate={birthDate} setBirthDate={setBirthDate} />
 
-      {isLoading && <ActivityIndicator size="large" color={colors.primary} style={styles.activityIndicator} />}
+      {isLoading && <ActivityIndicator size="large" color={colors.brandPrimary} style={styles.activityIndicator} />}
 
       {Platform.select({ android: !isToolbarVisibleForAndroid && renderOptionsAndImportButton, default: renderOptionsAndImportButton })}
       {Platform.select({

@@ -247,9 +247,9 @@ export const AmountInput: React.FC<AmountInputProps> = props => {
 
   const stylesHook = StyleSheet.create({
     center: { padding: amount === BitcoinUnit.MAX ? 0 : 15 },
-    localCurrency: { color: disabled ? colors.alternativeTextColor : colors.alternativeTextColor2 },
-    input: { color: disabled ? colors.alternativeTextColor : colors.alternativeTextColor2, fontSize: amount.length > 10 ? 20 : 36 },
-    cryptoCurrency: { color: disabled ? colors.alternativeTextColor : colors.alternativeTextColor2 },
+    localCurrency: { color: disabled ? colors.textMuted : colors.textBrand },
+    input: { color: disabled ? colors.textMuted : colors.textBrand, fontSize: amount.length > 10 ? 20 : 36 },
+    cryptoCurrency: { color: disabled ? colors.textMuted : colors.textBrand },
   });
 
   return (
@@ -272,7 +272,7 @@ export const AmountInput: React.FC<AmountInputProps> = props => {
                 ref={textInputRef}
                 editable={!isLoading && !disabled}
                 value={amount === BitcoinUnit.MAX ? loc.units.MAX : parseFloat(amount) >= 0 ? String(amount) : undefined}
-                placeholderTextColor={disabled ? colors.alternativeTextColor : colors.alternativeTextColor2}
+                placeholderTextColor={disabled ? colors.textMuted : colors.textBrand}
                 style={[styles.input, stylesHook.input]}
                 {...otherProps}
               />

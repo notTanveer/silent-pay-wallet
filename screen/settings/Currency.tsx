@@ -55,7 +55,7 @@ const Currency: React.FC = () => {
           item.endPointKey,
           <Text
             key={item.endPointKey}
-            style={[styles.symbol, { color: colors.settingsRowTitle }]}
+            style={[styles.symbol, { color: colors.textSecondary }]}
             numberOfLines={1}
             adjustsFontSizeToFit
             minimumFontScale={0.5}
@@ -64,10 +64,10 @@ const Currency: React.FC = () => {
           </Text>,
         ]),
       ),
-    [colors.settingsRowTitle],
+    [colors.textSecondary],
   );
 
-  const checkmarkElement = useMemo(() => <CheckmarkIcon color={colors.successCheck} size={20} />, [colors.successCheck]);
+  const checkmarkElement = useMemo(() => <CheckmarkIcon color={colors.brandPrimary} size={20} />, [colors.brandPrimary]);
 
   const fetchCurrency = useCallback(async () => {
     try {
@@ -151,7 +151,7 @@ const Currency: React.FC = () => {
   return (
     <View style={[styles.flex, { backgroundColor: colors.background }]}>
       <SearchField value={search} onChangeText={setSearch} placeholder={loc.settings.search_currency} style={styles.searchField} />
-      <View style={[styles.listCard, { backgroundColor: colors.settingsCardBackground, marginBottom: insets.bottom }]}>
+      <View style={[styles.listCard, { backgroundColor: colors.fieldBackground, marginBottom: insets.bottom }]}>
         <FlatList
           keyboardShouldPersistTaps="always"
           automaticallyAdjustKeyboardInsets

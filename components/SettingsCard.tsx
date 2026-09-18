@@ -9,11 +9,7 @@ interface SettingsCardProps {
 
 const SettingsCard: React.FC<SettingsCardProps> = ({ children, style }) => {
   const { colors } = useTheme();
-  return (
-    <View style={[styles.card, { borderColor: colors.settingsCardBorder, backgroundColor: colors.settingsCardBackground }, style]}>
-      {children}
-    </View>
-  );
+  return <View style={[styles.card, { borderColor: colors.borderDefault, backgroundColor: colors.fieldBackground }, style]}>{children}</View>;
 };
 
 export default SettingsCard;

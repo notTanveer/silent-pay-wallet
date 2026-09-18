@@ -26,15 +26,15 @@ const WalletsAdd: React.FC = () => {
   const [label, setLabel] = useState('');
   const stylesHook = {
     label: {
-      borderColor: colors.formBorder,
-      borderBottomColor: colors.formBorder,
-      backgroundColor: colors.inputBackgroundColor,
+      borderColor: colors.borderInput,
+      borderBottomColor: colors.borderInput,
+      backgroundColor: colors.fieldBackground,
     },
     root: {
       backgroundColor: colors.background,
     },
     helperText: {
-      color: colors.placeholderTextColor,
+      color: colors.textMuted,
     },
   };
 

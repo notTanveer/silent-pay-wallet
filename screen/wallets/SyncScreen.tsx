@@ -127,7 +127,7 @@ const SyncScreen: React.FC<SyncScreenProps> = () => {
             style={[
               styles.actionButton,
               styles.actionButtonPauseGap,
-              { backgroundColor: colors.brandPrimary, borderColor: colors.buttonBorder },
+              { backgroundColor: colors.brandPrimary, borderColor: colors.brandPrimary },
             ]}
           >
             <PauseIcon color={colors.white} size={13} />
@@ -138,7 +138,7 @@ const SyncScreen: React.FC<SyncScreenProps> = () => {
         return (
           <Pressable
             onPress={handleResume}
-            style={[styles.actionButton, { backgroundColor: colors.brandPrimary, borderColor: colors.buttonBorder }]}
+            style={[styles.actionButton, { backgroundColor: colors.brandPrimary, borderColor: colors.brandPrimary }]}
           >
             <PlayIcon color={colors.white} size={32} />
             <Text style={[styles.actionButtonText, { color: colors.white }]}>{loc.sync.btn_continue}</Text>
@@ -162,7 +162,7 @@ const SyncScreen: React.FC<SyncScreenProps> = () => {
         return (
           <Pressable
             onPress={handleRetry}
-            style={[styles.actionButton, { backgroundColor: colors.brandPrimary, borderColor: colors.buttonBorder }]}
+            style={[styles.actionButton, { backgroundColor: colors.brandPrimary, borderColor: colors.brandPrimary }]}
           >
             <Icon name="refresh" type="material" size={20} color={colors.white} />
             <Text style={[styles.actionButtonText, { color: colors.white }]}>{loc.sync.btn_retry}</Text>
@@ -182,25 +182,25 @@ const SyncScreen: React.FC<SyncScreenProps> = () => {
 
         {effectiveStatus !== 'error' && (
           <View style={styles.percentRow}>
-            <Text style={[styles.percentNum, { color: colors.textEmphasis }]}>{Math.round(effectivePct)}</Text>
-            <Text style={[styles.percentSign, { color: colors.textMeta }]}>%</Text>
+            <Text style={[styles.percentNum, { color: colors.textPrimary }]}>{Math.round(effectivePct)}</Text>
+            <Text style={[styles.percentSign, { color: colors.textMuted }]}>%</Text>
           </View>
         )}
 
         {(effectiveStatus === 'scanning' || effectiveStatus === 'paused') && (
           <View style={styles.etaRow}>
-            <Icon name="schedule" type="material" size={18} color={colors.textMeta} />
-            <Text style={[styles.etaText, { color: colors.textMeta }]}>{formatEtaAbout(liveEta) ?? '--'}</Text>
+            <Icon name="schedule" type="material" size={18} color={colors.textMuted} />
+            <Text style={[styles.etaText, { color: colors.textMuted }]}>{formatEtaAbout(liveEta) ?? '--'}</Text>
           </View>
         )}
 
         {effectiveStatus !== 'error' && (
-          <View style={[styles.barTrack, { backgroundColor: colors.progressTrack }]}>
+          <View style={[styles.barTrack, { backgroundColor: colors.borderDefault }]}>
             <Animated.View style={[styles.barFill, { width: barWidth, backgroundColor: barColor }]} />
           </View>
         )}
 
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>
           {effectiveStatus === 'scanning' || effectiveStatus === 'paused'
             ? loc.sync.subtitle_recent
             : effectiveStatus === 'done'
@@ -236,7 +236,7 @@ const SyncScreen: React.FC<SyncScreenProps> = () => {
 
         <View style={[styles.privacyCard, { backgroundColor: colors.surfaceSubtle }]}>
           <Icon name="info-outline" type="material" size={20} color={colors.brandPrimary} />
-          <Text style={[styles.privacyText, { color: colors.textSecondary }]}>{loc.sync.privacy_info}</Text>
+          <Text style={[styles.privacyText, { color: colors.textMuted }]}>{loc.sync.privacy_info}</Text>
         </View>
       </ScrollView>
     </SafeArea>

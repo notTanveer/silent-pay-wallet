@@ -32,7 +32,7 @@ export const AddressInputScanButton = ({
 
   const stylesHook = StyleSheet.create({
     scan: {
-      backgroundColor: colors.scanLabel,
+      backgroundColor: colors.textMuted,
     },
     scanText: {
       color: colors.white,
@@ -147,7 +147,7 @@ export const AddressInputScanButton = ({
           </Text>
         </>
       ) : (
-        <Text style={[styles.linkText, { color: colors.foregroundColor }]}>{loc.wallets.import_scan_qr}</Text>
+        <Text style={[styles.linkText, { color: colors.textSecondary }]}>{loc.wallets.import_scan_qr}</Text>
       )}
     </ToolTipMenu>
   );

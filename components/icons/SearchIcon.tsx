@@ -1,5 +1,6 @@
 import React from 'react';
 import Svg, { Path, Rect } from 'react-native-svg';
+import { useTheme } from '../themes';
 
 interface SearchIconProps {
   size?: number;
@@ -21,18 +22,24 @@ const Glyph: React.FC<{ stroke: string }> = ({ stroke }) => (
   </>
 );
 
-const SearchIcon: React.FC<SearchIconProps> = ({ size = 20, background, stroke = '#754CE8' }) =>
-  background ? (
-    <Svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-      <Rect width="47.9965" height="47.9965" rx="23.9982" fill={background} />
-      <Glyph stroke={stroke} />
-    </Svg>
-  ) : (
-    // Artwork is authored on the 48pt canvas above. Cropping to the 20pt box the design
-    // specs the icon at puts it at 1:1, so the strokes land at their native 1.66607 width.
+const SearchIcon: React.FC<SearchIconProps> = ({ size = 20, background, stroke }) => {
+  const { colors } = useTheme();
+  const glyphStroke = stroke ?? colors.brandPrimary;
+  if (background) {
+    return (
+      <Svg width={size} height={size} viewBox="0 0 48 48" fill="none">
+        <Rect width="47.9965" height="47.9965" rx="23.9982" fill={background} />
+        <Glyph stroke={glyphStroke} />
+      </Svg>
+    );
+  }
+  // Artwork is authored on the 48pt canvas above. Cropping to the 20pt box the design
+  // specs the icon at puts it at 1:1, so the strokes land at their native 1.66607 width.
+  return (
     <Svg width={size} height={size} viewBox="14 14 20 20" fill="none">
-      <Glyph stroke={stroke} />
+      <Glyph stroke={glyphStroke} />
     </Svg>
   );
+};
 
 export default SearchIcon;

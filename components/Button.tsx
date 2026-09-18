@@ -39,11 +39,11 @@ interface ButtonProps extends PressableProps {
 export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps>((props, ref) => {
   const { colors } = useTheme();
 
-  let backgroundColor = props.backgroundColor ?? colors.primary;
+  let backgroundColor = props.backgroundColor ?? colors.brandPrimary;
   let fontColor = props.buttonTextColor ?? colors.white;
   if (props.disabled) {
-    backgroundColor = props.disabledBackgroundColor ?? colors.buttonDisabledBackgroundColor;
-    fontColor = props.disabledTextColor ?? colors.alternativeTextColor;
+    backgroundColor = props.disabledBackgroundColor ?? colors.ctaDisabled;
+    fontColor = props.disabledTextColor ?? colors.white;
   }
 
   const borderRadius = props.borderRadius ?? styles.button.borderRadius;
@@ -51,7 +51,7 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
   const buttonStyle = {
     ...styles.button,
     backgroundColor,
-    borderColor: props.disabled ? colors.buttonDisabledBackgroundColor : 'transparent',
+    borderColor: props.disabled ? colors.ctaDisabled : 'transparent',
     borderRadius,
   };
 
@@ -72,7 +72,7 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
         {...props}
         ref={ref}
         testID={props.testID}
-        android_ripple={{ color: colors.androidRippleColor }}
+        android_ripple={{ color: colors.textMuted }}
         style={({ pressed }) => [Platform.OS === 'ios' && pressed ? styles.pressed : null, buttonStyle, props.style, styles.content]}
         accessibilityRole="button"
         onPress={props.onPress}

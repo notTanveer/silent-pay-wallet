@@ -1,8 +1,9 @@
 import React from 'react';
 import Svg, { Path } from 'react-native-svg';
+import { palette } from '../themes';
 import { IconProps } from './types';
 
-const CurrencyIcon: React.FC<IconProps> = ({ size = 24, color }) => (
+const CurrencyIcon: React.FC<IconProps> = ({ size = 24, color = palette.bitcoin500 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M15.75 9V7.5H12.75V5.25H11.25V7.5H9.75C9.35218 7.5 8.97064 7.65804 8.68934 7.93934C8.40804 8.22064 8.25 8.60218 8.25 9V11.25C8.25 11.6478 8.40804 12.0294 8.68934 12.3107C8.97064 12.592 9.35218 12.75 9.75 12.75H14.25V15H8.25V16.5H11.25V18.75H12.75V16.5H14.25C14.6478 16.5 15.0294 16.342 15.3107 16.0607C15.592 15.7794 15.75 15.3978 15.75 15V12.75C15.75 12.3522 15.592 11.9706 15.3107 11.6893C15.0294 11.408 14.6478 11.25 14.25 11.25H9.75V9H15.75Z"

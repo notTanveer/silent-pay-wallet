@@ -23,10 +23,10 @@ const HeaderMenuButton: React.FC<HeaderMenuButtonProps> = ({ onPressMenuItem, ac
       <Pressable
         testID="HeaderMenuButton"
         disabled={disabled}
-        android_ripple={{ color: colors.lightButton }}
+        android_ripple={{ color: colors.surfaceSubtle }}
         style={({ pressed }) => [{ opacity: pressed ? 0.5 : iconOpacity }]}
       >
-        <Icon size={22} name="more-horiz" type="material" color={colors.foregroundColor} {...styleProps} />
+        <Icon size={22} name="more-horiz" type="material" color={colors.textSecondary} {...styleProps} />
       </Pressable>
     );
   }
@@ -44,7 +44,7 @@ const HeaderMenuButton: React.FC<HeaderMenuButtonProps> = ({ onPressMenuItem, ac
       title={title}
       buttonStyle={{ opacity: iconOpacity }}
     >
-      <Icon size={22} name="more-horiz" type="material" color={colors.foregroundColor} {...styleProps} />
+      <Icon size={22} name="more-horiz" type="material" color={colors.textSecondary} {...styleProps} />
     </ToolTipMenu>
   );
 };

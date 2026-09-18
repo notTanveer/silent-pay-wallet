@@ -22,11 +22,11 @@ type SecondButtonProps = {
 
 export const SecondButton = forwardRef<React.ElementRef<typeof TouchableOpacity>, SecondButtonProps>((props, ref) => {
   const { colors } = useTheme();
-  let backgroundColor = props.backgroundColor ? props.backgroundColor : colors.buttonGrayBackgroundColor;
-  let fontColor = colors.secondButtonTextColor;
+  let backgroundColor = props.backgroundColor ? props.backgroundColor : colors.fieldBackground;
+  let fontColor = colors.textSecondary;
   if (props.disabled === true) {
-    backgroundColor = colors.buttonDisabledBackgroundColor;
-    fontColor = colors.alternativeTextColor;
+    backgroundColor = colors.ctaDisabled;
+    fontColor = colors.textMuted;
   }
 
   const buttonView = props.loading ? (

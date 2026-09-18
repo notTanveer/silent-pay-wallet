@@ -44,9 +44,9 @@ const ImportSpeed = () => {
       borderRadius: 4,
       paddingHorizontal: 8,
       color: '#81868e',
-      borderColor: colors.formBorder,
-      borderBottomColor: colors.formBorder,
-      backgroundColor: colors.inputBackgroundColor,
+      borderColor: colors.borderInput,
+      borderBottomColor: colors.borderInput,
+      backgroundColor: colors.fieldBackground,
     },
   });
 

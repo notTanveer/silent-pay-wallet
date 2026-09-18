@@ -18,16 +18,17 @@ const InfoBanner: React.FC<InfoBannerProps> = ({ text, emphasis, variant = 'info
   const { colors } = useTheme();
   const [before, match, after] = splitForEmphasis(text, emphasis);
   const backgroundColor = variant === 'caution' ? colors.surfaceCaution : colors.surfaceSubtle;
-  const iconColor = variant === 'caution' ? colors.iconCaution : colors.primary;
+  const iconColor = variant === 'caution' ? colors.textWarning : colors.brandPrimary;
+  const textColor = colors.textSecondary;
 
   return (
     <View style={[styles.banner, { backgroundColor }, containerStyle]}>
       <View style={styles.icon}>
         <InfoIcon size={20} color={iconColor} />
       </View>
-      <ShroudText style={[styles.text, { color: colors.textSecondary }]}>
+      <ShroudText style={[styles.text, { color: textColor }]}>
         {before}
-        {match ? <ShroudText style={[styles.emphasis, { color: colors.textPrimary }]}>{match}</ShroudText> : null}
+        {match ? <ShroudText style={[styles.emphasis, { color: textColor }]}>{match}</ShroudText> : null}
         {after}
       </ShroudText>
     </View>

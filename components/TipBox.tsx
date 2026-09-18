@@ -15,7 +15,7 @@ const TipBox: React.FC<TipBoxProps> = ({ number, title, description, additionalD
   const { colors } = useTheme();
   const stylesHook = StyleSheet.create({
     tipBox: {
-      backgroundColor: colors.ballOutgoingExpired,
+      backgroundColor: colors.surfaceSubtle,
       borderRadius: 12,
       padding: 16,
       marginBottom: 24,

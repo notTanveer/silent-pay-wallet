@@ -16,7 +16,7 @@ export const Header: React.FC<HeaderProps> = ({ leftText, isDrawerList }) => {
       borderBottomColor: isDrawerList ? colors.background : colors.background,
     },
     text: {
-      color: colors.foregroundColor,
+      color: colors.textPrimary,
     },
   });
 

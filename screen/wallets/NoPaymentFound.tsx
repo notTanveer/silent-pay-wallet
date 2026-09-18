@@ -27,7 +27,7 @@ const NoPaymentFound: React.FC = () => {
   );
 
   const spAddress = useMemo(() => wallet?.getSilentPaymentAddress() ?? '', [wallet]);
-  const warningColor = colors.warningColor;
+  const warningColor = colors.textWarning;
 
   const handleCopyAddress = useCallback(() => {
     if (!spAddress) return;
@@ -36,21 +36,21 @@ const NoPaymentFound: React.FC = () => {
   }, [spAddress]);
 
   const stylesHook = StyleSheet.create({
-    heading: { color: colors.foregroundColor },
-    subheading: { color: colors.alternativeTextColor },
-    reasonsBox: { backgroundColor: warningColor + '15' },
-    reasonsTitle: { color: colors.foregroundColor },
-    reasonText: { color: colors.alternativeTextColor },
-    tipBox: { backgroundColor: colors.ballOutgoingExpired },
-    tipText: { color: colors.black },
+    heading: { color: colors.textPrimary },
+    subheading: { color: colors.textMuted },
+    reasonsBox: { backgroundColor: colors.surfaceCaution },
+    reasonsTitle: { color: colors.textPrimary },
+    reasonText: { color: colors.textMuted },
+    tipBox: { backgroundColor: colors.surfaceSubtle },
+    tipText: { color: colors.textSecondary },
   });
 
   return (
     <SafeArea>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
-          <View style={[styles.iconContainer, { backgroundColor: colors.inputBackgroundColor }]}>
-            <Icon name="search" type="material" size={40} color={colors.alternativeTextColor} />
+          <View style={[styles.iconContainer, { backgroundColor: colors.fieldBackground }]}>
+            <Icon name="search" type="material" size={40} color={colors.textMuted} />
           </View>
 
           <Text style={[styles.heading, stylesHook.heading]}>{loc.no_payment_found.heading}</Text>
@@ -75,7 +75,7 @@ const NoPaymentFound: React.FC = () => {
 
           <View style={[styles.tipBox, stylesHook.tipBox]}>
             <Text style={[styles.tipText, stylesHook.tipText]}>
-              <Text style={[styles.tipLabel, { color: colors.primary }]}>{loc.no_payment_found.tip_label} </Text>
+              <Text style={[styles.tipLabel, { color: colors.brandPrimary }]}>{loc.no_payment_found.tip_label} </Text>
               {loc.no_payment_found.tip}
             </Text>
           </View>

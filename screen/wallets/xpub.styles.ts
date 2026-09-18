@@ -31,7 +31,7 @@ export const useDynamicStyles = () => {
         },
         container: {
           // Example of another dynamic style
-          borderColor: theme.colors.inputBorderColor,
+          borderColor: theme.colors.borderInput,
           borderWidth: 1,
         },
         // You can add more dynamically themed styles here

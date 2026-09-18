@@ -84,20 +84,19 @@ const ServerRow: React.FC<ServerRowProps> = ({ server, selected, onPress, showSe
         style={({ pressed }) => [styles.row, pressed && Platform.OS !== 'android' && styles.rowPressed]}
         onPress={onPress}
         testID={testID}
-        android_ripple={{ color: colors.settingsRipple }}
+        android_ripple={{ color: colors.borderDefault }}
       >
         <View style={styles.rowText}>
-          <Text style={[styles.rowTitle, { color: colors.settingsRowTitle }]}>{server.host}</Text>
-          <Text style={[styles.rowSubtitle, { color: colors.alternativeTextColor }]}>{formatServerAddress(server)}</Text>
+          <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{server.host}</Text>
+          <Text style={[styles.rowSubtitle, { color: colors.textMuted }]}>{formatServerAddress(server)}</Text>
         </View>
-        {selected && <CheckmarkIcon color={colors.settingsCheckmark} size={20} />}
+        {selected && <CheckmarkIcon color={colors.brandPrimary} size={20} />}
       </Pressable>
     </SettingsRowWrapper>
   );
 };
 
 const ElectrumServerSettings: React.FC = () => {
-  const { colors } = useTheme();
   const params = useRoute<RouteProps>().params;
   const { isTorEnabled } = useSettings();
   const [preferredServer, setPreferredServer] = useState<ElectrumServerItem>();
@@ -200,8 +199,6 @@ const ElectrumServerSettings: React.FC = () => {
           <Button
             testID="ConnectCustomServer"
             title={loc.settings.electrum_connect_custom_server}
-            disabledBackgroundColor={colors.accentSubtleDisabled}
-            disabledTextColor={colors.brandPrimaryDisabled}
             disabled={!parsedCustom || isConnecting}
             onPress={() => parsedCustom && saveServer(parsedCustom)}
             style={styles.connectButton}

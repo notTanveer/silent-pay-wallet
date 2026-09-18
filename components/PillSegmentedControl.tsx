@@ -4,7 +4,7 @@ import { Animated, LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-
 import triggerHapticFeedback, { HapticFeedbackTypes } from '../modules/hapticFeedback';
 import { ShroudText } from '../ShroudComponents';
 import { ClashFont } from '../constants/fonts';
-import { useTheme } from './themes';
+import { shadowSm, useTheme } from './themes';
 
 interface PillSegmentedControlProps {
   values: string[];
@@ -12,7 +12,7 @@ interface PillSegmentedControlProps {
   onChange: (index: number) => void;
 }
 
-const TRACK_PADDING = 6;
+const TRACK_PADDING = 4;
 const SEGMENT_GAP = 8;
 
 const PillSegmentedControl: React.FC<PillSegmentedControlProps> = ({ values, selectedIndex, onChange }) => {
@@ -32,6 +32,17 @@ const PillSegmentedControl: React.FC<PillSegmentedControlProps> = ({ values, sel
     }).start();
   }, [selectedIndex, segmentWidth, translateX]);
 
+  const stylesHook = StyleSheet.create({
+    labelSelected: {
+      color: colors.textSecondary,
+      fontFamily: ClashFont.medium,
+    },
+    labelUnselected: {
+      color: colors.textMuted,
+      fontFamily: ClashFont.regular,
+    },
+  });
+
   const onTrackLayout = (e: LayoutChangeEvent) => {
     setTrackWidth(e.nativeEvent.layout.width);
   };
@@ -45,7 +56,7 @@ const PillSegmentedControl: React.FC<PillSegmentedControlProps> = ({ values, sel
   if (!Array.isArray(values) || values.length === 0) return null;
 
   return (
-    <View style={[styles.track, { backgroundColor: colors.segmentTrack, borderColor: colors.segmentTrackBorder }]} onLayout={onTrackLayout}>
+    <View style={[styles.track, { backgroundColor: colors.surfaceBrandSubtle, borderColor: colors.accentSubtle }]} onLayout={onTrackLayout}>
       {segmentWidth > 0 && (
         <Animated.View
           pointerEvents="none"
@@ -53,8 +64,8 @@ const PillSegmentedControl: React.FC<PillSegmentedControlProps> = ({ values, sel
             styles.pill,
             {
               width: segmentWidth,
-              backgroundColor: colors.segmentSelectedBackground,
-              borderColor: colors.segmentSelectedBorder,
+              backgroundColor: colors.background,
+              borderColor: colors.accentSubtle,
               transform: [{ translateX }],
             },
           ]}
@@ -70,7 +81,7 @@ const PillSegmentedControl: React.FC<PillSegmentedControlProps> = ({ values, sel
         >
           <ShroudText
             numberOfLines={1}
-            style={[styles.label, { color: index === selectedIndex ? colors.textBright : colors.segmentLabelInactive }]}
+            style={[styles.label, index === selectedIndex ? stylesHook.labelSelected : stylesHook.labelUnselected]}
           >
             {value}
           </ShroudText>
@@ -84,7 +95,7 @@ const styles = StyleSheet.create({
   track: {
     flexDirection: 'row',
     width: '100%',
-    height: 56,
+    height: 44,
     borderRadius: 16,
     borderWidth: 1,
     padding: TRACK_PADDING,
@@ -98,11 +109,7 @@ const styles = StyleSheet.create({
     bottom: TRACK_PADDING,
     borderRadius: 16,
     borderWidth: 1,
-    shadowColor: '#101828',
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
+    ...shadowSm,
   },
   segment: {
     flex: 1,
@@ -111,8 +118,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    lineHeight: 24,
-    fontFamily: ClashFont.medium,
+    lineHeight: 20,
   },
 });
 

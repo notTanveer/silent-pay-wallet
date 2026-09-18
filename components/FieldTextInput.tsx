@@ -11,8 +11,8 @@ const FieldTextInput: React.FC<TextInputProps> = ({ style, ...props }) => {
 
   return (
     <TextInput
-      style={[styles.input, { color: colors.textPrimary }, style]}
-      placeholderTextColor={colors.textSecondary}
+      style={[styles.input, { color: colors.textSecondary }, style]}
+      placeholderTextColor={colors.textMuted}
       underlineColorAndroid="transparent"
       {...caretProps(colors)}
       {...props}

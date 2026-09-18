@@ -19,15 +19,15 @@ const ContactChip: React.FC<ContactChipProps> = ({ name, colorIndex, style, test
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.root, { borderColor: colors.contactChipBorder }, style]} testID={testID}>
+    <View style={[styles.root, { borderColor: colors.borderDefault }, style]} testID={testID}>
       {/* Same avatar as everywhere else, squashed into the chip's 32x22 outline. */}
       <ContactAvatar
         name={name}
         colorIndex={colorIndex}
-        style={[styles.avatar, { borderColor: colors.contactChipBorder }]}
+        style={[styles.avatar, { borderColor: colors.borderDefault }]}
         textStyle={styles.initials}
       />
-      <Text style={[styles.name, { color: colors.contactChipText }]}>{loc.formatString(loc.contacts.to_name, { name })}</Text>
+      <Text style={[styles.name, { color: colors.textPrimary }]}>{loc.formatString(loc.contacts.to_name, { name })}</Text>
     </View>
   );
 };

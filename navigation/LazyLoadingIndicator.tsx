@@ -6,7 +6,7 @@ export const LazyLoadingIndicator = () => {
   const { colors } = useTheme();
   return (
     <View style={styles.root}>
-      <ActivityIndicator size="large" color={colors.primary} />
+      <ActivityIndicator size="large" color={colors.brandPrimary} />
     </View>
   );
 };

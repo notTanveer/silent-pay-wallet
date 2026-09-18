@@ -42,22 +42,22 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
       accessibilityState={{ disabled, selected }}
       style={({ pressed }) => [
         styles.row,
-        showSeparator && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.settingsCardBorder },
+        showSeparator && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderDefault },
         pressed && Platform.OS !== 'android' && styles.rowPressed,
       ]}
       onPress={onPress}
       disabled={disabled}
       testID={testID}
-      android_ripple={{ color: colors.settingsRipple }}
+      android_ripple={{ color: colors.borderDefault }}
     >
       <SettingsIconWrapper circle={circle}>{icon}</SettingsIconWrapper>
       <View style={styles.rowText}>
-        <Text style={[styles.rowTitle, { color: colors.settingsRowTitle }]} numberOfLines={1}>
+        <Text style={[styles.rowTitle, { color: colors.textPrimary }]} numberOfLines={1}>
           {title}
         </Text>
-        {subtitle ? <Text style={[styles.rowSubtitle, { color: colors.alternativeTextColor }]}>{subtitle}</Text> : null}
+        {subtitle ? <Text style={[styles.rowSubtitle, { color: colors.textMuted }]}>{subtitle}</Text> : null}
       </View>
-      {isLoading ? <ActivityIndicator color={colors.settingsRowTitle} /> : rightElement}
+      {isLoading ? <ActivityIndicator color={colors.textSecondary} /> : rightElement}
     </Pressable>
   );
 };

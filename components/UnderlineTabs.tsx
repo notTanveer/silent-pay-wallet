@@ -24,7 +24,7 @@ const UnderlineTabs: React.FC<UnderlineTabsProps> = ({ values, selectedIndex, on
   };
 
   return (
-    <View style={[styles.strip, { borderBottomColor: colors.tabDivider }]}>
+    <View style={[styles.strip, { borderBottomColor: colors.borderDefault }]}>
       {values.map((value, index) => {
         const selected = index === selectedIndex;
         return (
@@ -36,7 +36,7 @@ const UnderlineTabs: React.FC<UnderlineTabsProps> = ({ values, selectedIndex, on
             testID={`${testIDPrefix}-${index}`}
             style={[styles.tab, selected && { borderBottomColor: colors.brandPrimary }]}
           >
-            <Text style={[styles.label, { color: selected ? colors.textPrimary : colors.tabInactiveText }]}>{value}</Text>
+            <Text style={[styles.label, { color: selected ? colors.textSecondary : colors.textMuted }]}>{value}</Text>
           </Pressable>
         );
       })}
