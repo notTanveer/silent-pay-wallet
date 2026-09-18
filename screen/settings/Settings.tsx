@@ -6,7 +6,6 @@ import SettingsRow from '../../components/SettingsRow';
 import GeneralIcon from '../../components/icons/GeneralIcon';
 import CurrencyIcon from '../../components/icons/CurrencyIcon';
 import ContactIcon from '../../components/icons/ContactIcon';
-import SecurityIcon from '../../components/icons/SecurityIcon';
 import NetworkIcon from '../../components/icons/NetworkIcon';
 import AboutIcon from '../../components/icons/AboutIcon';
 import { useTheme } from '../../components/themes';
@@ -20,7 +19,7 @@ import { IconProps } from '../../components/icons/types';
 const APP_VERSION = DeviceInfo.getVersion();
 const BUILD_NUMBER = DeviceInfo.getBuildNumber();
 
-type SettingsRoute = 'General' | 'Currency' | 'Contacts' | 'EncryptStorage' | 'NetworkSettings' | 'Tools' | 'About';
+type SettingsRoute = 'General' | 'Currency' | 'Contacts' | 'NetworkSettings' | 'Tools' | 'About';
 
 type SettingsIconColorToken =
   | 'settingsGeneralIconColor'
@@ -64,14 +63,6 @@ const MAIN_ROWS: RowConfig[] = [
     subtitle: loc.contacts.settings_subtitle,
     route: 'Contacts',
     testID: 'ContactsButton',
-  },
-  {
-    Icon: SecurityIcon,
-    colorToken: 'settingsSecurityIconColor',
-    title: loc.settings.encrypt_title,
-    subtitle: loc.settings.security_subtitle,
-    route: 'EncryptStorage',
-    testID: 'SecurityButton',
   },
   {
     Icon: NetworkIcon,

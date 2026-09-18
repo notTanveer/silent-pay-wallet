@@ -18,14 +18,12 @@ import Currency from '../screen/settings/Currency';
 import GeneralSettings from '../screen/settings/GeneralSettings';
 import ThemeSettings from '../screen/settings/ThemeSettings';
 import DenominationSettings from '../screen/settings/DenominationSettings';
-import PlausibleDeniability from '../screen/PlausibleDeniability';
 import Licensing from '../screen/settings/Licensing';
 import About from '../screen/settings/About';
 import ElectrumServerSettings from '../screen/settings/ElectrumServerSettings';
 import BlockExplorerSettings from '../screen/settings/BlockExplorerSettings';
 import TorSettings from '../screen/settings/TorSettings';
 import NetworkSettings from '../screen/settings/NetworkSettings';
-import EncryptStorage from '../screen/settings/EncryptStorage';
 import SelfTest from '../screen/settings/SelfTest';
 
 import { useSizeClass, SizeClass } from '../modules/sizeClass';
@@ -132,11 +130,6 @@ const DetailViewStackScreensStack = () => {
         component={ContactDetail}
         options={navigationStyle({ title: loc.contacts.header })(theme)}
       />
-      <DetailViewStack.Screen
-        name="PlausibleDeniability"
-        component={PlausibleDeniability}
-        options={navigationStyle({ title: loc.plausibledeniability.title })(theme)}
-      />
       <DetailViewStack.Screen name="Licensing" component={Licensing} options={navigationStyle({ title: loc.settings.license })(theme)} />
       <DetailViewStack.Screen name="About" component={About} options={navigationStyle({ title: loc.settings.about })(theme)} />
       <DetailViewStack.Screen
@@ -159,11 +152,6 @@ const DetailViewStackScreensStack = () => {
         name="NetworkSettings"
         component={NetworkSettings}
         options={navigationStyle({ title: loc.settings.network })(theme)}
-      />
-      <DetailViewStack.Screen
-        name="EncryptStorage"
-        component={EncryptStorage}
-        options={navigationStyle({ title: loc.settings.encrypt_title })(theme)}
       />
       <DetailViewStack.Screen name="SelfTest" component={SelfTest} options={navigationStyle({ title: loc.settings.selfTest })(theme)} />
       <DetailViewStack.Screen
