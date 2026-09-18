@@ -8,7 +8,8 @@ interface SearchIconProps {
   stroke?: string;
 }
 
-const Glyph: React.FC<{ stroke: string }> = ({ stroke }) => (
+// Exported so SearchTileIcon reuses this artwork instead of drawing a second glyph.
+export const SearchGlyph: React.FC<{ stroke: string }> = ({ stroke }) => (
   <>
     <Path
       d="M23.1609 29.8295C26.8415 29.8295 29.8252 26.8457 29.8252 23.1652C29.8252 19.4846 26.8415 16.5009 23.1609 16.5009C19.4803 16.5009 16.4966 19.4846 16.4966 23.1652C16.4966 26.8457 19.4803 29.8295 23.1609 29.8295Z"
@@ -25,13 +26,13 @@ const SearchIcon: React.FC<SearchIconProps> = ({ size = 20, background, stroke =
   background ? (
     <Svg width={size} height={size} viewBox="0 0 48 48" fill="none">
       <Rect width="47.9965" height="47.9965" rx="23.9982" fill={background} />
-      <Glyph stroke={stroke} />
+      <SearchGlyph stroke={stroke} />
     </Svg>
   ) : (
     // Artwork is authored on the 48pt canvas above. Cropping to the 20pt box the design
     // specs the icon at puts it at 1:1, so the strokes land at their native 1.66607 width.
     <Svg width={size} height={size} viewBox="14 14 20 20" fill="none">
-      <Glyph stroke={stroke} />
+      <SearchGlyph stroke={stroke} />
     </Svg>
   );
 

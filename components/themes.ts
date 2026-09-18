@@ -107,7 +107,6 @@ const tokens = {
   incomingBackgroundColor: same('#D2F8D6'),
   successColor: same(palette.teal500),
   placeholderTextColor: same(palette.gray500),
-  hdborderColor: same('#68BBE1'),
   background,
   card: background,
   lightButton: pair(palette.gray100, 'rgba(255,255,255,.1)'),
