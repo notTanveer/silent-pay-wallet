@@ -345,11 +345,6 @@
     },
     "wallets": {
         "add_import_wallet": "Import wallet",
-        "add_create": "Create",
-        "add_placeholder": "my first wallet",
-        "add_title": "Add Wallet",
-        "add_wallet_name": "Name",
-        "add_wallet_type": "Type",
         "clear_clipboard_on_import": "Clear clipboard on import",
         "details_address": "Standard Address",
         "details_are_you_sure": "Are you sure?",
