@@ -106,9 +106,7 @@ const tokens = {
   buttonGrayBackgroundColor: same(palette.gray150),
   incomingBackgroundColor: same('#D2F8D6'),
   successColor: same(palette.teal500),
-  warningColor: same('#F5A623'),
   placeholderTextColor: same(palette.gray500),
-  hdborderColor: same('#68BBE1'),
   background,
   card: background,
   lightButton: pair(palette.gray100, 'rgba(255,255,255,.1)'),
@@ -304,6 +302,13 @@ const tokens = {
   removeSurface: pair('#FBE1DF', palette.slate950), // Remove Contact button background
   removeBorder: pair('#FFC9C9', palette.red500), // Remove Contact button border
   removeText: pair('#E7000B', palette.red500), // Remove Contact button label + trash glyph
+
+  paymentBadgeFill: pair(palette.violet600, palette.violet525),
+
+  notFoundTileHalo: pair('#FDF4E6', palette.brown900),
+  notFoundTileAccent: pair('#E8912A', '#F1AF63'),
+  // notFoundTileAccent fails AA contrast as text; this is the same color at a darkened value for that use.
+  notFoundTileHeading: pair('#A2651D', '#F1AF63'),
 } satisfies Record<string, ColorToken>;
 
 type Scheme = 'light' | 'dark';
