@@ -62,10 +62,10 @@ const BottomModal = forwardRef<BottomModalHandle, BottomModalProps>(
     const { colors, closeImage } = useTheme();
     const stylesHook = StyleSheet.create({
       barButton: {
-        backgroundColor: colors.lightButton,
+        backgroundColor: colors.surfaceSubtle,
       },
       headerTitle: {
-        color: colors.foregroundColor,
+        color: colors.textSecondary,
       },
     });
 

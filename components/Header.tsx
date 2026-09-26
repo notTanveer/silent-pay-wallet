@@ -11,7 +11,7 @@ export const Header: React.FC<HeaderProps> = ({ leftText }) => {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <Text style={[styles.text, { color: colors.foregroundColor }]}>{leftText}</Text>
+      <Text style={[styles.text, { color: colors.textPrimary }]}>{leftText}</Text>
     </View>
   );
 };

@@ -20,27 +20,28 @@ const ReplaceFeeSuggestions: React.FC<ReplaceFeeSuggestionsProps> = ({ onFeeSele
   const { colors } = useTheme();
   const stylesHook = StyleSheet.create({
     activeButton: {
-      backgroundColor: colors.incomingBackgroundColor,
+      backgroundColor: colors.bgSuccess,
     },
     buttonText: {
-      color: colors.primary,
+      color: colors.textBrand,
     },
     timeContainer: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.brandPrimary,
     },
     timeText: {
       color: colors.background,
     },
     rateText: {
-      color: colors.primary,
+      color: colors.textBrand,
     },
     customFeeInput: {
-      backgroundColor: colors.inputBackgroundColor,
-      borderBottomColor: colors.formBorder,
-      borderColor: colors.formBorder,
+      backgroundColor: colors.fieldBackground,
+      borderBottomColor: colors.borderInput,
+      borderColor: colors.borderInput,
+      color: colors.textMuted,
     },
     alternativeText: {
-      color: colors.alternativeTextColor,
+      color: colors.textMuted,
     },
   });
 
@@ -158,7 +159,7 @@ const ReplaceFeeSuggestions: React.FC<ReplaceFeeSuggestionsProps> = ({ onFeeSele
             style={[styles.customFeeInput, stylesHook.customFeeInput]}
             onFocus={() => handleCustomFeeChange(customFeeValue)}
             placeholder={loc.send.fee_satvbyte}
-            placeholderTextColor="#81868e"
+            placeholderTextColor={colors.textMuted}
             inputAccessoryViewID={DismissKeyboardInputAccessoryViewID}
           />
           <DismissKeyboardInputAccessory />
@@ -205,7 +206,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderRadius: 4,
     borderWidth: 1.0,
-    color: '#81868e',
     flex: 1,
     marginRight: 10,
     minHeight: 33,

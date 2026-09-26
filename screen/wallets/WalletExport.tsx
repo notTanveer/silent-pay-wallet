@@ -24,7 +24,7 @@ const HORIZONTAL_PADDING = 20;
 const CopyBox: React.FC<{ text: string; onPress: () => void }> = ({ text, onPress }) => {
   const { colors } = useTheme();
   const stylesHook = StyleSheet.create({
-    copyRoot: { backgroundColor: colors.lightBorder },
+    copyRoot: { backgroundColor: colors.borderDefault },
   });
 
   return (
@@ -35,7 +35,7 @@ const CopyBox: React.FC<{ text: string; onPress: () => void }> = ({ text, onPres
         </ShroudText>
       </View>
       <View style={styles.copyRight}>
-        <Icon name="copy" type="font-awesome-5" color={colors.foregroundColor} />
+        <Icon name="copy" type="font-awesome-5" color={colors.textSecondary} />
       </View>
     </Pressable>
   );
@@ -45,7 +45,7 @@ const DoNotDisclose: React.FC = () => {
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.warningBox, { backgroundColor: colors.changeText }]}>
+    <View style={[styles.warningBox, { backgroundColor: colors.textWarning }]}>
       <Icon type="font-awesome-5" name="exclamation-circle" color="white" />
       <ShroudText style={styles.warning}>{loc.wallets.warning_do_not_disclose}</ShroudText>
     </View>

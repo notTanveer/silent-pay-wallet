@@ -23,7 +23,7 @@ const GeneralSettings: React.FC = () => {
     themePreference,
   } = useSettings();
 
-  const cardStyle = [styles.card, { borderColor: colors.settingsCardBorder, backgroundColor: colors.settingsCardBackground }];
+  const cardStyle = [styles.card, { borderColor: colors.borderDefault, backgroundColor: colors.fieldBackground }];
 
   const themeValueText = useMemo(() => {
     switch (themePreference) {
@@ -43,7 +43,7 @@ const GeneralSettings: React.FC = () => {
 
   return (
     <SafeAreaScrollView contentContainerStyle={styles.content} testID="GeneralSettingsScrollView">
-      <Text style={[styles.sectionHeader, { color: colors.alternativeTextColor }]}>{loc.settings.general_privacy_header}</Text>
+      <Text style={[styles.sectionHeader, { color: colors.textMuted }]}>{loc.settings.general_privacy_header}</Text>
       <View style={cardStyle}>
         <SettingsToggleRow
           title={loc.settings.general_read_clipboard_title}
@@ -62,7 +62,7 @@ const GeneralSettings: React.FC = () => {
         />
       </View>
 
-      <Text style={[styles.sectionHeader, styles.sectionHeaderGap, { color: colors.alternativeTextColor }]}>
+      <Text style={[styles.sectionHeader, styles.sectionHeaderGap, { color: colors.textMuted }]}>
         {loc.settings.general_display_header}
       </Text>
       <View style={cardStyle}>

@@ -19,14 +19,7 @@ const ContactsEmptyState: React.FC<ContactsEmptyStateProps> = ({ onAdd, bordered
 
   return (
     <EmptyStateCard
-      icon={
-        <ContactsGroupIcon
-          size={94}
-          background={colors.shieldIconBackground}
-          borderColor={colors.shieldIconBorder}
-          accent={colors.brandPrimary}
-        />
-      }
+      icon={<ContactsGroupIcon size={94} />}
       title={loc.contacts.empty_title}
       subtitle={loc.contacts.empty_subtitle}
       testID="NoContactsMessage"

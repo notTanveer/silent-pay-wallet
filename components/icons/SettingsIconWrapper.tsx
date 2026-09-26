@@ -9,11 +9,7 @@ interface SettingsIconWrapperProps {
 
 const SettingsIconWrapper: React.FC<SettingsIconWrapperProps> = ({ children, circle = false }) => {
   const { colors } = useTheme();
-  return (
-    <View style={[styles.container, circle ? styles.circle : styles.square, { backgroundColor: colors.settingsIconWrapperBg }]}>
-      {children}
-    </View>
-  );
+  return <View style={[styles.container, circle ? styles.circle : styles.square, { backgroundColor: colors.background }]}>{children}</View>;
 };
 
 const styles = StyleSheet.create({

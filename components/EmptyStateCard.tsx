@@ -25,13 +25,13 @@ const EmptyStateCard: React.FC<EmptyStateCardProps> = ({ icon, title, subtitle, 
     <View
       style={[
         styles.card,
-        bordered && [styles.bordered, { backgroundColor: colors.emptyCardBackground, borderColor: colors.emptyCardBorder }],
+        bordered && [styles.bordered, { backgroundColor: colors.surfaceBrandSubtle, borderColor: colors.borderDefault }],
       ]}
       testID={testID}
     >
       <View style={styles.icon}>{icon}</View>
-      <Text style={[styles.title, { color: colors.emptyStateTitle }]}>{title}</Text>
-      <Text style={[styles.subtitle, { color: colors.amountMeta }]}>{subtitle}</Text>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
+      <Text style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text>
       {children}
     </View>
   );

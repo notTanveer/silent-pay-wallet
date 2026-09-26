@@ -132,10 +132,10 @@ const PleaseBackup: React.FC = () => {
         indexBorder: colors.revealedPillBorder,
       }
     : {
-        rowBg: colors.cardBackground,
-        rowBorder: colors.transactionCardBorder,
+        rowBg: colors.surfaceBrandSubtle,
+        rowBorder: colors.borderDefault,
         indexBg: colors.fieldBackground,
-        indexBorder: colors.transactionCardBorder,
+        indexBorder: colors.borderDefault,
       };
 
   const handleVerifyComplete = useCallback(() => {
@@ -194,7 +194,7 @@ const PleaseBackup: React.FC = () => {
           <RevealEyeIcon size={64} color={colors.white} />
         </View>
         <Text style={[styles.revealTitle, { color: colors.textPrimary }]}>{loc.pleasebackup.tap_to_reveal}</Text>
-        <Text style={[styles.revealCaption, { color: colors.textSecondary }]}>{loc.pleasebackup.tap_to_reveal_caption}</Text>
+        <Text style={[styles.revealCaption, { color: colors.textMuted }]}>{loc.pleasebackup.tap_to_reveal_caption}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -225,10 +225,10 @@ const PleaseBackup: React.FC = () => {
 
             <ScrollView contentContainerStyle={styles.introScrollContent}>
               <View style={[styles.iconBadge, { backgroundColor: colors.surfaceSubtle, borderColor: colors.accentSubtle }]}>
-                <KeyIcon size={64} color={colors.primary} />
+                <KeyIcon size={64} color={colors.brandPrimary} />
               </View>
               <Text style={[styles.introTitle, { color: colors.textPrimary }]}>{loc.pleasebackup.intro_title}</Text>
-              <Text style={[styles.introSubtitle, { color: colors.textSecondary }]}>{loc.pleasebackup.intro_subtitle}</Text>
+              <Text style={[styles.introSubtitle, { color: colors.textMuted }]}>{loc.pleasebackup.intro_subtitle}</Text>
 
               {BACKUP_TIPS.map(tip => (
                 <View key={tip.bold} style={[styles.tipCard, { borderColor: colors.accentSubtle }]}>
@@ -237,7 +237,7 @@ const PleaseBackup: React.FC = () => {
                   </View>
                   <Text style={styles.tipText}>
                     <Text style={[styles.tipBold, { color: colors.textPrimary }]}>{tip.bold}</Text>
-                    <Text style={[styles.tipBody, { color: colors.textBright }]}>{tip.body}</Text>
+                    <Text style={[styles.tipBody, { color: colors.textSecondary }]}>{tip.body}</Text>
                   </Text>
                 </View>
               ))}
@@ -267,15 +267,13 @@ const PleaseBackup: React.FC = () => {
               testID="PleaseBackupScrollView"
             >
               <Text style={[styles.title, { color: colors.textPrimary }]}>{loc.pleasebackup.title}</Text>
-              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{loc.pleasebackup.text}</Text>
+              <Text style={[styles.subtitle, { color: colors.textMuted }]}>{loc.pleasebackup.text}</Text>
 
               <View style={[styles.warningBanner, { backgroundColor: colors.surfaceSubtle, borderColor: colors.accentSubtle }]}>
-                <CameraOffIcon size={20} color={colors.vividAccent} />
+                <CameraOffIcon size={20} color={colors.brandPrimary} />
                 <Text style={styles.warningText}>
                   <Text style={{ color: colors.warningBannerPrefixText }}>{loc.pleasebackup.screenshot_warning_prefix}</Text>
-                  <Text style={[styles.warningEmphasis, { color: colors.mutedAccentText }]}>
-                    {loc.pleasebackup.screenshot_warning_emphasis}
-                  </Text>
+                  <Text style={[styles.warningEmphasis, { color: colors.textBrand }]}>{loc.pleasebackup.screenshot_warning_emphasis}</Text>
                 </Text>
               </View>
 
@@ -289,7 +287,7 @@ const PleaseBackup: React.FC = () => {
                     <View key={idx} style={[styles.seedRowShadow, { shadowColor: colors.black }]}>
                       <View style={[styles.seedRow, { backgroundColor: pillColors.rowBg, borderColor: pillColors.rowBorder }]}>
                         <View style={[styles.seedIndexBox, { backgroundColor: pillColors.indexBg, borderColor: pillColors.indexBorder }]}>
-                          <Text style={[styles.seedIndexText, { color: colors.textSecondary }]}>{idx + 1}</Text>
+                          <Text style={[styles.seedIndexText, { color: colors.textMuted }]}>{idx + 1}</Text>
                         </View>
                         <View style={styles.seedWordBox}>
                           {isRevealed ? (
@@ -314,7 +312,7 @@ const PleaseBackup: React.FC = () => {
                 accessibilityState={{ checked: hasConfirmedWritten }}
               >
                 {hasConfirmedWritten ? (
-                  <CheckboxCheckedIcon size={20} color={colors.primary} />
+                  <CheckboxCheckedIcon size={20} color={colors.brandPrimary} />
                 ) : (
                   <CheckboxUncheckedIcon size={20} color={colors.checkboxUncheckedColor} />
                 )}
@@ -332,7 +330,7 @@ const PleaseBackup: React.FC = () => {
                   blurType="light"
                   overlayColor="transparent"
                   blurAmount={GRID_BLUR_AMOUNT}
-                  reducedTransparencyFallbackColor={colors.settingsCardBackground}
+                  reducedTransparencyFallbackColor={colors.fieldBackground}
                   autoUpdate={false}
                 />
                 <View style={[styles.gridScrim, { backgroundColor: colors.gridScrimBackground }]} pointerEvents="none" />

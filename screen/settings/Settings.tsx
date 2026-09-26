@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 import SettingsRow from '../../components/SettingsRow';
@@ -7,7 +7,7 @@ import CurrencyIcon from '../../components/icons/CurrencyIcon';
 import ContactIcon from '../../components/icons/ContactIcon';
 import NetworkIcon from '../../components/icons/NetworkIcon';
 import AboutIcon from '../../components/icons/AboutIcon';
-import { useTheme } from '../../components/themes';
+import { Theme, useTheme } from '../../components/themes';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useDeleteWallet } from '../../hooks/useDeleteWallet';
 import { useStorage } from '../../hooks/context/useStorage';
@@ -18,17 +18,9 @@ import { IconProps } from '../../components/icons/types';
 
 type SettingsRoute = 'General' | 'Currency' | 'Contacts' | 'NetworkSettings' | 'About';
 
-type SettingsIconColorToken =
-  | 'settingsGeneralIconColor'
-  | 'settingsCurrencyIconColor'
-  | 'settingsContactIconColor'
-  | 'settingsSecurityIconColor'
-  | 'settingsNetworkIconColor'
-  | 'settingsAboutIconColor';
-
 interface RowConfig {
   Icon: React.FC<IconProps>;
-  colorToken: SettingsIconColorToken;
+  colorToken: keyof Theme['colors'];
   title: string;
   subtitle: string;
   route: SettingsRoute;
@@ -38,7 +30,7 @@ interface RowConfig {
 const MAIN_ROWS: RowConfig[] = [
   {
     Icon: GeneralIcon,
-    colorToken: 'settingsGeneralIconColor',
+    colorToken: 'brandPrimary',
     title: loc.settings.general,
     subtitle: loc.settings.general_subtitle,
     route: 'General',
@@ -46,7 +38,7 @@ const MAIN_ROWS: RowConfig[] = [
   },
   {
     Icon: CurrencyIcon,
-    colorToken: 'settingsCurrencyIconColor',
+    colorToken: 'textBitcoin',
     title: loc.settings.currency,
     subtitle: loc.settings.currency_subtitle,
     route: 'Currency',
@@ -54,7 +46,7 @@ const MAIN_ROWS: RowConfig[] = [
   },
   {
     Icon: ContactIcon,
-    colorToken: 'settingsContactIconColor',
+    colorToken: 'brandPrimary',
     title: loc.contacts.header,
     subtitle: loc.contacts.settings_subtitle,
     route: 'Contacts',
@@ -62,7 +54,7 @@ const MAIN_ROWS: RowConfig[] = [
   },
   {
     Icon: NetworkIcon,
-    colorToken: 'settingsNetworkIconColor',
+    colorToken: 'statusSuccess',
     title: loc.settings.network,
     subtitle: loc.settings.network_subtitle,
     route: 'NetworkSettings',
@@ -73,7 +65,7 @@ const MAIN_ROWS: RowConfig[] = [
 const SECONDARY_ROWS: RowConfig[] = [
   {
     Icon: AboutIcon,
-    colorToken: 'settingsAboutIconColor',
+    colorToken: 'statusError',
     title: loc.settings.about,
     subtitle: getAppVersionLabel(),
     route: 'About',
@@ -87,10 +79,7 @@ const Settings: React.FC = () => {
   const { wallets } = useStorage();
   const handleDeleteWallet = useDeleteWallet();
 
-  const cardStyle = [styles.card, { borderColor: colors.settingsMainCardBorder, backgroundColor: colors.settingsMainCardBackground }];
-
-  const mainRowIcons = useMemo(() => MAIN_ROWS.map(row => <row.Icon key={row.route} color={colors[row.colorToken]} />), [colors]);
-  const secondaryRowIcons = useMemo(() => SECONDARY_ROWS.map(row => <row.Icon key={row.route} color={colors[row.colorToken]} />), [colors]);
+  const cardStyle = [styles.card, { borderColor: colors.borderDefault, backgroundColor: colors.fieldBackground }];
 
   return (
     <SafeAreaScrollView
@@ -103,7 +92,7 @@ const Settings: React.FC = () => {
         {MAIN_ROWS.map((row, index) => (
           <SettingsRow
             key={row.route}
-            icon={mainRowIcons[index]}
+            icon={<row.Icon color={colors[row.colorToken]} />}
             title={row.title}
             subtitle={row.subtitle}
             onPress={() => navigation.navigate(row.route)}
@@ -117,7 +106,7 @@ const Settings: React.FC = () => {
         {SECONDARY_ROWS.map((row, index) => (
           <SettingsRow
             key={row.route}
-            icon={secondaryRowIcons[index]}
+            icon={<row.Icon color={colors[row.colorToken]} />}
             title={row.title}
             subtitle={row.subtitle}
             onPress={() => navigation.navigate(row.route)}
@@ -131,16 +120,12 @@ const Settings: React.FC = () => {
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={loc.settings.delete_wallet}
-          style={[
-            styles.deleteWalletButton,
-            styles.cardGap,
-            { borderColor: colors.settingsDeleteWallet, backgroundColor: colors.settingsDeleteWalletBackground },
-          ]}
+          style={[styles.deleteWalletButton, styles.cardGap, { borderColor: colors.statusError, backgroundColor: colors.surfaceCaution }]}
           onPress={handleDeleteWallet}
           testID="DeleteWalletButton"
           activeOpacity={0.7}
         >
-          <Text style={[styles.deleteWalletText, { color: colors.settingsDeleteWallet }]}>{loc.settings.delete_wallet}</Text>
+          <Text style={[styles.deleteWalletText, { color: colors.statusError }]}>{loc.settings.delete_wallet}</Text>
         </TouchableOpacity>
       )}
     </SafeAreaScrollView>
@@ -170,6 +155,6 @@ const styles = StyleSheet.create({
   },
   deleteWalletText: {
     fontSize: 16,
-    fontFamily: ClashFont.semibold,
+    fontFamily: ClashFont.medium,
   },
 });

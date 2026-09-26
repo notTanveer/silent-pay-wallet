@@ -12,14 +12,14 @@ const Licensing: React.FC = () => {
   return (
     <SafeAreaScrollView contentContainerStyle={styles.content} testID="LicensingScrollView">
       <SettingsCard style={styles.card}>
-        <Text style={[styles.title, { color: colors.settingsRowTitle }]}>{LICENSE_TITLE}</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>{LICENSE_TITLE}</Text>
         {LICENSE_COPYRIGHT.map(line => (
-          <Text key={line} style={[styles.copyright, { color: colors.alternativeTextColor }]}>
+          <Text key={line} style={[styles.copyright, { color: colors.textMuted }]}>
             {line}
           </Text>
         ))}
         {LICENSE_PARAGRAPHS.map(p => (
-          <Text key={p} style={[styles.body, { color: colors.settingsDescriptionText }]}>
+          <Text key={p} style={[styles.body, { color: colors.textSecondary }]}>
             {p}
           </Text>
         ))}

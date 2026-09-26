@@ -17,7 +17,7 @@ import {
   upsertContact,
   validateContact,
 } from '../../class/contacts';
-import { contactInitials } from '../../components/ContactAvatar';
+import { AVATAR_COLORS, contactInitials } from '../../components/ContactAvatar';
 
 const ADDR_A = 'sp1qqfqnnv8czppwysafq3uwgwvsc638hc8rx3hscuddh0xa2yd746s7xqh6yy9ncjnqhqxazct0fzh98w7lpkm5fvlepqec2yy0sxlq4j6ccc3h6t0g';
 const ADDR_B = 'sp1qqvchcnrcqpdutxhpf57ptn3wajj0ymqxwzu9g6vj9uxx3wuvlykhyqh99hyh33y5593802pzw5rtw040zrw9f8re52tgcwngc5974w5evuufdy0m';
@@ -330,5 +330,11 @@ describe('randomContactColorIndex', () => {
   it('does not always return the same slot', () => {
     const seen = new Set(Array.from({ length: 500 }, () => randomContactColorIndex()));
     assert.ok(seen.size > 1, 'expected more than one colour across 500 draws');
+  });
+});
+
+describe('ContactAvatar colors', () => {
+  it('has one color pair per stored colorIndex', () => {
+    assert.strictEqual(AVATAR_COLORS.length, CONTACT_COLOR_COUNT);
   });
 });

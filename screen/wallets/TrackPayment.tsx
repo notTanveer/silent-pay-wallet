@@ -43,7 +43,7 @@ const TrackPayment: React.FC<TrackPaymentProps> = () => {
       color: colors.textPrimary,
     },
     description: {
-      color: colors.textSecondary,
+      color: colors.textMuted,
     },
     inputContainer: {
       borderColor: isValidTxid ? colors.brandPrimary : 'transparent',
@@ -54,16 +54,16 @@ const TrackPayment: React.FC<TrackPaymentProps> = () => {
     },
     pasteButton: {
       backgroundColor: colors.background,
-      borderColor: colors.copyButtonBorder,
+      borderColor: colors.borderDefault,
     },
     divider: {
       backgroundColor: colors.borderDefault,
     },
     statusText: {
-      color: isValidTxid ? colors.successCheck : colors.statusError,
+      color: isValidTxid ? colors.statusSuccess : colors.statusError,
     },
     clearText: {
-      color: colors.textSecondary,
+      color: colors.textMuted,
     },
   });
 
@@ -128,7 +128,7 @@ const TrackPayment: React.FC<TrackPaymentProps> = () => {
               <TextInput
                 style={[styles.input, stylesHook.input]}
                 placeholder={loc.track_payment.txid_placeholder}
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor={colors.textMuted}
                 value={txid}
                 onChangeText={setTxid}
                 autoCapitalize="none"
@@ -149,7 +149,7 @@ const TrackPayment: React.FC<TrackPaymentProps> = () => {
                 <View style={styles.statusRow}>
                   <View style={styles.statusIndicator}>
                     {isValidTxid ? (
-                      <CheckmarkIcon size={16} color={colors.successCheck} variant="filled" />
+                      <CheckmarkIcon size={16} color={colors.statusSuccess} variant="filled" />
                     ) : (
                       <CloseIcon size={14} color={colors.statusError} />
                     )}

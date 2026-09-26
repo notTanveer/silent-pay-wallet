@@ -16,8 +16,8 @@ const SettingsStatRow: React.FC<SettingsStatRowProps> = ({ title, value, valueCo
   return (
     <SettingsRowWrapper showSeparator={showSeparator}>
       <View style={styles.row}>
-        <Text style={[styles.label, { color: colors.settingsRowTitle }]}>{title}</Text>
-        <Text style={[styles.value, { color: valueColor ?? colors.settingsRowTitle }]}>{value}</Text>
+        <Text style={[styles.label, { color: colors.textPrimary }]}>{title}</Text>
+        <Text style={[styles.value, { color: valueColor ?? colors.textPrimary }]}>{value}</Text>
       </View>
     </SettingsRowWrapper>
   );

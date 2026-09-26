@@ -66,16 +66,16 @@ const PaymentFound: React.FC<PaymentFoundProps> = ({ route }) => {
 
   const stylesHook = StyleSheet.create({
     statusLabel: { color: colors.textBrand },
-    amount: { color: colors.textEmphasis },
-    unit: { color: colors.textSecondary },
-    fiat: { color: colors.textSecondary },
-    changeNote: { color: colors.textSecondary },
+    amount: { color: colors.textPrimary },
+    unit: { color: colors.textMuted },
+    fiat: { color: colors.textMuted },
+    changeNote: { color: colors.textMuted },
     confirmationsCard: { backgroundColor: colors.surfaceSubtle, borderColor: colors.accentSubtle },
-    confirmationsLabel: { color: colors.textSecondary },
+    confirmationsLabel: { color: colors.textMuted },
     confirmationsCount: { color: colors.textBrand },
     messageBox: { backgroundColor: colors.background },
     messageHighlight: { color: colors.textPrimary },
-    messageBody: { color: colors.textSecondary },
+    messageBody: { color: colors.textMuted },
     confirmedMessage: { color: colors.textPrimary },
   });
 
@@ -86,7 +86,7 @@ const PaymentFound: React.FC<PaymentFoundProps> = ({ route }) => {
           <View style={styles.hero}>
             <CheckBadgeIcon
               size={80}
-              color={colors.paymentBadgeFill}
+              color={colors.brandPrimary}
               halo={{ background: colors.surfaceSubtle, border: colors.accentSubtle }}
             />
             <Text style={[styles.statusLabel, stylesHook.statusLabel]}>
@@ -116,14 +116,14 @@ const PaymentFound: React.FC<PaymentFoundProps> = ({ route }) => {
             <SegmentedProgressBar
               segments={CONFIRMATIONS_THRESHOLD}
               filled={confirmationsDisplay}
-              filledColor={isConfirmed ? colors.successCheck : colors.paymentBadgeFill}
-              trackColor={colors.progressTrack}
+              filledColor={isConfirmed ? colors.statusSuccess : colors.brandPrimary}
+              trackColor={colors.borderDefault}
             />
 
             <View style={[styles.messageBox, stylesHook.messageBox]}>
               {isConfirmed ? (
                 <View style={styles.confirmedMessageRow}>
-                  <CheckBadgeIcon size={20} color={colors.paymentBadgeFill} />
+                  <CheckBadgeIcon size={20} color={colors.brandPrimary} />
                   <Text style={[styles.confirmedMessage, stylesHook.confirmedMessage]}>{loc.payment_found.confirmed_message}</Text>
                 </View>
               ) : (
@@ -143,13 +143,13 @@ const PaymentFound: React.FC<PaymentFoundProps> = ({ route }) => {
             onPress={handleViewDetails}
             backgroundColor={colors.background}
             color={colors.textPrimary}
-            borderColor={colors.copyButtonBorder}
+            borderColor={colors.borderDefault}
             testID="ViewDetailsButton"
           />
           <ActionButton
             title={loc.payment_found.done}
             onPress={handleDone}
-            backgroundColor={colors.paymentBadgeFill}
+            backgroundColor={colors.brandPrimary}
             color={colors.white}
             testID="DoneButton"
           />

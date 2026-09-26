@@ -44,7 +44,7 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
   rightElement,
 }) => {
   const { colors } = useTheme();
-  const defaultTrailing = external ? <ExternalLinkIcon size={20} color={colors.alternativeTextColor} /> : DEFAULT_CHEVRON;
+  const defaultTrailing = external ? <ExternalLinkIcon size={20} color={colors.textMuted} /> : DEFAULT_CHEVRON;
   // Only undefined falls back: callers pass null to hide the trailing element.
   const trailing = rightElement === undefined ? defaultTrailing : rightElement;
   return (
@@ -54,22 +54,22 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
       accessibilityState={{ disabled, selected }}
       style={({ pressed }) => [
         styles.row,
-        showSeparator && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.settingsCardBorder },
+        showSeparator && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderDefault },
         pressed && Platform.OS !== 'android' && styles.rowPressed,
       ]}
       onPress={onPress}
       disabled={disabled}
       testID={testID}
-      android_ripple={{ color: colors.settingsRipple }}
+      android_ripple={{ color: colors.borderDefault }}
     >
       {iconVariant === 'inline' ? icon : <SettingsIconWrapper circle={circle}>{icon}</SettingsIconWrapper>}
       <View style={styles.rowText}>
-        <Text style={[styles.rowTitle, { color: colors.settingsRowTitle }]} numberOfLines={1}>
+        <Text style={[styles.rowTitle, { color: colors.textPrimary }]} numberOfLines={1}>
           {title}
         </Text>
-        {subtitle ? <Text style={[styles.rowSubtitle, { color: colors.alternativeTextColor }]}>{subtitle}</Text> : null}
+        {subtitle ? <Text style={[styles.rowSubtitle, { color: colors.textMuted }]}>{subtitle}</Text> : null}
       </View>
-      {isLoading ? <ActivityIndicator color={colors.settingsRowTitle} /> : trailing}
+      {isLoading ? <ActivityIndicator color={colors.textSecondary} /> : trailing}
     </Pressable>
   );
 };

@@ -33,10 +33,10 @@ const SyncStatusIcon: React.FC<SyncStatusIconProps> = ({ status, size = 66 }) =>
   // Exception: `error` draws no inner-disc stroke - the design carries that state entirely on the
   // outer ring in full-saturation red - so for `error` ring means the outer ring only.
   const iconColors = {
-    scanning: { ring: colors.accentSubtle, fill: colors.syncFillScanning, glyph: colors.brandPrimary },
-    paused: { ring: colors.syncRingPaused, fill: colors.syncFillPaused, glyph: colors.statusPaused },
-    done: { ring: colors.syncRingDone, fill: colors.syncFillDone, glyph: colors.statusSuccess },
-    error: { ring: colors.syncRingError, fill: colors.syncFillError, glyph: colors.statusError },
+    scanning: { ring: colors.accentSubtle, fill: colors.surfaceSubtle, glyph: colors.brandPrimary },
+    paused: { ring: colors.borderDefault, fill: colors.surfaceSubtle, glyph: colors.textMuted },
+    done: { ring: colors.borderDefault, fill: colors.bgSuccess, glyph: colors.statusSuccess },
+    error: { ring: colors.statusError, fill: colors.surfaceError, glyph: colors.statusError },
   };
   const c = iconColors[status];
   return (

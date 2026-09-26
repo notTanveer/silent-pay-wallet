@@ -45,7 +45,7 @@ const VerifyWordPill: React.FC<VerifyWordPillProps> = ({ word, status, position,
   const isCorrect = status === WordStatus.CORRECT;
   const borderColor = isCorrect ? colors.statusSuccess : colors.statusError;
   const badgeColor = isCorrect ? colors.statusSuccess : colors.errorAccent;
-  const fillColor = isCorrect ? colors.verifyCorrectFill : colors.verifyIncorrectFill;
+  const fillColor = isCorrect ? colors.bgSuccess : colors.surfaceError;
 
   return (
     <View style={[styles.pill, styles.pillSelected, { backgroundColor: fillColor, borderColor }]}>
@@ -159,7 +159,7 @@ const SeedVerification: React.FC<SeedVerificationProps> = ({ seed, onSuccess, on
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={[styles.title, { color: colors.textPrimary }]}>{loc.pleasebackup.heading}</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text>
 
         <View style={styles.wordsGrid}>
           {shuffledWords.map((word, index) => {
@@ -192,8 +192,8 @@ const SeedVerification: React.FC<SeedVerificationProps> = ({ seed, onSuccess, on
           testID="ShowPhraseAgain"
           borderRadius={16}
           backgroundColor="transparent"
-          buttonTextColor={colors.textEmphasis}
-          icon={<ShowPhraseEyeIcon color={colors.textEmphasis} />}
+          buttonTextColor={colors.textPrimary}
+          icon={<ShowPhraseEyeIcon color={colors.textPrimary} />}
           style={[styles.footerButton, { borderColor: colors.verifyShowPhraseBorder }]}
         />
       </View>

@@ -71,8 +71,8 @@ const OnboardingScreen: React.FC = () => {
       <SafeAreaView style={[styles.welcomeContainer, { backgroundColor: colors.background }]}>
         <View style={styles.content}>
           <Image source={require('../../img/icon.png')} style={styles.logo} resizeMode="contain" />
-          <Text style={[styles.title, { color: colors.primary }]}>{loc.onboarding.shroud}</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{loc.onboarding.subtitle}</Text>
+          <Text style={[styles.title, { color: colors.brandPrimary }]}>{loc.onboarding.shroud}</Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>{loc.onboarding.subtitle}</Text>
         </View>
 
         <View style={styles.buttonContainer}>
@@ -81,7 +81,7 @@ const OnboardingScreen: React.FC = () => {
             onPress={handleContinue}
             testID="CreateWallet"
             borderRadius={16}
-            backgroundColor={colors.vividAccent}
+            backgroundColor={colors.brandPrimary}
             style={styles.button}
           />
           <Button
@@ -89,8 +89,8 @@ const OnboardingScreen: React.FC = () => {
             onPress={importWallet}
             testID="ImportWallet"
             borderRadius={16}
-            backgroundColor={colors.restoreButtonBackground}
-            buttonTextColor={colors.mutedAccentText}
+            backgroundColor="transparent"
+            buttonTextColor={colors.textBrand}
             style={[styles.button, styles.secondaryButton, { borderColor: colors.accentSubtle }]}
           />
         </View>

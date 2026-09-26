@@ -43,12 +43,12 @@ const AddressCopyCard: React.FC<AddressCopyCardProps> = ({ text }) => {
       testID="AddressCopyCard"
       style={[styles.card, { backgroundColor: colors.surfaceSubtle }]}
     >
-      <ShroudText testID="AddressValue" style={[styles.address, { color: colors.textBright }]}>
+      <ShroudText testID="AddressValue" style={[styles.address, { color: colors.textSecondary }]}>
         {text}
       </ShroudText>
       <View style={styles.copyRow}>
-        <CopyIcon size={16} color={colors.copyHint} />
-        <ShroudText style={[styles.copyLabel, { color: colors.copyHint }]}>
+        <CopyIcon size={16} color={colors.textMuted} />
+        <ShroudText style={[styles.copyLabel, { color: colors.textMuted }]}>
           {copied ? loc.receive.copied : loc.receive.tap_to_copy}
         </ShroudText>
       </View>

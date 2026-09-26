@@ -31,7 +31,7 @@ const InfoRow: React.FC<InfoRowProps> = ({ title, value, valueColor, showSeparat
   return (
     <SettingsRowWrapper showSeparator={showSeparator}>
       <View style={styles.infoRow}>
-        <Text style={[styles.rowTitle, { color: colors.settingsRowTitle }]}>{title}</Text>
+        <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{title}</Text>
         <Text style={[styles.rowTitle, { color: valueColor }]}>{value}</Text>
       </View>
     </SettingsRowWrapper>
@@ -95,15 +95,11 @@ const TorSettings: React.FC = () => {
   };
 
   const statusColor =
-    torStatus === 'connected'
-      ? colors.settingsNetworkIconColor
-      : torStatus === 'unavailable'
-        ? colors.statusError
-        : colors.alternativeTextColor;
+    torStatus === 'connected' ? colors.statusSuccess : torStatus === 'unavailable' ? colors.statusError : colors.textMuted;
   return (
     <SafeAreaScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="always" testID="TorSettingsScrollView">
-      <Text style={[styles.titleText, { color: colors.settingsRowTitle }]}>{loc.settings.tor_use_tor_title}</Text>
-      <Text style={[styles.description, { color: colors.settingsDescriptionText }]}>{loc.settings.tor_use_tor_description}</Text>
+      <Text style={[styles.titleText, { color: colors.textPrimary }]}>{loc.settings.tor_use_tor_title}</Text>
+      <Text style={[styles.description, { color: colors.textSecondary }]}>{loc.settings.tor_use_tor_description}</Text>
 
       <InfoBanner text={loc.settings.tor_orbot_info} containerStyle={styles.sectionHeaderGap} />
 
@@ -114,12 +110,12 @@ const TorSettings: React.FC = () => {
             accessibilityLabel={loc.settings.tor_install_orbot}
             onPress={() => TorManager.openOrbotInstallPage()}
             style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-            android_ripple={{ color: colors.settingsRipple }}
+            android_ripple={{ color: colors.borderDefault }}
             testID="InstallOrbotLink"
           >
-            <Text style={[styles.toggleRowTitle, { color: colors.settingsRowTitle }]}>{loc.settings.tor_install_orbot}</Text>
+            <Text style={[styles.toggleRowTitle, { color: colors.textPrimary }]}>{loc.settings.tor_install_orbot}</Text>
             <View style={styles.downloadIcon}>
-              <DownloadIcon color={colors.settingsRowTitle} size={18} />
+              <DownloadIcon color={colors.textSecondary} size={18} />
             </View>
           </Pressable>
         </SettingsRowWrapper>
@@ -151,7 +147,7 @@ const TorSettings: React.FC = () => {
         <InfoRow
           title={loc.settings.tor_orbot_installed_label}
           value={isOrbotInstalled ? loc.settings.tor_installed : loc.settings.tor_not_installed}
-          valueColor={isOrbotInstalled ? colors.settingsNetworkIconColor : colors.statusError}
+          valueColor={isOrbotInstalled ? colors.statusSuccess : colors.statusError}
         />
         <InfoRow
           title={loc.settings.tor_orbot_status_label}
@@ -163,7 +159,7 @@ const TorSettings: React.FC = () => {
       <Button
         testID="TestTorConnection"
         title={loc.settings.tor_test_connection}
-        backgroundColor={colors.settingsNetworkIconColor}
+        backgroundColor={colors.brandPrimary}
         disabled={!isTorEnabled || isTesting}
         showActivityIndicator={isTesting}
         onPress={handleTestConnection}
@@ -179,14 +175,14 @@ const TorSettings: React.FC = () => {
           {loc.settings.tor_advanced}
         </SettingsSectionHeader>
         <View style={[styles.advancedChevron, { transform: [{ rotate: isAdvancedExpanded ? '0deg' : '180deg' }] }]}>
-          <ChevronUpIcon color={colors.alternativeTextColor} size={18} />
+          <ChevronUpIcon color={colors.textMuted} size={18} />
         </View>
       </Pressable>
       {isAdvancedExpanded && (
         <SettingsCard>
           <View style={styles.advancedContent}>
-            <Text style={[styles.rowTitle, { color: colors.settingsRowTitle }]}>{loc.settings.tor_socks_port_label}</Text>
-            <Text style={[styles.rowSubtitle, styles.portDescription, { color: colors.alternativeTextColor }]}>
+            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{loc.settings.tor_socks_port_label}</Text>
+            <Text style={[styles.rowSubtitle, styles.portDescription, { color: colors.textMuted }]}>
               {loc.settings.tor_socks_port_description}
             </Text>
             <SettingsTextInput

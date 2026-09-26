@@ -15,9 +15,9 @@ export const WalletBirthSection: React.FC<WalletBirthSectionProps> = ({ birthDat
 
   const stylesHook = StyleSheet.create({
     input: {
-      borderColor: colors.formBorder,
-      backgroundColor: colors.inputBackgroundColor,
-      color: colors.foregroundColor,
+      borderColor: colors.borderInput,
+      backgroundColor: colors.fieldBackground,
+      color: colors.textSecondary,
     },
   });
 
@@ -29,7 +29,7 @@ export const WalletBirthSection: React.FC<WalletBirthSectionProps> = ({ birthDat
         value={birthDate}
         onChangeText={setBirthDate}
         placeholder={loc.wallet_birth.birth_date_placeholder}
-        placeholderTextColor={colors.alternativeTextColor}
+        placeholderTextColor={colors.textMuted}
         autoCapitalize="none"
         autoCorrect={false}
         keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}

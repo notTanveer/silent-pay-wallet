@@ -48,13 +48,13 @@ const NoPaymentFound: React.FC = () => {
   const stylesHook = StyleSheet.create({
     nothingDetected: { color: colors.notFoundTileHeading },
     heading: { color: colors.textPrimary },
-    subheading: { color: colors.textSecondary },
+    subheading: { color: colors.textMuted },
     reasonsBox: { backgroundColor: colors.surfaceSubtle },
-    reasonsTitle: { color: colors.textSecondary },
+    reasonsTitle: { color: colors.textMuted },
     reasonRow: { backgroundColor: colors.background },
     reasonText: { color: colors.textPrimary },
     tipHighlight: { color: colors.textPrimary },
-    tipBody: { color: colors.textSecondary },
+    tipBody: { color: colors.textMuted },
   });
 
   return (
@@ -77,7 +77,7 @@ const NoPaymentFound: React.FC = () => {
             <Text style={[styles.reasonsTitle, stylesHook.reasonsTitle]}>{loc.no_payment_found.could_mean}</Text>
             {reasons.map(reason => (
               <View key={reason} style={[styles.reasonRow, stylesHook.reasonRow]}>
-                <View style={[styles.bullet, { backgroundColor: colors.paymentBadgeFill }]} />
+                <View style={[styles.bullet, { backgroundColor: colors.brandPrimary }]} />
                 <Text style={[styles.reasonText, stylesHook.reasonText]}>{reason}</Text>
               </View>
             ))}
@@ -96,7 +96,7 @@ const NoPaymentFound: React.FC = () => {
             onPress={handleCheckAnotherTxid}
             backgroundColor={colors.background}
             color={colors.textPrimary}
-            borderColor={colors.copyButtonBorder}
+            borderColor={colors.borderDefault}
             testID="CheckAnotherTxidButton"
           />
           <ActionButton

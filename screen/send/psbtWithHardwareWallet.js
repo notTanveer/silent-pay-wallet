@@ -46,15 +46,15 @@ const PsbtWithHardwareWallet = () => {
       backgroundColor: colors.background,
     },
     hexLabel: {
-      color: colors.foregroundColor,
+      color: colors.textSecondary,
     },
     hexInput: {
-      borderColor: colors.formBorder,
-      backgroundColor: colors.inputBackgroundColor,
-      color: colors.foregroundColor,
+      borderColor: colors.borderInput,
+      backgroundColor: colors.fieldBackground,
+      color: colors.textSecondary,
     },
     hexText: {
-      color: colors.foregroundColor,
+      color: colors.textSecondary,
     },
   });
 
@@ -231,7 +231,7 @@ const PsbtWithHardwareWallet = () => {
           icon={{
             name: 'qrcode',
             type: 'font-awesome',
-            color: colors.secondButtonTextColor,
+            color: colors.textSecondary,
           }}
           onPress={openScanner}
           ref={openScannerButton}
@@ -242,7 +242,7 @@ const PsbtWithHardwareWallet = () => {
           icon={{
             name: 'login',
             type: 'entypo',
-            color: colors.secondButtonTextColor,
+            color: colors.textSecondary,
           }}
           onPress={onOpenSignedTransaction}
           title={loc.send.psbt_tx_open}
@@ -259,7 +259,7 @@ const PsbtWithHardwareWallet = () => {
             icon={{
               name: 'share-alternative',
               type: 'entypo',
-              color: colors.secondButtonTextColor,
+              color: colors.textSecondary,
             }}
             title={loc.send.psbt_tx_export}
           />

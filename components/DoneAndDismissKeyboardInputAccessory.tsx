@@ -15,7 +15,7 @@ export const DoneAndDismissKeyboardInputAccessory: React.FC<DoneAndDismissKeyboa
 
   const styleHooks = StyleSheet.create({
     container: {
-      backgroundColor: colors.inputBackgroundColor,
+      backgroundColor: colors.fieldBackground,
     },
   });
 

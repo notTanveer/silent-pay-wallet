@@ -30,9 +30,12 @@ const Broadcast: React.FC = () => {
 
   const stylesHooks = StyleSheet.create({
     input: {
-      borderColor: colors.formBorder,
-      borderBottomColor: colors.formBorder,
-      backgroundColor: colors.inputBackgroundColor,
+      borderColor: colors.borderInput,
+      borderBottomColor: colors.borderInput,
+      backgroundColor: colors.fieldBackground,
+    },
+    text: {
+      color: colors.textMuted,
     },
   });
 
@@ -115,10 +118,10 @@ const Broadcast: React.FC = () => {
 
             <View style={[styles.input, stylesHooks.input]}>
               <TextInput
-                style={styles.text}
+                style={[styles.text, stylesHooks.text]}
                 multiline
                 editable
-                placeholderTextColor="#81868e"
+                placeholderTextColor={colors.textMuted}
                 value={txHex}
                 onChangeText={handleUpdateTxHex}
                 onSubmitEditing={Keyboard.dismiss}
@@ -204,7 +207,6 @@ const styles = StyleSheet.create({
   },
   text: {
     padding: 8,
-    color: '#81868e',
     maxHeight: 100,
     minHeight: 100,
     maxWidth: '100%',

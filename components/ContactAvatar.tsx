@@ -2,17 +2,18 @@ import React from 'react';
 import { StyleProp, StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
 
 import { ClashFont } from '../constants/fonts';
+import { Theme, useTheme } from './themes';
 
-// Fixed tints; deliberately independent of the light/dark theme so a contact keeps one
-// recognisable colour. One entry per colour index class/contacts hands out — see
-// CONTACT_COLOR_COUNT there.
-export const CONTACT_AVATAR_PALETTE: ReadonlyArray<{ background: string; text: string }> = [
-  { background: '#EAE4FB', text: '#754CE8' },
-  { background: '#E7F0FA', text: '#3B80F9' },
-  { background: '#F9EFE6', text: '#C35E19' },
-  { background: '#EBF5ED', text: '#65C366' },
-  { background: '#F7E9EF', text: '#AA3F7E' },
-];
+type ColorKey = keyof Theme['colors'];
+
+// One [fill, initials] token pair per stored colorIndex (CONTACT_COLOR_COUNT in class/contacts).
+export const AVATAR_COLORS = [
+  ['avatarPurple', 'avatarPurpleText'],
+  ['avatarBlue', 'avatarBlueText'],
+  ['avatarAmber', 'avatarAmberText'],
+  ['avatarGreen', 'avatarGreenText'],
+  ['avatarPink', 'avatarPinkText'],
+] as const satisfies ReadonlyArray<readonly [ColorKey, ColorKey]>;
 
 export const contactInitials = (name: string): string =>
   name
@@ -34,9 +35,12 @@ interface ContactAvatarProps {
 }
 
 const ContactAvatar: React.FC<ContactAvatarProps> = ({ name, colorIndex, size = 40, borderRadius, style, textStyle }) => {
+  const { colors } = useTheme();
   // A colorIndex out of range only reaches here from a hand-edited bucket; fall back rather than
   // destructure undefined.
-  const { background, text } = CONTACT_AVATAR_PALETTE[colorIndex] ?? CONTACT_AVATAR_PALETTE[0];
+  const [fillKey, textKey] = AVATAR_COLORS[colorIndex] ?? AVATAR_COLORS[0];
+  const background = colors[fillKey];
+  const text = colors[textKey];
 
   return (
     <View style={[styles.root, { width: size, height: size, borderRadius: borderRadius ?? size / 4, backgroundColor: background }, style]}>
