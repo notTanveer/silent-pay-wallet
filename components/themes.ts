@@ -39,6 +39,8 @@ const palette = {
   navy900: '#101828',
   maroon900: '#5A4E4E',
   brown900: '#2E2518',
+  brown700: '#7A5410',
+  amber400: '#F1AF63',
 
   // Blue-violet tinted neutrals used by the dark scheme (distinct from the pure grays above).
   slate400: '#8888AA',
@@ -165,7 +167,8 @@ const tokens = {
   // Separate token from surfaceCaution: caution and error are different states, so a tweak to
   // the amber caution surface must not silently restyle the error banner.
   surfaceError: pair('#FDFBF5', palette.red950), // scan-error banner background
-  iconCaution: same('#F1AF63'), // caution banner icon (warm amber)
+  iconCaution: same(palette.amber400), // caution banner icon (warm amber)
+  textCaution: pair(palette.brown700, palette.amber400), // caution banner text
   tipIconColor: same(palette.violet480), // backup-intro tip icons (paper/offline/no-share) — same in both schemes per design spec
   segmentTrack: pair('#FDFCFE', '#0E0E16'), // pill toggle track background
   segmentTrackBorder: pair(palette.violet100, '#25253A'), // pill toggle track border
@@ -290,6 +293,8 @@ const tokens = {
   settingsContactIconColor: same('#6366F1'),
   settingsNetworkIconColor: same('#00A63E'),
   settingsCurrencyIconColor: same('#F7931A'),
+  settingsDiscordIconColor: same('#5865F2'),
+  settingsGithubIconColor: pair(palette.black, palette.white),
 
   emptyStateTitle: pair('#0A0A0A', palette.gray75),
   tabDivider: pair('#EAECF0', '#FFFFFF14'), // hairline rule under the whole tab strip (border/default)

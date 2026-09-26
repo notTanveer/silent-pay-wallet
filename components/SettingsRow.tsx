@@ -2,6 +2,7 @@ import React from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import SettingsIconWrapper from './icons/SettingsIconWrapper';
 import ChevronRightIcon from './icons/ChevronRightIcon';
+import ExternalLinkIcon from './icons/ExternalLinkIcon';
 import { useTheme } from './themes';
 import { ClashFont } from '../constants/fonts';
 
@@ -16,11 +17,17 @@ interface SettingsRowProps {
   testID?: string;
   showSeparator?: boolean;
   circle?: boolean;
+  // 'inline' drops the 48px tile and renders the icon bare.
+  iconVariant?: 'tile' | 'inline';
+  // Opens a URL outside the app: external-link icon instead of the chevron, announced as a link.
+  external?: boolean;
   rightElement?: React.ReactNode;
 }
 
 const DEFAULT_CHEVRON = <ChevronRightIcon />;
 
+// Icon row with title and optional subtitle, used for top-level Settings entries and link lists.
+// Use SettingsNavRow for plain title/value rows inside a sub-screen card.
 const SettingsRow: React.FC<SettingsRowProps> = ({
   icon,
   title,
@@ -32,12 +39,17 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
   testID,
   showSeparator = true,
   circle = false,
-  rightElement = DEFAULT_CHEVRON,
+  iconVariant = 'tile',
+  external = false,
+  rightElement,
 }) => {
   const { colors } = useTheme();
+  const defaultTrailing = external ? <ExternalLinkIcon size={20} color={colors.alternativeTextColor} /> : DEFAULT_CHEVRON;
+  // Only undefined falls back: callers pass null to hide the trailing element.
+  const trailing = rightElement === undefined ? defaultTrailing : rightElement;
   return (
     <Pressable
-      accessibilityRole="button"
+      accessibilityRole={external ? 'link' : 'button'}
       accessibilityLabel={subtitle ? `${title}, ${subtitle}` : title}
       accessibilityState={{ disabled, selected }}
       style={({ pressed }) => [
@@ -50,14 +62,14 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
       testID={testID}
       android_ripple={{ color: colors.settingsRipple }}
     >
-      <SettingsIconWrapper circle={circle}>{icon}</SettingsIconWrapper>
+      {iconVariant === 'inline' ? icon : <SettingsIconWrapper circle={circle}>{icon}</SettingsIconWrapper>}
       <View style={styles.rowText}>
         <Text style={[styles.rowTitle, { color: colors.settingsRowTitle }]} numberOfLines={1}>
           {title}
         </Text>
         {subtitle ? <Text style={[styles.rowSubtitle, { color: colors.alternativeTextColor }]}>{subtitle}</Text> : null}
       </View>
-      {isLoading ? <ActivityIndicator color={colors.settingsRowTitle} /> : rightElement}
+      {isLoading ? <ActivityIndicator color={colors.settingsRowTitle} /> : trailing}
     </Pressable>
   );
 };

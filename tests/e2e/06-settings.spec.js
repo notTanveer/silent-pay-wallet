@@ -24,6 +24,16 @@ describe('Settings', () => {
       .toBeVisible()
       .withTimeout(5_000);
 
+    await waitFor(element(by.id('LicenseRow')))
+      .toBeVisible()
+      .whileElement(by.id('AboutScrollView'))
+      .scroll(200, 'down');
+    await element(by.id('LicenseRow')).tap();
+    await waitFor(element(by.id('LicensingScrollView')))
+      .toBeVisible()
+      .withTimeout(5_000);
+    await device.pressBack();
+
     await device.pressBack();
     await device.pressBack();
     await waitFor(element(by.id('SettingsButton')))

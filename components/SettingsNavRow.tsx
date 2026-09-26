@@ -13,6 +13,7 @@ interface SettingsNavRowProps {
   testID?: string;
 }
 
+// Plain title/value row inside a SettingsCard that opens a sub-screen or picker. Use SettingsRow for icon rows.
 const SettingsNavRow: React.FC<SettingsNavRowProps> = ({ title, value, onPress, showSeparator = true, testID }) => {
   const { colors } = useTheme();
   return (

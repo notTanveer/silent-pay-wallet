@@ -2,8 +2,8 @@ import React, { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import SettingsRowWrapper from '../../components/SettingsRowWrapper';
 import SettingsNavRow from '../../components/SettingsNavRow';
+import SettingsStatRow from '../../components/SettingsStatRow';
 import SettingsCard from '../../components/SettingsCard';
 import SettingsSectionHeader from '../../components/SettingsSectionHeader';
 import StatusDotIcon from '../../components/icons/StatusDotIcon';
@@ -14,25 +14,6 @@ import { useSettings } from '../../hooks/context/useSettings';
 import * as Electrum from '../../modules/Electrum';
 import loc from '../../loc';
 import { ClashFont } from '../../constants/fonts';
-
-interface StatRowProps {
-  title: string;
-  value: string;
-  valueColor?: string;
-  showSeparator?: boolean;
-}
-
-const StatRow: React.FC<StatRowProps> = ({ title, value, valueColor, showSeparator = true }) => {
-  const { colors } = useTheme();
-  return (
-    <SettingsRowWrapper showSeparator={showSeparator}>
-      <View style={styles.statRow}>
-        <Text style={[styles.statLabel, { color: colors.alternativeTextColor }]}>{title}</Text>
-        <Text style={[styles.statValue, { color: valueColor ?? colors.settingsRowTitle }]}>{value}</Text>
-      </View>
-    </SettingsRowWrapper>
-  );
-};
 
 type ElectrumConfig = Partial<Awaited<ReturnType<typeof Electrum.getConfig>>>;
 
@@ -142,8 +123,13 @@ const NetworkSettings: React.FC = () => {
 
       <SettingsSectionHeader style={styles.sectionHeaderGap}>{loc.settings.network_section_status}</SettingsSectionHeader>
       <SettingsCard>
-        <StatRow title={loc.settings.network_block_height} value={blockHeightText} showSeparator={false} />
-        <StatRow title={loc.settings.network_sync_status} value={syncStatusText} valueColor={syncStatusColor} showSeparator={false} />
+        <SettingsStatRow title={loc.settings.network_block_height} value={blockHeightText} showSeparator={false} />
+        <SettingsStatRow
+          title={loc.settings.network_sync_status}
+          value={syncStatusText}
+          valueColor={syncStatusColor}
+          showSeparator={false}
+        />
       </SettingsCard>
     </SafeAreaScrollView>
   );
@@ -177,22 +163,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  statRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
   rowTitle: {
-    fontSize: 16,
-    fontFamily: ClashFont.medium,
-  },
-  statLabel: {
-    fontSize: 16,
-    fontFamily: ClashFont.regular,
-  },
-  statValue: {
     fontSize: 16,
     fontFamily: ClashFont.medium,
   },

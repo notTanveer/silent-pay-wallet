@@ -54,7 +54,8 @@
     "errors": {
         "broadcast": "Broadcast failed.",
         "error": "Error",
-        "network": "Network Error"
+        "network": "Network Error",
+        "open_link_failed": "Couldn't open the link. No app is available to handle it."
     },
     "pleasebackup": {
         "ask": "Have you saved your wallet’s backup phrase? This backup phrase is required to access your funds in case you lose this device. Without the backup phrase, your funds will be permanently lost.",
@@ -220,9 +221,18 @@
     },
     "settings": {
         "about": "About",
-        "about_free": "Shroud Wallet is a non-custodial, Bitcoin-only mobile wallet with support for Silent Payments",
+        "about_description": "A non-custodial, Bitcoin-only mobile wallet with support for Silent Payments.",
         "about_sm_github": "GitHub",
+        "about_sm_github_subtitle": "Source code and issues",
         "about_sm_discord": "Discord Server",
+        "about_sm_discord_subtitle": "Get help and follow releases",
+        "about_sm_website": "Website",
+        "about_community_header": "Community",
+        "about_app_info_header": "App info",
+        "about_version": "Version",
+        "about_version_value": "v{version} (build {build})",
+        "about_warning_title": "Work in Progress",
+        "about_warning": "This wallet is under active development. Use small amounts and keep your recovery phrase backed up.",
         "biometrics": "Biometrics",
         "biometrics_no_longer_available": "Your device settings have changed and no longer match the selected security settings in the app. Please re-enable biometrics or passcode, then restart the app to apply these changes.",
         "biom_10times": "You have attempted to enter your password 10 times. Would you like to reset your storage? This will remove all wallets and decrypt your storage.",
@@ -287,7 +297,6 @@
         "tor_use_tor_title": "Use Tor",
         "tor_use_tor_description": "Route indexer requests through a SOCKS5 proxy provided by Orbot (on Android). When enabled, the app tries the .onion address first and falls back to clearnet if Tor is unavailable.",
         "tor_orbot_info": "Make sure Orbot is installed and running before enabling Tor. Tap Install Orbot to download the latest APK directly from the Guardian Project.",
-        "tor_open_link_failed": "Couldn't open the link. No app is available to handle it.",
         "tor_install_orbot": "Install Orbot",
         "tor_enable_tor": "Enable Tor",
         "tor_only_mode": "Tor-Only Mode",
@@ -311,8 +320,7 @@
         "tor_port_saved": "SOCKS5 port saved.",
         "delete_wallet": "Delete Wallet",
         "license": "License",
-        "success_transaction_broadcasted": "Your transaction has been successfully broadcasted!",
-        "warning": "⚠️ Work in Progress - This wallet is currently under active development."
+        "success_transaction_broadcasted": "Your transaction has been successfully broadcasted!"
     },
     "transactions": {
         "cancel_explain": "We will replace this transaction with one that pays you and has higher fees. This effectively cancels the current transaction. This is called RBF—Replace by Fee.",

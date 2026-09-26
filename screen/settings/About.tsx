@@ -1,55 +1,102 @@
 import React from 'react';
-import { Image, Linking, StyleSheet, Text, View } from 'react-native';
-import { ShroudCard } from '../../ShroudComponents';
-import ListItem from '../../components/ListItem';
-import { useTheme } from '../../components/themes';
-import loc, { formatStringAddTwoWhiteSpaces } from '../../loc';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
+import SettingsCard from '../../components/SettingsCard';
+import SettingsSectionHeader from '../../components/SettingsSectionHeader';
+import SettingsNavRow from '../../components/SettingsNavRow';
+import SettingsRow from '../../components/SettingsRow';
+import SettingsStatRow from '../../components/SettingsStatRow';
+import InfoBanner from '../../components/InfoBanner';
+import DiscordIcon from '../../components/icons/DiscordIcon';
+import GithubIcon from '../../components/icons/GithubIcon';
+import { Theme, useTheme } from '../../components/themes';
+import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
+import loc from '../../loc';
+import { ClashFont } from '../../constants/fonts';
+import { LINKS, WEBSITE_DOMAIN } from '../../constants/links';
+import { getAppVersionLabel } from '../../helpers/appVersion';
+import { openLink } from '../../helpers/openLink';
+
+const shroudLogo = require('../../img/icon.png');
+
+interface LinkRowConfig {
+  renderIcon: (colors: Theme['colors']) => React.ReactNode;
+  title: string;
+  subtitle: string;
+  url: string;
+  testID: string;
+}
+
+const LINK_ROWS: LinkRowConfig[] = [
+  {
+    renderIcon: colors => <DiscordIcon size={20} color={colors.settingsDiscordIconColor} />,
+    title: loc.settings.about_sm_discord,
+    subtitle: loc.settings.about_sm_discord_subtitle,
+    url: LINKS.discord,
+    testID: 'DiscordRow',
+  },
+  {
+    renderIcon: colors => <GithubIcon size={20} color={colors.settingsGithubIconColor} />,
+    title: loc.settings.about_sm_github,
+    subtitle: loc.settings.about_sm_github_subtitle,
+    url: LINKS.github,
+    testID: 'GithubRow',
+  },
+  {
+    renderIcon: () => <Image source={shroudLogo} style={styles.linkRowLogo} resizeMode="contain" />,
+    title: loc.settings.about_sm_website,
+    subtitle: WEBSITE_DOMAIN,
+    url: LINKS.website,
+    testID: 'WebsiteRow',
+  },
+];
 
 const About: React.FC = () => {
   const { colors } = useTheme();
-
-  const stylesHook = StyleSheet.create({
-    textBackup: {
-      color: colors.foregroundColor,
-    },
-  });
-
-  const handleOnDiscordPress = () => {
-    Linking.openURL('https://discord.com/invite/STeQFVEWf9');
-  };
-
-  const handleOnGithubPress = () => {
-    Linking.openURL('https://github.com/Bitshala-Incubator/silent-pay-wallet');
-  };
+  const navigation = useExtendedNavigation();
 
   return (
-    <SafeAreaScrollView testID="AboutScrollView" contentInsetAdjustmentBehavior="automatic" automaticallyAdjustContentInsets>
-      <ShroudCard>
-        <View style={styles.center}>
-          <Image style={styles.logo} source={require('../../img/icon.png')} />
-          <Text style={styles.textFree}>{loc.settings.about_free}</Text>
-          <Text style={[styles.textBackup, stylesHook.textBackup]}>{formatStringAddTwoWhiteSpaces(loc.settings.warning)}</Text>
-        </View>
-        <ListItem
-          leftIcon={{
-            name: 'discord',
-            type: 'font-awesome-5',
-            color: '#7289da',
-          }}
-          onPress={handleOnDiscordPress}
-          title={loc.settings.about_sm_discord}
+    <SafeAreaScrollView contentContainerStyle={styles.content} testID="AboutScrollView">
+      <View style={styles.hero}>
+        <Image source={shroudLogo} style={styles.logo} resizeMode="contain" />
+        <Text style={[styles.appName, { color: colors.primary }]}>{loc.onboarding.shroud}</Text>
+        <Text style={[styles.description, { color: colors.alternativeTextColor }]}>{loc.settings.about_description}</Text>
+      </View>
+
+      <InfoBanner
+        variant="caution"
+        title={loc.settings.about_warning_title}
+        text={loc.settings.about_warning}
+        containerStyle={styles.warningBanner}
+      />
+
+      <SettingsSectionHeader style={styles.sectionHeaderGap}>{loc.settings.about_community_header}</SettingsSectionHeader>
+      <SettingsCard>
+        {LINK_ROWS.map((row, index) => (
+          <SettingsRow
+            key={row.testID}
+            icon={row.renderIcon(colors)}
+            iconVariant="inline"
+            external
+            title={row.title}
+            subtitle={row.subtitle}
+            onPress={() => openLink(row.url)}
+            showSeparator={index < LINK_ROWS.length - 1}
+            testID={row.testID}
+          />
+        ))}
+      </SettingsCard>
+
+      <SettingsSectionHeader style={styles.sectionHeaderGap}>{loc.settings.about_app_info_header}</SettingsSectionHeader>
+      <SettingsCard>
+        <SettingsStatRow title={loc.settings.about_version} value={getAppVersionLabel()} />
+        <SettingsNavRow
+          title={loc.settings.license}
+          onPress={() => navigation.navigate('Licensing')}
+          showSeparator={false}
+          testID="LicenseRow"
         />
-        <ListItem
-          leftIcon={{
-            name: 'github',
-            type: 'font-awesome-5',
-            color: '#000000',
-          }}
-          onPress={handleOnGithubPress}
-          title={loc.settings.about_sm_github}
-        />
-      </ShroudCard>
+      </SettingsCard>
     </SafeAreaScrollView>
   );
 };
@@ -57,28 +104,42 @@ const About: React.FC = () => {
 export default About;
 
 const styles = StyleSheet.create({
-  center: {
-    justifyContent: 'center',
+  content: {
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+  },
+  hero: {
     alignItems: 'center',
-    marginTop: 54,
+    marginTop: 24,
+    marginBottom: 8,
   },
   logo: {
-    width: 50,
-    height: 50,
+    width: 64,
+    height: 64,
+    marginBottom: 20,
   },
-  textFree: {
-    maxWidth: 260,
-    marginVertical: 24,
-    color: '#9AA0AA',
-    fontSize: 15,
+  appName: {
+    fontSize: 22,
+    fontFamily: ClashFont.semibold,
     textAlign: 'center',
-    fontWeight: '500',
+    marginBottom: 8,
   },
-  textBackup: {
-    maxWidth: 260,
-    marginBottom: 40,
-    fontSize: 15,
+  description: {
+    maxWidth: 280,
+    fontSize: 14,
+    fontFamily: ClashFont.regular,
+    lineHeight: 20,
     textAlign: 'center',
-    fontWeight: '500',
+  },
+  warningBanner: {
+    marginTop: 20,
+  },
+  sectionHeaderGap: {
+    marginTop: 24,
+  },
+  linkRowLogo: {
+    width: 20,
+    height: 20,
   },
 });

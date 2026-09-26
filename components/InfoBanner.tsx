@@ -31,6 +31,8 @@ const InfoBanner: React.FC<InfoBannerProps> = ({
   const backgroundColor = variant === 'caution' ? colors.surfaceCaution : colors.surfaceSubtle;
   const iconColor = variant === 'caution' ? colors.iconCaution : colors.primary;
   const borderColor = variant === 'caution' ? colors.iconCaution : colors.accentSubtle;
+  const titleColor = variant === 'caution' ? colors.textCaution : colors.textPrimary;
+  const textColor = variant === 'caution' ? colors.textCaution : colors.textSecondary;
 
   return (
     <View style={[styles.banner, { backgroundColor }, bordered && styles.bordered, bordered && { borderColor }, containerStyle]}>
@@ -38,8 +40,8 @@ const InfoBanner: React.FC<InfoBannerProps> = ({
         <InfoIcon size={20} color={iconColor} />
       </View>
       <View style={styles.textColumn}>
-        {title ? <ShroudText style={[styles.title, { color: colors.textPrimary }]}>{title}</ShroudText> : null}
-        <ShroudText style={[styles.text, { color: colors.textSecondary }]}>
+        {title ? <ShroudText style={[styles.title, { color: titleColor }]}>{title}</ShroudText> : null}
+        <ShroudText style={[styles.text, { color: textColor }]}>
           {before}
           {match ? <ShroudText style={[styles.emphasis, { color: colors.textPrimary }]}>{match}</ShroudText> : null}
           {after}
