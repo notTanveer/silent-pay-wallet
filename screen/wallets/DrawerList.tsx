@@ -47,7 +47,7 @@ const DrawerList: React.FC<DrawerContentComponentProps> = memo((props: DrawerCon
       showsVerticalScrollIndicator={false}
       directionalLockEnabled
     >
-      <Header leftText={loc.wallets.list_title} isDrawerList />
+      <Header leftText={loc.wallets.list_title} />
       {wallet && <WalletCarouselItem item={wallet} onPress={handleClick} horizontal={false} />}
     </DrawerContentScrollView>
   );

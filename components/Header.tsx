@@ -4,25 +4,14 @@ import { useTheme } from './themes';
 
 interface HeaderProps {
   leftText: string;
-  isDrawerList?: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({ leftText, isDrawerList }) => {
+export const Header: React.FC<HeaderProps> = ({ leftText }) => {
   const { colors } = useTheme();
-  const styleWithProps = StyleSheet.create({
-    root: {
-      backgroundColor: isDrawerList ? colors.background : colors.background,
-      borderTopColor: isDrawerList ? colors.background : colors.background,
-      borderBottomColor: isDrawerList ? colors.background : colors.background,
-    },
-    text: {
-      color: colors.foregroundColor,
-    },
-  });
 
   return (
-    <View style={[styles.root, styleWithProps.root]}>
-      <Text style={[styles.text, styleWithProps.text]}>{leftText}</Text>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <Text style={[styles.text, { color: colors.foregroundColor }]}>{leftText}</Text>
     </View>
   );
 };
