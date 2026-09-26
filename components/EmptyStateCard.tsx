@@ -23,7 +23,10 @@ const EmptyStateCard: React.FC<EmptyStateCardProps> = ({ icon, title, subtitle, 
 
   return (
     <View
-      style={[styles.card, bordered && [styles.bordered, { backgroundColor: colors.cardBackground, borderColor: colors.lightBorder }]]}
+      style={[
+        styles.card,
+        bordered && [styles.bordered, { backgroundColor: colors.emptyCardBackground, borderColor: colors.emptyCardBorder }],
+      ]}
       testID={testID}
     >
       <View style={styles.icon}>{icon}</View>
@@ -59,7 +62,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: ClashFont.regular,
     fontSize: 16,
-    lineHeight: 20,
+    lineHeight: 24,
     letterSpacing: -0.31,
     textAlign: 'center',
     marginBottom: 28,

@@ -54,8 +54,10 @@ const palette = {
   violet150Alpha: '#DCD2F999',
   violet175: '#D7C8F7',
   violet200: '#D0C0FAFF',
+  violet480: '#9747FF',
   violet500: '#8763EB',
   violet525: '#6B5CE7',
+  violet530: '#7C5BF5',
   violet600: '#754CE8',
   violet600Alpha: '#754CE866',
   violet850: '#473F71',
@@ -97,7 +99,7 @@ const tokens = {
   buttonDisabledBackgroundColor: pair(palette.gray100, palette.gray800),
   inputBorderColor: same(palette.gray300),
   inputBackgroundColor: pair('#F5F5F5', '#262626'),
-  alternativeTextColor: same(palette.gray400),
+  alternativeTextColor: pair(palette.gray400, palette.slate400),
   alternativeTextColor2: pair(palette.violet600, palette.blue500),
   accentColor: same(palette.indigo500),
   toggleTrackOff: same(palette.gray350),
@@ -139,27 +141,49 @@ const tokens = {
   statusPaused: pair('#9792A6', palette.slate400),
   statusSuccess: pair('#55B685', palette.green400),
   statusError: pair(palette.red550, palette.red500),
+  errorAccent: same(palette.red500), // vivid red badge fill (recovery-phrase verify), distinct from statusError's softer border tone
+  verifyCorrectFill: pair('#EBF5ED', palette.green900), // correct-answer pill fill (recovery-phrase verify)
+  verifyIncorrectFill: pair('#FCD3CA', palette.red950), // incorrect-answer pill fill (recovery-phrase verify)
+  // Not settingsCardBackground/Border: those are shared by every Settings screen, unverified here.
+  verifyDefaultPillBackground: pair('#F9F9FB', 'transparent'),
+  verifyDefaultPillBorder: pair('#F0F0F0', '#212129'),
+  verifyErrorBannerBackground: pair('#FDFBF5', palette.brown900), // not surfaceError — that's tuned for a different screen
+  verifyShowPhraseBorder: pair(palette.violet100, '#787897'), // not accentSubtle — that's shared elsewhere
   surfaceSubtle: pair(palette.violet50, palette.violet920), // banner / card background
   accentSubtle: pair(palette.violet100, palette.slate880), // banner & card border, "check again" button bg, scanning icon ring
   accentSubtleDisabled: pair(palette.violet150Alpha, palette.violet850), // disabled bg for accentSubtle/brandPrimary "soft" buttons
   brandPrimaryDisabled: pair(palette.violet600Alpha, palette.gray400), // disabled text for accentSubtle/brandPrimary "soft" buttons
+  restoreButtonBackground: same('transparent'), // onboarding "Restore Existing Wallet" button fill — outlined in both schemes, per design spec
+  vividAccent: pair(palette.violet600, palette.violet525),
+  mutedAccentText: pair(palette.violet600, palette.violet150),
+  warningBannerPrefixText: pair(palette.black, palette.gray375), // light mirrors textPrimary; no light-mode evidence of a difference
+  revealCircleBackground: pair(palette.violet600, palette.violet530),
+  checkboxUncheckedColor: pair(palette.violet100, palette.slate400), // not accentSubtle — too near-black in dark to stay visible
+  backupContinueDisabledBackground: pair(palette.gray400, palette.gray480), // not darkGray — that's shared with AddressItem
+  gridContainerBackground: pair('#F8F8FC', palette.slate890), // blurred together with every pill as one unit; gridScrimBackground darkens it further
+  gridScrimBackground: pair('#FFFFFF33', '#1A1A284D'),
+  revealedPillBorder: pair(palette.gray200Alpha, palette.slate890), // light matches borderDefault's --border-default; dark is pixel-verified for this screen specifically
   surfaceCaution: pair('#FDFBF5', palette.brown900), // caution banner background (address-reuse warning)
-  // Same values as surfaceCaution today, but a separate token: caution and error are different
-  // states, so a tweak to the amber caution surface must not silently restyle the error banner.
-  surfaceError: pair('#FDFBF5', palette.brown900), // scan-error banner background
+  // Separate token from surfaceCaution: caution and error are different states, so a tweak to
+  // the amber caution surface must not silently restyle the error banner.
+  surfaceError: pair('#FDFBF5', palette.red950), // scan-error banner background
   iconCaution: same('#F1AF63'), // caution banner icon (warm amber)
+  tipIconColor: same(palette.violet480), // backup-intro tip icons (paper/offline/no-share) — same in both schemes per design spec
   segmentTrack: pair('#FDFCFE', '#0E0E16'), // pill toggle track background
   segmentTrackBorder: pair(palette.violet100, '#25253A'), // pill toggle track border
   segmentSelectedBorder: pair(palette.violet100, '#3D3D3D'), // selected pill border
   segmentSelectedBackground: pair(palette.white, palette.slate890), // selected pill fill, lighter than segmentTrack
   copyHint: same(palette.gray450), // "tap to copy" icon + label
   progressTrack: pair('#EAECF0', palette.violet920),
+  // Unfilled segment on the backup-flow step header specifically — deliberately lighter than
+  // progressTrack (shared with SyncScreen's sync bar; don't repoint that one to this value).
+  backupProgressTrack: pair('#EAECF0', palette.gray200),
   // Hairline rim on the filled brand button; in dark the design draws it in the brand color itself.
   buttonBorder: pair('#EBEBEB', palette.violet500),
   // Light keeps five distinct greys below; dark deliberately collapses every secondary/meta/
   // muted/chevron role (and statusPaused above) onto slate400 - the single text/secondary value
   // the Figma dark collection defines. Intentional, not unfinished placeholders.
-  textPrimary: pair('#1A1A1A', palette.gray375), // titles, primary copy
+  textPrimary: pair(palette.black, palette.gray75), // titles, primary copy
   textSecondary: pair('#8E8E93', palette.slate400), // subtitles, privacy copy
   textMeta: pair('#92929B', palette.slate400), // ETA / "%" meta text
   textMuted: pair('#7B7A7E', palette.slate400), // card row labels
@@ -179,19 +203,24 @@ const tokens = {
   syncFillError: pair('#FBE9EB', palette.red950),
   // Legacy / existing tokens (keep for compatibility)
   receiveBtnBackground: pair('#EAE4FB', '#110732'),
-  bannerBackground: pair(palette.violet50, palette.violet900),
+  bannerBackground: pair(palette.violet50, palette.violet920),
   payBtnDisabledBackground: pair(palette.blackAlpha32, palette.whiteAlpha32),
-  requestBtnBorderColor: pair(palette.violet600, palette.violet500Alpha),
+  requestBtnBorderColor: pair(palette.violet600, palette.violet525),
+  payButtonActiveBackground: pair(palette.violet600, palette.violet525),
   bannerBorderColor: pair(palette.violet100, '#2D264F'),
   scanBtnBorderColor: pair(palette.violet100, '#241F3B'),
-  settingsBtnBackground: pair('#F6F7F9', '#141414'),
+  settingsBtnBackground: pair('#F6F7F9', palette.violet920),
   settingsBtnIconColor: pair(palette.gray700, '#AAAAAA'),
   searchIconBackground: pair(palette.white, '#0D0D0D'),
-  shieldIconBackground: pair('#FAF5FF', palette.violet900),
-  shieldIconBorder: pair('#F3E8FF', '#181818'),
-  shareAddrBorderColor: pair(palette.violet100, palette.violet500Alpha),
-  shareAddrBackground: pair('transparent', palette.violet900),
+  shieldIconBackground: pair('#FAF5FF', palette.violet920),
+  shieldIconBorder: pair('#F3E8FF', palette.whiteAlpha08),
+  shieldIconAccent: pair(palette.violet600, palette.violet525),
+  shareAddrBorderColor: pair(palette.violet100, palette.whiteAlpha08),
+  shareAddrBackground: same('transparent'),
+  shareAddrTextColor: pair(palette.violet600, palette.violet150),
   cardBackground: pair(palette.violet25, '#1A1A1A'),
+  emptyCardBackground: pair(palette.violet25, palette.slate950), // no fill in dark — content sits on the screen bg directly
+  emptyCardBorder: pair('#EDEDED', palette.gray850), // stays visible so the region still reads as distinct
 
   // --- Send redesign tokens ---
   fieldBackground: pair(palette.gray50, palette.slate890), // Address / Note field background (bg/secondary)
@@ -237,6 +266,10 @@ const tokens = {
   // --- Settings screen tokens ---
   settingsCardBorder: pair('#F0F0F0', '#2C2C2E'),
   settingsCardBackground: pair('#F9F9FB', '#1C1C1E'),
+  // Settings main-menu card. Not settingsCardBorder/Background above — those are shared by
+  // several other Settings screens with no design evidence for them.
+  settingsMainCardBorder: pair('#F0F0F0', '#2D2C3A'),
+  settingsMainCardBackground: pair('#F9F9FB', '#1B1A28'),
   settingsRowTitle: pair(palette.navy900, palette.white),
   settingsDescriptionText: pair('#3C3C43', palette.white),
   settingsCheckmark: pair(palette.violet600, palette.violet500), // mirrors brandPrimary's light/dark split for contrast on dark backgrounds
@@ -249,7 +282,8 @@ const tokens = {
   themePreviewBarLight: same(palette.gray325),
   themePreviewBarDark: same(palette.gray800),
   themePreviewLabelInactive: same(palette.gray480),
-  settingsDeleteWallet: pair('#E53935', '#FF453A'),
+  settingsDeleteWallet: pair('#E53935', palette.red500),
+  settingsDeleteWalletBackground: pair('transparent', palette.red950), // no light-mode reference; stays transparent there
   settingsIconWrapperBg: pair(palette.white, '#2C2C2E'),
   settingsRipple: pair('rgba(0,0,0,0.06)', 'rgba(255,255,255,0.06)'),
   settingsAboutIconColor: same('#E7000B'),

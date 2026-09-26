@@ -100,7 +100,7 @@ const Settings: React.FC = () => {
   const { wallets } = useStorage();
   const handleDeleteWallet = useDeleteWallet();
 
-  const cardStyle = [styles.card, { borderColor: colors.settingsCardBorder, backgroundColor: colors.settingsCardBackground }];
+  const cardStyle = [styles.card, { borderColor: colors.settingsMainCardBorder, backgroundColor: colors.settingsMainCardBackground }];
 
   const mainRowIcons = useMemo(() => MAIN_ROWS.map(row => <row.Icon key={row.route} color={colors[row.colorToken]} />), [colors]);
   const secondaryRowIcons = useMemo(() => SECONDARY_ROWS.map(row => <row.Icon key={row.route} color={colors[row.colorToken]} />), [colors]);
@@ -144,7 +144,11 @@ const Settings: React.FC = () => {
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={loc.settings.delete_wallet}
-          style={[styles.deleteWalletButton, styles.cardGap, { borderColor: colors.settingsDeleteWallet }]}
+          style={[
+            styles.deleteWalletButton,
+            styles.cardGap,
+            { borderColor: colors.settingsDeleteWallet, backgroundColor: colors.settingsDeleteWalletBackground },
+          ]}
           onPress={handleDeleteWallet}
           testID="DeleteWalletButton"
           activeOpacity={0.7}

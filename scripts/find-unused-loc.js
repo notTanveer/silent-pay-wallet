@@ -4,7 +4,7 @@ const path = require('path');
 const mainLocFile = './loc/en.json';
 const dirsToInterate = ['components', 'screen', 'modules', 'class', 'hooks', 'helpers', 'navigation', 'typings', 'loc'];
 const addFiles = ['ShroudComponents.js', 'App.tsx', 'navigation/index.tsx'];
-const allowedLocPrefixes = ['loc.units'];
+const allowedLocPrefixes = ['loc.units', 'loc.pleasebackup.ordinals'];
 
 const allLocKeysHashmap = {}; // loc key -> used or not
 

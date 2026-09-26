@@ -180,7 +180,7 @@ const WalletsList: React.FC = () => {
         borderWidth: 1,
       },
       payBtnActive: {
-        backgroundColor: colors.primary,
+        backgroundColor: colors.payButtonActiveBackground,
       },
       payBtnDisabled: {
         backgroundColor: colors.payBtnDisabledBackground,
@@ -210,7 +210,7 @@ const WalletsList: React.FC = () => {
         backgroundColor: colors.shareAddrBackground,
       },
       shareAddrText: {
-        color: colors.brandPrimary,
+        color: colors.shareAddrTextColor,
       },
       zeroBalanceRequestText: {
         color: colors.white,
@@ -613,7 +613,7 @@ const WalletsList: React.FC = () => {
             size={94}
             background={colors.shieldIconBackground}
             borderColor={colors.shieldIconBorder}
-            accent={colors.brandPrimary}
+            accent={colors.shieldIconAccent}
           />
         }
         title={loc.wallets.no_transactions_title}
@@ -644,7 +644,7 @@ const WalletsList: React.FC = () => {
     stylesHook.shareAddrText,
     colors.shieldIconBackground,
     colors.shieldIconBorder,
-    colors.brandPrimary,
+    colors.shieldIconAccent,
   ]);
 
   // Contacts are keyed by address so switching tabs can't reuse a transaction's row identity.
@@ -838,8 +838,7 @@ const styles = StyleSheet.create({
   shareAddressButton: {
     borderRadius: 16,
     height: 59,
-    alignSelf: 'stretch',
-    marginHorizontal: 32,
+    paddingHorizontal: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
