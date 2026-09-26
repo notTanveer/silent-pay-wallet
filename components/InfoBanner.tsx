@@ -5,7 +5,6 @@ import { ShroudText } from '../ShroudComponents';
 import { ClashFont } from '../constants/fonts';
 import { splitForEmphasis } from '../helpers/emphasis';
 import InfoIcon from './icons/InfoIcon';
-import InfoBadgeIcon from './icons/InfoBadgeIcon';
 import { useTheme } from './themes';
 
 interface InfoBannerProps {
@@ -16,8 +15,6 @@ interface InfoBannerProps {
   variant?: 'info' | 'caution';
   /** 1px border in the variant's accent color. */
   bordered?: boolean;
-  /** Icon inside a filled accent circle instead of bare. */
-  badge?: boolean;
   containerStyle?: ViewStyle;
 }
 
@@ -27,7 +24,6 @@ const InfoBanner: React.FC<InfoBannerProps> = ({
   title,
   variant = 'info',
   bordered = false,
-  badge = false,
   containerStyle,
 }) => {
   const { colors } = useTheme();
@@ -39,11 +35,7 @@ const InfoBanner: React.FC<InfoBannerProps> = ({
   return (
     <View style={[styles.banner, { backgroundColor }, bordered && styles.bordered, bordered && { borderColor }, containerStyle]}>
       <View style={styles.icon}>
-        {badge ? (
-          <InfoBadgeIcon size={28} backgroundColor={colors.accentSubtle} color={colors.brandPrimary} />
-        ) : (
-          <InfoIcon size={20} color={iconColor} />
-        )}
+        <InfoIcon size={20} color={iconColor} />
       </View>
       <View style={styles.textColumn}>
         {title ? <ShroudText style={[styles.title, { color: colors.textPrimary }]}>{title}</ShroudText> : null}

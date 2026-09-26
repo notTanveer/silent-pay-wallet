@@ -86,10 +86,8 @@ const PaymentFound: React.FC<PaymentFoundProps> = ({ route }) => {
           <View style={styles.hero}>
             <CheckBadgeIcon
               size={80}
-              showHalo
               color={colors.paymentBadgeFill}
-              haloBackground={colors.surfaceSubtle}
-              haloBorder={colors.accentSubtle}
+              halo={{ background: colors.surfaceSubtle, border: colors.accentSubtle }}
             />
             <Text style={[styles.statusLabel, stylesHook.statusLabel]}>
               {isConfirmed ? loc.payment_found.confirmed : loc.payment_found.detected}

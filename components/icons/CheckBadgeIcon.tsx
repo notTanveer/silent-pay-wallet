@@ -5,9 +5,8 @@ import { IconProps } from './types';
 interface CheckBadgeIconProps extends IconProps {
   color: string;
   checkColor?: string;
-  showHalo?: boolean;
-  haloBackground?: string;
-  haloBorder?: string;
+  /** Draws the badge inside a rounded halo tile. Omit for the bare badge. */
+  halo?: { background: string; border: string };
 }
 
 // No drop shadow: FeMorphology isn't implemented in react-native-svg@15.12.1 and warns + renders null.
@@ -15,20 +14,18 @@ const CheckBadgeIcon: React.FC<CheckBadgeIconProps> = ({
   size = 92,
   color,
   checkColor = '#FFFFFF',
-  showHalo = false,
-  haloBackground = '#FDFCFE',
-  haloBorder = '#E6E4E4',
+  halo,
 }) => {
-  if (showHalo) {
+  if (halo) {
     return (
       <Svg width={size} height={size} viewBox="0 0 98 98" fill="none">
         <Path
           d="M0 16C0 7.16342 7.16344 0 16 0H81.9999C90.8365 0 97.9999 7.16344 97.9999 16V81.9999C97.9999 90.8365 90.8364 97.9999 81.9999 97.9999H16C7.16342 97.9999 0 90.8364 0 81.9999V16Z"
-          fill={haloBackground}
+          fill={halo.background}
         />
         <Path
           d="M16 0.5H82C90.5604 0.500045 97.5 7.43961 97.5 16V82C97.5 90.5603 90.5603 97.4999 82 97.5H16C7.43962 97.5 0.500058 90.5604 0.5 82V16C0.5 7.43959 7.43959 0.5 16 0.5Z"
-          stroke={haloBorder}
+          stroke={halo.border}
           strokeOpacity={0.6}
         />
         <Path

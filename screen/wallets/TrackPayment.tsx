@@ -165,7 +165,7 @@ const TrackPayment: React.FC<TrackPaymentProps> = () => {
             )}
           </View>
 
-          <InfoBanner title={loc.track_payment.whats_txid} text={loc.track_payment.txid_explanation} bordered badge />
+          <InfoBanner title={loc.track_payment.whats_txid} text={loc.track_payment.txid_explanation} bordered />
         </View>
 
         <View style={styles.buttonContainer}>
