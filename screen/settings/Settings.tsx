@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import DeviceInfo from 'react-native-device-info';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 import SettingsRow from '../../components/SettingsRow';
 import GeneralIcon from '../../components/icons/GeneralIcon';
@@ -13,11 +12,9 @@ import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import { useDeleteWallet } from '../../hooks/useDeleteWallet';
 import { useStorage } from '../../hooks/context/useStorage';
 import loc from '../../loc';
+import { getAppVersionLabel } from '../../helpers/appVersion';
 import { ClashFont } from '../../constants/fonts';
 import { IconProps } from '../../components/icons/types';
-
-const APP_VERSION = DeviceInfo.getVersion();
-const BUILD_NUMBER = DeviceInfo.getBuildNumber();
 
 type SettingsRoute = 'General' | 'Currency' | 'Contacts' | 'NetworkSettings' | 'About';
 
@@ -78,7 +75,7 @@ const SECONDARY_ROWS: RowConfig[] = [
     Icon: AboutIcon,
     colorToken: 'settingsAboutIconColor',
     title: loc.settings.about,
-    subtitle: `v${APP_VERSION} (build ${BUILD_NUMBER})`,
+    subtitle: getAppVersionLabel(),
     route: 'About',
     testID: 'AboutButton',
   },

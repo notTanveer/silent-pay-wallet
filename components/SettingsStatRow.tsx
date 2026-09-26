@@ -16,7 +16,7 @@ const SettingsStatRow: React.FC<SettingsStatRowProps> = ({ title, value, valueCo
   return (
     <SettingsRowWrapper showSeparator={showSeparator}>
       <View style={styles.row}>
-        <Text style={[styles.label, { color: colors.alternativeTextColor }]}>{title}</Text>
+        <Text style={[styles.label, { color: colors.settingsRowTitle }]}>{title}</Text>
         <Text style={[styles.value, { color: valueColor ?? colors.settingsRowTitle }]}>{value}</Text>
       </View>
     </SettingsRowWrapper>
@@ -31,11 +31,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 18,
   },
+  // Matches SettingsNavRow's title so the two can share a card.
   label: {
-    fontSize: 16,
-    fontFamily: ClashFont.regular,
+    fontSize: 14,
+    fontFamily: ClashFont.medium,
   },
   value: {
     fontSize: 16,

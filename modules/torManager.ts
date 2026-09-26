@@ -1,10 +1,9 @@
 import { Buffer } from 'buffer';
 import DefaultPreference from 'react-native-default-preference';
 import TcpSocket from 'react-native-tcp-socket';
-import { Linking, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import Share from 'react-native-share';
-import presentAlert from '../components/Alert';
-import loc from '../loc';
+import { openLink } from '../helpers/openLink';
 import { GROUP_IO_SHROUD } from './currency';
 
 const TOR_ENABLED_KEY = 'tor_enabled';
@@ -212,9 +211,7 @@ class TorManager {
       Platform.OS === 'android'
         ? 'https://guardianproject.info/releases/orbot-latest.apk'
         : 'https://apps.apple.com/app/orbot/id1609461599';
-    Linking.openURL(url).catch(() => {
-      presentAlert({ title: loc.errors.error, message: loc.settings.tor_open_link_failed });
-    });
+    openLink(url);
   }
 
   private _testSocksProxy(): Promise<boolean> {

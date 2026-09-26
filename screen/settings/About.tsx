@@ -1,86 +1,95 @@
 import React from 'react';
-import { Image, Linking, StyleSheet, Text, View } from 'react-native';
-import DeviceInfo from 'react-native-device-info';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
 import SettingsCard from '../../components/SettingsCard';
 import SettingsSectionHeader from '../../components/SettingsSectionHeader';
 import SettingsNavRow from '../../components/SettingsNavRow';
+import SettingsRow from '../../components/SettingsRow';
 import SettingsStatRow from '../../components/SettingsStatRow';
+import InfoBanner from '../../components/InfoBanner';
 import DiscordIcon from '../../components/icons/DiscordIcon';
 import GithubIcon from '../../components/icons/GithubIcon';
-import InfoIcon from '../../components/icons/InfoIcon';
-import { useTheme } from '../../components/themes';
+import { Theme, useTheme } from '../../components/themes';
 import { useExtendedNavigation } from '../../hooks/useExtendedNavigation';
 import loc from '../../loc';
 import { ClashFont } from '../../constants/fonts';
+import { LINKS, WEBSITE_DOMAIN } from '../../constants/links';
+import { getAppVersionLabel } from '../../helpers/appVersion';
+import { openLink } from '../../helpers/openLink';
 
-const APP_VERSION = DeviceInfo.getVersion();
-const BUILD_NUMBER = DeviceInfo.getBuildNumber();
 const shroudLogo = require('../../img/icon.png');
+
+interface LinkRowConfig {
+  renderIcon: (colors: Theme['colors']) => React.ReactNode;
+  title: string;
+  subtitle: string;
+  url: string;
+  testID: string;
+}
+
+const LINK_ROWS: LinkRowConfig[] = [
+  {
+    renderIcon: colors => <DiscordIcon size={20} color={colors.settingsDiscordIconColor} />,
+    title: loc.settings.about_sm_discord,
+    subtitle: loc.settings.about_sm_discord_subtitle,
+    url: LINKS.discord,
+    testID: 'DiscordRow',
+  },
+  {
+    renderIcon: colors => <GithubIcon size={20} color={colors.settingsGithubIconColor} />,
+    title: loc.settings.about_sm_github,
+    subtitle: loc.settings.about_sm_github_subtitle,
+    url: LINKS.github,
+    testID: 'GithubRow',
+  },
+  {
+    renderIcon: () => <Image source={shroudLogo} style={styles.linkRowLogo} resizeMode="contain" />,
+    title: loc.settings.about_sm_website,
+    subtitle: WEBSITE_DOMAIN,
+    url: LINKS.website,
+    testID: 'WebsiteRow',
+  },
+];
 
 const About: React.FC = () => {
   const { colors } = useTheme();
   const navigation = useExtendedNavigation();
 
-  const handleOnDiscordPress = () => {
-    Linking.openURL('https://discord.com/invite/STeQFVEWf9');
-  };
-
-  const handleOnGithubPress = () => {
-    Linking.openURL('https://github.com/Bitshala-Incubator/silent-pay-wallet');
-  };
-
-  const handleOnWebsitePress = () => {
-    Linking.openURL('https://shroudwallet.app/');
-  };
-
   return (
     <SafeAreaScrollView contentContainerStyle={styles.content} testID="AboutScrollView">
       <View style={styles.hero}>
         <Image source={shroudLogo} style={styles.logo} resizeMode="contain" />
-        <Text style={[styles.appName, { color: colors.primary }]}>{loc.settings.about_app_name}</Text>
-        <Text style={[styles.description, { color: colors.alternativeTextColor }]}>{loc.settings.about_free}</Text>
+        <Text style={[styles.appName, { color: colors.primary }]}>{loc.onboarding.shroud}</Text>
+        <Text style={[styles.description, { color: colors.alternativeTextColor }]}>{loc.settings.about_description}</Text>
       </View>
 
-      <View style={[styles.warningBanner, { backgroundColor: colors.surfaceCaution }]}>
-        <View style={styles.warningIcon}>
-          <InfoIcon size={20} color={colors.settingsWarningTextColor} />
-        </View>
-        <View style={styles.warningTextContainer}>
-          <Text style={[styles.warningTitle, { color: colors.settingsWarningTextColor }]}>{loc.settings.warning_title}</Text>
-          <Text style={[styles.warningText, { color: colors.settingsWarningTextColor }]}>{loc.settings.warning}</Text>
-        </View>
-      </View>
+      <InfoBanner
+        variant="caution"
+        title={loc.settings.about_warning_title}
+        text={loc.settings.about_warning}
+        containerStyle={styles.warningBanner}
+      />
 
       <SettingsSectionHeader style={styles.sectionHeaderGap}>{loc.settings.about_community_header}</SettingsSectionHeader>
       <SettingsCard>
-        <SettingsNavRow
-          icon={<DiscordIcon size={20} color={colors.settingsDiscordIconColor} />}
-          title={loc.settings.about_sm_discord}
-          subtitle={loc.settings.about_sm_discord_subtitle}
-          onPress={handleOnDiscordPress}
-          testID="DiscordRow"
-        />
-        <SettingsNavRow
-          icon={<GithubIcon size={20} color={colors.settingsGithubIconColor} />}
-          title={loc.settings.about_sm_github}
-          subtitle={loc.settings.about_sm_github_subtitle}
-          onPress={handleOnGithubPress}
-          testID="GithubRow"
-        />
-        <SettingsNavRow
-          icon={<Image source={shroudLogo} style={styles.linkRowLogo} resizeMode="contain" />}
-          title={loc.settings.about_sm_website}
-          subtitle={loc.settings.about_sm_website_subtitle}
-          onPress={handleOnWebsitePress}
-          showSeparator={false}
-          testID="WebsiteRow"
-        />
+        {LINK_ROWS.map((row, index) => (
+          <SettingsRow
+            key={row.testID}
+            icon={row.renderIcon(colors)}
+            iconVariant="inline"
+            external
+            title={row.title}
+            subtitle={row.subtitle}
+            onPress={() => openLink(row.url)}
+            showSeparator={index < LINK_ROWS.length - 1}
+            testID={row.testID}
+          />
+        ))}
       </SettingsCard>
 
-      <SettingsSectionHeader style={styles.sectionHeaderGap}>{loc.settings.about_version_header}</SettingsSectionHeader>
+      <SettingsSectionHeader style={styles.sectionHeaderGap}>{loc.settings.about_app_info_header}</SettingsSectionHeader>
       <SettingsCard>
-        <SettingsStatRow title={loc.settings.about_version} value={`v${APP_VERSION} (build ${BUILD_NUMBER})`} />
+        <SettingsStatRow title={loc.settings.about_version} value={getAppVersionLabel()} />
         <SettingsNavRow
           title={loc.settings.license}
           onPress={() => navigation.navigate('Licensing')}
@@ -124,29 +133,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   warningBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
     marginTop: 20,
-    borderRadius: 16,
-    paddingVertical: 19,
-    paddingHorizontal: 17,
-    gap: 10,
-  },
-  warningIcon: {
-    marginTop: 1,
-  },
-  warningTextContainer: {
-    flex: 1,
-  },
-  warningTitle: {
-    fontFamily: ClashFont.medium,
-    fontSize: 15,
-  },
-  warningText: {
-    fontFamily: ClashFont.regular,
-    fontSize: 13,
-    lineHeight: 23,
-    marginTop: 2,
   },
   sectionHeaderGap: {
     marginTop: 24,
