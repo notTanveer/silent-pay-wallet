@@ -12,10 +12,10 @@ const SeedWords: React.FC<SeedWordsProps> = ({ word, index }) => {
 
   return (
     <View style={styles.seedItemContainer}>
-      <View style={[styles.indexContainer, { backgroundColor: colors.settingsCardBackground, borderColor: colors.settingsCardBorder }]}>
+      <View style={[styles.indexContainer, { backgroundColor: colors.fieldBackground, borderColor: colors.borderDefault }]}>
         <Text style={[styles.seedIndex, { color: colors.textPrimary }]}>{index + 1}</Text>
       </View>
-      <View style={[styles.wordContainer, { backgroundColor: colors.settingsCardBackground, borderColor: colors.settingsCardBorder }]}>
+      <View style={[styles.wordContainer, { backgroundColor: colors.fieldBackground, borderColor: colors.borderDefault }]}>
         <Text style={[styles.seedWord, { color: colors.textPrimary }]}>{word}</Text>
       </View>
     </View>

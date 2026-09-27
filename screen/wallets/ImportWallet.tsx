@@ -247,7 +247,6 @@ const ImportWallet = () => {
             title={loc.wallets.import_do_import}
             testID="DoImport"
             onPress={handleImport}
-            backgroundColor="#754CE8"
           />
           <Spacing20 />
           <AddressInputScanButton type="link" onChangeText={setImportText} testID="ScanImport" />
@@ -280,7 +279,7 @@ const ImportWallet = () => {
       <Spacing20 />
       <WalletBirthSection birthDate={birthDate} setBirthDate={setBirthDate} />
 
-      {isLoading && <ActivityIndicator size="large" color={colors.primary} style={styles.activityIndicator} />}
+      {isLoading && <ActivityIndicator size="large" color={colors.brandPrimary} style={styles.activityIndicator} />}
 
       {Platform.select({ android: !isToolbarVisibleForAndroid && renderOptionsAndImportButton, default: renderOptionsAndImportButton })}
       {Platform.select({

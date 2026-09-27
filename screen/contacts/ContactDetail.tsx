@@ -61,10 +61,10 @@ const ContactDetail: React.FC = () => {
         style={styles.editButton}
       >
         <EditIcon size={20} color={colors.brandPrimary} />
-        <Text style={[styles.editLabel, { color: colors.brandPrimary }]}>{loc._.edit}</Text>
+        <Text style={[styles.editLabel, { color: colors.textBrand }]}>{loc._.edit}</Text>
       </Pressable>
     ),
-    [navigation, params.address, colors.brandPrimary],
+    [navigation, params.address, colors.brandPrimary, colors.textBrand],
   );
 
   useLayoutEffect(() => {
@@ -135,9 +135,9 @@ const ContactDetail: React.FC = () => {
               hitSlop={10}
               onPress={onCopyAddress}
               testID="ContactCopyAddressIconButton"
-              style={[styles.copyButton, { backgroundColor: colors.background, borderColor: colors.copyButtonBorder }]}
+              style={[styles.copyButton, { backgroundColor: colors.background, borderColor: colors.borderDefault }]}
             >
-              <CopyIcon size={16} color={copied ? colors.brandPrimary : colors.chevron} />
+              <CopyIcon size={16} color={copied ? colors.brandPrimary : colors.iconSecondary} />
             </Pressable>
           </View>
           <Pressable
@@ -161,9 +161,9 @@ const ContactDetail: React.FC = () => {
           title={loc.contacts.remove}
           Icon={TrashIcon}
           onPress={onRemove}
-          backgroundColor={colors.removeSurface}
-          color={colors.removeText}
-          borderColor={colors.removeBorder}
+          backgroundColor={colors.surfaceCaution}
+          color={colors.statusError}
+          borderColor={colors.statusError}
           testID="ContactRemoveButton"
         />
       </View>

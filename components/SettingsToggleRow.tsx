@@ -29,10 +29,10 @@ const SettingsToggleRow: React.FC<SettingsToggleRowProps> = ({
     <SettingsRowWrapper showSeparator={showSeparator}>
       <View style={styles.row}>
         <View style={styles.rowTop}>
-          <Text style={[styles.rowTitle, { color: colors.settingsRowTitle }]}>{title}</Text>
+          <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{title}</Text>
           <Toggle value={value} onValueChange={onValueChange} disabled={disabled} accessibilityLabel={title} testID={testID} />
         </View>
-        {subtitle ? <Text style={[styles.rowSubtitle, { color: colors.alternativeTextColor }]}>{subtitle}</Text> : null}
+        {subtitle ? <Text style={[styles.rowSubtitle, { color: colors.textMuted }]}>{subtitle}</Text> : null}
       </View>
     </SettingsRowWrapper>
   );

@@ -92,7 +92,7 @@ const navigationStyle = (
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={loc._.close}
-          style={isFormSheet ? [styles.buttonFormSheet, { backgroundColor: theme.colors.lightButton }] : styles.button}
+          style={isFormSheet ? [styles.buttonFormSheet, { backgroundColor: theme.colors.surfaceSubtle }] : styles.button}
           onPress={handleClose}
           testID="NavigationCloseButton"
         >
@@ -110,7 +110,7 @@ const navigationStyle = (
         headerLeft = (props: any) =>
           props.canGoBack ? (
             <HeaderBackButton
-              color={theme.colors.backButtonIcon}
+              color={theme.colors.iconPrimary}
               onPress={() => {
                 Keyboard.dismiss();
                 navigation.goBack();
@@ -125,9 +125,9 @@ const navigationStyle = (
         headerTitleStyle: {
           fontFamily: ClashFont.medium,
           fontSize: 17,
-          color: theme.colors.foregroundColor,
+          color: theme.colors.textPrimary,
         },
-        headerTintColor: theme.colors.foregroundColor,
+        headerTintColor: theme.colors.textPrimary,
       };
       const isLeftCloseButtonAndroid = closeButton === CloseButtonPosition.Left && Platform.OS === 'android';
 

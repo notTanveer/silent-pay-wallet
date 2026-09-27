@@ -112,7 +112,7 @@ export class DynamicQRCode extends Component<DynamicQRCodeProps, DynamicQRCodeSt
   render() {
     const currentFragment = this.fragments[this.state.index];
     // Read the themed color at render time so it tracks the live scheme (see BlueCurrentTheme).
-    const textStyle = [animatedQRCodeStyle.text, { color: BlueCurrentTheme.colors.foregroundColor }];
+    const textStyle = [animatedQRCodeStyle.text, { color: BlueCurrentTheme.colors.textSecondary }];
 
     if (!currentFragment && this.state.displayQRCode) {
       return (

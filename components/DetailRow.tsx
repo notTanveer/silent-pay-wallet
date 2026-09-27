@@ -17,8 +17,8 @@ interface DetailRowProps {
 const DetailRow: React.FC<DetailRowProps> = ({ label, value, mono, onCopy, copied, accessibilityLabel }) => {
   const { colors } = useTheme();
   const stylesHook = StyleSheet.create({
-    label: { color: colors.textPrimary },
-    value: { color: colors.textPrimary },
+    label: { color: colors.textSecondary },
+    value: { color: colors.textSecondary },
   });
   return (
     <View style={styles.row}>
@@ -32,7 +32,7 @@ const DetailRow: React.FC<DetailRowProps> = ({ label, value, mono, onCopy, copie
             onPress={onCopy}
             style={styles.copyBtn}
           >
-            <CopyIcon size={16} color={copied ? colors.brandPrimary : colors.chevron} />
+            <CopyIcon size={16} color={copied ? colors.brandPrimary : colors.iconSecondary} />
           </Pressable>
         )}
       </View>

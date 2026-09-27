@@ -18,19 +18,12 @@ interface InfoBannerProps {
   containerStyle?: ViewStyle;
 }
 
-const InfoBanner: React.FC<InfoBannerProps> = ({
-  text,
-  emphasis,
-  title,
-  variant = 'info',
-  bordered = false,
-  containerStyle,
-}) => {
+const InfoBanner: React.FC<InfoBannerProps> = ({ text, emphasis, title, variant = 'info', bordered = false, containerStyle }) => {
   const { colors } = useTheme();
   const [before, match, after] = splitForEmphasis(text, emphasis);
   const backgroundColor = variant === 'caution' ? colors.surfaceCaution : colors.surfaceSubtle;
-  const iconColor = variant === 'caution' ? colors.iconCaution : colors.primary;
-  const borderColor = variant === 'caution' ? colors.iconCaution : colors.accentSubtle;
+  const iconColor = variant === 'caution' ? colors.textWarning : colors.brandPrimary;
+  const borderColor = variant === 'caution' ? colors.textWarning : colors.accentSubtle;
   const titleColor = variant === 'caution' ? colors.textCaution : colors.textPrimary;
   const textColor = variant === 'caution' ? colors.textCaution : colors.textSecondary;
 
@@ -43,7 +36,7 @@ const InfoBanner: React.FC<InfoBannerProps> = ({
         {title ? <ShroudText style={[styles.title, { color: titleColor }]}>{title}</ShroudText> : null}
         <ShroudText style={[styles.text, { color: textColor }]}>
           {before}
-          {match ? <ShroudText style={[styles.emphasis, { color: colors.textPrimary }]}>{match}</ShroudText> : null}
+          {match ? <ShroudText style={[styles.emphasis, { color: textColor }]}>{match}</ShroudText> : null}
           {after}
         </ShroudText>
       </View>

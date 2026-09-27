@@ -11,7 +11,7 @@ interface SettingsSectionHeaderProps {
 
 const SettingsSectionHeader: React.FC<SettingsSectionHeaderProps> = ({ children, color, style }) => {
   const { colors } = useTheme();
-  return <Text style={[styles.header, { color: color ?? colors.alternativeTextColor }, style]}>{children}</Text>;
+  return <Text style={[styles.header, { color: color ?? colors.textMuted }, style]}>{children}</Text>;
 };
 
 export default SettingsSectionHeader;

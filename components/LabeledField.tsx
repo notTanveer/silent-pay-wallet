@@ -18,7 +18,7 @@ const LabeledField: React.FC<LabeledFieldProps> = ({ label, children, trailing, 
   const { colors } = useTheme();
 
   const stylesHook = StyleSheet.create({
-    label: { color: colors.textSecondary },
+    label: { color: colors.textMuted },
     field: tinted
       ? { backgroundColor: colors.surfaceSubtle, borderWidth: 1, borderColor: colors.accentSubtle }
       : { backgroundColor: colors.fieldBackground },

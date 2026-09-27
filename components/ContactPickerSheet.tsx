@@ -59,7 +59,7 @@ const ContactPickerSheet = forwardRef<BottomModalHandle, ContactPickerSheetProps
       <View style={styles.header}>
         <HeaderBackButton
           onPress={() => sheetRef.current?.dismiss()}
-          color={colors.sheetBackIcon}
+          color={colors.iconSecondary}
           accessibilityLabel={loc._.close}
           testID="PickContactBackButton"
         />

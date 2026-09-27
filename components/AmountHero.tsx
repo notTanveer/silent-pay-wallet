@@ -49,9 +49,9 @@ const AmountHero: React.FC<AmountHeroProps> = ({
   const empty = isAmountEmpty(amount);
 
   const stylesHook = StyleSheet.create({
-    amountFilled: { color: colors.textEmphasis },
+    amountFilled: { color: colors.textPrimary },
     amountEmpty: { color: colors.textDisabled },
-    meta: { color: colors.amountMeta },
+    meta: { color: colors.textMuted },
     hint: { color: colors.textBrand },
     sendingMax: { color: colors.textBrand },
     // The pill fill is bg/brand whether or not Max is on - only the tick and the label change.
@@ -114,7 +114,7 @@ const AmountHero: React.FC<AmountHeroProps> = ({
           style={[styles.useMax, stylesHook.useMax, useMaxDisabled && styles.useMaxDisabled]}
           testID="UseMaxButton"
         >
-          {isMax && <CheckmarkIcon color={colors.brandStrong} size={16} />}
+          {isMax && <CheckmarkIcon color={colors.brandPrimary} size={16} />}
           <ShroudText style={[styles.useMaxText, stylesHook.useMaxText]}>{isMax ? loc.send.max_active : loc.send.max}</ShroudText>
         </Pressable>
       )}

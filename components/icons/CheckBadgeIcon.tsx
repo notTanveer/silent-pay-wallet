@@ -10,12 +10,7 @@ interface CheckBadgeIconProps extends IconProps {
 }
 
 // No drop shadow: FeMorphology isn't implemented in react-native-svg@15.12.1 and warns + renders null.
-const CheckBadgeIcon: React.FC<CheckBadgeIconProps> = ({
-  size = 92,
-  color,
-  checkColor = '#FFFFFF',
-  halo,
-}) => {
+const CheckBadgeIcon: React.FC<CheckBadgeIconProps> = ({ size = 92, color, checkColor = '#FFFFFF', halo }) => {
   if (halo) {
     return (
       <Svg width={size} height={size} viewBox="0 0 98 98" fill="none">

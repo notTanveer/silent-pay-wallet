@@ -29,14 +29,14 @@ interface LinkRowConfig {
 
 const LINK_ROWS: LinkRowConfig[] = [
   {
-    renderIcon: colors => <DiscordIcon size={20} color={colors.settingsDiscordIconColor} />,
+    renderIcon: colors => <DiscordIcon size={20} />,
     title: loc.settings.about_sm_discord,
     subtitle: loc.settings.about_sm_discord_subtitle,
     url: LINKS.discord,
     testID: 'DiscordRow',
   },
   {
-    renderIcon: colors => <GithubIcon size={20} color={colors.settingsGithubIconColor} />,
+    renderIcon: colors => <GithubIcon size={20} color={colors.bgInverse} />,
     title: loc.settings.about_sm_github,
     subtitle: loc.settings.about_sm_github_subtitle,
     url: LINKS.github,
@@ -59,8 +59,8 @@ const About: React.FC = () => {
     <SafeAreaScrollView contentContainerStyle={styles.content} testID="AboutScrollView">
       <View style={styles.hero}>
         <Image source={shroudLogo} style={styles.logo} resizeMode="contain" />
-        <Text style={[styles.appName, { color: colors.primary }]}>{loc.onboarding.shroud}</Text>
-        <Text style={[styles.description, { color: colors.alternativeTextColor }]}>{loc.settings.about_description}</Text>
+        <Text style={[styles.appName, { color: colors.brandPrimary }]}>{loc.onboarding.shroud}</Text>
+        <Text style={[styles.description, { color: colors.textMuted }]}>{loc.settings.about_description}</Text>
       </View>
 
       <InfoBanner

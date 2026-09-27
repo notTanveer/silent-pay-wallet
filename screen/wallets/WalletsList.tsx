@@ -167,50 +167,50 @@ const WalletsList: React.FC = () => {
         backgroundColor: colors.background,
       },
       trackPaymentBg: {
-        backgroundColor: colors.bannerBackground,
-        borderColor: colors.bannerBorderColor,
+        backgroundColor: colors.surfaceSubtle,
+        borderColor: colors.accentSubtle,
       },
       receiveBtnStyle: {
-        backgroundColor: colors.receiveBtnBackground,
-        borderColor: colors.requestBtnBorderColor,
+        backgroundColor: colors.surfaceBrandTint,
+        borderColor: colors.brandPrimary,
       },
       scanBtnStyle: {
         backgroundColor: colors.background,
-        borderColor: colors.scanBtnBorderColor,
+        borderColor: colors.accentSubtle,
         borderWidth: 1,
       },
       payBtnActive: {
-        backgroundColor: colors.payButtonActiveBackground,
+        backgroundColor: colors.brandPrimary,
       },
       payBtnDisabled: {
-        backgroundColor: colors.payBtnDisabledBackground,
+        backgroundColor: colors.ctaDisabled,
       },
       cardStyle: {
         backgroundColor: colors.background,
-        borderColor: colors.lightBorder,
+        borderColor: colors.borderDefault,
       },
       foregroundText: {
-        color: colors.foregroundColor,
+        color: colors.textPrimary,
       },
       alternativeText: {
-        color: colors.alternativeTextColor,
+        color: colors.textMuted,
       },
       requestBtnLabel: {
-        color: colors.brandPrimary,
+        color: colors.textBrand,
       },
       payBtnLabel: {
         color: colors.white,
       },
       toastRequestBtn: {
-        backgroundColor: colors.primary,
+        backgroundColor: colors.brandPrimary,
       },
       shareAddrStyle: {
         borderWidth: 1.63,
-        borderColor: colors.shareAddrBorderColor,
-        backgroundColor: colors.shareAddrBackground,
+        borderColor: colors.accentSubtle,
+        backgroundColor: colors.background,
       },
       shareAddrText: {
-        color: colors.shareAddrTextColor,
+        color: colors.textBrand,
       },
       zeroBalanceRequestText: {
         color: colors.white,
@@ -340,13 +340,13 @@ const WalletsList: React.FC = () => {
             testID="TrackPaymentBanner"
           >
             <View style={styles.trackPaymentIconCircle}>
-              <SearchIcon size={48} background={colors.searchIconBackground} stroke={colors.brandPrimary} />
+              <SearchIcon size={48} background={colors.background} stroke={colors.brandPrimary} />
             </View>
             <View style={styles.trackPaymentBannerContent}>
               <Text style={[styles.trackPaymentBannerTitle, stylesHook.foregroundText]}>{loc.track_payment.banner_title}</Text>
               <Text style={[styles.trackPaymentBannerSubtitle, stylesHook.alternativeText]}>{loc.track_payment.banner_subtitle}</Text>
             </View>
-            <ChevronRightIcon color={colors.chevron} />
+            <ChevronRightIcon color={colors.iconSecondary} />
           </TouchableOpacity>
         )}
         <View style={styles.tabRow}>
@@ -365,7 +365,7 @@ const WalletsList: React.FC = () => {
               testID="HomeAddContactButton"
             >
               <AddIcon size={24} color={colors.brandPrimary} />
-              <Text style={[styles.addContactLabel, { color: colors.brandPrimary }]}>{loc.contacts.add}</Text>
+              <Text style={[styles.addContactLabel, { color: colors.textBrand }]}>{loc.contacts.add}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -381,9 +381,10 @@ const WalletsList: React.FC = () => {
     activeTab,
     contactList.length,
     openAddContact,
-    colors.searchIconBackground,
+    colors.background,
     colors.brandPrimary,
-    colors.chevron,
+    colors.iconSecondary,
+    colors.textBrand,
   ]);
 
   const renderTransactionListsRow = useCallback(
@@ -534,7 +535,7 @@ const WalletsList: React.FC = () => {
             accessibilityRole="button"
             accessibilityLabel={loc.wallets.scan_qr_code}
           >
-            <QRScanIcon color={colors.primary} size={22} />
+            <QRScanIcon color={colors.brandPrimary} size={22} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -608,14 +609,7 @@ const WalletsList: React.FC = () => {
     const wallet = wallets.length > 0 ? wallets[0] : null;
     return (
       <EmptyStateCard
-        icon={
-          <ShieldReceiveIcon
-            size={94}
-            background={colors.shieldIconBackground}
-            borderColor={colors.shieldIconBorder}
-            accent={colors.shieldIconAccent}
-          />
-        }
+        icon={<ShieldReceiveIcon size={94} />}
         title={loc.wallets.no_transactions_title}
         subtitle={loc.wallets.no_transactions_subtitle}
         testID="NoTransactionsMessage"
@@ -642,9 +636,6 @@ const WalletsList: React.FC = () => {
     navigation,
     stylesHook.shareAddrStyle,
     stylesHook.shareAddrText,
-    colors.shieldIconBackground,
-    colors.shieldIconBorder,
-    colors.shieldIconAccent,
   ]);
 
   // Contacts are keyed by address so switching tabs can't reuse a transaction's row identity.

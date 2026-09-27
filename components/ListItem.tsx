@@ -94,13 +94,13 @@ const ListItem: React.FC<ListItemProps> = React.memo(
     const { colors } = useTheme();
     const stylesHook = StyleSheet.create({
       title: {
-        color: disabled ? colors.alternativeTextColor : colors.foregroundColor,
+        color: disabled ? colors.textMuted : colors.textSecondary,
         fontSize: 16,
         fontFamily: ClashFont.medium,
       },
       subtitle: {
         flexWrap: 'wrap',
-        color: colors.alternativeTextColor,
+        color: colors.textMuted,
         fontFamily: ClashFont.regular,
         paddingVertical: switchProps ? 8 : 0,
         lineHeight: 20,
