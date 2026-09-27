@@ -43,7 +43,7 @@ export class SilentPaymentIndexer {
 
   async getTransactionsByRange(startHeight: number, endHeight: number): Promise<TransactionResponse> {
     return this.httpClient.get<TransactionResponse>(
-      `/transactions/range?startHeight=${startHeight}&endHeight=${endHeight}&filterSpent=true`,
+      `/transactions/range?startHeight=${startHeight}&endHeight=${endHeight}`,
       `Error fetching transactions by range ${startHeight}-${endHeight}`,
     );
   }
