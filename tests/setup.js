@@ -229,18 +229,20 @@ jest.mock('realm', () => {
   };
 });
 
-// Stands in for the unlinked native module; present/dismiss/resize just resolve.
+// Stands in for the unlinked native module. Children render only while presented, so a test that
+// finds sheet content has also proved present() ran.
 jest.mock('@lodev09/react-native-true-sheet', () => {
   const React = require('react');
   const { View } = require('react-native');
 
   class TrueSheet extends React.Component {
-    dismiss = jest.fn(() => Promise.resolve());
-    present = jest.fn(() => Promise.resolve());
+    state = { visible: false };
+    dismiss = jest.fn(() => new Promise(resolve => this.setState({ visible: false }, resolve)));
+    present = jest.fn(() => new Promise(resolve => this.setState({ visible: true }, resolve)));
     resize = jest.fn(() => Promise.resolve());
 
     render() {
-      return React.createElement(View, this.props);
+      return this.state.visible ? React.createElement(View, this.props) : null;
     }
   }
 

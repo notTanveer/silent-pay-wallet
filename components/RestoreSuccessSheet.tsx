@@ -1,51 +1,38 @@
-import React, { forwardRef, useImperativeHandle, useRef } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import React, { forwardRef } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
 import ActionButton from './ActionButton';
 import BottomModal, { BottomModalHandle } from './BottomModal';
-import SuccessCheckIcon from './icons/SuccessCheckIcon';
+import SuccessBadge from './SuccessBadge';
 import { useTheme } from './themes';
 import { ClashFont } from '../constants/fonts';
 import loc from '../loc';
-
-export interface RestoreSuccessSheetHandle {
-  present: () => Promise<void>;
-  dismiss: () => Promise<void>;
-}
 
 interface RestoreSuccessSheetProps {
   onDone: () => void;
 }
 
 // Shown once a restored wallet has been saved, before handing off to the wallets list.
-const RestoreSuccessSheet = forwardRef<RestoreSuccessSheetHandle, RestoreSuccessSheetProps>(({ onDone }, ref) => {
+const RestoreSuccessSheet = forwardRef<BottomModalHandle, RestoreSuccessSheetProps>(({ onDone }, ref) => {
   const { colors } = useTheme();
-  const modalRef = useRef<BottomModalHandle>(null);
-
-  useImperativeHandle(ref, () => ({
-    present: async () => {
-      await modalRef.current?.present();
-    },
-    dismiss: async () => {
-      await modalRef.current?.dismiss();
-    },
-  }));
 
   return (
     <BottomModal
-      ref={modalRef}
+      ref={ref}
+      sizes={['auto']}
+      // Rounds the top corners only; the native sheet squares off the bottom two.
+      cornerRadius={16}
       showCloseButton={false}
       isGrabberVisible={false}
       dismissible={false}
       backgroundColor={colors.background}
-      sizes={Platform.OS === 'ios' ? ['auto'] : [420, 'auto']}
     >
       <View style={styles.container} testID="RestoreSuccessSheet">
         <View style={styles.icon}>
-          <SuccessCheckIcon size={60} color={colors.brandStrong} backgroundColor={colors.surfaceSubtle} />
+          <SuccessBadge />
         </View>
         <Text style={[styles.title, { color: colors.textPrimary }]}>{loc.wallets.restore_success_title}</Text>
-        <Text style={[styles.message, { color: colors.textSecondary }]}>{loc.wallets.restore_success_message}</Text>
+        <Text style={[styles.message, { color: colors.textMuted }]}>{loc.wallets.restore_success_message}</Text>
         <ActionButton
           title={loc.wallets.restore_success_done}
           onPress={onDone}

@@ -24,6 +24,7 @@ interface StorageContextType {
   selectedWalletID: () => string | undefined; // Change from string|undefined to a function
   addWallet: (wallet: TWallet) => boolean;
   deleteWallet: (wallet: TWallet) => void;
+  // Rejects with a user-facing message when the wallet can't be added.
   addAndSaveWallet: (wallet: TWallet) => Promise<void>;
   fetchAndSaveWalletTransactions: (walletID: string) => Promise<void>;
   walletsInitialized: boolean;
@@ -407,27 +408,19 @@ export const StorageProvider = ({ children }: { children: React.ReactNode }) => 
 
   const addAndSaveWallet = useCallback(
     async (w: TWallet) => {
-      if (wallets.length > 0) {
-        triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
-        presentAlert({ message: loc.wallets.single_wallet_limit });
-        return;
-      }
+      if (wallets.length > 0) throw new Error(loc.wallets.single_wallet_limit);
       const emptyWalletLabel = new HDSilentPaymentsWallet().getLabel();
       if (w.getLabel() === emptyWalletLabel) w.setLabel(loc.wallets.import_imported + ' ' + w.typeReadable);
       w.setUserHasSavedExport(true);
-      if (!addWallet(w)) {
-        triggerHapticFeedback(HapticFeedbackTypes.NotificationError);
-        presentAlert({ message: loc.wallets.single_wallet_limit });
-        return;
-      }
-      triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
+      if (!addWallet(w)) throw new Error(loc.wallets.single_wallet_limit);
       await saveToDisk();
       A(A.ENUM.CREATED_WALLET);
 
-      await w.fetchBalance();
-      if (isScannable(w) && !w.isScanActive()) {
-        w.fetchTransactions().catch((e: any) => console.warn('[addAndSaveWallet] scan error:', e));
-      }
+      // Resolves once the wallet is on disk; balance and scan catch up in the background.
+      (async () => {
+        await w.fetchBalance();
+        if (isScannable(w) && !w.isScanActive()) await w.fetchTransactions();
+      })().catch((e: any) => console.warn('[addAndSaveWallet] sync error:', e));
     },
     [wallets, addWallet, saveToDisk],
   );

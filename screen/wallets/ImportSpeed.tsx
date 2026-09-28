@@ -62,10 +62,10 @@ const ImportSpeed = () => {
       }
 
       await addAndSaveWallet(wallet);
-      presentAlert({ hapticFeedback: HapticFeedbackTypes.ImpactHeavy, message: loc.wallets.import_success });
+      presentAlert({ hapticFeedback: HapticFeedbackTypes.NotificationSuccess, message: loc.wallets.import_success });
       navigation.navigateToWalletsList();
     } catch (error: any) {
-      presentAlert({ message: error.message });
+      presentAlert({ hapticFeedback: HapticFeedbackTypes.NotificationError, message: error.message });
     } finally {
       setLoading(false);
     }

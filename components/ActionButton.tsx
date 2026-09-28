@@ -3,6 +3,7 @@ import { Pressable, StyleProp, StyleSheet, Text, ViewStyle } from 'react-native'
 
 import { ClashFont } from '../constants/fonts';
 import { IconProps } from './icons/types';
+import { useTheme } from './themes';
 
 interface ActionButtonProps {
   title: string;
@@ -15,13 +16,14 @@ interface ActionButtonProps {
   color: string;
   /** Outlined variant, e.g. the destructive "Remove contact" button. */
   borderColor?: string;
+  /** Swaps in the shared disabled colours, so every disabled CTA looks the same. */
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }
 
-// The app's full-width call to action: a 56pt pill with an optional leading glyph. Colours stay
-// the caller's to pick, so one button covers the brand, tinted and destructive variants without
+// The app's full-width call to action: a 56pt pill with an optional leading glyph. Enabled colours
+// stay the caller's to pick, so one button covers the brand, tinted and destructive variants without
 // growing a taxonomy of them.
 const ActionButton: React.FC<ActionButtonProps> = ({
   title,
@@ -34,22 +36,34 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   disabled,
   style,
   testID,
-}) => (
-  <Pressable
-    accessibilityRole="button"
-    disabled={disabled}
-    onPress={onPress}
-    testID={testID}
-    style={[styles.button, borderColor !== undefined && styles.outlined, { backgroundColor, borderColor }, style]}
-  >
-    {Icon !== undefined && <Icon size={iconSize} color={color} />}
-    <Text style={[styles.title, { color }]}>{title}</Text>
-  </Pressable>
-);
+}) => {
+  const { colors } = useTheme();
+  const fill = disabled ? colors.accentSubtle : backgroundColor;
+  const tint = disabled ? colors.textMuted : color;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      disabled={disabled}
+      onPress={onPress}
+      testID={testID}
+      style={[
+        actionButtonStyles.button,
+        borderColor !== undefined && actionButtonStyles.outlined,
+        { backgroundColor: fill, borderColor },
+        style,
+      ]}
+    >
+      {Icon !== undefined && <Icon size={iconSize} color={tint} />}
+      <Text style={[actionButtonStyles.title, { color: tint }]}>{title}</Text>
+    </Pressable>
+  );
+};
 
 export default ActionButton;
 
-const styles = StyleSheet.create({
+// Exported so pill-shaped controls that can't be an ActionButton (e.g. a menu trigger) keep its geometry.
+export const actionButtonStyles = StyleSheet.create({
   button: {
     flexDirection: 'row',
     height: 56,

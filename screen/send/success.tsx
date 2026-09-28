@@ -5,7 +5,7 @@ import { RouteProp, useRoute } from '@react-navigation/native';
 import LottieView from 'lottie-react-native';
 import ActionButton from '../../components/ActionButton';
 import AmountHero from '../../components/AmountHero';
-import CheckmarkIcon from '../../components/icons/CheckmarkIcon';
+import SuccessBadge from '../../components/SuccessBadge';
 import { ClashFont } from '../../constants/fonts';
 import { useTheme } from '../../components/themes';
 import loc from '../../loc';
@@ -41,16 +41,13 @@ const Success = () => {
   const stylesHook = StyleSheet.create({
     overlay: { backgroundColor: colors.scrim },
     sheet: { backgroundColor: colors.background, paddingBottom: 32 + insets.bottom },
-    checkCircle: { backgroundColor: colors.surfaceSubtle },
     sentText: { color: colors.textPrimary },
   });
 
   return (
     <View style={[styles.overlay, stylesHook.overlay]}>
       <View style={[styles.sheet, stylesHook.sheet]}>
-        <View style={[styles.checkCircle, stylesHook.checkCircle]}>
-          <CheckmarkIcon size={32} color={colors.brandPrimary} />
-        </View>
+        <SuccessBadge />
 
         <Text style={[styles.sentText, stylesHook.sentText]}>{loc.send.sent_successfully}</Text>
 
@@ -128,13 +125,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     gap: 20,
     alignItems: 'center',
-  },
-  checkCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   sentText: {
     fontFamily: ClashFont.medium,

@@ -18,10 +18,12 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AddressInputScanButton } from '../../components/AddressInputScanButton';
 import { useScreenProtect } from '../../hooks/useScreenProtect';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import FieldTextInput from '../../components/FieldTextInput';
+import { FieldMnemonicInput } from '../../components/FieldTextInput';
+import LabeledField from '../../components/LabeledField';
 import InfoBanner from '../../components/InfoBanner';
 import ClipboardIcon from '../../components/icons/ClipboardIcon';
-import RestoreSuccessSheet, { RestoreSuccessSheetHandle } from '../../components/RestoreSuccessSheet';
+import RestoreSuccessSheet from '../../components/RestoreSuccessSheet';
+import { BottomModalHandle } from '../../components/BottomModal';
 import { ClashFont } from '../../constants/fonts';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet.ts';
 import { useStorage } from '../../hooks/context/useStorage';
@@ -30,6 +32,7 @@ import { WalletBirthSection } from '../../components/WalletBirthSection';
 import { BIP352_ACTIVATION_HEIGHT, clampBirthHeight } from '../../modules/constants';
 import { getDefaultIndexer } from '../../modules/SilentPaymentIndexer';
 import { readClipboardForPaste } from '../../helpers/clipboard';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 
 type RouteProps = RouteProp<AddWalletStackParamList, 'ImportWallet'>;
 type NavigationProps = NativeStackNavigationProp<AddWalletStackParamList, 'ImportWallet'>;
@@ -84,8 +87,8 @@ const ImportWallet = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { isScreenCaptureAllowed, isClipboardGetContentEnabled } = useSettings();
   const { enableScreenProtect, disableScreenProtect } = useScreenProtect();
-  const { addAndSaveWallet, wallets } = useStorage();
-  const successSheetRef = useRef<RestoreSuccessSheetHandle>(null);
+  const { addAndSaveWallet } = useStorage();
+  const successSheetRef = useRef<BottomModalHandle>(null);
 
   const onBlur = useCallback(() => {
     const valueWithSingleWhitespace = importText.replace(/^\s+|\s+$|\s+(?=\s)/g, '');
@@ -104,11 +107,6 @@ const ImportWallet = () => {
 
   const importMnemonic = useCallback(
     async (text: string) => {
-      if (wallets.length > 0) {
-        presentAlert({ title: loc.errors.error, message: loc.wallets.single_wallet_limit });
-        return;
-      }
-
       try {
         if (await Clipboard.hasString()) {
           Clipboard.setString('');
@@ -120,6 +118,7 @@ const ImportWallet = () => {
       Keyboard.dismiss();
       setIsLoading(true);
 
+      let restored = false;
       try {
         if (!text.trim()) {
           presentAlert({ title: loc.errors.error, message: loc.wallet_birth.error_empty_mnemonic });
@@ -149,18 +148,26 @@ const ImportWallet = () => {
         });
 
         await addAndSaveWallet(wallet);
-        await successSheetRef.current?.present();
+        restored = true;
       } catch (error: any) {
         console.error('Import error:', error);
         presentAlert({
-          title: loc.wallets.import_error,
+          title: loc.wallets.restore_error,
           message: error.message || loc.wallet_birth.error_import_failed,
+          hapticFeedback: HapticFeedbackTypes.NotificationError,
         });
       } finally {
         setIsLoading(false);
       }
+
+      // Outside the try: the wallet is saved by now, so a sheet failure must not read as a failed restore.
+      if (restored) {
+        setImportText('');
+        triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
+        await successSheetRef.current?.present();
+      }
     },
-    [birthDate, addAndSaveWallet, wallets],
+    [birthDate, addAndSaveWallet],
   );
 
   const handleImport = useCallback(() => {
@@ -213,8 +220,7 @@ const ImportWallet = () => {
 
   const onPasteFromClipboard = useCallback(async () => {
     try {
-      const text = await readClipboardForPaste();
-      if (text !== undefined) setImportText(text);
+      setImportText(await readClipboardForPaste());
     } catch (error) {
       presentAlert({ message: (error as Error).message });
     }
@@ -233,11 +239,11 @@ const ImportWallet = () => {
         title={loc.wallets.restore_cta}
         onPress={handleImport}
         disabled={!canImport}
-        backgroundColor={canImport ? colors.brandPrimary : colors.accentSubtle}
-        color={canImport ? colors.white : colors.textSecondary}
+        backgroundColor={colors.brandPrimary}
+        color={colors.white}
         testID="DoImport"
       />
-      <AddressInputScanButton type="link" onChangeText={setImportText} testID="ScanImport" />
+      <AddressInputScanButton onChangeText={setImportText} testID="ScanImport" />
     </View>
   );
 
@@ -247,23 +253,22 @@ const ImportWallet = () => {
         <TouchableWithoutFeedback accessibilityRole="button" onPress={speedBackdoorTap} testID="SpeedBackdoor">
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.textPrimary }]}>{loc.wallets.restore_headline}</Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{loc.wallets.restore_subtitle}</Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>{loc.wallets.restore_subtitle}</Text>
           </View>
         </TouchableWithoutFeedback>
 
-        <View style={[styles.mnemonicField, { backgroundColor: colors.fieldBackground }]}>
-          <FieldTextInput
+        <LabeledField>
+          <FieldMnemonicInput
             value={importText}
             onBlur={onBlur}
             onChangeText={setImportText}
-            multiline
-            autoCapitalize="none"
-            autoCorrect={false}
+            placeholder={loc.wallets.restore_mnemonic_placeholder}
+            accessibilityLabel={loc.wallets.restore_mnemonic_label}
             testID="MnemonicInput"
             inputAccessoryViewID={DoneAndDismissKeyboardInputAccessoryViewID}
             style={styles.mnemonicInput}
           />
-        </View>
+        </LabeledField>
 
         {isClipboardGetContentEnabled && (
           <ActionButton
@@ -293,10 +298,14 @@ const ImportWallet = () => {
             onClearTapped={() => {
               setImportText('');
             }}
-            onPasteTapped={text => {
-              setImportText(text);
-              Keyboard.dismiss();
-            }}
+            onPasteTapped={
+              isClipboardGetContentEnabled
+                ? text => {
+                    setImportText(text);
+                    Keyboard.dismiss();
+                  }
+                : undefined
+            }
           />
         ),
         default: null,
@@ -313,7 +322,6 @@ const styles = StyleSheet.create({
   header: { marginBottom: 4 },
   title: { fontFamily: ClashFont.medium, fontSize: 32, letterSpacing: -1, marginBottom: 8 },
   subtitle: { fontFamily: ClashFont.regular, fontSize: 15, lineHeight: 20 },
-  mnemonicField: { borderRadius: 16, paddingHorizontal: 12, paddingVertical: 12 },
   mnemonicInput: { minHeight: 72, textAlignVertical: 'top' },
   spacer: { flex: 1 },
   footer: { paddingTop: 16, gap: 12 },
