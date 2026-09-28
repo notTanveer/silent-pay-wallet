@@ -542,6 +542,9 @@ export class ShroudApp {
           keyCloned._txs_by_external_index = {};
           keyCloned._txs_by_internal_index = {};
         }
+        if (key instanceof HDSilentPaymentsWallet) {
+          for (const k of HDSilentPaymentsWallet.RUNTIME_KEYS) delete (keyCloned as any)[k];
+        }
 
         walletsToSave.push(JSON.stringify({ ...keyCloned, type: keyCloned.type }));
       }

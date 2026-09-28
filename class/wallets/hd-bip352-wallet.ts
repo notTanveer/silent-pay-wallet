@@ -118,6 +118,29 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
   private _scanStartTime: number = 0;
   private _onScanStateChangeCallback: ((state: ScanStateInfo) => void) | null = null;
 
+  // in-memory only: stripped in saveToDisk and ignored by fromJson
+  static readonly RUNTIME_KEYS: ReadonlySet<string> = new Set([
+    'cachedSeed',
+    'spendKeyCandidates',
+    'transactionProcessor',
+    'spUTXOsCache',
+    'activeScanPromise',
+    'cancelScanCallbackScan',
+    'pollingIntervalId',
+    'isPollingActive',
+    'onBalanceChangeCallback',
+    'onPersistCallback',
+    '_onScanStateChangeCallback',
+    '_birthResolutionFailures',
+    '_scanState',
+    '_scanPaused',
+    '_scanResumeResolver',
+    '_scanResumePromise',
+    '_lastProgressEmitTime',
+    '_scanSamples',
+    '_scanStartTime',
+  ]);
+
   setOnBalanceChangeCallback(callback: (() => void) | null): void {
     this.onBalanceChangeCallback = callback;
   }
@@ -202,15 +225,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         wallet._sp_spending_txs = data[key] || [];
       } else if (key === '_sp_pending_inputs') {
         wallet._sp_pending_inputs = new Set(data[key] || []);
-      } else if (
-        key !== '_utxo' &&
-        key !== 'transactionProcessor' &&
-        key !== 'cachedSeed' &&
-        key !== 'spUTXOsCache' &&
-        key !== 'activeScanPromise' &&
-        key !== '_sp_pending_inputs' &&
-        key !== '_sp_spending_txs'
-      ) {
+      } else if (key !== '_utxo' && !HDSilentPaymentsWallet.RUNTIME_KEYS.has(key)) {
         (wallet as any)[key] = data[key];
       }
     }

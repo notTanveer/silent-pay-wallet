@@ -507,4 +507,37 @@ describe('BIP-352 Silent Payments', () => {
       expect(result.fee).toBe(314);
     });
   });
+
+  describe('save/load round trip', () => {
+    it('does not restore runtime-only fields, so SP coins stay spendable and the wallet stays deletable', () => {
+      const wallet = new HDSilentPaymentsWallet();
+      wallet.setSecret(TEST_SEED);
+      const utxo = buildUtxo(wallet.getSpendPublicKey(), wallet.getSilentPaymentAddress()!, 0x07);
+      const targetAddress = 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr';
+      const send = (w: HDSilentPaymentsWallet) =>
+        w.createTransaction([utxo as never], [{ address: targetAddress, value: 50_000 }], 2, utxo.address, 0xfffffffd, false, 0);
+
+      (wallet as any)._utxo = [utxo];
+      (wallet as any).lastScannedBlock = 900_000;
+      send(wallet); // fills spendKeyCandidates with real Uint8Arrays
+      (wallet as any).isPollingActive = true;
+      (wallet as any).cancelScanCallbackScan = true;
+
+      // unstripped blob, so fromJson has to drop the runtime fields itself
+      wallet.prepareForSerialization();
+      const loaded = HDSilentPaymentsWallet.fromJson(JSON.stringify({ ...wallet }));
+
+      expect((loaded as any).spendKeyCandidates).toBeNull();
+      expect((loaded as any).transactionProcessor).toBeNull();
+      expect((loaded as any).cachedSeed).toBeNull();
+      expect((loaded as any).isPollingActive).toBe(false);
+      expect((loaded as any).cancelScanCallbackScan).toBe(false);
+      expect((loaded as any).lastScannedBlock).toBe(900_000);
+      expect((loaded as any)._utxo[0].tweak).toBeInstanceOf(Uint8Array);
+
+      expect(send(loaded).tx).toBeDefined();
+      expect(() => loaded.clearCache()).not.toThrow();
+      wallet.clearCache();
+    });
+  });
 });
