@@ -529,7 +529,7 @@ export class ShroudApp {
         key.prepareForSerialization();
         // @ts-ignore wtf is wallet.current? Does it even exist?
         delete key.current;
-        const keyCloned = Object.assign({}, key); // stripped-down version of a wallet to save to secure keystore
+        const keyCloned: any = key instanceof HDSilentPaymentsWallet ? key.toPersistable() : Object.assign({}, key); // stripped-down version of a wallet to save to secure keystore
         if ('_hdWalletInstance' in key) {
           const k = keyCloned as any;
           k._hdWalletInstance = Object.assign({}, key._hdWalletInstance);
@@ -541,9 +541,6 @@ export class ShroudApp {
         if (key._txs_by_external_index) {
           keyCloned._txs_by_external_index = {};
           keyCloned._txs_by_internal_index = {};
-        }
-        if (key instanceof HDSilentPaymentsWallet) {
-          for (const k of HDSilentPaymentsWallet.RUNTIME_KEYS) delete (keyCloned as any)[k];
         }
 
         walletsToSave.push(JSON.stringify({ ...keyCloned, type: keyCloned.type }));
