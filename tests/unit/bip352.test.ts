@@ -507,4 +507,99 @@ describe('BIP-352 Silent Payments', () => {
       expect(result.fee).toBe(314);
     });
   });
+
+  describe('save/load round trip', () => {
+    it('does not restore runtime-only fields, so SP coins stay spendable and the wallet stays deletable', () => {
+      const wallet = new HDSilentPaymentsWallet();
+      wallet.setSecret(TEST_SEED);
+      const utxo = buildUtxo(wallet.getSpendPublicKey(), wallet.getSilentPaymentAddress()!, 0x07);
+      const targetAddress = 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr';
+      const send = (w: HDSilentPaymentsWallet) =>
+        w.createTransaction([utxo as never], [{ address: targetAddress, value: 50_000 }], 2, utxo.address, 0xfffffffd, false, 0);
+
+      (wallet as any)._utxo = [utxo];
+      (wallet as any).lastScannedBlock = 900_000;
+      send(wallet); // fills spendKeyCandidates with real Uint8Arrays
+      (wallet as any).isPollingActive = true;
+      (wallet as any).cancelScanCallbackScan = true;
+      (wallet as any)._scanState = { ...(wallet as any)._scanState, status: 'scanning' };
+      (wallet as any)._scanSamples = [{ t: 1, percent: 50 }];
+
+      // unstripped blob, so fromJson has to drop the non-persisted fields itself
+      wallet.prepareForSerialization();
+      const loaded = HDSilentPaymentsWallet.fromJson(JSON.stringify({ ...wallet }));
+
+      // _utxo is rebuilt from _utxos_serializable, so it isn't expected to match a fresh wallet
+      const fresh = new HDSilentPaymentsWallet();
+      for (const k of (HDSilentPaymentsWallet as any).NON_PERSISTED_KEYS) {
+        expect(k in fresh).toBe(true);
+        if (k !== '_utxo') expect((loaded as any)[k]).toEqual((fresh as any)[k]);
+      }
+      expect((loaded as any).lastScannedBlock).toBe(900_000);
+      expect((loaded as any)._utxo[0].tweak).toBeInstanceOf(Uint8Array);
+
+      expect(send(loaded).tx).toBeDefined();
+      expect(() => loaded.clearCache()).not.toThrow();
+      wallet.clearCache();
+    });
+
+    it('keeps the seed, key cache and runtime state out of the persisted blob', () => {
+      const wallet = HDSilentPaymentsWallet.fromMnemonic(TEST_SEED);
+      const utxo = buildUtxo(wallet.getSpendPublicKey(), wallet.getSilentPaymentAddress()!, 0x07);
+      (wallet as any)._utxo = [utxo];
+      wallet.createTransaction([utxo as never], [{ address: utxo.address, value: 50_000 }], 2, utxo.address, 0xfffffffd, false, 0);
+      (wallet as any).getSeed(); // fills cachedSeed
+
+      wallet.prepareForSerialization();
+      const blob = JSON.parse(JSON.stringify(wallet.toPersistable()));
+      for (const k of ['cachedSeed', 'spendKeyCandidates', 'transactionProcessor', '_utxo']) expect(blob).not.toHaveProperty(k);
+      wallet.clearCache();
+    });
+
+    // fails on any new field, so it has to be put in NON_PERSISTED_KEYS or added here on purpose
+    it('persists only the expected keys', () => {
+      const wallet = HDSilentPaymentsWallet.fromMnemonic(TEST_SEED);
+      wallet.prepareForSerialization();
+      expect(Object.keys(wallet.toPersistable()).sort()).toEqual([
+        '_address',
+        '_address_to_wif_cache',
+        '_balances_by_external_index',
+        '_balances_by_internal_index',
+        '_birthHeight',
+        '_birthResolutionFailures',
+        '_birthTimestamp',
+        '_derivationPath',
+        '_fp',
+        '_hideTransactionsInWalletsList',
+        '_lastBalanceFetch',
+        '_lastTxFetch',
+        '_sp_pending_inputs',
+        '_sp_spending_txs',
+        '_txs_by_external_index',
+        '_txs_by_internal_index',
+        '_utxoMetadata',
+        '_utxos_serializable',
+        '_xpub',
+        'balance',
+        'chain',
+        'external_addresses_cache',
+        'gap_limit',
+        'hideBalance',
+        'internal_addresses_cache',
+        'label',
+        'lastScannedBlock',
+        'next_free_address_index',
+        'next_free_change_address_index',
+        'passphrase',
+        'preferredBalanceUnit',
+        'secret',
+        'segwitType',
+        'type',
+        'typeReadable',
+        'unconfirmed_balance',
+        'usedAddresses',
+        'userHasSavedExport',
+      ]);
+    });
+  });
 });

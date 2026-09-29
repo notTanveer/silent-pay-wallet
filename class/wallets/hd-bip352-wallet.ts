@@ -52,6 +52,7 @@ const SCAN_PROGRESS_THROTTLE_MS = 500;
 const SCAN_ETA_ROLLING_WINDOW = 10;
 // Consecutive failed birth-height lookups before we stop deferring and scan from the fallback height.
 const BIRTH_RESOLUTION_MAX_ATTEMPTS = 3;
+const POLLING_INTERVAL_MS = 30000;
 
 type UpdateBirthHeightOptions = { resetScan?: boolean; pendingTimestamp?: number | null };
 
@@ -90,7 +91,6 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
   // @ts-ignore: override
   public readonly typeReadable = HDSilentPaymentsWallet.typeReadable;
 
-  private readonly POLLING_INTERVAL_MS = 30000;
   private cachedSeed: Buffer | null = null;
   private spendKeyCandidates: SpendKeyPair[] | null = null;
   private transactionProcessor: RustTransactionProcessor | null = null;
@@ -117,6 +117,30 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
   private _scanSamples: { t: number; percent: number }[] = [];
   private _scanStartTime: number = 0;
   private _onScanStateChangeCallback: ((state: ScanStateInfo) => void) | null = null;
+
+  // never written to disk and ignored by fromJson. _utxo is rebuilt from _utxos_serializable,
+  // everything else is in-memory only
+  private static readonly NON_PERSISTED_KEYS: ReadonlySet<string> = new Set([
+    'cachedSeed',
+    'spendKeyCandidates',
+    'transactionProcessor',
+    'spUTXOsCache',
+    'activeScanPromise',
+    'cancelScanCallbackScan',
+    'pollingIntervalId',
+    'isPollingActive',
+    'onBalanceChangeCallback',
+    'onPersistCallback',
+    '_scanState',
+    '_scanPaused',
+    '_scanResumeResolver',
+    '_scanResumePromise',
+    '_lastProgressEmitTime',
+    '_scanSamples',
+    '_scanStartTime',
+    '_onScanStateChangeCallback',
+    '_utxo',
+  ]);
 
   setOnBalanceChangeCallback(callback: (() => void) | null): void {
     this.onBalanceChangeCallback = callback;
@@ -202,15 +226,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
         wallet._sp_spending_txs = data[key] || [];
       } else if (key === '_sp_pending_inputs') {
         wallet._sp_pending_inputs = new Set(data[key] || []);
-      } else if (
-        key !== '_utxo' &&
-        key !== 'transactionProcessor' &&
-        key !== 'cachedSeed' &&
-        key !== 'spUTXOsCache' &&
-        key !== 'activeScanPromise' &&
-        key !== '_sp_pending_inputs' &&
-        key !== '_sp_spending_txs'
-      ) {
+      } else if (!HDSilentPaymentsWallet.NON_PERSISTED_KEYS.has(key)) {
         (wallet as any)[key] = data[key];
       }
     }
@@ -220,6 +236,13 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
     }
 
     return wallet;
+  }
+
+  /** Plain-object form written to storage: serializable fields only, no runtime state. */
+  toPersistable(): Record<string, unknown> {
+    const obj: Record<string, unknown> = { ...(this as any) };
+    for (const k of HDSilentPaymentsWallet.NON_PERSISTED_KEYS) delete obj[k];
+    return obj;
   }
 
   prepareForSerialization(): void {
@@ -520,7 +543,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       } catch (error) {
         console.warn('[SP] Polling scan failed:', error instanceof Error ? error.message : error);
       }
-    }, this.POLLING_INTERVAL_MS);
+    }, POLLING_INTERVAL_MS);
   }
 
   private stopPolling(): void {
@@ -985,6 +1008,7 @@ export class HDSilentPaymentsWallet extends HDTaprootWallet implements IScannabl
       return true;
     } catch (error) {
       this._birthResolutionFailures++;
+      this.onPersistCallback?.();
       if (this._birthResolutionFailures < BIRTH_RESOLUTION_MAX_ATTEMPTS) {
         console.warn(
           `[SP] Birth height resolution failed (${this._birthResolutionFailures}/${BIRTH_RESOLUTION_MAX_ATTEMPTS}), skipping scan:`,
