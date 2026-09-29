@@ -27,11 +27,7 @@ const AddWalletStack = () => {
   const theme = useTheme();
   return (
     <Stack.Navigator initialRouteName="ImportWallet">
-      <Stack.Screen
-        name="ImportWallet"
-        component={ImportWalletComponent}
-        options={navigationStyle({ title: loc.wallets.import_title })(theme)}
-      />
+      <Stack.Screen name="ImportWallet" component={ImportWalletComponent} options={navigationStyle({ title: '' })(theme)} />
       <Stack.Screen
         name="ImportSpeed"
         component={ImportSpeedComponent}

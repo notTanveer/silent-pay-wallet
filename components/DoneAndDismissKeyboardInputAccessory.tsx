@@ -3,10 +3,12 @@ import { InputAccessoryView, Keyboard, Platform, StyleSheet, View } from 'react-
 import { ShroudButtonLink } from '../ShroudComponents';
 import loc from '../loc';
 import { useTheme } from './themes';
-import Clipboard from '@react-native-clipboard/clipboard';
+import presentAlert from './Alert';
+import { readClipboardForPaste } from '../helpers/clipboard';
 
 interface DoneAndDismissKeyboardInputAccessoryProps {
-  onPasteTapped: (clipboard: string) => void;
+  /** Omit to hide the Paste action. */
+  onPasteTapped?: (clipboard: string) => void;
   onClearTapped: () => void;
 }
 export const DoneAndDismissKeyboardInputAccessoryViewID = 'DoneAndDismissKeyboardInputAccessory';
@@ -20,14 +22,17 @@ export const DoneAndDismissKeyboardInputAccessory: React.FC<DoneAndDismissKeyboa
   });
 
   const onPasteTapped = async () => {
-    const clipboard = await Clipboard.getString();
-    props.onPasteTapped(clipboard);
+    try {
+      props.onPasteTapped?.(await readClipboardForPaste());
+    } catch (error) {
+      presentAlert({ message: (error as Error).message });
+    }
   };
 
   const inputView = (
     <View style={[styles.container, styleHooks.container]}>
       <ShroudButtonLink title={loc.send.input_clear} onPress={props.onClearTapped} />
-      <ShroudButtonLink title={loc.send.input_paste} onPress={onPasteTapped} />
+      {props.onPasteTapped && <ShroudButtonLink title={loc.send.input_paste} onPress={onPasteTapped} />}
       <ShroudButtonLink title={loc.send.input_done} onPress={Keyboard.dismiss} />
     </View>
   );

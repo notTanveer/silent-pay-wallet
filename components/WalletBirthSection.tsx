@@ -1,54 +1,25 @@
 import React from 'react';
-import { Platform, StyleSheet, TextInput, View } from 'react-native';
-import { ShroudFormLabel } from '../ShroudComponents';
-import { useTheme } from './themes';
+import { Platform } from 'react-native';
+import FieldTextInput from './FieldTextInput';
+import LabeledField from './LabeledField';
 import loc from '../loc';
-import { ClashFont } from '../constants/fonts';
 
 interface WalletBirthSectionProps {
   birthDate: string;
   setBirthDate: (value: string) => void;
 }
 
-export const WalletBirthSection: React.FC<WalletBirthSectionProps> = ({ birthDate, setBirthDate }) => {
-  const { colors } = useTheme();
-
-  const stylesHook = StyleSheet.create({
-    input: {
-      borderColor: colors.borderInput,
-      backgroundColor: colors.fieldBackground,
-      color: colors.textSecondary,
-    },
-  });
-
-  return (
-    <View>
-      <ShroudFormLabel>{loc.wallet_birth.birth_date_label}</ShroudFormLabel>
-      <TextInput
-        style={[styles.input, stylesHook.input]}
-        value={birthDate}
-        onChangeText={setBirthDate}
-        placeholder={loc.wallet_birth.birth_date_placeholder}
-        placeholderTextColor={colors.textMuted}
-        autoCapitalize="none"
-        autoCorrect={false}
-        keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}
-        returnKeyType="done"
-        testID="BirthDateInput"
-      />
-    </View>
-  );
-};
-
-const styles = StyleSheet.create({
-  input: {
-    borderWidth: 1,
-    borderRadius: 4,
-    paddingHorizontal: 12,
-    paddingVertical: Platform.select({ ios: 14, default: 10 }),
-    marginHorizontal: 20,
-    marginTop: 6,
-    minHeight: 44,
-    fontFamily: ClashFont.regular,
-  },
-});
+export const WalletBirthSection: React.FC<WalletBirthSectionProps> = ({ birthDate, setBirthDate }) => (
+  <LabeledField label={loc.wallet_birth.birth_date_label} testID="BirthDateField">
+    <FieldTextInput
+      value={birthDate}
+      onChangeText={setBirthDate}
+      placeholder={loc.wallet_birth.birth_date_placeholder}
+      autoCapitalize="none"
+      autoCorrect={false}
+      keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}
+      returnKeyType="done"
+      testID="BirthDateInput"
+    />
+  </LabeledField>
+);

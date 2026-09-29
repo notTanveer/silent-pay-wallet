@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { ActivityIndicator, Keyboard, Platform, StyleSheet, TouchableWithoutFeedback, View, TouchableOpacity, Image } from 'react-native';
-import { ShroudFormLabel, ShroudFormMultiInput } from '../../ShroudComponents';
-import Button from '../../components/Button';
+import { ActivityIndicator, Keyboard, Platform, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ActionButton from '../../components/ActionButton';
 import {
   DoneAndDismissKeyboardInputAccessory,
   DoneAndDismissKeyboardInputAccessoryViewID,
@@ -18,13 +18,21 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AddressInputScanButton } from '../../components/AddressInputScanButton';
 import { useScreenProtect } from '../../hooks/useScreenProtect';
 import SafeAreaScrollView from '../../components/SafeAreaScrollView';
-import { Spacing20 } from '../../components/Spacing';
+import { FieldMnemonicInput } from '../../components/FieldTextInput';
+import LabeledField from '../../components/LabeledField';
+import InfoBanner from '../../components/InfoBanner';
+import ClipboardIcon from '../../components/icons/ClipboardIcon';
+import RestoreSuccessSheet from '../../components/RestoreSuccessSheet';
+import { BottomModalHandle } from '../../components/BottomModal';
+import { ClashFont } from '../../constants/fonts';
 import { HDSilentPaymentsWallet } from '../../class/wallets/hd-bip352-wallet.ts';
 import { useStorage } from '../../hooks/context/useStorage';
 import presentAlert from '../../components/Alert';
 import { WalletBirthSection } from '../../components/WalletBirthSection';
 import { BIP352_ACTIVATION_HEIGHT, clampBirthHeight } from '../../modules/constants';
 import { getDefaultIndexer } from '../../modules/SilentPaymentIndexer';
+import { readClipboardForPaste } from '../../helpers/clipboard';
+import triggerHapticFeedback, { HapticFeedbackTypes } from '../../modules/hapticFeedback';
 
 type RouteProps = RouteProp<AddWalletStackParamList, 'ImportWallet'>;
 type NavigationProps = NativeStackNavigationProp<AddWalletStackParamList, 'ImportWallet'>;
@@ -65,21 +73,10 @@ async function resolveBirthHeight(dateStr: string): Promise<BirthHeightResult> {
   }
 }
 
-const ImportWalletHeaderLeft = ({ onPress, closeImage, style }: { onPress: () => void; closeImage: any; style: any }) => (
-  <TouchableOpacity
-    accessibilityRole="button"
-    accessibilityLabel={loc._.close}
-    style={style}
-    onPress={onPress}
-    testID="NavigationCloseButton"
-  >
-    <Image source={closeImage} />
-  </TouchableOpacity>
-);
-
 const ImportWallet = () => {
   const navigation = useExtendedNavigation<NavigationProps>();
-  const { colors, closeImage } = useTheme();
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const route = useRoute<RouteProps>();
   const label = route?.params?.label ?? '';
   const triggerImport = route?.params?.triggerImport ?? false;
@@ -88,17 +85,10 @@ const ImportWallet = () => {
   const [isToolbarVisibleForAndroid, setIsToolbarVisibleForAndroid] = useState<boolean>(false);
   const [, setSpeedBackdoor] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { isScreenCaptureAllowed } = useSettings();
+  const { isScreenCaptureAllowed, isClipboardGetContentEnabled } = useSettings();
   const { enableScreenProtect, disableScreenProtect } = useScreenProtect();
-  const { addAndSaveWallet, wallets } = useStorage();
-  const stylesHook = StyleSheet.create({
-    root: {
-      backgroundColor: colors.background,
-    },
-    center: {
-      backgroundColor: colors.background,
-    },
-  });
+  const { addAndSaveWallet } = useStorage();
+  const successSheetRef = useRef<BottomModalHandle>(null);
 
   const onBlur = useCallback(() => {
     const valueWithSingleWhitespace = importText.replace(/^\s+|\s+$|\s+(?=\s)/g, '');
@@ -117,11 +107,6 @@ const ImportWallet = () => {
 
   const importMnemonic = useCallback(
     async (text: string) => {
-      if (wallets.length > 0) {
-        presentAlert({ title: loc.errors.error, message: loc.wallets.single_wallet_limit });
-        return;
-      }
-
       try {
         if (await Clipboard.hasString()) {
           Clipboard.setString('');
@@ -133,6 +118,7 @@ const ImportWallet = () => {
       Keyboard.dismiss();
       setIsLoading(true);
 
+      let restored = false;
       try {
         if (!text.trim()) {
           presentAlert({ title: loc.errors.error, message: loc.wallet_birth.error_empty_mnemonic });
@@ -162,18 +148,26 @@ const ImportWallet = () => {
         });
 
         await addAndSaveWallet(wallet);
-        navigation.navigateToWalletsList();
+        restored = true;
       } catch (error: any) {
         console.error('Import error:', error);
         presentAlert({
-          title: loc.wallets.import_error,
+          title: loc.wallets.restore_error,
           message: error.message || loc.wallet_birth.error_import_failed,
+          hapticFeedback: HapticFeedbackTypes.NotificationError,
         });
       } finally {
         setIsLoading(false);
       }
+
+      // Outside the try: the wallet is saved by now, so a sheet failure must not read as a failed restore.
+      if (restored) {
+        setImportText('');
+        triggerHapticFeedback(HapticFeedbackTypes.NotificationSuccess);
+        await successSheetRef.current?.present();
+      }
     },
-    [birthDate, addAndSaveWallet, navigation, wallets],
+    [birthDate, addAndSaveWallet],
   );
 
   const handleImport = useCallback(() => {
@@ -224,100 +218,114 @@ const ImportWallet = () => {
     if (triggerImport) handleImport();
   }, [triggerImport, handleImport]);
 
-  // Adding the ToolTipMenu to the header
-  const renderHeaderLeft = useCallback(
-    () => <ImportWalletHeaderLeft onPress={() => navigation.goBack()} closeImage={closeImage} style={styles.button} />,
-    [closeImage, navigation],
-  );
+  const onPasteFromClipboard = useCallback(async () => {
+    try {
+      setImportText(await readClipboardForPaste());
+    } catch (error) {
+      presentAlert({ message: (error as Error).message });
+    }
+  }, []);
 
-  useEffect(() => {
-    if (navigation.getState().index !== 0) return;
-    navigation.setOptions({
-      headerLeft: renderHeaderLeft,
-    });
-  }, [navigation, renderHeaderLeft]);
+  const onDoneFromSuccessSheet = useCallback(async () => {
+    await successSheetRef.current?.dismiss();
+    navigation.navigateToWalletsList();
+  }, [navigation]);
 
-  const renderOptionsAndImportButton = (
-    <>
-      <Spacing20 />
-      <View style={[styles.center, stylesHook.center]}>
-        <>
-          <Button
-            disabled={importText.trim().length === 0 || isLoading}
-            title={loc.wallets.import_do_import}
-            testID="DoImport"
-            onPress={handleImport}
-          />
-          <Spacing20 />
-          <AddressInputScanButton type="link" onChangeText={setImportText} testID="ScanImport" />
-        </>
-      </View>
-    </>
+  const canImport = importText.trim().length > 0 && !isLoading;
+
+  const footer = (
+    <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 32) }]}>
+      <ActionButton
+        title={loc.wallets.restore_cta}
+        onPress={handleImport}
+        disabled={!canImport}
+        backgroundColor={colors.brandPrimary}
+        color={colors.white}
+        testID="DoImport"
+      />
+      <AddressInputScanButton onChangeText={setImportText} testID="ScanImport" />
+    </View>
   );
 
   return (
-    <SafeAreaScrollView
-      contentContainerStyle={[styles.root, stylesHook.root]}
-      keyboardShouldPersistTaps="always"
-      automaticallyAdjustKeyboardInsets
-    >
-      <Spacing20 />
-      <TouchableWithoutFeedback accessibilityRole="button" onPress={speedBackdoorTap} testID="SpeedBackdoor">
-        <ShroudFormLabel>{loc.wallets.import_explanation}</ShroudFormLabel>
-      </TouchableWithoutFeedback>
-      <View style={styles.mnemonicInputContainer}>
-        <ShroudFormMultiInput
-          value={importText}
-          onBlur={onBlur}
-          onChangeText={setImportText}
-          testID="MnemonicInput"
-          inputAccessoryViewID={DoneAndDismissKeyboardInputAccessoryViewID}
-          numberOfLines={3}
-        />
+    <SafeAreaScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="always" automaticallyAdjustKeyboardInsets>
+      <View style={styles.body}>
+        <TouchableWithoutFeedback accessibilityRole="button" onPress={speedBackdoorTap} testID="SpeedBackdoor">
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>{loc.wallets.restore_headline}</Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>{loc.wallets.restore_subtitle}</Text>
+          </View>
+        </TouchableWithoutFeedback>
+
+        <LabeledField>
+          <FieldMnemonicInput
+            value={importText}
+            onBlur={onBlur}
+            onChangeText={setImportText}
+            placeholder={loc.wallets.restore_mnemonic_placeholder}
+            accessibilityLabel={loc.wallets.restore_mnemonic_label}
+            testID="MnemonicInput"
+            inputAccessoryViewID={DoneAndDismissKeyboardInputAccessoryViewID}
+            style={styles.mnemonicInput}
+          />
+        </LabeledField>
+
+        {isClipboardGetContentEnabled && (
+          <ActionButton
+            title={loc.wallets.restore_paste_button}
+            Icon={ClipboardIcon}
+            iconSize={20}
+            onPress={onPasteFromClipboard}
+            backgroundColor={colors.fieldBackground}
+            color={colors.textPrimary}
+            testID="PasteFromClipboardButton"
+          />
+        )}
+
+        <WalletBirthSection birthDate={birthDate} setBirthDate={setBirthDate} />
+
+        <InfoBanner text={loc.wallets.restore_history_notice} emphasis={loc.wallets.restore_history_notice_emphasis} />
+
+        {isLoading && <ActivityIndicator size="large" color={colors.brandPrimary} style={styles.activityIndicator} />}
       </View>
 
-      <Spacing20 />
-      <WalletBirthSection birthDate={birthDate} setBirthDate={setBirthDate} />
+      <View style={styles.spacer} />
 
-      {isLoading && <ActivityIndicator size="large" color={colors.brandPrimary} style={styles.activityIndicator} />}
-
-      {Platform.select({ android: !isToolbarVisibleForAndroid && renderOptionsAndImportButton, default: renderOptionsAndImportButton })}
+      {Platform.select({ android: !isToolbarVisibleForAndroid && footer, default: footer })}
       {Platform.select({
         ios: (
           <DoneAndDismissKeyboardInputAccessory
             onClearTapped={() => {
               setImportText('');
             }}
-            onPasteTapped={text => {
-              setImportText(text);
-              Keyboard.dismiss();
-            }}
+            onPasteTapped={
+              isClipboardGetContentEnabled
+                ? text => {
+                    setImportText(text);
+                    Keyboard.dismiss();
+                  }
+                : undefined
+            }
           />
         ),
         default: null,
       })}
+
+      <RestoreSuccessSheet ref={successSheetRef} onDone={onDoneFromSuccessSheet} />
     </SafeAreaScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  root: {
-    paddingTop: 10,
-    flexGrow: 1,
-  },
-  center: {
-    flex: 1,
-    marginHorizontal: 16,
-  },
-  button: {
-    padding: 10,
-  },
-  mnemonicInputContainer: {
-    minHeight: 120,
-  },
-  activityIndicator: {
-    marginVertical: 16,
-  },
+  content: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 0 },
+  body: { gap: 20 },
+  header: { marginBottom: 4 },
+  title: { fontFamily: ClashFont.medium, fontSize: 32, letterSpacing: -1, marginBottom: 8 },
+  subtitle: { fontFamily: ClashFont.regular, fontSize: 15, lineHeight: 20 },
+  mnemonicInput: { minHeight: 72, textAlignVertical: 'top' },
+  spacer: { flex: 1 },
+  footer: { paddingTop: 16, gap: 12 },
+  activityIndicator: { marginTop: 4 },
 });
 
 export default ImportWallet;

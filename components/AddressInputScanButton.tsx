@@ -1,43 +1,32 @@
-import React, { useCallback, useMemo } from 'react';
-import { Image, Keyboard, Platform, StyleSheet, Text } from 'react-native';
-import Clipboard from '@react-native-clipboard/clipboard';
+import React, { useCallback } from 'react';
+import { Keyboard, StyleSheet, Text } from 'react-native';
 import ToolTipMenu from './TooltipMenu';
 import loc from '../loc';
 import { showFilePickerAndReadFile, showImagePickerAndReadImage } from '../modules/fs';
 import presentAlert from './Alert';
 import { useTheme } from './themes';
-import { detectQRCodeInImage } from 'react-native-camera-kit-no-google';
 import { CommonToolTipActions } from '../typings/CommonToolTipActions';
-import { useSettings } from '../hooks/context/useSettings';
 import { scanQrHelper } from '../helpers/scan-qr';
-import { ClashFont } from '../constants/fonts';
+import { actionButtonStyles } from './ActionButton';
 
 interface AddressInputScanButtonProps {
   isLoading?: boolean;
   onChangeText: (text: string) => void;
-  type?: 'default' | 'link';
   testID?: string;
   beforePress?: () => Promise<void> | void;
 }
 
+// Pasting is left to the screen's own paste controls, so the menu only offers photo and file.
+const ACTIONS = [CommonToolTipActions.ChoosePhoto, CommonToolTipActions.ImportFile];
+
+// Outlined pill that scans a QR code on tap and offers photo/file import on long press.
 export const AddressInputScanButton = ({
   isLoading,
   onChangeText,
-  type = 'default',
   testID = 'BlueAddressInputScanQrButton',
   beforePress,
 }: AddressInputScanButtonProps) => {
   const { colors } = useTheme();
-  const { isClipboardGetContentEnabled } = useSettings();
-
-  const stylesHook = StyleSheet.create({
-    scan: {
-      backgroundColor: colors.textMuted,
-    },
-    scanText: {
-      color: colors.white,
-    },
-  });
 
   const toolTipOnPress = useCallback(async () => {
     if (beforePress) {
@@ -47,56 +36,9 @@ export const AddressInputScanButton = ({
     scanQrHelper().then(onChangeText);
   }, [beforePress, onChangeText]);
 
-  const actions = useMemo(() => {
-    const availableActions = [
-      CommonToolTipActions.ChoosePhoto,
-      CommonToolTipActions.ImportFile,
-      {
-        ...CommonToolTipActions.PasteFromClipboard,
-        hidden: !isClipboardGetContentEnabled,
-      },
-    ];
-
-    return availableActions;
-  }, [isClipboardGetContentEnabled]);
-
   const onMenuItemPressed = useCallback(
     async (action: string) => {
       switch (action) {
-        case CommonToolTipActions.PasteFromClipboard.id:
-          try {
-            let getImage: string | null = null;
-            let hasImage = false;
-            if (Platform.OS === 'android') {
-              hasImage = true;
-            } else {
-              hasImage = await Clipboard.hasImage();
-            }
-
-            if (hasImage) {
-              getImage = await Clipboard.getImage();
-            }
-
-            if (getImage) {
-              try {
-                const base64Data = getImage.replace(/^data:image\/(png|jpeg|jpg);base64,/, '');
-                const result = await detectQRCodeInImage(base64Data);
-                if (result) {
-                  onChangeText(result);
-                } else {
-                  presentAlert({ message: loc.send.qr_error_no_qrcode });
-                }
-              } catch (error) {
-                presentAlert({ message: (error as Error).message });
-              }
-            } else {
-              const clipboardText = await Clipboard.getString();
-              onChangeText(clipboardText);
-            }
-          } catch (error) {
-            presentAlert({ message: (error as Error).message });
-          }
-          break;
         case CommonToolTipActions.ChoosePhoto.id:
           showImagePickerAndReadImage()
             .then(value => {
@@ -125,30 +67,19 @@ export const AddressInputScanButton = ({
     [onChangeText],
   );
 
-  const buttonStyle = useMemo(() => [styles.scan, stylesHook.scan], [stylesHook.scan]);
-
   return (
     <ToolTipMenu
-      actions={actions}
+      actions={ACTIONS}
       isButton
       onPressMenuItem={onMenuItemPressed}
       testID={testID}
       disabled={isLoading}
       onPress={toolTipOnPress}
-      buttonStyle={type === 'default' ? buttonStyle : undefined}
+      buttonStyle={[actionButtonStyles.button, actionButtonStyles.outlined, styles.fullWidth, { borderColor: colors.accentSubtle }]}
       accessibilityLabel={loc.send.details_scan}
       accessibilityHint={loc.send.details_scan_hint}
     >
-      {type === 'default' ? (
-        <>
-          <Image source={require('../img/scan-white.png')} accessible={false} />
-          <Text style={[styles.scanText, stylesHook.scanText]} accessible={false}>
-            {loc.send.details_scan}
-          </Text>
-        </>
-      ) : (
-        <Text style={[styles.linkText, { color: colors.textSecondary }]}>{loc.wallets.import_scan_qr}</Text>
-      )}
+      <Text style={[actionButtonStyles.title, { color: colors.brandPrimary }]}>{loc.wallets.import_scan_qr}</Text>
     </ToolTipMenu>
   );
 };
@@ -156,23 +87,5 @@ export const AddressInputScanButton = ({
 AddressInputScanButton.displayName = 'AddressInputScanButton';
 
 const styles = StyleSheet.create({
-  scan: {
-    height: 36,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderRadius: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    marginHorizontal: 4,
-  },
-  scanText: {
-    marginLeft: 4,
-    fontFamily: ClashFont.regular,
-  },
-  linkText: {
-    textAlign: 'center',
-    fontSize: 16,
-    fontFamily: ClashFont.regular,
-  },
+  fullWidth: { width: '100%' },
 });

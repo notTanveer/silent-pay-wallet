@@ -6,7 +6,8 @@ import { ClashFont } from '../constants/fonts';
 import { useTheme } from './themes';
 
 interface LabeledFieldProps {
-  label: string;
+  /** Omit when the screen's heading already names the field. */
+  label?: string;
   children: React.ReactNode; // the input element, normally a FieldTextInput
   trailing?: React.ReactNode; // e.g. a scan button
   testID?: string;
@@ -26,7 +27,7 @@ const LabeledField: React.FC<LabeledFieldProps> = ({ label, children, trailing, 
 
   return (
     <View style={styles.container} testID={testID}>
-      <ShroudText style={[styles.label, stylesHook.label]}>{label}</ShroudText>
+      {label ? <ShroudText style={[styles.label, stylesHook.label]}>{label}</ShroudText> : null}
       <View style={[styles.field, stylesHook.field]}>
         <View style={styles.inputWrap}>{children}</View>
         {trailing}

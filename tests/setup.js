@@ -229,6 +229,26 @@ jest.mock('realm', () => {
   };
 });
 
+// Stands in for the unlinked native module. Children render only while presented, so a test that
+// finds sheet content has also proved present() ran.
+jest.mock('@lodev09/react-native-true-sheet', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+
+  class TrueSheet extends React.Component {
+    state = { visible: false };
+    dismiss = jest.fn(() => new Promise(resolve => this.setState({ visible: false }, resolve)));
+    present = jest.fn(() => new Promise(resolve => this.setState({ visible: true }, resolve)));
+    resize = jest.fn(() => Promise.resolve());
+
+    render() {
+      return this.state.visible ? React.createElement(View, this.props) : null;
+    }
+  }
+
+  return { TrueSheet };
+});
+
 jest.mock('react-native-camera-kit-no-google', () => ({
   detectQRCodeInImage: jest.fn(base64 => {
     if (base64 === 'invalid-image') {
